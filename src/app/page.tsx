@@ -15,7 +15,11 @@ import {
   Loader2,
   CheckCircle2,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  BarChart3,
+  PieChart,
+  Target,
+  Flame
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
@@ -38,6 +42,7 @@ export default function Home() {
     title: ""
   });
   const [filter, setFilter] = useState("Tudo");
+  const [activeView, setActiveView] = useState<"simulados" | "analises">("simulados");
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminJson, setAdminJson] = useState("");
   const [isImporting, setIsImporting] = useState(false);
@@ -291,189 +296,220 @@ export default function Home() {
       </nav>
 
       <main className="max-w-6xl mx-auto py-10 sm:py-16 px-4 sm:px-12">
-        {/* Cabeçalho de Seção Elite */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-10 sm:mb-16 relative gap-8">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="h-px w-8 bg-blue-500/50" />
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500/60">Catálogo de Operações</span>
-            </div>
-            <h2 className="text-3xl sm:text-5xl font-light text-white tracking-tighter leading-none">
-              Simulados <span className="font-black text-slate-700 italic">Disponíveis</span>
-            </h2>
-            <p className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em]">Selecione seu próximo protocolo de treinamento</p>
-          </div>
-
-          <div className="flex items-center gap-2 p-1 bg-[#0F172A]/40 border border-white/5 rounded-2xl backdrop-blur-xl overflow-x-auto no-scrollbar max-w-full">
-            {["Tudo", "Básico", "Padrão", "Avançado"].map((lvl) => (
-              <button 
-                key={lvl}
-                onClick={() => setFilter(lvl)}
-                className={`relative px-5 sm:px-6 py-3 text-xs sm:text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 shrink-0 ${
-                  filter === lvl 
-                    ? 'text-white' 
-                    : 'text-slate-600 hover:text-slate-400'
-                }`}
-              >
-                {filter === lvl && (
-                  <motion.div 
-                    layoutId="filter-bg"
-                    className="absolute inset-0 bg-blue-600 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.3)]"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
-                <span className="relative z-10">{lvl}</span>
-              </button>
-            ))}
-          </div>
+        {/* Main Tab Switcher */}
+        <div className="flex items-center gap-2 p-1.5 bg-[#0F172A]/40 border border-white/5 rounded-2xl mb-12 max-w-fit mx-auto sm:mx-0">
+          <button 
+            onClick={() => setActiveView("simulados")}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs sm:text-[10px] font-black uppercase tracking-widest transition-all ${activeView === "simulados" ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            Simulados
+          </button>
+          <button 
+            onClick={() => setActiveView("analises")}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs sm:text-[10px] font-black uppercase tracking-widest transition-all ${activeView === "analises" ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            <BarChart3 className="w-3.5 h-3.5" />
+            Análises
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-4">
-          {loading ? (
-            <div className="flex flex-col items-center py-24 gap-6">
-              <div className="relative">
-                <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
-                <div className="absolute inset-0 bg-blue-600/20 blur-xl animate-pulse" />
-              </div>
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-700 animate-pulse">Sincronizando Base de Dados...</p>
-            </div>
-          ) : filteredSimulados.length === 0 ? (
-            <div className="text-center py-24 bg-white/[0.01] rounded-[40px] border-2 border-dashed border-white/[0.03]">
-              <BookOpen className="w-16 h-16 text-slate-800 mx-auto mb-6 opacity-20" />
-              <p className="text-slate-600 text-[11px] font-black uppercase tracking-[0.2em]">Nenhum protocolo detectado nesta categoria</p>
-            </div>
-          ) : (
-            filteredSimulados.map((sim, i) => {
-              const countQ = (obj: any): number => {
-                if (!obj) return 0;
-                if (Array.isArray(obj)) return obj.length;
-                
-                // Tenta disciplinas
-                if (obj.disciplinas && Array.isArray(obj.disciplinas)) {
-                  return obj.disciplinas.reduce((acc: number, d: any) => acc + (d.questoes?.length || 0), 0);
-                }
-                
-                // Tenta questões direto
-                if (obj.questoes && Array.isArray(obj.questoes)) {
-                  return obj.questoes.length;
-                }
+        <AnimatePresence mode="wait">
+          {activeView === "simulados" ? (
+            <motion.div
+              key="simulados-view"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              {/* Cabeçalho de Seção Elite */}
+              <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-10 sm:mb-16 relative gap-8">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-px w-8 bg-blue-500/50" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500/60">Catálogo de Operações</span>
+                  </div>
+                  <h2 className="text-3xl sm:text-5xl font-light text-white tracking-tighter leading-none">
+                    Simulados <span className="font-black text-slate-700 italic">Disponíveis</span>
+                  </h2>
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em]">Selecione seu próximo protocolo de treinamento</p>
+                </div>
 
-                // Se tiver uma sub-chave data_json, mergulha nela
-                if (obj.data_json) {
-                  return countQ(obj.data_json);
-                }
-
-                return 0;
-              };
-
-              const qCount = countQ(sim.data_json);
-              const level = (sim.nivel || "PADRÃO").toUpperCase();
-
-              return (
-                <motion.div 
-                  key={sim.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.08 }}
-                  onClick={() => handleSimuladoClick(sim.id)}
-                  className="group relative flex flex-col md:flex-row md:items-center justify-between p-5 bg-[#0F172A]/30 border border-white/[0.03] rounded-[24px] hover:border-blue-500/20 hover:bg-[#0F172A]/60 transition-all duration-500 cursor-pointer overflow-hidden"
-                >
-                   {/* Overlay de Gradiente no Hover */}
-                   <div className="absolute inset-0 bg-gradient-to-r from-blue-600/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-
-                   <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 relative z-10 w-full">
-                      <div className={`w-12 h-12 shrink-0 rounded-[18px] flex items-center justify-center border transition-all duration-500 group-hover:scale-105 ${
-                        level === 'AVANÇADO' 
-                          ? 'bg-purple-500/5 border-purple-500/10 text-purple-500/60 group-hover:text-purple-400 group-hover:border-purple-500/30' 
-                          : 'bg-blue-500/5 border-blue-500/10 text-blue-500/60 group-hover:text-blue-400 group-hover:border-blue-500/30'
-                      }`}>
-                        <BookOpen className="w-5 h-5" />
-                      </div>
-                      
-                      <div className="space-y-2 flex-1 min-w-0">
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <h3 className="text-sm sm:text-base font-bold text-slate-200 group-hover:text-white transition-colors tracking-tight truncate">
-                            {sim.titulo}
-                          </h3>
-                          {sim.ano && (
-                            <span className="px-2 py-0.5 bg-white/[0.03] border border-white/[0.05] rounded-lg text-[8px] text-slate-600 font-black tracking-widest uppercase shrink-0">
-                              {sim.ano}
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                          <div className="flex items-center gap-1.5 text-xs sm:text-[9px] font-black text-slate-700 uppercase tracking-widest">
-                            <CheckCircle2 className="w-3 h-3" />
-                            <span>{qCount} Questões</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-xs sm:text-[9px] font-black text-slate-700 uppercase tracking-widest">
-                            <Clock className="w-3 h-3" />
-                            <span>{Math.floor(sim.duracao_minutos / 60)}h {sim.duracao_minutos % 60}m</span>
-                          </div>
-                          {sim.autor && (
-                            <div className="flex items-center gap-1.5 text-xs sm:text-[9px] font-black text-blue-500/30 uppercase tracking-widest truncate max-w-[150px]">
-                              <User className="w-3 h-3" />
-                              <span>{sim.autor}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                   </div>
-
-                   <div className="flex flex-wrap items-center gap-3 mt-6 sm:mt-0 relative z-10 sm:justify-end w-full sm:w-auto">
-                      <button 
-                        onClick={(e) => openRanking(e, sim)}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white/[0.02] border border-white/[0.05] rounded-xl text-slate-600 hover:text-yellow-500 hover:bg-yellow-500/5 hover:border-yellow-500/20 transition-all duration-300"
-                      >
-                        <Trophy className="w-3.5 h-3.5" />
-                        <span className="text-xs sm:text-[9px] font-black uppercase tracking-widest">Ranking</span>
-                      </button>
-                      
-                      <div className={`hidden xs:flex px-4 py-2.5 rounded-xl text-xs sm:text-[9px] font-black uppercase tracking-widest border transition-colors duration-300 ${
-                        level === 'AVANÇADO' 
-                          ? 'bg-purple-500/5 border-purple-500/10 text-purple-500/60' 
-                          : level === 'BÁSICO' 
-                            ? 'bg-blue-500/5 border-blue-500/10 text-blue-500/60' 
-                            : 'bg-emerald-500/5 border-emerald-500/10 text-emerald-500/60'
-                      }`}>
-                        {level}
-                      </div>
-
-                      {isAdmin && (
-                        <button 
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            const ok = await showConfirm(
-                              `Essa ação é irreversível. O simulado "${sim.titulo}" será permanentemente removido da base de dados.`,
-                              'Excluir Simulado?',
-                              'Sim, excluir',
-                              'Cancelar'
-                            );
-                            if (ok) {
-                              const { error } = await supabase.from('simulados').delete().eq('id', sim.id);
-                              if (!error) {
-                                setSimulados((prev: any) => prev.filter((s: any) => s.id !== sim.id));
-                              } else {
-                                await showAlert('Erro ao excluir: ' + error.message, 'error');
-                              }
-                            }
-                          }}
-                          className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300"
-                          title="Excluir Simulado"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                <div className="flex items-center gap-2 p-1 bg-[#0F172A]/40 border border-white/5 rounded-2xl backdrop-blur-xl overflow-x-auto no-scrollbar max-w-full">
+                  {["Tudo", "Básico", "Padrão", "Avançado"].map((lvl) => (
+                    <button 
+                      key={lvl}
+                      onClick={() => setFilter(lvl)}
+                      className={`relative px-5 sm:px-6 py-3 text-xs sm:text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 shrink-0 ${
+                        filter === lvl 
+                          ? 'text-white' 
+                          : 'text-slate-600 hover:text-slate-400'
+                      }`}
+                    >
+                      {filter === lvl && (
+                        <motion.div 
+                          layoutId="filter-bg"
+                          className="absolute inset-0 bg-blue-600 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                        />
                       )}
+                      <span className="relative z-10">{lvl}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-                      <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-white/[0.05] flex items-center justify-center group-hover:bg-blue-600 group-hover:border-blue-600 transition-all duration-500 ml-auto sm:ml-0">
-                        <ChevronRight className="w-4 h-4 text-slate-800 group-hover:text-white transition-all" />
+              <div className="grid grid-cols-1 gap-4">
+                {loading ? (
+                  <div className="flex flex-col items-center py-24 gap-6">
+                    <div className="relative">
+                      <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+                      <div className="absolute inset-0 bg-blue-600/20 blur-xl animate-pulse" />
+                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-700 animate-pulse">Sincronizando Base de Dados...</p>
+                  </div>
+                ) : filteredSimulados.length === 0 ? (
+                  <div className="text-center py-24 bg-white/[0.01] rounded-[40px] border-2 border-dashed border-white/[0.03]">
+                    <BookOpen className="w-16 h-16 text-slate-800 mx-auto mb-6 opacity-20" />
+                    <p className="text-slate-600 text-[11px] font-black uppercase tracking-[0.2em]">Nenhum protocolo detectado nesta categoria</p>
+                  </div>
+                ) : (
+                  filteredSimulados.map((sim, i) => {
+                    const countQ = (obj: any): number => {
+                      if (!obj) return 0;
+                      if (Array.isArray(obj)) return obj.length;
+                      if (obj.disciplinas && Array.isArray(obj.disciplinas)) {
+                        return obj.disciplinas.reduce((acc: number, d: any) => acc + (d.questoes?.length || 0), 0);
+                      }
+                      if (obj.questoes && Array.isArray(obj.questoes)) {
+                        return obj.questoes.length;
+                      }
+                      if (obj.data_json) return countQ(obj.data_json);
+                      return 0;
+                    };
+
+                    const qCount = countQ(sim.data_json);
+                    const level = (sim.nivel || "PADRÃO").toUpperCase();
+
+                    return (
+                      <motion.div 
+                        key={sim.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.08 }}
+                        onClick={() => handleSimuladoClick(sim.id)}
+                        className="group relative flex flex-col md:flex-row md:items-center justify-between p-5 bg-[#0F172A]/30 border border-white/[0.03] rounded-[24px] hover:border-blue-500/20 hover:bg-[#0F172A]/60 transition-all duration-500 cursor-pointer overflow-hidden"
+                      >
+                         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                         <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 relative z-10 w-full">
+                            <div className={`w-12 h-12 shrink-0 rounded-[18px] flex items-center justify-center border transition-all duration-500 group-hover:scale-105 ${
+                              level === 'AVANÇADO' ? 'bg-purple-500/5 border-purple-500/10 text-purple-500/60' : 'bg-blue-500/5 border-blue-500/10 text-blue-500/60'
+                            }`}>
+                              <BookOpen className="w-5 h-5" />
+                            </div>
+                            <div className="space-y-2 flex-1 min-w-0">
+                              <div className="flex items-center gap-3 flex-wrap">
+                                <h3 className="text-sm sm:text-base font-bold text-slate-200 group-hover:text-white transition-colors tracking-tight truncate uppercase italic">{sim.titulo}</h3>
+                                {sim.ano && <span className="px-2 py-0.5 bg-white/[0.03] border border-white/[0.05] rounded-lg text-[8px] text-slate-600 font-black tracking-widest uppercase">{sim.ano}</span>}
+                              </div>
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                <div className="flex items-center gap-1.5 text-xs sm:text-[9px] font-black text-slate-700 uppercase tracking-widest"><CheckCircle2 className="w-3 h-3" /><span>{qCount} Questões</span></div>
+                                <div className="flex items-center gap-1.5 text-xs sm:text-[9px] font-black text-slate-700 uppercase tracking-widest"><Clock className="w-3 h-3" /><span>{Math.floor(sim.duracao_minutos / 60)}h {sim.duracao_minutos % 60}m</span></div>
+                                {sim.autor && <div className="flex items-center gap-1.5 text-xs sm:text-[9px] font-black text-blue-500/30 uppercase tracking-widest truncate max-w-[150px]"><User className="w-3 h-3" /><span>{sim.autor}</span></div>}
+                              </div>
+                            </div>
+                         </div>
+                         <div className="flex flex-wrap items-center gap-3 mt-6 sm:mt-0 relative z-10 sm:justify-end w-full sm:w-auto">
+                            <button onClick={(e) => openRanking(e, sim)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white/[0.02] border border-white/[0.05] rounded-xl text-slate-600 hover:text-yellow-500 hover:bg-yellow-500/5 hover:border-yellow-500/20 transition-all duration-300"><Trophy className="w-3.5 h-3.5" /><span className="text-xs sm:text-[9px] font-black uppercase tracking-widest">Ranking</span></button>
+                            <div className={`hidden xs:flex px-4 py-2.5 rounded-xl text-xs sm:text-[9px] font-black uppercase tracking-widest border ${level === 'AVANÇADO' ? 'bg-purple-500/5 border-purple-500/10 text-purple-500/60' : level === 'BÁSICO' ? 'bg-blue-500/5 border-blue-500/10 text-blue-500/60' : 'bg-emerald-500/5 border-emerald-500/10 text-emerald-500/60'}`}>{level}</div>
+                            {isAdmin && (
+                              <button onClick={async (e) => { e.stopPropagation(); const ok = await showConfirm(`Deseja excluir "${sim.titulo}"?`, 'Excluir?', 'Sim', 'Não'); if (ok) { const { error } = await supabase.from('simulados').delete().eq('id', sim.id); if (!error) setSimulados((prev: any) => prev.filter((s: any) => s.id !== sim.id)); } }} className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all"><Trash2 className="w-4 h-4" /></button>
+                            )}
+                            <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-white/[0.05] flex items-center justify-center group-hover:bg-blue-600 group-hover:border-blue-600 transition-all ml-auto sm:ml-0"><ChevronRight className="w-4 h-4 text-slate-800 group-hover:text-white" /></div>
+                         </div>
+                      </motion.div>
+                    );
+                  })
+                )}
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="analises-view"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-12"
+            >
+              <div className="space-y-4">
+                <div className="flex items-center gap-3"><div className="h-px w-8 bg-orange-500/50" /><span className="text-[10px] font-black uppercase tracking-[0.4em] text-orange-500/60">Inteligência Competitiva</span></div>
+                <h2 className="text-3xl sm:text-5xl font-light text-white tracking-tighter leading-none">Engenharia de <span className="font-black text-slate-700 italic">Dados</span></h2>
+                <p className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em]">O que realmente cai na sua prova (Top Assuntos)</p>
+              </div>
+
+              <div className="flex items-center gap-4 overflow-x-auto pb-4 no-scrollbar">
+                <button className="px-6 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-900/20 whitespace-nowrap">Informática</button>
+                <button className="px-6 py-3 bg-white/[0.03] border border-white/5 text-slate-500 rounded-xl text-xs font-black uppercase tracking-widest whitespace-nowrap cursor-not-allowed opacity-50">Conhecimentos Bancários (Em breve)</button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  {[
+                    { subject: "Windows 10", q: 18, p: 8.87 },
+                    { subject: "Protocolos de Redes", q: 12, p: 5.91 },
+                    { subject: "Mozilla Firefox", q: 11, p: 5.42 },
+                    { subject: "Linux / Unix", q: 10, p: 4.93 },
+                    { subject: "Ameaças (Vírus, Worms, Trojans)", q: 9, p: 4.43 },
+                    { subject: "Excel 2019", q: 9, p: 4.43 },
+                  ].map((item, idx) => (
+                    <motion.div key={idx} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }} className="p-5 bg-[#0B1224]/60 border border-white/5 rounded-3xl group hover:border-blue-500/30 transition-all">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black ${idx === 0 ? 'bg-yellow-500 text-black' : 'bg-white/5 text-slate-500'}`}>#{idx + 1}</div>
+                          <span className="text-sm font-bold text-slate-200 group-hover:text-blue-400 transition-colors">{item.subject}</span>
+                        </div>
+                        <span className="text-xs font-black text-blue-500">{item.p}%</span>
                       </div>
-                   </div>
-                </motion.div>
-              );
-            })
+                      <div className="relative h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${(item.p / 9) * 100}%` }} transition={{ duration: 1, delay: 0.5 }} className={`absolute top-0 left-0 h-full rounded-full ${idx === 0 ? 'bg-yellow-500' : 'bg-blue-600'}`} />
+                      </div>
+                      <div className="mt-2"><span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">{item.q} Questões Mapeadas</span></div>
+                    </motion.div>
+                  ))}
+                </div>
+                <div className="space-y-4">
+                  {[
+                    { subject: "Segurança da Informação", q: 6, p: 2.96 },
+                    { subject: "Sistemas Operacionais", q: 6, p: 2.96 },
+                    { subject: "Conceitos de Internet", q: 6, p: 2.96 },
+                    { subject: "Word 2019 / 2013", q: 12, p: 5.92 },
+                    { subject: "Computação em Nuvem", q: 6, p: 2.96 },
+                  ].map((item, idx) => (
+                    <motion.div key={idx + 6} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: (idx + 6) * 0.05 }} className="p-5 bg-[#0B1224]/40 border border-white/5 rounded-3xl group hover:border-slate-500/30 transition-all">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-xs font-black text-slate-500">#{idx + 7}</div>
+                          <span className="text-sm font-bold text-slate-400 group-hover:text-white transition-colors">{item.subject}</span>
+                        </div>
+                        <span className="text-xs font-black text-slate-500">{item.p}%</span>
+                      </div>
+                      <div className="relative h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${(item.p / 9) * 100}%` }} transition={{ duration: 1, delay: 0.5 }} className="absolute top-0 left-0 h-full bg-slate-700 rounded-full" />
+                      </div>
+                      <div className="mt-2"><span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">{item.q} Questões Mapeadas</span></div>
+                    </motion.div>
+                  ))}
+                  <div className="p-8 bg-blue-600/5 border border-blue-500/20 rounded-[32px] flex flex-col items-center text-center gap-4">
+                    <div className="w-12 h-12 bg-blue-600/20 rounded-2xl flex items-center justify-center"><Flame className="w-6 h-6 text-blue-500 animate-pulse" /></div>
+                    <div><h4 className="text-sm font-black text-white uppercase tracking-widest italic">Ponto de Atenção</h4><p className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-widest">Windows 10 e Protocolos representam ~15% da prova. Foco total.</p></div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           )}
+        </AnimatePresence>
         </div>
       </main>
 
