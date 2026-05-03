@@ -1,0 +1,889 @@
+{
+  "id": "2",
+  "titulo": "3º Simulado Especial - Banco do Brasil",
+  "duracao_minutos": 300,
+  "data_json": {
+    "disciplinas": [
+      {
+        "nome": "LÍNGUA PORTUGUESA",
+        "questoes": [
+          {
+            "id": "q_1",
+            "texto": "O texto discute os motivos sociais e econômicos que explicam o roubo de carros elétricos, mesmo quando os criminosos não têm como recarregá - los. A partir da leitura e compreensão das ideias apresentadas, assinale a alternativa incorreta.",
+            "alternativas": {
+              "A": "O texto sugere que muitos roubos ocorrem porque os carros elétricos contêm peças valiosas que podem ser revendidas no mercado paralelo.",
+              "B": "A dificuldade de acesso à infraestrutura de recarga não impede completamente o roubo, pois o objetivo nem sempre é o uso do veículo, mas o lucro com a desmontagem.",
+              "C": "Entre os fatores sociais apontados, estão o desemprego, a desigualdade e a busca por ganhos rápidos em economias informais.",
+              "D": "O texto defende que os roubos de carros elétricos ocorrem, principalmente, por ordem de facções criminosas que desejam expandir sua atuação.",
+              "E": "A análise mostra que o problema não é apenas tecnológico, mas também social, refletindo desigualdades e falhas no combate ao mercado ilegal de peças."
+            },
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "q_2",
+            "texto": "O texto “Por que as pessoas roubam carros elétricos se às vezes não têm como carregá - los?” busca explicar as causas sociais e econômicas de um fenômeno atual. Quanto ao tipo e gênero textual , assinale a alternativa correta.",
+            "alternativas": {
+              "A": "O texto é narrativo, pois relata uma sequência de ações envolvendo personagens e tempo definido.",
+              "B": "O texto é injuntivo, pois tem como objetivo principal orientar o leitor sobre como evitar o roubo de veículos.",
+              "C": "O texto é descritivo, uma vez que se limita a caracterizar os carros elétricos e suas peças.",
+              "D": "O texto é dissertativo - expositivo, pois apresenta informações e explicações sobre o tema com base em causas e consequências sociais.",
+              "E": "O texto é argumentativo, pois defende um ponto de vista acerca de como diminuir os crimes citados."
+            },
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "q_3",
+            "texto": "No trecho abaixo, observe o uso do termo destacado: “Muitos roubos de carros elétricos acontecem não pelo interesse em utilizá - los , mas pela possibilidade de revender suas peças, que têm alto valor no mercado paralelo.” Considerando os mecanismos de coesão referencial , assinale a alternativa correta.",
+            "alternativas": {
+              "A": "O pronome “ los ” retoma o substantivo “roubos”, funcionando como elemento de retomada anafórica.",
+              "B": "O pronome “ los ” retoma o substantivo “carros elétricos”, estabelecendo coesão por substituição pronominal.",
+              "C": "O pronome “ los ” antecipa a ideia de “peças”, exercendo função catafórica.",
+              "D": "O termo “ suas ” refere - se a “pessoas”, o que demonstra ambiguidade no texto..",
+              "E": "O termo “ que ” introduz uma oração adjetiva explicativa, retomando “possibilidade”."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "q_4",
+            "texto": "Em relação à concordância, assinale a alternativa que não apresenta deslize.",
+            "alternativas": {
+              "A": "Entre as ruas silenciosas da madrugada, percebe - se, com nitidez quase poética, ausências de qualquer sinal humano que denuncie o movimento da cidade adormecida.",
+              "B": "Nos relatórios elaborados pelo instituto, constataram - se, após longas análises, a existência de falhas graves nos dados sobre mobilidade urbana.",
+              "C": "De cada esquina abandonada, notava - se, sob o brilho dos postes, que o eco das sirenes anunciavam o caos urbano.",
+              "D": "A crescente onda de desinformação que se espalha pelas redes sociais, alimentada por interesses políticos, pela pressa do público em compartilhar e pela ausência de checagem adequada, têm provocado sérios danos à formação crítica da sociedade.",
+              "E": "Os inúmeros desafios enfrentados diariamente pelos trabalhadores do transporte público, agravados pela falta de segurança, pelos baixos salários e pela precariedade das condições de trabalho, acabam comprometendo a qualidade do serviço oferecido à populaçã o."
+            },
+            "respostaCorreta": "E"
+          },
+          {
+            "id": "q_5",
+            "texto": "Assinale a única alternativa em que o pronome ‘onde’ tenha sido bem empregado.",
+            "alternativas": {
+              "A": "Visitamos o museu onde se preservam peças raras da história colonial brasileira.",
+              "B": "Não entendo o projeto onde ele explicou suas intenções com tanta clareza.",
+              "C": "Este é o motivo onde discordamos desde o início da reunião.",
+              "D": "Li um artigo onde o autor defende ideias sobre moral e liberdade.",
+              "E": "A situação onde chegamos exige medidas urgentes de contenção."
+            },
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "q_6",
+            "texto": "No terceiro parágrafo, a expressão ‘Mesmo que’ pode ser corretamente substituída, com manutenção do sentido, por:",
+            "alternativas": {
+              "A": "Mesmo assim",
+              "B": "Conquanto",
+              "C": "Porém",
+              "D": "Desde que",
+              "E": "A não ser que"
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "q_7",
+            "texto": "Em primeiro lugar, há o valor das peças. Carros elétricos possuem componentes de alto custo, como baterias de lítio, cabos de cobre e sistemas eletrônicos avançados, todos com grande valor no mercado paralelo . O termo ‘paralelo’ só não poderia ser substituído corretamente, mantendo o sentido original, por:",
+            "alternativas": {
+              "A": "ilegal",
+              "B": "informal",
+              "C": "ilícito",
+              "D": "secundário",
+              "E": "clandestino"
+            },
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "q_8",
+            "texto": "Assinale a opção que apresente problema de pontuação.",
+            "alternativas": {
+              "A": "Nas feiras e plataformas digitais, produtos falsificados circulam livremente, sustentando redes criminosas que exploram o consumo fácil e o preço baixo.",
+              "B": "O comércio ilegal movimenta bilhões por ano e enfraquece a economia formal, desviando recursos que deveriam ser investidos em serviços públicos.",
+              "C": "Por trás do comércio clandestino há uma cadeia de exploração que envolve trabalhadores sem direitos, evasão fiscal e corrupção institucional.",
+              "D": "A venda irregular de metais e componentes eletrônicos alimenta o roubo de cabos, baterias e veículos, gerando prejuízos sociais e ambientais.",
+              "E": "Combater o comércio ilegal exige mais do que fiscalização: é preciso educação econômica, inclusão social e consumo consciente"
+            },
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "q_9",
+            "texto": "Quanto ao uso do acento de crase, assinale a alternativa incorreta:",
+            "alternativas": {
+              "A": "O pesquisador fez referência à mesma teoria clássica antes de apresentar sua própria hipótese experimental.",
+              "B": "O ministro respondeu à jornalista com firmeza, deixando claro que não aceitaria distorções de suas palavras.",
+              "C": "A professora recorreu à experiência dos alunos para tornar a aula mais significativa e participativa.",
+              "D": "A empresa entregou o relatório à essa diretoria na manhã seguinte, após revisar todos os dados.",
+              "E": "Os manifestantes dirigiram - se à praça central, onde o ato público já começava a se formar."
+            },
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "q_10",
+            "texto": "Quanto à ortografia, assinale a alternativa em que ocorre deslize.",
+            "alternativas": {
+              "A": "O desenvolvimento pré - escolar é uma etapa fundamental para a formação cognitiva e social da criança.",
+              "B": "Um profissional autossuficiente é capaz de tomar decisões e resolver problemas sem depender constantemente de supervisão.",
+              "C": "Os fatores econômicos e ambientais estão profundamente inter - relacionados , influenciando se mutuamente.",
+              "D": "A preocupação com a auto - higiene é importante.",
+              "E": "Aceitar vantagens em troca de favores é um comportamento claramente anti-ético e condenável."
+            },
+            "respostaCorreta": "E"
+          }
+        ]
+      },
+      {
+        "nome": "LÍNGUA INGLESA",
+        "questoes": [
+          {
+            "id": "q_11",
+            "texto": "The main purpose of the text is",
+            "alternativas": {
+              "A": "to compare the features of different AI - powered web browsers.",
+              "B": "to announce the launch of OpenAI’s ChatGPT Atlas and its competition with Google Chrome.",
+              "C": "to explain how Google Chrome maintains its dominance in the browser market.",
+              "D": "to describe the technical specifications of ChatGPT Atlas’s agent mode.",
+              "E": "to argue that AI - driven search will completely replace traditional search methods."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "q_12",
+            "texto": "In the segment of 1 st paragraph “OpenAI unveiled ChatGPT Atlas, a long - anticipated artificial intelligence - powered web browser,” the word unveiled is synonymous with",
+            "alternativas": {
+              "A": "developed.",
+              "B": "launched.",
+              "C": "promoted.",
+              "D": "revealed.",
+              "E": "tested."
+            },
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "q_13",
+            "texto": "The text suggests something about the impact of ChatGPT Atlas on the browser market, that is",
+            "alternativas": {
+              "A": "it will immediately surpass Google Chrome’s market share.",
+              "B": "it intensifies competition by offering AI - driven features that challenge traditional browsers.",
+              "C": "it has no significant impact due to Google Chrome’s dominance.",
+              "D": "it will replace all other AI - powered browsers like Comet and Neon.",
+              "E": "it focuses solely on providing free browsing services to users."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "q_14",
+            "texto": "In the fragment “Atlas lets users open a ChatGPT sidebar in any window to summarize content,” the word sidebar refers to",
+            "alternativas": {
+              "A": "a physical bar on the side of a computer screen.",
+              "B": "a separate application running alongside the browser.",
+              "C": "a panel integrated into the browser interface.",
+              "D": "a toolbar for navigating websites.",
+              "E": "a pop - up advertisement window."
+            },
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "q_15",
+            "texto": "According to the text, it can be inferred about ChatGPT Atlas “agent mode” that",
+            "alternativas": {
+              "A": "It is available to all users for free.",
+              "B": "It enables the browser to perform tasks independently for paid users.",
+              "C": "It is used exclusively for summarizing web content.",
+              "D": "It requires users to manually input all task instructions.",
+              "E": "It is a feature also available in Google Chrome."
+            },
+            "respostaCorreta": "B"
+          }
+        ]
+      },
+      {
+        "nome": "MATEMÁTICA",
+        "questoes": [
+          {
+            "id": "q_16",
+            "texto": "Ao realizar uma pesquisa sobre a quantidade de pessoas que estudam para a área policial ou para a área bancária, obtiveram - se os seguintes resultados: 55% estudam para a área policial, 65% estudam para a área bancária e 25 pessoas estudam para ambas as áreas. Sabendo - se que todos os entrevistados estudam para ao menos uma das duas áreas, o total de pessoas entrevistadas foi:",
+            "alternativas": {
+              "A": "7 5",
+              "B": "125",
+              "C": "150",
+              "D": "175",
+              "E": "250"
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "q_17",
+            "texto": "Um empresário quita o valor principal de um débito, efetuando um pagamento inicial de 9 mil reais . Contudo, o contrato estabelece que, no mês seguinte, ele deve pagar uma multa por atraso correspondente a 1/3 do valor do principal ( 3 mil reais ) e uma taxa de juros moratórios de valor idêntico ao dessa multa (outros 3 mil reais ). Nos meses subsequentes, uma nova multa é calculada como 1/3 da multa do mês anterior, e novos juros moratórios são cobrados em valor idêntico ao da nova multa. Se essa cobrança de e ncargos se perpetuasse indefinidamente, a soma de todos os pagamentos efetuados (principal + multas + juros) totalizaria:",
+            "alternativas": {
+              "A": "9 mil reais .",
+              "B": "12 mil reais .",
+              "C": "16 mil reais .",
+              "D": "18 mil reais .",
+              "E": "27 mil reais ."
+            },
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "q_18",
+            "texto": "O valor V(t), em reais, de um lote de um novo criptoativo é modelado pela função V(t) = 15000 × (3/2)^(t+k), onde t representa o número de meses desde o lançamento e k é uma constante real de ajuste do modelo. Considerando que o valor de lançamento desse lote (t = 0) foi de R$ 10.000,00, o valor da constante k utilizado no modelo é:",
+            "alternativas": {
+              "A": "1",
+              "B": "− 2",
+              "C": "1 2",
+              "D": "2",
+              "E": "− 1"
+            },
+            "respostaCorreta": "E"
+          },
+          {
+            "id": "q_19",
+            "texto": "Arnaldo e Bernaldo constituíram a empresa Trambiques&Trambiques LTDA com certo capital, sendo que a diferença dos valores dos capitais investidos por Arnaldo e por Bernaldo foi igual a R$ 3.900,00. Ao final de um mês da constituição da empresa, ambos dividiram o primeiro lucro em partes diretamente proporcionais aos c apitais investidos, sendo R$ 26,00 a parte do lucro recebida por Bernaldo e R$ 78,00 a parte do lucro recebida por Arnaldo. Assim, pode - se concluir corretamente que o capital total por eles investido foi de:",
+            "alternativas": {
+              "A": "R$ 7.750,00.",
+              "B": "R$ 7.800,00.",
+              "C": "R$ 7.850,00.",
+              "D": "R$ 7.900,00.",
+              "E": "R$ 7.950,00."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "q_20",
+            "texto": "O lucro de uma cooperativa agrícola é determinado pela fórmula L = R - C, onde L é o lucro, C é o custo total de plantio e R é a receita total da colheita. Uma cooperativa analisou seus dados e descobriu que, ao plantar n hectares de soja, seu custo operacional é dado pela função C(n) = n^2 - 1000n e a receita obtida com a venda da soja desses n hectares é representada por R(n) = 5000n - 2n^2. Com base nessas funções, a quantidade n de hectares que devem ser cultivados para que a cooperativa atinja seu lucro máximo corresponde a um número no intervalo",
+            "alternativas": {
+              "A": "580 < n < 720",
+              "B": "860 < n < 940",
+              "C": "980 < n < 1300",
+              "D": "1350 < n < 1800",
+              "E": "n > 1850"
+            },
+            "respostaCorreta": "C"
+          }
+        ]
+      },
+      {
+        "nome": "ATUALIDADES DO MERCADO FINANCEIRO",
+        "questoes": [
+          {
+            "id": "q_21",
+            "texto": "O avanço das fintechs e das big techs tem desafiado o modelo tradicional de bancos no Brasil e no mundo. Nesse cenário, qual das alternativas representa corretamente um dos desafios enfrentados pelos bancos tradicionais?",
+            "alternativas": {
+              "A": "A ampliação das agências físicas para reduzir a presença digital.",
+              "B": "A queda na demanda por serviços financeiros devido à redução da população bancarizada.",
+              "C": "A necessidade de manter estruturas operacionais caras em um ambiente de competição digital.",
+              "D": "O fortalecimento das operações com papel - moeda como prioridade estratégica.",
+              "E": "A proibição legal de implementar inovações tecnológicas em produtos financeiros."
+            },
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "q_22",
+            "texto": "No contexto da transformação digital, os bancos passaram a investir mais intensamente na experiência do cliente (customer experience). Sobre esse processo, é correto afirmar que:",
+            "alternativas": {
+              "A": "A digitalização eliminou completamente a necessidade de canais de atendimento ao cliente.",
+              "B": "A experiência do cliente é irrelevante em serviços financeiros com grande base de usuários.",
+              "C": "A digitalização permitiu personalizar o atendimento com base em dados comportamentais dos clientes.",
+              "D": "A jornada do cliente é padronizada em todos os canais, sem diferenciação de perfis.",
+              "E": "A transformação digital tornou todos os serviços financeiros uniformes entre os concorrentes."
+            },
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "q_23",
+            "texto": "Nos últimos anos, o modelo bancário evoluiu de um modelo de intermediação financeira para uma abordagem mais voltada a plataformas e ecossistemas digitais. Considerando essa tendência, assinale a alternativa correta.",
+            "alternativas": {
+              "A": "O modelo de plataforma bancária depende da obrigatoriedade de presença física do cliente na agência.",
+              "B": "Ecossistemas digitais limitam o relacionamento do cliente a um único serviço financeiro.",
+              "C": "Os bancos digitais tendem a integrar diferentes serviços financeiros e não financeiros em um só ambiente.",
+              "D": "A intermediação financeira direta foi ampliada com o fechamento de canais digitais.",
+              "E": "O uso de plataformas digitais pelos bancos é restrito aos grandes bancos internacionais."
+            },
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "q_24",
+            "texto": "A digitalização dos serviços bancários teve forte impacto na inclusão financeira da população brasileira. Assinale a afirmativa correta sobre essa transformação.",
+            "alternativas": {
+              "A": "A digitalização reduziu o acesso da população de baixa renda a serviços financeiros.",
+              "B": "O uso de canais digitais tem contribuído para ampliar o acesso bancário em regiões antes desatendidas.",
+              "C": "O processo digital eliminou a necessidade de políticas públicas para inclusão bancária.",
+              "D": "A inclusão digital é restrita a grandes centros urbanos com alta renda per capita.",
+              "E": "A transformação digital aumentou a dependência exclusiva das agências físicas."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "q_25",
+            "texto": "A concorrência digital forçou os bancos tradicionais a reverem seus modelos de atuação, produtos e canais de atendimento. Com base nessa realidade, assinale a alternativa correta.",
+            "alternativas": {
+              "A": "A concorrência digital levou os bancos tradicionais a concentrarem todos os investimentos em abertura de agências.",
+              "B": "A presença de bancos digitais reduziu a pressão por inovação nos bancos tradicionais.",
+              "C": "Os bancos tradicionais passaram a investir em transformação digital e melhorar seus canais de autoatendimento.",
+              "D": "As fintechs abandonaram o mercado devido à supremacia tecnológica dos bancos convencionais.",
+              "E": "A concorrência digital afetou apenas o setor de pagamentos, sem impactos nos demais segmentos bancários."
+            },
+            "respostaCorreta": "C"
+          }
+        ]
+      },
+      {
+        "nome": "MATEMÁTICA FINANCEIRA",
+        "questoes": [
+          {
+            "id": "q_26",
+            "texto": "Uma empresa contraiu um empréstimo que foi totalmente quitado 4 meses após a sua contratação. O valor total pago na quitação, incluindo os encargos, foi de R$ 60.000,00. Sabendo que a operação foi realizada sob o regime de juros simples, com uma taxa de 5% ao mês, conclui - se que o valor original do empréstimo, em reais, foi:",
+            "alternativas": {
+              "A": "72.000,00",
+              "B": "57.000,00",
+              "C": "55.000,00",
+              "D": "50.000,00",
+              "E": "48.000,00"
+            },
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "q_27",
+            "texto": "Um colecionador adquiriu um item raro por R$ 500,00. Analistas de mercado estimam que o item se valorize, sob o regime de juros compostos, a uma taxa efetiva de 12% ao ano. Se essa estimativa se confirmar, o valor do item após 21 anos será de: Se necessário, considere a aproximação: 1,12^10 = 3,10.",
+            "alternativas": {
+              "A": "R$ 5.100,45",
+              "B": "R$ 5.200,12",
+              "C": "R$ 5.300,00",
+              "D": "R$ 5.315,90",
+              "E": "R$ 5.381,60"
+            },
+            "respostaCorreta": "E"
+          },
+          {
+            "id": "q_28",
+            "texto": "Uma cooperativa agrícola financiou um trator, comprometendo - se a pagar a dívida pelo Sistema de Amortização Constante (SAC) em 40 parcelas mensais. Sabe - se que a primeira parcela, paga um mês após a compra, foi de R$ 3.000,00, e a décima parcela foi de R$ 2.550,00. Nessas condições, o valor da quadragésima (e última) parcela é igual a",
+            "alternativas": {
+              "A": "R$ 1.000,00",
+              "B": "R$ 1.050,00",
+              "C": "R$ 1.100,00",
+              "D": "R$ 1.150,00",
+              "E": "R$ 1.200,00"
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "q_29",
+            "texto": "Um fornecedor de software possui um contrato de manutenção que prevê três recebimentos mensais fixos de R$ 1.000,00 cada, o primeiro vencendo daqui a um mês, o segundo em dois meses e o terceiro em três meses. O cliente propõe substituir esse fluxo por doi s pagamentos iguais, 푃 , com vencimentos para daqui a dois meses e quatro meses, respectivamente. Utilizando o critério de equivalência de capitais a uma taxa de juros compostos de 5% ao mês, o valor 푃 de cada um desses novos pagamentos, em reais, é tal que",
+            "alternativas": {
+              "A": "1 . 590 < 푃 < 1 . 595",
+              "B": "1 . 575 < 푃 < 1 . 580",
+              "C": "1 . 570 < 푃 < 1 . 575",
+              "D": "1 . 585 < 푃 < 1 . 590",
+              "E": "1 . 580 < 푃 < 1 . 585"
+            },
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "q_30",
+            "texto": "Uma empresa de logística adquire um novo veículo financiado no valor de R$ 60.000,00. O contrato padrão do fornecedor é baseado no Sistema de Amortização Constante (SAC), prevendo cinco pagamentos mensais a uma taxa de 5% ao mês. Contudo, a empresa optou por um plano alternativo, baseado no Sistema Price, no qual o valor de cada parcela fixa é R$ 13.858,48. Nesse cenário , optando pelo Price, o saldo devedor da dívida, imediatamente após o pagamento da primeira parcela, será:",
+            "alternativas": {
+              "A": "R$ 37.740,12.",
+              "B": "R$ 43.141,52.",
+              "C": "R$ 46.141,52.",
+              "D": "R$ 46.740,12.",
+              "E": "R$ 49.141,52. Celso Natale"
+            },
+            "respostaCorreta": "E"
+          }
+        ]
+      },
+      {
+        "nome": "CONHECIMENTOS BANCÁRIOS",
+        "questoes": [
+          {
+            "id": "q_31",
+            "texto": "O Conselho Nacional de Seguros Privados (CNSP) é o órgão normativo do ramo de seguros privados do SFN. Considerando suas atribuições, assinale a opção correta.",
+            "alternativas": {
+              "A": "Executar a política monetária definida pelo Conselho Monetário Nacional.",
+              "B": "Fiscalizar diretamente as sociedades seguradoras, aplicando penalidades administrativas.",
+              "C": "Autorizar o funcionamento de instituições financeiras de crédito e câmbio.",
+              "D": "Estabelecer diretrizes e normas da política de seguros privados, incluindo previdência complementar aberta, resseguros e capitalização.",
+              "E": "Supervisionar as operações no mercado de valores mobiliários."
+            },
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "q_32",
+            "texto": "No Sistema Financeiro Nacional, o Banco Central do Brasil (BCB) exerce papel essencial na estabilidade econômica. Acerca de sua natureza jurídica e atribuições, assinale a opção correta.",
+            "alternativas": {
+              "A": "O BCB é autarquia federal vinculada ao Ministério da Fazenda, com subordinação hierárquica à Secretaria de Política Econômica.",
+              "B": "O BCB é autarquia federal de natureza especial, dotada de autonomia técnica, operacional, administrativa e financeira, responsável por executar a política monetária e cambial definida pelo Conselho Monetário Nacional.",
+              "C": "O BCB é órgão normativo do SFN, com competência para editar Resoluções sobre política monetária.",
+              "D": "O BCB supervisiona exclusivamente instituições financeiras, não tendo competência sobre instituições de pagamento.",
+              "E": "O BCB é entidade de previdência complementar aberta, integrante do ramo de seguros privados."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "q_33",
+            "texto": "No Sistema Financeiro Nacional, o órgão responsável por normatizar os mercados de moeda, crédito, capitais e câmbio é o:",
+            "alternativas": {
+              "A": "CVM",
+              "B": "BCB",
+              "C": "CNSP",
+              "D": "CMN",
+              "E": "Previc"
+            },
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "q_34",
+            "texto": "Sobre os agregados monetários, assinale a opção que define corretamente o M1.",
+            "alternativas": {
+              "A": "Papel - moeda em poder do público + Depósitos à vista",
+              "B": "M1 + Depósitos de poupança + Títulos emitidos por instituições depositárias + Depósitos especiais remunerados",
+              "C": "M2 + Cotas de fundos de investimento + Operações compromissadas Selic",
+              "D": "M3 + Títulos públicos federais de alta liquidez",
+              "E": "Papel - moeda em circulação + Reservas bancárias (voluntárias e compulsórias)"
+            },
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "q_35",
+            "texto": "Em determinado período, a razão dos depósitos à vista no M1 é d = 0,8 e a razão das reservas totais sobre depósitos à vista é r = 0,25. O multiplicador monetário é:",
+            "alternativas": {
+              "A": "1,25",
+              "B": "1,60",
+              "C": "2,00",
+              "D": "2,50",
+              "E": "4,00"
+            },
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "q_36",
+            "texto": "Uma indústria vende equipamentos a prazo para um cliente recorrente. Para reforçar seu caixa, recebe à vista de um banco, que passa a cobrar as parcelas do comprador; se o comprador não pagar, a vendedora responde perante o banco. A modalidade descrita é :",
+            "alternativas": {
+              "A": "Compror",
+              "B": "Vendor",
+              "C": "Desconto de duplicatas",
+              "D": "Conta garantida",
+              "E": "Hot money"
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "q_37",
+            "texto": "Sobre os investimentos do mercado financeiro, assinale a opção correta.",
+            "alternativas": {
+              "A": "O Recibo de Depósito Bancário (RDB) é título de renda fixa negociável no mercado secundário, com liquidez diária.",
+              "B": "A Letra de Crédito Imobiliário (LCI) é um título de renda fixa emitido por instituições financeiras, lastreado em operações de crédito imobiliário, cujos rendimentos são isentos de Imposto de Renda para pessoas físicas.",
+              "C": "O Certificado de Depósito Bancário (CDB) é isento de Imposto de Renda e não é coberto pelo Fundo Garantidor de Créditos (FGC).",
+              "D": "A Letra de Câmbio é emitida pelo Banco Central para financiar operações de câmbio no mercado internacional.",
+              "E": "A poupança é isenta de imposto de renda para pessoas físicas e jurídicas, com rendimento mensal fixo de 0,5% ao mês mais TR."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "q_38",
+            "texto": "O regime cambial em que o Banco Central permite que a taxa de câmbio varie livremente, mas intervém pontualmente para evitar oscilações excessivas e manter a estabilidade do mercado é denominado:",
+            "alternativas": {
+              "A": "Câmbio fixo",
+              "B": "Bandas cambiais",
+              "C": "Flutuação suja (ou administrada)",
+              "D": "Câmbio flutuante puro",
+              "E": "Currency board"
+            },
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "q_39",
+            "texto": "A hipoteca é uma garantia real que recai, em regra, sobre:",
+            "alternativas": {
+              "A": "Bens móveis e semoventes",
+              "B": "Créditos e títulos de dívida",
+              "C": "Bens imóveis, navios e aeronaves",
+              "D": "Mercadorias em depósito",
+              "E": "Direitos de propriedade intelectual"
+            },
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "q_40",
+            "texto": "Segundo a Resolução CMN nº 4.893/2021, a política de segurança cibernética das instituições financeiras deve assegurar, em relação aos dados e informações, os princípios de:",
+            "alternativas": {
+              "A": "Legalidade, impessoalidade e eficiência",
+              "B": "Autenticidade, rastreabilidade e economicidade",
+              "C": "Confidencialidade, integridade e disponibilidade",
+              "D": "Transparência, governança e interoperabilidade",
+              "E": "Segurança, publicidade e auditabilidade Emannuelle Gouveia"
+            },
+            "respostaCorreta": "C"
+          }
+        ]
+      },
+      {
+        "nome": "CONHECIMENTOS DE INFORMÁTICA",
+        "questoes": [
+          {
+            "id": "q_41",
+            "texto": "No Windows 10, é possível utilizar o “Gerenciador de Tarefas” para monitorar processos, desempenho e serviços em execução. Uma diferença importante entre as versões de 32 e 64 bits é que:",
+            "alternativas": {
+              "A": "a versão de 64 bits não permite a execução de aplicativos de 32 bits.",
+              "B": "a versão de 32 bits utiliza um kernel híbrido, enquanto a de 64 bits usa kernel monolítico.",
+              "C": "a versão de 64 bits suporta maior quantidade de memória RAM e executa processos de 64 e 32 bits.",
+              "D": "ambas as versões possuem suporte ilimitado de memória e compatibilidade total com todos os drivers.",
+              "E": "a versão de 32 bits é exclusiva para servidores e não possui interface gráfica."
+            },
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "q_42",
+            "texto": "No sistema operacional Linux SUSE SLES 15 SP2, um usuário deseja conceder permissão de execução a um script chamado backup.sh. Para isso, ele deve utilizar corretamente o comando:",
+            "alternativas": {
+              "A": "chmod +r backup.sh",
+              "B": "chmod +x backup.sh",
+              "C": "chmod +w backup.sh",
+              "D": "chmod +s backup.sh",
+              "E": "chmod 777 backup.sh"
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "q_43",
+            "texto": "No Microsoft Word do Office 365, um usuário deseja inserir o mesmo texto no cabeçalho de todas as páginas de um documento. Para isso, deve:",
+            "alternativas": {
+              "A": "ativar a guia Layout e inserir uma caixa de texto.",
+              "B": "selecionar o texto e clicar em “Repetir em todas as páginas”.",
+              "C": "acessar a guia Inserir, escolher Cabeçalho e digitar o texto desejado.",
+              "D": "usar o recurso “Referências cruzadas”.",
+              "E": "aplicar um estilo de parágrafo personalizado."
+            },
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "q_44",
+            "texto": "No Microsoft Word do Office 365, um usuário precisa criar um sumário automático que atualize os números de página sempre que o documento for alterado. Para isso, ele deve:",
+            "alternativas": {
+              "A": "inserir manualmente uma tabela e digitar os títulos.",
+              "B": "usar a guia Referências e o comando Sumário.",
+              "C": "aplicar negrito aos títulos e atualizar a numeração de página.",
+              "D": "ativar o modo de exibição de leitura.",
+              "E": "copiar o índice de outro documento."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "q_45",
+            "texto": "No Microsoft Excel do Office 365, um usuário deseja calcular a média de valores contidos nas células A1 até A10, ignorando células vazias. O comando correto é:",
+            "alternativas": {
+              "A": "=SOMA(A1:A10)/10",
+              "B": "=MÉDIA(A1:A10)",
+              "C": "=CONT.VALORES(A1:A10)",
+              "D": "=SOMA(A1:A10)",
+              "E": "=MÉDIASE(A1:A10;\">0\")"
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "q_46",
+            "texto": "No Microsoft Excel do Office 365, um usuário deseja destacar automaticamente em vermelho os valores superiores a 100 na coluna B. O recurso mais adequado para essa tarefa é:",
+            "alternativas": {
+              "A": "Filtro automático.",
+              "B": "Validação de dados.",
+              "C": "Formatação condicional.",
+              "D": "Classificação personalizada.",
+              "E": "Inserção de gráfico."
+            },
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "q_47",
+            "texto": "No Microsoft PowerPoint do Office 365, um usuário deseja aplicar o mesmo plano de fundo e formatação a todas as lâminas de uma apresentação. Para isso, deve utilizar o recurso:",
+            "alternativas": {
+              "A": "Modo de leitura.",
+              "B": "Visualização de estrutura.",
+              "C": "Layout de slide.",
+              "D": "Slide mestre.",
+              "E": "Tema dinâmico."
+            },
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "q_48",
+            "texto": "No Microsoft PowerPoint do Office 365, um usuário deseja inserir uma transição suave entre todos os slides de uma apresentação. Para isso, ele deve:",
+            "alternativas": {
+              "A": "selecionar cada slide e escolher o efeito desejado na guia Transições.",
+              "B": "utilizar o recurso Animações personalizadas.",
+              "C": "inserir manualmente um novo slide entre cada transição.",
+              "D": "ativar o modo de exibição de leitura.",
+              "E": "aplicar o comando Revisão ortográfica."
+            },
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "q_49",
+            "texto": "Em relação ao navegador Microsoft Edge (versão 91), assinale a alternativa correta quanto ao procedimento para eliminar arquivos temporários, cookies e cache a fim de resolver falhas de exibição de páginas.",
+            "alternativas": {
+              "A": "Exibir > Histórico > Limpar formato de exibição.",
+              "B": "Configurações > Privacidade, pesquisa e serviços > Limpar dados de navegação.",
+              "C": "Segurança > Firewall > Limpar histórico de navegação.",
+              "D": "Ferramentas > Limpeza do sistema > Excluir registros.",
+              "E": "Ajuda > Diagnóstico de conexão > Redefinir navegador."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "q_50",
+            "texto": "Em ambientes corporativos, muitas equipes precisam compartilhar documentos técnicos com controle de versão e registro de edições. Entre as opções abaixo, o recurso mais apropriado para essa finalidade é:",
+            "alternativas": {
+              "A": "Fórum de discussão.",
+              "B": "Lista de e - mails.",
+              "C": "Canal no YouTube.",
+              "D": "Wiki corporativa.",
+              "E": "Grupo no Telegram."
+            },
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "q_51",
+            "texto": "Entre os princípios fundamentais da segurança da informação, assinale a alternativa que representa a garantia de que os dados não sejam alterados, excluídos ou corrompidos de forma não autorizada.",
+            "alternativas": {
+              "A": "Integridade.",
+              "B": "Confidencialidade.",
+              "C": "Disponibilidade.",
+              "D": "Autenticidade.",
+              "E": "Irretratabilidade."
+            },
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "q_52",
+            "texto": "Em um ambiente corporativo, o administrador de rede configurou políticas que bloqueiam automaticamente dispositivos de armazenamento removíveis (pendrives e HDs externos) para evitar cópia indevida de dados sigilosos. Essa medida está relacionada ao mecani smo de:",
+            "alternativas": {
+              "A": "Hardening.",
+              "B": "Firewall pessoal.",
+              "C": "Criptografia assimétrica.",
+              "D": "Antimalware heurístico.",
+              "E": "Controle de dispositivos USB."
+            },
+            "respostaCorreta": "E"
+          },
+          {
+            "id": "q_53",
+            "texto": "Os sistemas de suporte à decisão (DSS) são ferramentas que auxiliam gestores na análise de informações para tomadas de decisão mais assertivas. No contexto da inteligência de negócio (BI), esses sistemas utilizam:",
+            "alternativas": {
+              "A": "dados consolidados de múltiplas fontes, processados e apresentados em relatórios, painéis e indicadores de desempenho.",
+              "B": "dados exclusivamente em tempo real, sem armazenamento histórico.",
+              "C": "apenas dados textuais, excluindo informações numéricas.",
+              "D": "planilhas isoladas, sem integração entre sistemas.",
+              "E": "algoritmos que impedem o uso de relatórios visuais para tomada de decisão."
+            },
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "q_54",
+            "texto": "Na etapa inicial de um projeto de análise de dados, é fundamental compreender o tipo de informação disponível e como ela se relaciona com o problema de negócio. Nesse contexto, o processo de exploração e sumarização dos dados para identificar padrões, tend ências e inconsistências é denominado:",
+            "alternativas": {
+              "A": "Engenharia de características.",
+              "B": "Análise exploratória de dados.",
+              "C": "Validação cruzada.",
+              "D": "Modelagem estatística preditiva.",
+              "E": "Mineração de dados."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "q_55",
+            "texto": "Em um ambiente de trabalho remoto, uma equipe precisa compartilhar arquivos em nuvem, editar documentos simultaneamente e garantir que todas as versões fiquem armazenadas de forma centralizada, com controle de acesso. A ferramenta mais adequada para essa f inalidade é:",
+            "alternativas": {
+              "A": "Microsoft Teams.",
+              "B": "Cisco Webex.",
+              "C": "Skype.",
+              "D": "Google Hangout.",
+              "E": "Google Drive. Stefan Fantini"
+            },
+            "respostaCorreta": "E"
+          }
+        ]
+      },
+      {
+        "nome": "VENDAS E NEGOCIAÇÃO",
+        "questoes": [
+          {
+            "id": "q_56",
+            "texto": "Durante uma pesquisa de satisfação, os clientes de uma clínica relataram que as recepcionistas sempre os atendem prontamente, com boa vontade e sem fazer o cliente esperar. Essa atitude reflete uma dimensão da qualidade no atendimento chamada de",
+            "alternativas": {
+              "A": "cordialidade",
+              "B": "competência técnica",
+              "C": "presteza",
+              "D": "simpatia",
+              "E": "confiabilidade"
+            },
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "q_57",
+            "texto": "Um passageiro enviou uma mensagem à companhia aérea relatando que o atendimento no balcão de check - in foi lento e desorganizado. Ele não exigiu ressarcimento nem solução imediata, mas manifestou a esperança de que a empresa melhore o processo para futuros passageiros. Esse tipo de reclamação é classificado como:",
+            "alternativas": {
+              "A": "pessoal",
+              "B": "não - instrumental",
+              "C": "ativa",
+              "D": "instrumental",
+              "E": "passiva"
+            },
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "q_58",
+            "texto": "Uma empresa de comércio eletrônico implementou um sistema que monitora as interações dos clientes em todos os pontos de contato com a marca, coletando opiniões, sugestões e críticas, a fim de ajustar processos internos e aperfeiçoar continuamente o relacio namento com o público. Essa prática corresponde ao conceito de:",
+            "alternativas": {
+              "A": "Gestão da Imagem Institucional",
+              "B": "Gestão da Experiência do Cliente",
+              "C": "Marketing Institucional",
+              "D": "Gestão de Processos",
+              "E": "Pesquisa de Satisfação"
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "q_59",
+            "texto": "Uma empresa de serviços envia aos seus clientes uma pergunta simples: “Em uma escala de 0 a 10, qual a probabilidade de você recomendar nossa empresa a um amigo ou colega?” Com base nas respostas, ela classifica os clientes em promotores, neutros ou detratores, utilizando esse dado para avaliar o relacionamento com o público. Essa prática se refere ao uso do indicador denominado",
+            "alternativas": {
+              "A": "Customer Lifetime Value (CLV)",
+              "B": "Net Promoter Score (NPS)",
+              "C": "Customer Effort Score (CES)",
+              "D": "Customer Satisfaction Index (CSI)",
+              "E": "Market Share Index (MSI)"
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "q_60",
+            "texto": "Ao adquirir um novo plano de internet, um cliente avalia não apenas o preço pago, mas também a velocidade, a estabilidade e o suporte técnico oferecido. A partir dessa análise, ele decide se o serviço “vale a pena” em relação ao que pagou. Essa relação entre o que o cliente oferece e o que recebe é chamada de",
+            "alternativas": {
+              "A": "valor percebido pelo cliente",
+              "B": "fidelização de marca",
+              "C": "marketing de relacionamento",
+              "D": "custo de oportunidade",
+              "E": "lealdade comportamental"
+            },
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "q_61",
+            "texto": "Um paciente marcou consulta em uma clínica acreditando que o atendimento seria rápido e personalizado, mas enfrentou longa espera e pouca atenção do profissional. Essa situação representa um caso em que:",
+            "alternativas": {
+              "A": "a expectativa superou a percepção, gerando insatisfação.",
+              "B": "a percepção superou a expectativa, gerando fidelização.",
+              "C": "a percepção e a expectativa se igualaram, gerando satisfação.",
+              "D": "o custo superou o benefício, mas houve satisfação.",
+              "E": "o benefício superou o custo, mas houve neutralidade."
+            },
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "q_62",
+            "texto": "Ao perceber que seus clientes possuem perfis distintos — alguns buscam investimento, outros crédito e outros apenas conta digital — , um banco passou a adotar campanhas e produtos diferentes para cada grupo. Essa medida é um exemplo de:",
+            "alternativas": {
+              "A": "segmentação de mercado.",
+              "B": "pesquisa de clima organizacional.",
+              "C": "diversificação de marca.",
+              "D": "comunicação integrada.",
+              "E": "precificação estratégica."
+            },
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "q_63",
+            "texto": "Os clientes do Banco SF123 preferem resolver suas demandas entrando em contato com a central de atendimento apenas quando consideram necessário, sem receber ligações do banco oferecendo produtos. Nesse caso, o canal de comunicação desejado pelos clientes é o",
+            "alternativas": {
+              "A": "telemarketing receptivo.",
+              "B": "marketing direto.",
+              "C": "atendimento ativo.",
+              "D": "telemarketing ativo.",
+              "E": "pós - venda programada."
+            },
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "q_64",
+            "texto": "Em vez de focar apenas em novas vendas, uma empresa decide investir na fidelização de clientes antigos, oferecendo suporte constante, atendimento personalizado e estimulando a lealdade dos clientes. Essa estratégia está associada ao conceito de:",
+            "alternativas": {
+              "A": "marketing de relacionamento.",
+              "B": "marketing agressivo.",
+              "C": "prospecção de mercado.",
+              "D": "marketing transacional.",
+              "E": "marketing institucional."
+            },
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "q_65",
+            "texto": "Uma academia passou a oferecer uma aula experimental gratuita e um brinde personalizado para quem visitasse suas instalações. A estratégia tem o objetivo de despertar no potencial cliente o desejo de “retribuir” o gesto, aumentando as chances de matrícula . O gatilho mental utilizado nessa situação é o da:",
+            "alternativas": {
+              "A": "autoridade",
+              "B": "escassez",
+              "C": "reciprocidade",
+              "D": "exclusividade",
+              "E": "urgência"
+            },
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "q_66",
+            "texto": "Durante uma aula particular agendada, o aluno não compareceu e o professor não conseguiu reagendar o horário com outro aluno. O tempo não utilizado representa uma perda, pois o serviço não pode ser “guardado” para uso futuro. Essa situação evidencia que os serviços são",
+            "alternativas": {
+              "A": "intangíveis.",
+              "B": "inseparáveis.",
+              "C": "variáveis.",
+              "D": "perecíveis.",
+              "E": "homogêneos."
+            },
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "q_67",
+            "texto": "Uma agência de viagens separou seus clientes entre os que preferem experiências de aventura e contato com a natureza e os que buscam conforto, luxo e tranquilidade. Essa divisão baseia - se no tipo de personalidade e estilo de vida dos viajantes. Essa segmentação é chamada de:",
+            "alternativas": {
+              "A": "demográfica.",
+              "B": "geográfica.",
+              "C": "psicográfica.",
+              "D": "comportamental.",
+              "E": "socioeconômica."
+            },
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "q_68",
+            "texto": "Um cliente trocou de operadora porque percebeu que outra empresa oferecia planos com melhor cobertura e maior qualidade no serviço de internet. Esse tipo de cliente é classificado como:",
+            "alternativas": {
+              "A": "desertor de preço.",
+              "B": "desertor de produto.",
+              "C": "desertor de conveniência.",
+              "D": "desertor de mercado.",
+              "E": "desertor de serviço."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "q_69",
+            "texto": "O termo _ _______ refere - se à técnica de produzir textos com foco em convencer o leitor a realizar uma ação, como clicar em um link, fazer uma compra ou se inscrever em um curso. Trata - se da arte da escrita persuasiva para influenciar as pessoas a tomarem uma ação.",
+            "alternativas": {
+              "A": "inbound marketing",
+              "B": "marketing digital",
+              "C": "gatilho mental",
+              "D": "marketing de relacionamento",
+              "E": "copywriting"
+            },
+            "respostaCorreta": "E"
+          },
+          {
+            "id": "q_70",
+            "texto": "Em uma corretora de seguros, o vendedor inicia seu trabalho buscando empresas e pessoas que possam se interessar pelos serviços oferecidos. Essa fase do processo de vendas, voltada à busca de potenciais clientes, é conhecida como:",
+            "alternativas": {
+              "A": "abordagem.",
+              "B": "prospecção.",
+              "C": "fechamento.",
+              "D": "negociação.",
+              "E": "pós-venda."
+            },
+            "respostaCorreta": "B"
+          }
+        ]
+      }
+    ]
+  }
+}
