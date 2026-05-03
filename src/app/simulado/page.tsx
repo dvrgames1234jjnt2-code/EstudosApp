@@ -68,6 +68,7 @@ function SimuladoContent() {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [activeAttempt, setActiveAttempt] = useState<any>(null);
   const [loadingAttempt, setLoadingAttempt] = useState(false);
+  const [showMobileGabarito, setShowMobileGabarito] = useState(false);
 
   // Name Editing State
   const [isEditingName, setIsEditingName] = useState(false);
@@ -343,7 +344,7 @@ function SimuladoContent() {
           <div className="absolute -bottom-[20%] -right-[10%] w-[50%] h-[50%] bg-indigo-600/5 blur-[120px] rounded-full" />
         </div>
 
-        <div className="max-w-6xl mx-auto py-12 px-8 relative z-10">
+        <div className="max-w-6xl mx-auto py-8 lg:py-12 px-4 sm:px-8 relative z-10">
           {/* Barra Superior */}
           <div className="flex items-center justify-between mb-20">
             <button onClick={() => router.push('/')} className="group flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 hover:text-white transition-all">
@@ -357,7 +358,7 @@ function SimuladoContent() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
             {/* Conteúdo Esquerdo: Título da Missão */}
             <div className="lg:col-span-7 space-y-12">
               <div className="space-y-6">
@@ -365,7 +366,7 @@ function SimuladoContent() {
                   <div className="h-px w-8 bg-blue-500/50" />
                   <span className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500/60">Protocolo {simuladoDb?.ano || '2024'}</span>
                 </div>
-                <h2 className="text-5xl font-light text-white tracking-tighter leading-[1.1] max-w-2xl">
+                <h2 className="text-3xl sm:text-5xl font-light text-white tracking-tighter leading-[1.1] max-w-2xl">
                   {simuladoDb?.title?.split(' - ')[0] || 'Simulado'} <br />
                   <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">
                     {simuladoDb?.title?.split(' - ')[1] || 'Banco do Brasil'}
@@ -521,42 +522,39 @@ function SimuladoContent() {
 
     return (
       <div className="min-h-screen bg-[#020617] flex flex-col">
-        <header className="h-20 border-b border-white/[0.05] bg-[#020617]/80 backdrop-blur-md sticky top-0 z-50 px-8 flex items-center justify-between">
-           <div className="flex items-center gap-6">
-              <div className="flex flex-col">
+        <header className="h-20 border-b border-white/[0.05] bg-[#020617]/80 backdrop-blur-md sticky top-0 z-[60] px-4 sm:px-8 flex items-center justify-between gap-4">
+           <div className="flex items-center gap-4 sm:gap-6 flex-1 min-w-0">
+              <div className="flex flex-col shrink-0">
                 <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Progresso</span>
-                <span className="text-sm font-bold text-white tracking-tighter">{currentQuestion + 1} de {totalQuestions}</span>
+                <span className="text-xs sm:text-sm font-bold text-white tracking-tighter">{currentQuestion + 1} de {totalQuestions}</span>
               </div>
-              <div className="w-48 h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div className="flex-1 max-w-[200px] h-1.5 bg-white/5 rounded-full overflow-hidden hidden sm:block">
                 <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} className="h-full bg-gradient-to-r from-blue-600 to-indigo-600" />
               </div>
            </div>
            
-           <div className="flex items-center gap-8">
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><Timer className="w-3 h-3" /> Cronômetro</span>
-                <span className={`text-xl font-mono font-bold tracking-tighter ${timeLeft < 300 ? 'text-red-500 animate-pulse' : 'text-blue-500'}`}>
+           <div className="flex items-center gap-3 sm:gap-8">
+              <div className="flex flex-col items-end shrink-0">
+                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest hidden xs:flex items-center gap-2"><Timer className="w-3 h-3" /> Cronômetro</span>
+                <span className={`text-sm sm:text-xl font-mono font-bold tracking-tighter ${timeLeft < 300 ? 'text-red-500 animate-pulse' : 'text-blue-500'}`}>
                   {Math.floor(timeLeft / 3600)}h {Math.floor((timeLeft % 3600) / 60)}m {timeLeft % 60}s
                 </span>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5 sm:gap-2">
+                <button 
+                  onClick={() => setShowMobileGabarito(!showMobileGabarito)} 
+                  className={`lg:hidden w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all border ${
+                    showMobileGabarito ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white/5 border-white/5 text-slate-400'
+                  }`}
+                  title="Gabarito"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                </button>
                 <button onClick={() => {
                   setIsPaused(true);
                   saveProgress();
-                }} className="w-10 h-10 bg-white/5 hover:bg-white/10 rounded-xl flex items-center justify-center text-slate-400 hover:text-white transition-all border border-white/5" title="Pausar"><Lock className="w-4 h-4" /></button>
-                <button onClick={async () => { 
-                  const ok = await showConfirm(
-                    'Seu progresso atual será perdido e o simulado encerrado. Deseja mesmo cancelar?',
-                    'Cancelar Simulado?',
-                    'Sim, cancelar',
-                    'Continuar simulando'
-                  );
-                  if (ok) {
-                    await supabase.from('tentativas_ativas').delete().eq('user_id', user.id).eq('simulado_id', simuladoId);
-                    router.push('/');
-                  }
-                }} className="w-10 h-10 bg-red-500/10 hover:bg-red-500/20 rounded-xl flex items-center justify-center text-red-500 transition-all border border-red-500/10" title="Cancelar"><X className="w-4 h-4" /></button>
-                <button onClick={handleFinish} className="ml-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all shadow-lg shadow-blue-900/20">Finalizar</button>
+                }} className="w-9 h-9 sm:w-10 sm:h-10 bg-white/5 hover:bg-white/10 rounded-xl flex items-center justify-center text-slate-400 hover:text-white transition-all border border-white/5" title="Pausar"><Lock className="w-4 h-4" /></button>
+                <button onClick={handleFinish} className="px-4 sm:px-6 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs sm:text-[10px] font-black uppercase tracking-widest text-white transition-all shadow-lg shadow-blue-900/20">Finalizar</button>
               </div>
            </div>
         </header>
@@ -573,19 +571,19 @@ function SimuladoContent() {
                   <p className="text-slate-500 text-sm">O tempo foi congelado. Respire fundo e volte quando estiver pronto.</p>
                 </div>
                 <div className="grid grid-cols-1 gap-3">
-                  <button onClick={() => setIsPaused(false)} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-[0.3em] text-[10px] shadow-2xl shadow-blue-900/40 hover:bg-blue-500 transition-all">Continuar Simulado</button>
+                  <button onClick={() => setIsPaused(false)} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-[0.3em] text-xs shadow-2xl shadow-blue-900/40 hover:bg-blue-500 transition-all">Continuar Simulado</button>
                   <button onClick={async () => {
                     await saveProgress();
                     router.push('/');
-                  }} className="w-full py-5 bg-white/5 border border-white/10 text-slate-400 rounded-2xl font-black uppercase tracking-[0.3em] text-[10px] hover:bg-white/10 hover:text-white transition-all">Salvar e Sair</button>
+                  }} className="w-full py-5 bg-white/5 border border-white/10 text-slate-400 rounded-2xl font-black uppercase tracking-[0.3em] text-xs hover:bg-white/10 hover:text-white transition-all">Salvar e Sair</button>
                 </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <div className="flex-1 flex overflow-hidden">
-           <div className="flex-1 overflow-y-auto p-16 bg-white/[0.01] custom-scrollbar">
+        <div className="flex-1 flex overflow-hidden relative">
+           <div className="flex-1 overflow-y-auto p-6 sm:p-16 bg-white/[0.01] custom-scrollbar">
               <div className="max-w-3xl mx-auto relative">
                 {/* Drawing overlay */}
                 <DrawOverlay questionKey={currentQuestion} />
@@ -660,10 +658,18 @@ function SimuladoContent() {
 
 
 
-           <div className="w-96 border-l border-white/5 p-8 bg-[#020617] overflow-y-auto custom-scrollbar">
-              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-8 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4" /> Folha de Respostas (Gabarito)
-              </h3>
+           <div className={`
+              fixed lg:relative inset-y-0 right-0 w-80 sm:w-96 border-l border-white/5 p-6 sm:p-8 bg-[#020617] overflow-y-auto custom-scrollbar transition-transform duration-300 z-50
+              ${showMobileGabarito ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
+            `}>
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" /> Folha de Respostas
+                </h3>
+                <button onClick={() => setShowMobileGabarito(false)} className="lg:hidden p-2 text-slate-500 hover:text-white">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
               
               <div className="space-y-10">
                 {Array.from(new Set(questoesProcessadas.map((q: any) => q.disciplina))).map((disciplina: any) => {
@@ -694,7 +700,7 @@ function SimuladoContent() {
                               </button>
                             </div>
 
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 sm:gap-1.5">
                               {['A', 'B', 'C', 'D', 'E'].map((alt) => (
                                 <button
                                   key={alt}
@@ -703,7 +709,7 @@ function SimuladoContent() {
                                     setAnswers(newAnswers);
                                     saveProgress(newAnswers);
                                   }}
-                                  className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black border transition-all ${
+                                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[9px] sm:text-[10px] font-black border transition-all ${
                                     answers[idx] === alt 
                                       ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20' 
                                       : 'bg-white/5 border-white/5 text-slate-700 hover:border-slate-600 hover:text-slate-400'
