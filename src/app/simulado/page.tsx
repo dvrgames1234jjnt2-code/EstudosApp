@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BookOpen, ChevronRight, GraduationCap, Clock, CheckCircle2, User, LogOut, Mail, KeyRound, Loader2, Lock, X, ShieldCheck, Timer, AlertCircle, Bookmark, ArrowLeft, History, Trophy, Target, Zap, Shield, Activity, Edit2, Check, Scissors } from "lucide-react";
 import { supabase } from "../../lib/supabase";
@@ -48,7 +48,7 @@ const AlternativeItem = ({ id, text, isSelected, onClick, isStrikethrough, onTog
 
 
 
-export default function SimuladoPage() {
+function SimuladoContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const simuladoId = searchParams.get('id') || "BB-2025-01";
@@ -307,7 +307,7 @@ export default function SimuladoPage() {
     let totalPoints = 0;
     let absoluteScore = 0;
 
-    questoesProcessadas.forEach((q, idx) => {
+    questoesProcessadas.forEach((q: any, idx: number) => {
       if (answers[idx] === q.respostaCorreta) {
         absoluteScore += 1;
         const weight = pesos[q.disciplina.toUpperCase()] || 1.5;
@@ -666,9 +666,9 @@ export default function SimuladoPage() {
               </h3>
               
               <div className="space-y-10">
-                {Array.from(new Set(questoesProcessadas.map(q => q.disciplina))).map((disciplina: any) => {
-                  const discQuestions = questoesProcessadas.filter(q => q.disciplina === disciplina);
-                  const firstIdx = questoesProcessadas.findIndex(qp => qp === discQuestions[0]);
+                {Array.from(new Set(questoesProcessadas.map((q: any) => q.disciplina))).map((disciplina: any) => {
+                  const discQuestions = questoesProcessadas.filter((q: any) => q.disciplina === disciplina);
+                  const firstIdx = questoesProcessadas.findIndex((qp: any) => qp === discQuestions[0]);
                   return (
                   <div key={disciplina} className="space-y-4">
                     <button 
@@ -682,7 +682,7 @@ export default function SimuladoPage() {
                     
                     <div className="space-y-2">
                       {discQuestions.map((q: any) => {
-                        const idx = questoesProcessadas.findIndex(qp => qp === q);
+                        const idx = questoesProcessadas.findIndex((qp: any) => qp === q);
                         return (
                           <div key={idx} className={`flex items-center justify-between p-2 rounded-xl transition-all ${currentQuestion === idx ? 'bg-blue-600/5 ring-1 ring-blue-500/20' : 'hover:bg-white/[0.02]'}`}>
                             <div className="flex items-center gap-3">
@@ -743,10 +743,10 @@ export default function SimuladoPage() {
       "INFORMÁTICA": 1.5
     };
 
-    const stats = Array.from(new Set(questoesProcessadas.map(q => q.disciplina))).map((disciplina: any) => {
-      const qMat = questoesProcessadas.filter(q => q.disciplina === disciplina);
-      const indices = qMat.map(q => questoesProcessadas.findIndex(qp => qp === q));
-      const correct = indices.filter(idx => answers[idx] === questoesProcessadas[idx].respostaCorreta).length;
+    const stats = Array.from(new Set(questoesProcessadas.map((q: any) => q.disciplina))).map((disciplina: any) => {
+      const qMat = questoesProcessadas.filter((q: any) => q.disciplina === disciplina);
+      const indices = qMat.map((q: any) => questoesProcessadas.findIndex((qp: any) => qp === q));
+      const correct = indices.filter((idx: any) => answers[idx] === questoesProcessadas[idx].respostaCorreta).length;
       return {
         disciplina,
         total: qMat.length,
@@ -756,9 +756,9 @@ export default function SimuladoPage() {
       };
     });
 
-    const totalAcertos = stats.reduce((acc, s) => acc + s.acertos, 0);
-    const pontuacaoTotal = stats.reduce((acc, s) => acc + (s.acertos * s.peso), 0);
-    const pontuacaoMaxima = stats.reduce((acc, s) => acc + (s.total * s.peso), 0);
+    const totalAcertos = stats.reduce((acc: number, s: any) => acc + s.acertos, 0);
+    const pontuacaoTotal = stats.reduce((acc: number, s: any) => acc + (s.acertos * s.peso), 0);
+    const pontuacaoMaxima = stats.reduce((acc: number, s: any) => acc + (s.total * s.peso), 0);
     const aproveitamentoGeral = (pontuacaoTotal / pontuacaoMaxima) * 100;
 
     return (
@@ -969,5 +969,16 @@ export default function SimuladoPage() {
       {/* Rascunho — floating tldraw pad */}
       {gameState === 'playing' && <Rascunho />}
     </div>
+  );
+}
+export default function SimuladoPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+      </div>
+    }>
+      <SimuladoContent />
+    </Suspense>
   );
 }

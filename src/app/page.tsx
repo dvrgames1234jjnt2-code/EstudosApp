@@ -237,7 +237,7 @@ export default function Home() {
     }
   };
 
-  const filteredSimulados = filter === "Tudo" ? simulados : simulados.filter(s => {
+  const filteredSimulados = filter === "Tudo" ? simulados : simulados.filter((s: any) => {
     return s.nivel === filter.toUpperCase();
   });
 
@@ -453,7 +453,7 @@ export default function Home() {
                             if (ok) {
                               const { error } = await supabase.from('simulados').delete().eq('id', sim.id);
                               if (!error) {
-                                setSimulados(prev => prev.filter(s => s.id !== sim.id));
+                                setSimulados((prev: any) => prev.filter((s: any) => s.id !== sim.id));
                               } else {
                                 await showAlert('Erro ao excluir: ' + error.message, 'error');
                               }

@@ -4,7 +4,7 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import { Pencil, Eraser, Highlighter, Trash2 } from "lucide-react";
 
 /* ─── Types ──────────────────────────────────── */
-type Tool = "pen" | "marker" | "eraser";
+type Tool = "pen" | "marker" | "eraser" | "laser";
 
 interface Point { x: number; y: number; }
 interface Stroke {
@@ -17,9 +17,9 @@ interface Stroke {
 
 /* ─── Tool config ────────────────────────────── */
 const TOOLS: { id: Tool; label: string; icon: React.ElementType; width: number; opacity: number }[] = [
-  { id: "pen",     label: "Caneta",          icon: Pencil,      width: 2,  opacity: 1    },
-  { id: "marker",  label: "Caneta Laser",    icon: Highlighter, width: 12, opacity: 0.6 },
-  { id: "eraser",  label: "Borracha",        icon: Eraser,      width: 24, opacity: 1    },
+  { id: "pen",     label: "Caneta", icon: Pencil,      width: 2,  opacity: 1    },
+  { id: "marker",  label: "Marca-texto", icon: Highlighter, width: 14, opacity: 0.4 },
+  { id: "eraser",  label: "Borracha", icon: Eraser,      width: 24, opacity: 1    },
 ];
 
 const COLORS = ["#ef4444", "#3b82f6", "#22c55e", "#f59e0b", "#a855f7", "#ffffff"];
@@ -87,8 +87,11 @@ export function DrawOverlay({ questionKey }: Props) {
     if (s.tool === "eraser") {
       ctx.globalCompositeOperation = "destination-out";
       ctx.globalAlpha = 1;
-    } else if (s.tool === "marker") {
+    } else if (s.tool === "laser") {
       ctx.globalCompositeOperation = "source-over";
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = s.color;
+      ctx.strokeStyle = s.color;
     } else {
       ctx.globalCompositeOperation = "source-over";
     }
@@ -146,11 +149,25 @@ export function DrawOverlay({ questionKey }: Props) {
   const onPointerUp = () => {
     if (!drawing.current || !currentStroke.current) return;
     drawing.current = false;
+    
     if (currentStroke.current.points.length > 1) {
+      const stroke = { ...currentStroke.current };
+      const id = Math.random().toString(36).substr(2, 9);
+      
       setAllStrokes((prev) => ({
         ...prev,
-        [questionKey]: [...(prev[questionKey] || []), currentStroke.current!]
+        [questionKey]: [...(prev[questionKey] || []), stroke]
       }));
+
+      // If it's a laser, remove it after 2 seconds
+      if (stroke.tool === "laser") {
+        setTimeout(() => {
+          setAllStrokes(prev => ({
+            ...prev,
+            [questionKey]: (prev[questionKey] || []).filter(s => s !== stroke)
+          }));
+        }, 2000);
+      }
     }
     currentStroke.current = null;
   };
@@ -172,7 +189,10 @@ export function DrawOverlay({ questionKey }: Props) {
       {/* Toolbar — always interactive */}
       <div className="pointer-events-auto absolute top-0 right-0 flex items-center gap-1.5 p-2 bg-[#0B1220]/80 backdrop-blur-md border border-white/[0.06] rounded-2xl">
         {/* Tools */}
-        {TOOLS.map((t) => {
+        {[
+          ...TOOLS,
+          { id: "laser" as Tool, label: "Laser", icon: Highlighter, width: 4, opacity: 1 }
+        ].map((t) => {
           const Icon = t.icon;
           const isActive = active && tool === t.id;
           return (
@@ -181,19 +201,20 @@ export function DrawOverlay({ questionKey }: Props) {
               title={t.label}
               onClick={() => {
                 if (active && tool === t.id) {
-                  setActive(false); // click same tool again = deactivate
+                  setActive(false);
                 } else {
                   setTool(t.id);
                   setActive(true);
+                  if (t.id === "laser") setColor("#ef4444"); // Default red for laser
                 }
               }}
               className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
                 isActive
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-900/40"
+                  ? t.id === "laser" ? "bg-red-500 text-white shadow-lg shadow-red-900/40" : "bg-blue-600 text-white shadow-lg shadow-blue-900/40"
                   : "text-slate-500 hover:text-slate-200 hover:bg-white/5"
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className={`w-4 h-4 ${t.id === "laser" ? "rotate-45" : ""}`} />
             </button>
           );
         })}
@@ -201,7 +222,7 @@ export function DrawOverlay({ questionKey }: Props) {
         {/* Divider */}
         <div className="w-px h-5 bg-white/10 mx-1" />
 
-        {/* Colors — only shown when pen or marker active */}
+        {/* Colors — only shown when pen, marker or laser active */}
         {active && tool !== "eraser" && (
           <>
             {COLORS.map((c) => (
