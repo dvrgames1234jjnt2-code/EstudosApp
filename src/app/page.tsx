@@ -33,6 +33,38 @@ const ANALYSIS_DATA: Record<string, {
   attention: string,
   color: string
 }> = {
+  "Português": {
+    color: "rose",
+    subjects: [
+      { subject: "Interpretação de Textos", q: 115, p: 24.06 },
+      { subject: "Concordância (Verbal e Nominal)", q: 53, p: 11.09 },
+      { subject: "Pontuação (Vírgula, etc.)", q: 41, p: 8.58 },
+      { subject: "Crase", q: 33, p: 6.90 },
+      { subject: "Coerência e Coesão", q: 28, p: 5.86 },
+      { subject: "Reescrita de Frases", q: 24, p: 5.02 },
+      { subject: "Colocação Pronominal", q: 18, p: 3.77 },
+      { subject: "Sinônimos e Antônimos", q: 18, p: 3.77 },
+      { subject: "Conjunção", q: 18, p: 3.77 },
+      { subject: "Acentuação", q: 14, p: 2.93 },
+    ],
+    attention: "Interpretação e Concordância somam 35% da prova de Português."
+  },
+  "Matemática": {
+    color: "amber",
+    subjects: [
+      { subject: "Porcentagem", q: 46, p: 20.00 },
+      { subject: "Análise Combinatória", q: 15, p: 6.52 },
+      { subject: "Equações de 1º Grau", q: 14, p: 6.09 },
+      { subject: "Frações e Dízimas", q: 14, p: 6.09 },
+      { subject: "Operações Básicas", q: 11, p: 4.78 },
+      { subject: "Regra de Três Simples", q: 11, p: 4.78 },
+      { subject: "Unidades de Medida", q: 10, p: 4.35 },
+      { subject: "Progressão Aritmética (PA)", q: 9, p: 3.91 },
+      { subject: "Operações com Decimais", q: 9, p: 3.91 },
+      { subject: "Progressão Geométrica (PG)", q: 8, p: 3.48 },
+    ],
+    attention: "Porcentagem é o tema rei, caindo em praticamente todas as provas."
+  },
   "Informática": {
     color: "blue",
     subjects: [
@@ -66,6 +98,38 @@ const ANALYSIS_DATA: Record<string, {
     ],
     attention: "Marketing e Técnicas de Vendas dominam mais de 30% do conteúdo."
   },
+  "Bancários": {
+    color: "orange",
+    subjects: [
+      { subject: "Mercado Cambial", q: 37, p: 11.53 },
+      { subject: "Outros Serviços e Produtos Financeiros", q: 13, p: 4.05 },
+      { subject: "BACEN (Banco Central)", q: 12, p: 3.74 },
+      { subject: "Blockchain, Bitcoin e Criptomoedas", q: 12, p: 3.74 },
+      { subject: "Bancos Comerciais", q: 11, p: 3.43 },
+      { subject: "Operações de Crédito", q: 10, p: 3.12 },
+      { subject: "Mercado Monetário", q: 10, p: 3.12 },
+      { subject: "Fintechs, Startups e Big Techs", q: 10, p: 3.12 },
+      { subject: "Bancos na Era Digital", q: 10, p: 3.12 },
+      { subject: "CVM e Crédito Rural", q: 16, p: 4.98 },
+    ],
+    attention: "Mercado Cambial é disparado o tema mais frequente nesta disciplina."
+  },
+  "Atualidades": {
+    color: "cyan",
+    subjects: [
+      { subject: "Blockchain, Bitcoin e Cripto", q: 12, p: 18.18 },
+      { subject: "Fintechs, Startups e Big Techs", q: 10, p: 15.15 },
+      { subject: "Bancos na Era Digital", q: 10, p: 15.15 },
+      { subject: "PIX (Pagamentos Instantâneos)", q: 7, p: 10.61 },
+      { subject: "Open Finance / Open Banking", q: 6, p: 9.09 },
+      { subject: "Shadow Banking", q: 5, p: 7.58 },
+      { subject: "Novos Modelos de Negócios", q: 5, p: 7.58 },
+      { subject: "Segmentação e Interações Digitais", q: 3, p: 4.55 },
+      { subject: "Transformação Digital", q: 2, p: 3.03 },
+      { subject: "Arranjos de Pagamentos", q: 2, p: 3.03 },
+    ],
+    attention: "A Era Digital e Criptoativos dominam quase 50% das atualidades."
+  },
   "Financeira": {
     color: "purple",
     subjects: [
@@ -82,21 +146,21 @@ const ANALYSIS_DATA: Record<string, {
     ],
     attention: "Juros Compostos e Simples sozinhos somam 43% da prova de exatas."
   },
-  "Bancários": {
-    color: "orange",
+  "Inglês": {
+    color: "indigo",
     subjects: [
-      { subject: "Mercado Cambial", q: 37, p: 11.53 },
-      { subject: "Outros Serviços e Produtos Financeiros", q: 13, p: 4.05 },
-      { subject: "BACEN (Banco Central)", q: 12, p: 3.74 },
-      { subject: "Blockchain, Bitcoin e Criptomoedas", q: 12, p: 3.74 },
-      { subject: "Bancos Comerciais", q: 11, p: 3.43 },
-      { subject: "Operações de Crédito", q: 10, p: 3.12 },
-      { subject: "Mercado Monetário", q: 10, p: 3.12 },
-      { subject: "Fintechs, Startups e Big Techs", q: 10, p: 3.12 },
-      { subject: "Bancos na Era Digital", q: 10, p: 3.12 },
-      { subject: "CVM e Crédito Rural", q: 16, p: 4.98 },
+      { subject: "Interpretação de Textos", q: 60, p: 46.15 },
+      { subject: "Substituição e Reescrita", q: 19, p: 14.62 },
+      { subject: "Anáfora e Catáfora", q: 18, p: 13.85 },
+      { subject: "Significado de Palavras", q: 18, p: 13.85 },
+      { subject: "Conjunções e Conectivos", q: 8, p: 6.15 },
+      { subject: "Advérbios (Adverbs)", q: 2, p: 1.54 },
+      { subject: "Pronomes (Pronouns)", q: 2, p: 1.54 },
+      { subject: "Verbos (Verbs)", q: 2, p: 1.54 },
+      { subject: "Forma Condicional", q: 1, p: 0.77 },
+      { subject: "Vocabulário Técnico", q: 1, p: 0.77 },
     ],
-    attention: "Mercado Cambial é disparado o tema mais frequente nesta disciplina."
+    attention: "Quase metade da prova de Inglês é pura interpretação de texto."
   }
 };
 
@@ -403,7 +467,7 @@ export default function Home() {
                     <div className="h-px w-8 bg-blue-500/50" />
                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500/60">Catálogo de Operações</span>
                   </div>
-                  <h2 className="text-3xl sm:text-5xl font-light text-white tracking-tighter leading-none">
+                <h2 className="text-2xl sm:text-5xl font-light text-white tracking-tighter leading-none">
                     Simulados <span className="font-black text-slate-700 italic">Disponíveis</span>
                   </h2>
                   <p className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em]">Selecione seu próximo protocolo de treinamento</p>
@@ -516,91 +580,125 @@ export default function Home() {
               transition={{ duration: 0.3 }}
               className="space-y-12"
             >
-              <div className="space-y-4">
-                <div className="flex items-center gap-3"><div className="h-px w-8 bg-orange-500/50" /><span className="text-[10px] font-black uppercase tracking-[0.4em] text-orange-500/60">Inteligência Competitiva</span></div>
-                <h2 className="text-3xl sm:text-5xl font-light text-white tracking-tighter leading-none">Engenharia de <span className="font-black text-slate-700 italic">Dados</span></h2>
-                <p className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em]">O que realmente cai na sua prova (Top Assuntos)</p>
+              <div className="flex items-center justify-between">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3"><div className="h-px w-8 bg-orange-500/50" /><span className="text-[10px] font-black uppercase tracking-[0.4em] text-orange-500/60">Inteligência Competitiva</span></div>
+                  <h2 className="text-2xl sm:text-5xl font-light text-white tracking-tighter leading-none">Engenharia de <span className="font-black text-slate-700 italic">Dados</span></h2>
+                  <p className="text-[9px] sm:text-[10px] text-slate-500 uppercase font-bold tracking-[0.1em] sm:tracking-[0.2em]">O que realmente cai na sua prova (Top Assuntos)</p>
+                </div>
+                <div className="hidden xs:flex flex-col items-end gap-1 opacity-20 sm:hidden">
+                  <div className="flex gap-1">
+                    <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
+                    <div className="w-1 h-1 bg-white rounded-full animate-pulse [animation-delay:200ms]" />
+                    <div className="w-1 h-1 bg-white rounded-full animate-pulse [animation-delay:400ms]" />
+                  </div>
+                  <span className="text-[8px] font-black uppercase tracking-widest text-white">Deslize</span>
+                </div>
               </div>
 
-              <div className="flex items-center gap-4 overflow-x-auto pb-4 no-scrollbar">
-                {Object.keys(ANALYSIS_DATA).map((subj) => (
-                  <button 
-                    key={subj}
-                    onClick={() => setActiveSubject(subj)}
-                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg ${
-                      activeSubject === subj 
-                        ? (subj === 'Informática' ? 'bg-blue-600 shadow-blue-900/20' : 
-                           subj === 'Vendas' ? 'bg-emerald-600 shadow-emerald-900/20' :
-                           subj === 'Financeira' ? 'bg-purple-600 shadow-purple-900/20' :
-                           'bg-orange-600 shadow-orange-900/20') + ' text-white'
-                        : 'bg-white/[0.03] border border-white/5 text-slate-500 hover:bg-white/10'
-                    } whitespace-nowrap`}
-                  >
-                    {subj === 'Vendas' ? 'Vendas e Negociação' : subj === 'Financeira' ? 'Mat. Financeira' : subj}
-                  </button>
-                ))}
+              <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto pb-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+                {Object.keys(ANALYSIS_DATA).map((subj) => {
+                  const color = ANALYSIS_DATA[subj].color;
+                  const isActive = activeSubject === subj;
+                  
+                  // Mapeamento manual de cores tailwind para garantir que o JIT pegue as classes
+                  const colorClasses: Record<string, string> = {
+                    blue: isActive ? 'bg-blue-600 shadow-blue-900/20 text-white' : 'text-slate-500',
+                    emerald: isActive ? 'bg-emerald-600 shadow-emerald-900/20 text-white' : 'text-slate-500',
+                    purple: isActive ? 'bg-purple-600 shadow-purple-900/20 text-white' : 'text-slate-500',
+                    orange: isActive ? 'bg-orange-600 shadow-orange-900/20 text-white' : 'text-slate-500',
+                    rose: isActive ? 'bg-rose-600 shadow-rose-900/20 text-white' : 'text-slate-500',
+                    amber: isActive ? 'bg-amber-600 shadow-amber-900/20 text-white' : 'text-slate-500',
+                    cyan: isActive ? 'bg-cyan-600 shadow-cyan-900/20 text-white' : 'text-slate-500',
+                    indigo: isActive ? 'bg-indigo-600 shadow-indigo-900/20 text-white' : 'text-slate-500',
+                  };
+
+                  return (
+                    <button 
+                      key={subj}
+                      onClick={() => setActiveSubject(subj)}
+                      className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all shadow-lg whitespace-nowrap border ${
+                        isActive ? 'border-transparent' : 'bg-white/[0.03] border-white/5 hover:bg-white/10'
+                      } ${colorClasses[color]}`}
+                    >
+                      {subj === 'Vendas' ? 'Vendas' : subj === 'Financeira' ? 'Mat. Fin.' : subj}
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  {ANALYSIS_DATA[activeSubject].subjects.slice(0, 6).map((item, idx) => (
-                    <motion.div key={idx} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }} className="p-5 bg-[#0B1224]/60 border border-white/5 rounded-3xl group hover:border-blue-500/30 transition-all">
+                  {ANALYSIS_DATA[activeSubject].subjects.slice(0, 5).map((item, idx) => (
+                    <motion.div key={idx} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }} className="p-5 bg-[#0B1224]/60 border border-white/5 rounded-3xl group hover:border-white/20 transition-all">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black ${idx === 0 ? 'bg-yellow-500 text-black' : 'bg-white/5 text-slate-500'}`}>#{idx + 1}</div>
-                          <span className="text-sm font-bold text-slate-200 group-hover:text-blue-400 transition-colors truncate max-w-[200px] sm:max-w-none">{item.subject}</span>
+                          <span className="text-xs sm:text-sm font-bold text-slate-200 group-hover:text-white transition-colors truncate max-w-[150px] sm:max-w-none">{item.subject}</span>
                         </div>
-                        <span className="text-xs font-black text-blue-500">{item.p}%</span>
+                        <span className="text-[10px] sm:text-xs font-black text-slate-400 group-hover:text-white transition-colors">{item.p}%</span>
                       </div>
                       <div className="relative h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${(item.p / (ANALYSIS_DATA[activeSubject].subjects[0].p * 1.2)) * 100}%` }} transition={{ duration: 1, delay: 0.5 }} className={`absolute top-0 left-0 h-full rounded-full ${idx === 0 ? 'bg-yellow-500' : 'bg-blue-600'}`} />
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${(item.p / (ANALYSIS_DATA[activeSubject].subjects[0].p * 1.1)) * 100}%` }} transition={{ duration: 1, delay: 0.5 }} className={`absolute top-0 left-0 h-full rounded-full ${idx === 0 ? 'bg-yellow-500' : 'bg-blue-600'}`} />
                       </div>
                       <div className="mt-2"><span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">{item.q} Questões Mapeadas</span></div>
                     </motion.div>
                   ))}
                 </div>
                 <div className="space-y-4">
-                  {ANALYSIS_DATA[activeSubject].subjects.slice(6).map((item, idx) => (
-                    <motion.div key={idx + 6} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: (idx + 6) * 0.05 }} className="p-5 bg-[#0B1224]/40 border border-white/5 rounded-3xl group hover:border-slate-500/30 transition-all">
+                  {ANALYSIS_DATA[activeSubject].subjects.slice(5, 10).map((item, idx) => (
+                    <motion.div key={idx + 5} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: (idx + 5) * 0.05 }} className="p-5 bg-[#0B1224]/40 border border-white/5 rounded-3xl group hover:border-slate-500/30 transition-all">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-xs font-black text-slate-500">#{idx + 7}</div>
+                          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-xs font-black text-slate-500">#{idx + 6}</div>
                           <span className="text-sm font-bold text-slate-400 group-hover:text-white transition-colors truncate max-w-[200px] sm:max-w-none">{item.subject}</span>
                         </div>
                         <span className="text-xs font-black text-slate-500">{item.p}%</span>
                       </div>
                       <div className="relative h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${(item.p / (ANALYSIS_DATA[activeSubject].subjects[0].p * 1.2)) * 100}%` }} transition={{ duration: 1, delay: 0.5 }} className="absolute top-0 left-0 h-full bg-slate-700 rounded-full" />
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${(item.p / (ANALYSIS_DATA[activeSubject].subjects[0].p * 1.1)) * 100}%` }} transition={{ duration: 1, delay: 0.5 }} className="absolute top-0 left-0 h-full bg-slate-700 rounded-full" />
                       </div>
                       <div className="mt-2"><span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">{item.q} Questões Mapeadas</span></div>
                     </motion.div>
                   ))}
-                  <div className={`p-8 rounded-[32px] flex flex-col items-center text-center gap-4 ${
-                    activeSubject === 'Informática' ? 'bg-blue-600/5 border-blue-500/20' :
-                    activeSubject === 'Vendas' ? 'bg-emerald-600/5 border-emerald-500/20' :
-                    activeSubject === 'Financeira' ? 'bg-purple-600/5 border-purple-500/20' :
-                    'bg-orange-600/5 border-orange-500/20'
+                  
+                  {/* Ponto de Atenção Dinâmico */}
+                  <div className={`p-8 rounded-[32px] border-2 border-dashed flex flex-col items-center text-center gap-4 ${
+                    activeSubject === 'Informática' ? 'bg-blue-600/5 border-blue-500/10' :
+                    activeSubject === 'Vendas' ? 'bg-emerald-600/5 border-emerald-500/10' :
+                    activeSubject === 'Financeira' ? 'bg-purple-600/5 border-purple-500/10' :
+                    activeSubject === 'Bancários' ? 'bg-orange-600/5 border-orange-500/10' :
+                    activeSubject === 'Português' ? 'bg-rose-600/5 border-rose-500/10' :
+                    activeSubject === 'Matemática' ? 'bg-amber-600/5 border-amber-500/10' :
+                    activeSubject === 'Atualidades' ? 'bg-cyan-600/5 border-cyan-500/10' :
+                    'bg-indigo-600/5 border-indigo-500/10'
                   }`}>
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-                      activeSubject === 'Informática' ? 'bg-blue-600/20' :
-                      activeSubject === 'Vendas' ? 'bg-emerald-600/20' :
-                      activeSubject === 'Financeira' ? 'bg-purple-600/20' :
-                      'bg-orange-600/20'
-                    }`}><Flame className={`w-6 h-6 animate-pulse ${
-                      activeSubject === 'Informática' ? 'text-blue-500' :
-                      activeSubject === 'Vendas' ? 'text-emerald-500' :
-                      activeSubject === 'Financeira' ? 'text-purple-500' :
-                      'text-orange-500'
-                    }`} /></div>
-                    <div><h4 className="text-sm font-black text-white uppercase tracking-widest italic">Ponto de Atenção</h4><p className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-widest">{ANALYSIS_DATA[activeSubject].attention}</p></div>
+                    <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center shadow-inner">
+                      <Flame className={`w-6 h-6 animate-pulse ${
+                        activeSubject === 'Informática' ? 'text-blue-500' :
+                        activeSubject === 'Vendas' ? 'text-emerald-500' :
+                        activeSubject === 'Financeira' ? 'text-purple-500' :
+                        activeSubject === 'Bancários' ? 'text-orange-500' :
+                        activeSubject === 'Português' ? 'text-rose-500' :
+                        activeSubject === 'Matemática' ? 'text-amber-500' :
+                        activeSubject === 'Atualidades' ? 'text-cyan-500' :
+                        'text-indigo-500'
+                      }`} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-white uppercase tracking-widest italic">Ponto de Atenção</h4>
+                      <p className="text-[10px] text-slate-500 mt-2 uppercase font-bold tracking-widest leading-relaxed">
+                        {ANALYSIS_DATA[activeSubject].attention}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-        </div>
-      </main>
+      </div>
+    </main>
 
       <AuthModal 
         isOpen={showAuthModal} 
