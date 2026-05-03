@@ -25,7 +25,7 @@ const AlternativeItem = ({ id, text, isSelected, onClick, isStrikethrough, onTog
 
     <button 
       onClick={onClick} 
-      className={`flex-1 flex items-start gap-4 p-4 rounded-lg transition-all text-left ${
+      className={`flex-1 flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl transition-all text-left ${
         isSelected ? 'bg-blue-600/10 shadow-lg shadow-blue-900/5' : 'hover:bg-white/[0.02]'
       } ${isStrikethrough ? 'cursor-not-allowed' : 'cursor-pointer'}`}
     >
@@ -60,6 +60,7 @@ function SimuladoContent() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [strikethroughs, setStrikethroughs] = useState<Record<string, boolean>>({});
+  const [showTextoApoio, setShowTextoApoio] = useState(true);
   const [timeLeft, setTimeLeft] = useState(300 * 60);
   const [isPaused, setIsPaused] = useState(false);
   const [showReview, setShowReview] = useState(false);
@@ -88,7 +89,24 @@ function SimuladoContent() {
 
   useEffect(() => { initDialog(setDialogState); }, []);
   
+  const formatMarkdown = (text: string) => {
+    if (!text) return "";
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/\n/g, '<br/>');
+  };
+
   const questoesProcessadas = useMemo(() => {
+    // PRIORIDADE: Se for o simulado completo 2026, usa o arquivo local que atualizamos
+    if (simuladoId === "simulado-completo-2026" || simuladoId === "BB-2025-01") {
+      if (simuladoData && simuladoData.disciplinas) {
+        return simuladoData.disciplinas.flatMap((disc: any) => 
+          (disc.questoes || []).map((q: any) => ({ ...q, disciplina: disc.nome || "Geral" }))
+        );
+      }
+    }
+
     if (!simuladoDb || !simuladoDb.data_json) return [];
     
     // Helper para extrair questões de uma estrutura de disciplinas
@@ -128,7 +146,7 @@ function SimuladoContent() {
     }
 
     return [];
-  }, [simuladoDb]);
+  }, [simuladoDb, simuladoId]);
 
   const tempoTotal = useMemo(() => {
     return (simuladoDb?.duracao_minutos || 300) * 60;
@@ -367,9 +385,9 @@ function SimuladoContent() {
                   <span className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500/60">Protocolo {simuladoDb?.ano || '2024'}</span>
                 </div>
                 <h2 className="text-3xl sm:text-5xl font-light text-white tracking-tighter leading-[1.1] max-w-2xl">
-                  {simuladoDb?.title?.split(' - ')[0] || 'Simulado'} <br />
+                  {(simuladoDb?.titulo || simuladoDb?.title || 'Simulado').split(' - ')[0]} <br />
                   <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">
-                    {simuladoDb?.title?.split(' - ')[1] || 'Banco do Brasil'}
+                    {(simuladoDb?.titulo || simuladoDb?.title || 'Banco do Brasil').split(' - ')[1] || ''}
                   </span>
                 </h2>
                 {questoesProcessadas.length === 0 ? (
@@ -535,12 +553,30 @@ function SimuladoContent() {
            
            <div className="flex items-center gap-3 sm:gap-8">
               <div className="flex flex-col items-end shrink-0">
-                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest hidden xs:flex items-center gap-2"><Timer className="w-3 h-3" /> Cronômetro</span>
-                <span className={`text-sm sm:text-xl font-mono font-bold tracking-tighter ${timeLeft < 300 ? 'text-red-500 animate-pulse' : 'text-blue-500'}`}>
+                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest hidden sm:flex items-center gap-2"><Timer className="w-3 h-3" /> Cronômetro</span>
+                <span className={`text-base sm:text-xl font-mono font-bold tracking-tighter ${timeLeft < 300 ? 'text-red-500 animate-pulse' : 'text-blue-500'}`}>
                   {Math.floor(timeLeft / 3600)}h {Math.floor((timeLeft % 3600) / 60)}m {timeLeft % 60}s
                 </span>
               </div>
               <div className="flex gap-1.5 sm:gap-2">
+                <button 
+                  onClick={async () => {
+                    const ok = await showConfirm(
+                      "Deseja realmente sair? Seu progresso será salvo para que você possa continuar de onde parou.",
+                      "Sair do Simulado",
+                      "Sair e Salvar",
+                      "Continuar"
+                    );
+                    if (ok) {
+                      await saveProgress();
+                      router.push('/');
+                    }
+                  }}
+                  className="px-3 sm:px-4 py-2.5 bg-red-600/10 hover:bg-red-600/20 rounded-xl text-[10px] font-black uppercase tracking-widest text-red-500 transition-all border border-red-500/20 flex items-center justify-center"
+                >
+                  <span className="hidden xs:inline">Cancelar</span>
+                  <LogOut className="w-4 h-4 xs:hidden" />
+                </button>
                 <button 
                   onClick={() => setShowMobileGabarito(!showMobileGabarito)} 
                   className={`lg:hidden w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all border ${
@@ -554,7 +590,10 @@ function SimuladoContent() {
                   setIsPaused(true);
                   saveProgress();
                 }} className="w-9 h-9 sm:w-10 sm:h-10 bg-white/5 hover:bg-white/10 rounded-xl flex items-center justify-center text-slate-400 hover:text-white transition-all border border-white/5" title="Pausar"><Lock className="w-4 h-4" /></button>
-                <button onClick={handleFinish} className="px-4 sm:px-6 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs sm:text-[10px] font-black uppercase tracking-widest text-white transition-all shadow-lg shadow-blue-900/20">Finalizar</button>
+                <button onClick={handleFinish} className="px-3 sm:px-6 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center min-w-[70px]">
+                  <span className="hidden xs:inline">Finalizar</span>
+                  <span className="xs:hidden">Fim</span>
+                </button>
               </div>
            </div>
         </header>
@@ -583,7 +622,7 @@ function SimuladoContent() {
         </AnimatePresence>
 
         <div className="flex-1 flex overflow-hidden relative">
-           <div className="flex-1 overflow-y-auto p-6 sm:p-16 bg-white/[0.01] custom-scrollbar">
+           <div className="flex-1 overflow-y-auto p-6 pb-48 sm:p-16 bg-white/[0.01] custom-scrollbar">
               <div className="max-w-3xl mx-auto relative">
                 {/* Drawing overlay */}
                 <DrawOverlay questionKey={currentQuestion} />
@@ -593,26 +632,40 @@ function SimuladoContent() {
                 </div>
 
                 {q.texto_apoio && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-12 p-6 sm:p-10 bg-white/[0.02] border-l-4 border-blue-600/30 rounded-r-[32px] space-y-6 relative overflow-hidden group"
-                  >
-                    <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
-                      <FileText className="w-24 h-24" />
-                    </div>
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-8 h-8 bg-blue-600/10 rounded-lg flex items-center justify-center">
-                        <FileText className="w-4 h-4 text-blue-500" />
-                      </div>
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Texto de Apoio</span>
-                    </div>
-                    <div className="space-y-4">
-                      {q.texto_apoio.split('\n\n').map((part: string, idx: number) => (
-                        <p key={idx} className="text-sm sm:text-base leading-relaxed text-slate-400 italic font-medium selection:bg-blue-500/30" dangerouslySetInnerHTML={{ __html: part }} />
-                      ))}
-                    </div>
-                  </motion.div>
+                  <div className="mb-8">
+                    <button 
+                      onClick={() => setShowTextoApoio(!showTextoApoio)}
+                      className="flex items-center gap-2 mb-4 px-4 py-2 bg-blue-600/10 border border-blue-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest text-blue-400 hover:bg-blue-600/20 transition-all"
+                    >
+                      {showTextoApoio ? (
+                        <><X className="w-3 h-3" /> Ocultar Texto de Apoio</>
+                      ) : (
+                        <><FileText className="w-3 h-3" /> Mostrar Texto de Apoio</>
+                      )}
+                    </button>
+
+                    <AnimatePresence>
+                      {showTextoApoio && (
+                        <motion.div 
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="p-6 sm:p-10 bg-white/[0.02] border-l-4 border-blue-600/30 rounded-r-[32px] space-y-6 relative group mb-4">
+                            <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
+                              <FileText className="w-24 h-24" />
+                            </div>
+                            <div className="space-y-4">
+                              {q.texto_apoio.split('\n\n').map((part: string, idx: number) => (
+                                <p key={idx} className="text-sm sm:text-base leading-relaxed text-slate-400 italic font-medium selection:bg-blue-500/30" dangerouslySetInnerHTML={{ __html: formatMarkdown(part) }} />
+                              ))}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 )}
                 
                 <div className="space-y-6 mb-12">
@@ -666,20 +719,15 @@ function SimuladoContent() {
                        />
                      );
                    })}
-
-                </div>
-                
-                <div className="flex items-center justify-between mt-16 pt-8 border-t border-white/[0.03]">
-                   <button disabled={currentQuestion === 0} onClick={() => setCurrentQuestion(curr => curr - 1)} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white disabled:opacity-0 transition-all"><ArrowLeft className="w-3.5 h-3.5" /> Anterior</button>
-                   <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Questão {currentQuestion + 1} de {totalQuestions}</div>
-                   <button disabled={currentQuestion === totalQuestions - 1} onClick={() => setCurrentQuestion(curr => curr + 1)} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white disabled:opacity-0 transition-all">Próxima <ChevronRight className="w-3.5 h-3.5" /></button>
                 </div>
 
+                <div className="flex flex-col sm:flex-row items-center justify-between mt-20 pt-10 border-t border-white/[0.05] gap-8 sm:gap-0">
+                    <button disabled={currentQuestion === 0} onClick={() => setCurrentQuestion(curr => curr - 1)} className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-white/[0.02] sm:bg-transparent border border-white/5 sm:border-0 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white disabled:opacity-0 transition-all active:scale-95"><ArrowLeft className="w-4 h-4" /> Anterior</button>
+                    <div className="text-[10px] font-black text-slate-700 uppercase tracking-[0.3em] order-first sm:order-none">Questão {currentQuestion + 1} de {totalQuestions}</div>
+                    <button disabled={currentQuestion === totalQuestions - 1} onClick={() => setCurrentQuestion(curr => curr + 1)} className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-blue-600 sm:bg-transparent sm:text-blue-500 border border-blue-600/20 sm:border-0 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] text-white transition-all active:scale-95">Próxima <ChevronRight className="w-4 h-4" /></button>
+                 </div>
               </div>
            </div>
-
-
-
 
            <div className={`
               fixed lg:relative inset-y-0 right-0 w-80 sm:w-96 border-l border-white/5 p-6 sm:p-8 bg-[#020617] overflow-y-auto custom-scrollbar transition-transform duration-300 z-50

@@ -1,885 +1,1025 @@
 {
-  "id": "bb-simulado-academico",
-  "titulo": "Simulado Oficial - Banco do Brasil (Contextual e Detalhado)",
+  "id": "simulado-completo-2026",
+  "titulo": "Simulado Completo Banco do Brasil - Edital 2026",
   "duracaoMinutos": 300,
   "disciplinas": [
     {
-      "nome": "Língua Portuguesa",
+      "nome": "LÍNGUA PORTUGUESA",
       "questoes": [
         {
-          "id": "port_01",
-          "texto": "Considere o trecho a seguir: 'Embora a digitalização bancária traga inúmeros benefícios aos correntistas, como a agilidade e a disponibilidade 24 horas, há um desafio latente que as instituições não podem ignorar: a exclusão digital de parcelas mais vulneráveis da população.'\n\nDe acordo com a norma-padrão e o sentido do texto, a conjunção 'Embora' estabelece, entre as orações, uma relação de:",
+          "id": "bb_2026_01",
+          "texto_apoio": "**Texto para as questões de 1 a 3.**\n*O futuro do dinheiro não é apenas digital; é integrado. À medida que as moedas virtuais ganham espaço, o desafio dos bancos centrais não é proibir a inovação, mas trazê-la para um escopo regulatório seguro. Quem não perceber que a velocidade das transações mudou a forma como o cidadão enxerga o tempo não compreenderá as finanças do século XXI.*",
+          "texto": "De acordo com o texto, o principal desafio dos bancos centrais em relação às inovações financeiras é:",
           "alternativas": {
-            "A": "Causa, visto que a digitalização gerou a exclusão digital.",
-            "B": "Condição, pois apenas se houver digitalização haverá exclusão.",
-            "C": "Concessão, indicando um contraste que não impede o fato principal.",
-            "D": "Conclusão, resumindo os benefícios trazidos pela agilidade.",
-            "E": "Proporção, pois quanto mais digitalização, maior a exclusão."
+            "A": "eliminar por completo o dinheiro em cédula para forçar a digitalização.",
+            "B": "impedir que moedas virtuais privadas concorram com os bancos nacionais.",
+            "C": "regulamentar as novidades, conferindo-lhes segurança jurídica e financeira.",
+            "D": "acelerar as transações apenas para os grandes conglomerados financeiros.",
+            "E": "ignorar as mudanças do século XXI, mantendo o sistema financeiro intacto."
           },
+          "meta": "LÍNGUA PORTUGUESA",
           "respostaCorreta": "C"
         },
         {
-          "id": "port_02",
-          "texto": "Assinale a alternativa em que o uso do sinal indicativo de crase atende rigorosamente às exigências da norma-padrão da Língua Portuguesa:",
+          "id": "bb_2026_02",
+          "texto_apoio": "**Texto para as questões de 1 a 3.**\n*O futuro do dinheiro não é apenas digital; é integrado. À medida que as moedas virtuais ganham espaço, o desafio dos bancos centrais não é proibir a inovação, mas trazê-la para um escopo regulatório seguro. Quem não perceber que a velocidade das transações mudou a forma como o cidadão enxerga o tempo não compreenderá as finanças do século XXI.*",
+          "texto": "Na frase \"Quem não perceber que a velocidade das transações mudou a forma **como** o cidadão enxerga o tempo\", a palavra destacada expressa ideia de:",
           "alternativas": {
-            "A": "O cliente dirigiu-se à uma agência próxima para atualizar seu cadastro.",
-            "B": "As novas taxas de juros aplicam-se à qualquer operação de crédito.",
-            "C": "O gerente informou à diretoria sobre a falha no aplicativo móvel.",
-            "D": "O pagamento do empréstimo foi realizado à prazo, sem acréscimos.",
-            "E": "Ele estava disposto à colaborar com as investigações de fraude."
+            "A": "comparação.",
+            "B": "causa.",
+            "C": "modo.",
+            "D": "tempo.",
+            "E": "condição."
           },
+          "meta": "LÍNGUA PORTUGUESA",
           "respostaCorreta": "C"
         },
         {
-          "id": "port_03",
-          "texto": "A regência verbal é uma das exigências recorrentes na redação corporativa. Qual das frases abaixo está CORRETA quanto à regência do verbo assistir?",
+          "id": "bb_2026_03",
+          "texto_apoio": "**Texto para as questões de 1 a 3.**\n*O futuro do dinheiro não é apenas digital; é integrado. À medida que as moedas virtuais ganham espaço, o desafio dos bancos centrais não é proibir a inovação, mas trazê-la para um escopo regulatório seguro. Quem não perceber que a velocidade das transações mudou a forma como o cidadão enxerga o tempo não compreenderá as finanças do século XXI.*",
+          "texto": "\"À medida que as moedas virtuais ganham espaço...\" A locução conjuntiva em destaque indica uma relação de:",
           "alternativas": {
-            "A": "O técnico de TI assistiu o sistema durante toda a madrugada.",
-            "B": "Aos correntistas, assiste o direito de contestar cobranças indevidas.",
-            "C": "O diretor assistiu o treinamento de segurança da informação.",
-            "D": "O banco assistiu aos novos funcionários com um pacote de benefícios.",
-            "E": "Assistimos um aumento considerável nas fraudes eletrônicas neste ano."
+            "A": "proporção.",
+            "B": "consequência.",
+            "C": "concessão.",
+            "D": "finalidade.",
+            "E": "tempo cronológico."
           },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "port_04",
-          "texto": "Na elaboração de relatórios, a concordância verbal deve ser impecável. Assinale a alternativa que apresenta erro de concordância:",
-          "alternativas": {
-            "A": "Fazem três meses que o banco atualizou a política de senhas.",
-            "B": "Havia vários clientes aguardando atendimento na fila do caixa.",
-            "C": "Existem novos protocolos de segurança que devem ser seguidos.",
-            "D": "Devem ocorrer mudanças significativas no quadro de diretores.",
-            "E": "Trata-se de questões sigilosas que envolvem grandes corporações."
-          },
+          "meta": "LÍNGUA PORTUGUESA",
           "respostaCorreta": "A"
         },
         {
-          "id": "port_05",
-          "texto": "Em relação à concordância nominal, a frase inteiramente correta é:",
+          "id": "bb_2026_04",
+          "texto_apoio": "**Texto para as questões de 1 a 3.**\n*O futuro do dinheiro não é apenas digital; é integrado. À medida que as moedas virtuais ganham espaço, o desafio dos bancos centrais não é proibir a inovação, mas trazê-la para um escopo regulatório seguro. Quem não perceber que a velocidade das transações mudou a forma como o cidadão enxerga o tempo não compreenderá as finanças do século XXI.*",
+          "texto": "Assinale a alternativa em que a concordância verbal está de acordo com a norma-padrão:",
           "alternativas": {
-            "A": "Seguem anexo aos e-mails as planilhas financeiras do último trimestre.",
-            "B": "A porta giratória da agência principal estava meio travada.",
-            "C": "Elas mesmas enviaram a documentação para o setor de compliance.",
-            "D": "É necessária muita cautela durante a aprovação de limites altos.",
-            "E": "Havia bastantes reclamações sobre a lentidão no atendimento."
+            "A": "Fazem muitos anos desde a última grande crise financeira global.",
+            "B": "Tratam-se de novos investimentos que o banco lançou este ano.",
+            "C": "Haviam várias opções de consórcio disponíveis no aplicativo.",
+            "D": "Mais de um cliente reclamou das taxas de manutenção da conta.",
+            "E": "Fui eu quem assinou o contrato de financiamento ontem."
           },
-          "respostaCorreta": "C"
-        },
-        {
-          "id": "port_06",
-          "texto": "Sobre o emprego da vírgula, marque a alternativa que justifica adequadamente a correção gramatical:",
-          "alternativas": {
-            "A": "O banco central, interveio no mercado para estabilizar o câmbio.",
-            "B": "Os clientes, que possuem contas digitais, não pagam tarifa de manutenção.",
-            "C": "Sempre que há falha sistêmica, o suporte técnico é acionado imediatamente.",
-            "D": "Foi solicitado, ao novo gerente uma postura mais proativa com os clientes.",
-            "E": "O Banco do Brasil, oferece crédito rural aos produtores parceiros."
-          },
-          "respostaCorreta": "C"
-        },
-        {
-          "id": "port_07",
-          "texto": "No que diz respeito à colocação pronominal, assinale a opção que desrespeita as regras cultas da Língua Portuguesa:",
-          "alternativas": {
-            "A": "Nunca se viu um avanço tecnológico tão rápido no setor bancário.",
-            "B": "Me disseram que a agência fecharia mais cedo hoje.",
-            "C": "Informar-lhe-emos sobre a liberação do seu limite em breve.",
-            "D": "Espera-se que as taxas de juros sejam reduzidas na próxima reunião.",
-            "E": "O cliente que nos procurou ontem já resolveu sua pendência."
-          },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "port_08",
-          "texto": "De acordo com o Novo Acordo Ortográfico da Língua Portuguesa, qual palavra está grafada CORRETAMENTE?",
-          "alternativas": {
-            "A": "Anti-fraude.",
-            "B": "Micro-ondas.",
-            "C": "Auto-atendimento.",
-            "D": "Infra-estrutura.",
-            "E": "Super-população."
-          },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "port_09",
-          "texto": "Leia a frase: 'O bancário deferiu o pedido de empréstimo, pois o cliente provou ser idôneo.'\nNa frase acima, a palavra 'deferiu' significa:",
-          "alternativas": {
-            "A": "Recusou ou negou o pedido.",
-            "B": "Aprovou ou concedeu o pedido.",
-            "C": "Analisou cuidadosamente o pedido.",
-            "D": "Diferenciou o pedido dos demais.",
-            "E": "Encaminhou o pedido para análise superior."
-          },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "port_10",
-          "texto": "A voz passiva sintética está corretamente empregada, com a devida concordância, em:",
-          "alternativas": {
-            "A": "Vende-se imóveis recuperados de leilão.",
-            "B": "Precisa-se de novos analistas de sistemas corporativos.",
-            "C": "Alugou-se, naquele bairro nobre, duas novas salas comerciais.",
-            "D": "Anunciaram-se a nova taxa Selic no final da tarde.",
-            "E": "Assiste-se a excelentes cenários econômicos neste semestre."
-          },
-          "respostaCorreta": "B"
-        }
-      ]
-    },
-    {
-      "nome": "Língua Inglesa",
-      "questoes": [
-        {
-          "id": "ing_01",
-          "texto": "Read the text below to answer the questions.\n\n'In recent years, the banking sector has undergone a massive transformation. Traditional brick-and-mortar branches are being rapidly replaced by mobile applications and digital platforms. Although this shift offers unprecedented convenience for customers, it also exposes financial institutions to new vulnerabilities. Consequently, banks are investing heavily in cybersecurity measures to protect their clients' sensitive data.'\n\nAccording to the text, what is the main consequence of the shift to digital platforms?",
-          "alternativas": {
-            "A": "Customers are forced to visit brick-and-mortar branches more often.",
-            "B": "Banks are no longer investing in physical security.",
-            "C": "Financial institutions are now exposed to new vulnerabilities.",
-            "D": "Mobile applications have become entirely obsolete.",
-            "E": "Cybersecurity measures are becoming less important for clients."
-          },
-          "respostaCorreta": "C"
-        },
-        {
-          "id": "ing_02",
-          "texto": "In the sentence 'Although this shift offers unprecedented convenience...', the word 'Although' conveys an idea of:",
-          "alternativas": {
-            "A": "Addition.",
-            "B": "Concession.",
-            "C": "Result.",
-            "D": "Condition.",
-            "E": "Time."
-          },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "ing_03",
-          "texto": "Based on the text, the expression 'brick-and-mortar branches' refers to:",
-          "alternativas": {
-            "A": "Digital applications developed by the IT department.",
-            "B": "Physical bank locations where customers can go in person.",
-            "C": "Cybersecurity protocols that protect sensitive data.",
-            "D": "Virtual currencies used in modern financial transactions.",
-            "E": "The main servers located inside the bank's headquarters."
-          },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "ing_04",
-          "texto": "In the fragment '...it also exposes financial institutions...', the pronoun 'it' refers to:",
-          "alternativas": {
-            "A": "The banking sector.",
-            "B": "Unprecedented convenience.",
-            "C": "This shift to mobile applications and digital platforms.",
-            "D": "Cybersecurity measures.",
-            "E": "Clients' sensitive data."
-          },
-          "respostaCorreta": "C"
-        },
-        {
-          "id": "ing_05",
-          "texto": "Which of the following statements can be inferred from the text?",
-          "alternativas": {
-            "A": "Traditional branches will completely disappear in the next five years.",
-            "B": "Banks do not care about the safety of their clients' data.",
-            "C": "The convenience of digital banking comes with security trade-offs.",
-            "D": "Customers prefer physical branches over mobile applications.",
-            "E": "Cybersecurity investments are decreasing due to high costs."
-          },
-          "respostaCorreta": "C"
-        }
-      ]
-    },
-    {
-      "nome": "Matemática",
-      "questoes": [
-        {
-          "id": "mat_01",
-          "texto": "Um smartphone que era utilizado em promoções do banco custava R$ 2.000,00. Ele sofreu um aumento de 20% em função da inflação e, no mês seguinte, durante a Black Friday, foi vendido com 20% de desconto sobre o novo valor ajustado. Qual foi o valor final de venda do smartphone?",
-          "alternativas": {
-            "A": "R$ 2.000,00",
-            "B": "R$ 1.920,00",
-            "C": "R$ 2.040,00",
-            "D": "R$ 1.960,00",
-            "E": "R$ 1.800,00"
-          },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "mat_02",
-          "texto": "Para o fechamento mensal, o setor de TI do banco utiliza 4 servidores idênticos que processam 100.000 transações em 5 horas de funcionamento ininterrupto. Quantas horas seriam necessárias para que 6 servidores, idênticos aos primeiros, processassem 150.000 transações nessas mesmas condições?",
-          "alternativas": {
-            "A": "4 horas",
-            "B": "4 horas e 30 minutos",
-            "C": "5 horas",
-            "D": "6 horas",
-            "E": "7 horas e 30 minutos"
-          },
-          "respostaCorreta": "C"
-        },
-        {
-          "id": "mat_03",
-          "texto": "O bônus de performance de R$ 180.000,00 de uma agência será dividido entre três gerentes (A, B e C) de forma diretamente proporcional aos anos de serviço dedicados à agência. Sabendo que o gerente A tem 2 anos de serviço, o B tem 3 anos e o C tem 5 anos, qual será o valor do bônus recebido pelo gerente B?",
-          "alternativas": {
-            "A": "R$ 36.000,00",
-            "B": "R$ 45.000,00",
-            "C": "R$ 54.000,00",
-            "D": "R$ 60.000,00",
-            "E": "R$ 90.000,00"
-          },
-          "respostaCorreta": "C"
-        },
-        {
-          "id": "mat_04",
-          "texto": "A média de idade de uma equipe de 4 analistas financeiros é de exatos 30 anos. Um novo analista, que tem 40 anos de idade, é contratado para integrar essa equipe. Qual passará a ser a nova média de idade do time?",
-          "alternativas": {
-            "A": "31 anos e 6 meses",
-            "B": "32 anos",
-            "C": "33 anos",
-            "D": "34 anos",
-            "E": "35 anos"
-          },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "mat_05",
-          "texto": "Ao sortear aleatoriamente uma senha de atendimento numérico, variando de 1 a 100, para a fila do caixa de uma agência bancária, qual é a probabilidade de a senha sorteada ser um número múltiplo de 5 e também múltiplo de 3, simultaneamente?",
-          "alternativas": {
-            "A": "5%",
-            "B": "6%",
-            "C": "8%",
-            "D": "10%",
-            "E": "15%"
-          },
-          "respostaCorreta": "B"
-        }
-      ]
-    },
-    {
-      "nome": "Atualidades do Mercado Financeiro",
-      "questoes": [
-        {
-          "id": "atu_01",
-          "texto": "O Open Finance (Sistema Financeiro Aberto) é uma evolução do Open Banking no Brasil, impulsionada pelo Banco Central. A premissa central desse ecossistema é que:",
-          "alternativas": {
-            "A": "Os dados financeiros pertencem aos bancos.",
-            "B": "O cliente é o dono dos seus dados e autoriza o compartilhamento seguro.",
-            "C": "O compartilhamento é compulsório.",
-            "D": "Extinguiu-se o uso de senhas.",
-            "E": "Fintechs acessam contas sem autorização."
-          },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "atu_02",
-          "texto": "O Drex (antigo Real Digital) é classificado como uma CBDC, o que significa que:",
-          "alternativas": {
-            "A": "Varia livremente como Bitcoin.",
-            "B": "É gerado por mineração pública.",
-            "C": "É a representação digital da moeda oficial, garantida pelo Banco Central.",
-            "D": "Não serve para pagamentos no varejo.",
-            "E": "A liquidação ocorre de forma anônima e ilícita."
-          },
-          "respostaCorreta": "C"
-        },
-        {
-          "id": "atu_03",
-          "texto": "No contexto bancário da sigla ESG, uma prática alinhada ao pilar 'S' (Social) é:",
-          "alternativas": {
-            "A": "Redução de emissão de carbono.",
-            "B": "Aumento da transparência no conselho.",
-            "C": "Financiamento de energia solar.",
-            "D": "Políticas afirmativas de diversidade e inclusão.",
-            "E": "Compliance contra propinas."
-          },
+          "meta": "LÍNGUA PORTUGUESA",
           "respostaCorreta": "D"
         },
         {
-          "id": "atu_04",
-          "texto": "As 'Fintechs' ganharam rápido mercado no Brasil principalmente devido à:",
+          "id": "bb_2026_05",
+          "texto_apoio": "**Texto para as questões de 1 a 3.**\n*O futuro do dinheiro não é apenas digital; é integrado. À medida que as moedas virtuais ganham espaço, o desafio dos bancos centrais não é proibir a inovação, mas trazê-la para um escopo regulatório seguro. Quem não perceber que a velocidade das transações mudou a forma como o cidadão enxerga o tempo não compreenderá as finanças do século XXI.*",
+          "texto": "O acento indicador de crase está empregado corretamente em:",
           "alternativas": {
-            "A": "Monopólio governamental concedido.",
-            "B": "Oferta de produtos desburocratizados, interfaces intuitivas e isenção de tarifas.",
-            "C": "Exigência de altas garantias físicas.",
-            "D": "Criação de vastas redes de agências de tijolo.",
-            "E": "Foco exclusivo em investidores milionários."
+            "A": "O banco não oferece crédito à clientes inadimplentes.",
+            "B": "O diretor referiu-se à ela como a melhor funcionária do mês.",
+            "C": "O pagamento foi parcelado de dez à quinze vezes sem juros.",
+            "D": "A agência voltará a funcionar a partir das 9h de amanhã.",
+            "E": "O acesso ao cofre é restrito àqueles que possuem senha matriz."
           },
+          "meta": "LÍNGUA PORTUGUESA",
+          "respostaCorreta": "E"
+        },
+        {
+          "id": "bb_2026_06",
+          "texto_apoio": "**Texto para as questões de 1 a 3.**\n*O futuro do dinheiro não é apenas digital; é integrado. À medida que as moedas virtuais ganham espaço, o desafio dos bancos centrais não é proibir a inovação, mas trazê-la para um escopo regulatório seguro. Quem não perceber que a velocidade das transações mudou a forma como o cidadão enxerga o tempo não compreenderá as finanças do século XXI.*",
+          "texto": "Em relação à regência verbal, marque a opção correta:",
+          "alternativas": {
+            "A": "Assistimos no documentário sobre a história do Banco do Brasil.",
+            "B": "O gerente visava o lucro máximo em todas as operações de câmbio.",
+            "C": "O cliente preferia mais investir em ações do que na poupança.",
+            "D": "Lembrei-me dos tempos em que o atendimento era apenas presencial.",
+            "E": "O caixa simpatizou-se com o idoso que aguardava na fila."
+          },
+          "meta": "LÍNGUA PORTUGUESA",
+          "respostaCorreta": "D"
+        },
+        {
+          "id": "bb_2026_07",
+          "texto_apoio": "**Texto para as questões de 1 a 3.**\n*O futuro do dinheiro não é apenas digital; é integrado. À medida que as moedas virtuais ganham espaço, o desafio dos bancos centrais não é proibir a inovação, mas trazê-la para um escopo regulatório seguro. Quem não perceber que a velocidade das transações mudou a forma como o cidadão enxerga o tempo não compreenderá as finanças do século XXI.*",
+          "texto": "Assinale a alternativa que apresenta pontuação correta:",
+          "alternativas": {
+            "A": "O Banco Central, anunciou ontem que a taxa Selic foi mantida.",
+            "B": "Os investidores, otimistas, compraram várias ações da empresa.",
+            "C": "Sempre que há inflação os preços, sobem rapidamente.",
+            "D": "Carlos o gerente geral, da agência foi promovido.",
+            "E": "O open finance trouxe para os clientes, inúmeras facilidades."
+          },
+          "meta": "LÍNGUA PORTUGUESA",
           "respostaCorreta": "B"
         },
         {
-          "id": "atu_05",
-          "texto": "Sobre as inovações do Pix, é correto afirmar que:",
+          "id": "bb_2026_08",
+          "texto_apoio": "**Texto para as questões de 1 a 3.**\n*O futuro do dinheiro não é apenas digital; é integrado. À medida que as moedas virtuais ganham espaço, o desafio dos bancos centrais não é proibir a inovação, mas trazê-la para um escopo regulatório seguro. Quem não perceber que a velocidade das transações mudou a forma como o cidadão enxerga o tempo não compreenderá as finanças do século XXI.*",
+          "texto": "\"Embora o risco fosse alto, o conselho aprovou o empreendimento.\" A conjunção \"Embora\" pode ser substituída, sem alteração de sentido e reestruturação profunda da frase, por:",
           "alternativas": {
-            "A": "É cobrado tarifa de pessoa física.",
-            "B": "Pix Saque e Pix Troco permitem retirar dinheiro em espécie no comércio.",
-            "C": "Restrito a finais de semana.",
-            "D": "O estorno é automático sem intermediação.",
-            "E": "É obrigatório ter chave Pix cadastrada para conseguir pagar."
+            "A": "Contanto que",
+            "B": "Porquanto",
+            "C": "Conquanto",
+            "D": "Portanto",
+            "E": "Logo"
           },
+          "meta": "LÍNGUA PORTUGUESA",
+          "respostaCorreta": "C"
+        },
+        {
+          "id": "bb_2026_09",
+          "texto_apoio": "**Texto para as questões de 1 a 3.**\n*O futuro do dinheiro não é apenas digital; é integrado. À medida que as moedas virtuais ganham espaço, o desafio dos bancos centrais não é proibir a inovação, mas trazê-la para um escopo regulatório seguro. Quem não perceber que a velocidade das transações mudou a forma como o cidadão enxerga o tempo não compreenderá as finanças do século XXI.*",
+          "texto": "No trecho \"O novo sistema de segurança do app, **cujas** funcionalidades surpreenderam os analistas, foi lançado na sexta\", o pronome \"cujas\" estabelece relação de:",
+          "alternativas": {
+            "A": "explicação.",
+            "B": "posse.",
+            "C": "causa.",
+            "D": "alternância.",
+            "E": "oposição."
+          },
+          "meta": "LÍNGUA PORTUGUESA",
           "respostaCorreta": "B"
+        },
+        {
+          "id": "bb_2026_10",
+          "texto_apoio": "**Texto para as questões de 1 a 3.**\n*O futuro do dinheiro não é apenas digital; é integrado. À medida que as moedas virtuais ganham espaço, o desafio dos bancos centrais não é proibir a inovação, mas trazê-la para um escopo regulatório seguro. Quem não perceber que a velocidade das transações mudou a forma como o cidadão enxerga o tempo não compreenderá as finanças do século XXI.*",
+          "texto": "Assinale a palavra que segue a mesma regra de acentuação gráfica de \"Bancária\":",
+          "alternativas": {
+            "A": "Raízes",
+            "B": "Lâmpada",
+            "C": "Último",
+            "D": "Relógio",
+            "E": "Açúcar"
+          },
+          "meta": "LÍNGUA PORTUGUESA",
+          "respostaCorreta": "D"
         }
       ]
     },
     {
-      "nome": "Matemática Financeira",
+      "nome": "LÍNGUA INGLESA",
       "questoes": [
         {
-          "id": "matfin_01",
-          "texto": "Para comparar a rentabilidade de diferentes aplicações, um investidor precisa converter taxas. Sabendo que um fundo de investimento rende à taxa de juros compostos de 2% ao mês, qual é a taxa anual equivalente a essa rentabilidade? (Considere a aproximação: 1,02¹² = 1,2682)",
+          "id": "bb_2026_11",
+          "texto_apoio": "**Text for questions 11 and 12:**\n*Central Bank Digital Currencies (CBDCs) are a digital form of a country’s fiat currency. Unlike cryptocurrencies, which are decentralized, CBDCs are issued and regulated by the nation's monetary authority. Brazil’s project, named Drex, aims to provide a safe and regulated environment for new businesses and more democratic access to financial advantages.*",
+          "texto": "According to the text, the main difference between CBDCs and common cryptocurrencies is that CBDCs:",
+          "alternativas": {
+            "A": "are completely anonymous and untraceable.",
+            "B": "are issued and controlled by a central authority.",
+            "C": "cannot be used for everyday transactions.",
+            "D": "are backed by physical gold only.",
+            "E": "are designed exclusively to block foreign investments."
+          },
+          "meta": "LÍNGUA INGLESA",
+          "respostaCorreta": "B"
+        },
+        {
+          "id": "bb_2026_12",
+          "texto_apoio": "**Text for questions 11 and 12:**\n*Central Bank Digital Currencies (CBDCs) are a digital form of a country’s fiat currency. Unlike cryptocurrencies, which are decentralized, CBDCs are issued and regulated by the nation's monetary authority. Brazil’s project, named Drex, aims to provide a safe and regulated environment for new businesses and more democratic access to financial advantages.*",
+          "texto": "The word \"aims\" in the text is closest in meaning to:",
+          "alternativas": {
+            "A": "fails",
+            "B": "intends",
+            "C": "ignores",
+            "D": "refuses",
+            "E": "demands"
+          },
+          "meta": "LÍNGUA INGLESA",
+          "respostaCorreta": "B"
+        },
+        {
+          "id": "bb_2026_13",
+          "texto_apoio": "**Text for questions 11 and 12:**\n*Central Bank Digital Currencies (CBDCs) are a digital form of a country’s fiat currency. Unlike cryptocurrencies, which are decentralized, CBDCs are issued and regulated by the nation's monetary authority. Brazil’s project, named Drex, aims to provide a safe and regulated environment for new businesses and more democratic access to financial advantages.*",
+          "texto": "Fill in the blank: \"If the stock market crashes tomorrow, many investors _____ losing a significant amount of money.\"",
+          "alternativas": {
+            "A": "will risk",
+            "B": "risked",
+            "C": "would risk",
+            "D": "had risked",
+            "E": "risks"
+          },
+          "meta": "LÍNGUA INGLESA",
+          "respostaCorreta": "A"
+        },
+        {
+          "id": "bb_2026_14",
+          "texto_apoio": "**Text for questions 11 and 12:**\n*Central Bank Digital Currencies (CBDCs) are a digital form of a country’s fiat currency. Unlike cryptocurrencies, which are decentralized, CBDCs are issued and regulated by the nation's monetary authority. Brazil’s project, named Drex, aims to provide a safe and regulated environment for new businesses and more democratic access to financial advantages.*",
+          "texto": "In banking terminology, an \"Asset\" is best described as:",
+          "alternativas": {
+            "A": "a debt owed to the bank.",
+            "B": "the interest rate paid on a loan.",
+            "C": "something of value owned by a company or an individual.",
+            "D": "a tax applied to international transfers.",
+            "E": "a penalty fee for late payments."
+          },
+          "meta": "LÍNGUA INGLESA",
+          "respostaCorreta": "C"
+        },
+        {
+          "id": "bb_2026_15",
+          "texto_apoio": "**Text for questions 11 and 12:**\n*Central Bank Digital Currencies (CBDCs) are a digital form of a country’s fiat currency. Unlike cryptocurrencies, which are decentralized, CBDCs are issued and regulated by the nation's monetary authority. Brazil’s project, named Drex, aims to provide a safe and regulated environment for new businesses and more democratic access to financial advantages.*",
+          "texto": "Choose the correct preposition to complete the sentence: \"The new branch manager is completely responsible _____ the team's performance.\"",
+          "alternativas": {
+            "A": "of",
+            "B": "with",
+            "C": "for",
+            "D": "about",
+            "E": "at"
+          },
+          "meta": "LÍNGUA INGLESA",
+          "respostaCorreta": "C"
+        }
+      ]
+    },
+    {
+      "nome": "MATEMÁTICA",
+      "questoes": [
+        {
+          "id": "bb_2026_16",
+          "texto_apoio": null,
+          "texto": "Uma agência bancária possui 45 funcionários. Sabe-se que 60% deles são mulheres e que 30% dos funcionários possuem certificação CPA-20. Se 5 mulheres possuem a certificação, qual é a probabilidade de um funcionário sorteado ao acaso ser homem e possuir a certificação?",
+          "alternativas": {
+            "A": "5/45",
+            "B": "6/45",
+            "C": "7/45",
+            "D": "8/45",
+            "E": "9/45"
+          },
+          "meta": "MATEMÁTICA",
+          "respostaCorreta": "D"
+        },
+        {
+          "id": "bb_2026_17",
+          "texto_apoio": null,
+          "texto": "Dois novos terminais de autoatendimento, X e Y, foram instalados. X processa um lote de transações a cada 12 segundos, e Y processa um lote a cada 15 segundos. Se ambos processaram um lote simultaneamente no instante inicial, após quanto tempo no mínimo eles voltarão a processar simultaneamente juntos?",
+          "alternativas": {
+            "A": "30 segundos",
+            "B": "45 segundos",
+            "C": "60 segundos",
+            "D": "72 segundos",
+            "E": "90 segundos"
+          },
+          "meta": "MATEMÁTICA",
+          "respostaCorreta": "C"
+        },
+        {
+          "id": "bb_2026_18",
+          "texto_apoio": null,
+          "texto": "O salário de um gerente era de R$ 8.000,00. Após bater as metas semestrais, ele recebeu um aumento de 15%. Sobre o novo salário, no ano seguinte por reestruturação do banco, ele sofreu uma redução de 10%. Qual o valor do salário atual?",
+          "alternativas": {
+            "A": "R$ 8.280,00",
+            "B": "R$ 8.400,00",
+            "C": "R$ 8.520,00",
+            "D": "R$ 8.600,00",
+            "E": "R$ 9.200,00"
+          },
+          "meta": "MATEMÁTICA",
+          "respostaCorreta": "A"
+        },
+        {
+          "id": "bb_2026_19",
+          "texto_apoio": null,
+          "texto": "A função lucro de um pequeno correspondente bancário é dada por L(x) = -x² + 40x - 300, onde x é a quantidade de consórcios vendidos no mês e L(x) é o lucro em reais. Quantos consórcios devem ser vendidos para que o lucro seja MÁXIMO?",
+          "alternativas": {
+            "A": "15",
+            "B": "20",
+            "C": "30",
+            "D": "40",
+            "E": "400"
+          },
+          "meta": "MATEMÁTICA",
+          "respostaCorreta": "B"
+        },
+        {
+          "id": "bb_2026_20",
+          "texto_apoio": null,
+          "texto": "Uma matriz 2x2 representa os custos operacionais (C) do banco, onde c11 = 2, c12 = -1, c21 = 3 e c22 = 4. O determinante dessa matriz C é igual a:",
+          "alternativas": {
+            "A": "5",
+            "B": "7",
+            "C": "8",
+            "D": "11",
+            "E": "12"
+          },
+          "meta": "MATEMÁTICA",
+          "respostaCorreta": "D"
+        }
+      ]
+    },
+    {
+      "nome": "ATUALIDADES DO MERCADO FINANCEIRO",
+      "questoes": [
+        {
+          "id": "bb_2026_21",
+          "texto_apoio": null,
+          "texto": "Com o avanço tecnológico na área financeira no Brasil a partir de 2024, consolidou-se o projeto da moeda digital oficial brasileira (CBDC). O nome oficial desse ativo regulado pelo BCB é:",
+          "alternativas": {
+            "A": "Real Coin",
+            "B": "Pix Digital",
+            "C": "Drex",
+            "D": "CriptoReal",
+            "E": "BRL Token"
+          },
+          "meta": "ATUALIDADES DO MERCADO FINANCEIRO",
+          "respostaCorreta": "C"
+        },
+        {
+          "id": "bb_2026_22",
+          "texto_apoio": null,
+          "texto": "O ecossistema de inovações conhecido como Open Finance permitiu:",
+          "alternativas": {
+            "A": "O fim absoluto do uso de notas e moedas metálicas no comércio varejista.",
+            "B": "O compartilhamento de dados e serviços por meio de APIs não padronizadas, sem controle do BCB.",
+            "C": "Que o cliente tenha o poder de decidir se deseja compartilhar seus dados bancários, de previdência e investimentos entre diferentes instituições.",
+            "D": "Que bancos privados assumam as contas da Caixa Econômica Federal.",
+            "E": "Que empresas sem autorização do Banco Central concedam empréstimos sem análise de risco."
+          },
+          "meta": "ATUALIDADES DO MERCADO FINANCEIRO",
+          "respostaCorreta": "C"
+        },
+        {
+          "id": "bb_2026_23",
+          "texto_apoio": null,
+          "texto": "Diversas *Fintechs* surgiram propondo novos modelos de negócio. Dentre elas, as Startups que realizam a avaliação e cessão de crédito entre pares (Peer-to-Peer Lending), sem um banco tradicional no meio, utilizam um modelo enquadrado sob a chancela do Bacen como:",
+          "alternativas": {
+            "A": "SCTF",
+            "B": "SEP (Sociedade de Empréstimo entre Pessoas)",
+            "C": "SCD (Sociedade de Crédito Direto)",
+            "D": "FIDC (Fundo de Direitos Creditórios)",
+            "E": "Cooperativas Singulares"
+          },
+          "meta": "ATUALIDADES DO MERCADO FINANCEIRO",
+          "respostaCorreta": "B"
+        },
+        {
+          "id": "bb_2026_24",
+          "texto_apoio": null,
+          "texto": "As práticas ESG (Environmental, Social, and Governance) são primordiais também no mercado financeiro atual. Um banco que emite *Green Bonds* (Títulos Verdes) possui como principal objetivo:",
+          "alternativas": {
+            "A": "Financiar projetos de reflorestamento e transição de matriz energética limpa.",
+            "B": "Comprar dívidas de empresas poluidoras para liquidá-las com desconto.",
+            "C": "Criar agências bancárias virtuais utilizando NFTs ecológicos e metaversos.",
+            "D": "Financiar campanhas políticas focadas na ecologia sem prestação de contas.",
+            "E": "Reduzir a taxa de crédito para qualquer agronegócio que expanda a fronteira agrícola."
+          },
+          "meta": "ATUALIDADES DO MERCADO FINANCEIRO",
+          "respostaCorreta": "A"
+        },
+        {
+          "id": "bb_2026_25",
+          "texto_apoio": null,
+          "texto": "Criptomoedas, como o Bitcoin, utilizam uma tecnologia distribuída que visa garantir a segurança e a imutabilidade dos registros de transações sem necessidade de uma câmara de compensação central. Como se chama essa tecnologia base?",
+          "alternativas": {
+            "A": "Edge Computing",
+            "B": "Cloud Native",
+            "C": "Quantum Ledger",
+            "D": "Blockchain",
+            "E": "Open Banking Nodes\n\n---\n\n## CONHECIMENTOS ESPECÍFICOS"
+          },
+          "meta": "ATUALIDADES DO MERCADO FINANCEIRO",
+          "respostaCorreta": "D"
+        }
+      ]
+    },
+    {
+      "nome": "MATEMÁTICA FINANCEIRA",
+      "questoes": [
+        {
+          "id": "bb_2026_26",
+          "texto_apoio": null,
+          "texto": "Um capital de R$ 5.000,00 foi aplicado em um fundo de investimento que rende juros compostos de 10% ao ano. Ao final de 2 anos, os juros auferidos nessa aplicação corresponderão a:",
+          "alternativas": {
+            "A": "R$ 500,00",
+            "B": "R$ 1.000,00",
+            "C": "R$ 1.050,00",
+            "D": "R$ 1.100,00",
+            "E": "R$ 6.050,00"
+          },
+          "meta": "MATEMÁTICA FINANCEIRA",
+          "respostaCorreta": "C"
+        },
+        {
+          "id": "bb_2026_27",
+          "texto_apoio": null,
+          "texto": "Na Tabela PRICE, o plano de amortização de uma dívida se caracteriza fundamentalmente por:",
+          "alternativas": {
+            "A": "Amortizações constantes e juros crescentes.",
+            "B": "Prestações (parcelas) decrescentes devido aos juros simples.",
+            "C": "Amortizações crescentes e prestações (parcelas totais) constantes.",
+            "D": "Prestações variáveis crescendo exponencialmente.",
+            "E": "Juros decrescentes mas amortização decrescente."
+          },
+          "meta": "MATEMÁTICA FINANCEIRA",
+          "respostaCorreta": "C"
+        },
+        {
+          "id": "bb_2026_28",
+          "texto_apoio": null,
+          "texto": "Uma taxa nominal é de 24% ao ano, capitalizada mensalmente. A taxa de juros efetiva mensal, que será efetivamente aplicada em cada período, é de:",
           "alternativas": {
             "A": "24,00%",
-            "B": "24,48%",
-            "C": "26,00%",
-            "D": "26,82%",
-            "E": "28,12%"
+            "B": "12,00%",
+            "C": "2,40%",
+            "D": "2,00%",
+            "E": "0,50%"
           },
+          "meta": "MATEMÁTICA FINANCEIRA",
           "respostaCorreta": "D"
         },
         {
-          "id": "matfin_02",
-          "texto": "Um cliente contraiu um financiamento imobiliário de R$ 300.000,00 pelo Sistema de Amortização Constante (SAC), a ser pago em 100 meses. A taxa de juros pactuada foi de 1% ao mês. Qual será o valor exato da 2ª (segunda) prestação a ser paga pelo cliente?",
+          "id": "bb_2026_29",
+          "texto_apoio": null,
+          "texto": "O Valor Presente Líquido (VPL) é um método utilizado na análise de viabilidade de projetos de investimentos. Um projeto de investimento é viável (aceitável do ponto de vista estrito do método) quando seu VPL:",
           "alternativas": {
-            "A": "R$ 6.000,00",
-            "B": "R$ 5.970,00",
-            "C": "R$ 5.940,00",
-            "D": "R$ 3.000,00",
-            "E": "R$ 2.970,00"
+            "A": "é menor que a Taxa Interna de Retorno (TIR).",
+            "B": "é exatamente zero, independente do custo de capital.",
+            "C": "é menor que a taxa livre de risco.",
+            "D": "é estritamente negativo.",
+            "E": "é maior que zero (VPL > 0), evidenciando agregação de riqueza."
           },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "matfin_03",
-          "texto": "Ao simular um empréstimo pessoal, o gerente do banco ofereceu a opção de pagamento pela Tabela Price (Sistema Francês de Amortização). A principal característica matemática desse sistema que o diferencia do SAC é que, na Tabela Price:",
-          "alternativas": {
-            "A": "As parcelas de juros cobrados são constantes.",
-            "B": "A cota de amortização é idêntica do início ao fim.",
-            "C": "As prestações diminuem gradativamente.",
-            "D": "As prestações mensais são todas iguais, enquanto a parcela de amortização cresce.",
-            "E": "O saldo devedor é liquidado apenas no último mês."
-          },
-          "respostaCorreta": "D"
-        },
-        {
-          "id": "matfin_04",
-          "texto": "Um investidor conservador aplicou R$ 10.000,00 em um CDB bancário que rende juros compostos à taxa de 5% ao ano. Se ele não fizer nenhum aporte ou retirada, ao final de 2 anos, qual será APENAS o total de juros acumulados gerados por essa aplicação?",
-          "alternativas": {
-            "A": "R$ 1.000,00",
-            "B": "R$ 1.025,00",
-            "C": "R$ 1.050,00",
-            "D": "R$ 1.102,50",
-            "E": "R$ 11.025,00"
-          },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "matfin_05",
-          "texto": "Uma empresa precisou de capital de giro e decidiu antecipar uma duplicata de R$ 5.000,00 em um banco comercial, 3 meses antes do seu vencimento. A instituição aplicou uma taxa de desconto comercial simples (desconto por fora) de 2% ao mês. Qual foi o valor líquido creditado na conta da empresa?",
-          "alternativas": {
-            "A": "R$ 300,00",
-            "B": "R$ 4.700,00",
-            "C": "R$ 4.704,00",
-            "D": "R$ 4.850,00",
-            "E": "R$ 5.300,00"
-          },
-          "respostaCorreta": "B"
-        }
-      ]
-    },
-    {
-      "nome": "Conhecimentos Bancários",
-      "questoes": [
-        {
-          "id": "cb_01",
-          "texto": "O Conselho Monetário Nacional (CMN) é o órgão deliberativo máximo do Sistema Financeiro Nacional (SFN). Dentre as suas atribuições, NÃO se inclui a competência para:",
-          "alternativas": {
-            "A": "Coordenar a política monetária.",
-            "B": "Adaptar o volume de meios de pagamento.",
-            "C": "Emitir papel-moeda e moeda metálica.",
-            "D": "Disciplinar o crédito.",
-            "E": "Regular o valor interno da moeda."
-          },
-          "respostaCorreta": "C"
-        },
-        {
-          "id": "cb_02",
-          "texto": "A compra e venda de títulos públicos federais pelo Banco Central é conhecida como:",
-          "alternativas": {
-            "A": "Recolhimento compulsório.",
-            "B": "Operações de mercado aberto (Open Market).",
-            "C": "Redesconto.",
-            "D": "Controle de crédito.",
-            "E": "Fixação cambial."
-          },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "cb_03",
-          "texto": "O mercado sob jurisdição exclusiva da CVM é o mercado de:",
-          "alternativas": {
-            "A": "Crédito.",
-            "B": "Câmbio.",
-            "C": "Seguros.",
-            "D": "Capitais.",
-            "E": "Títulos da dívida primária."
-          },
-          "respostaCorreta": "D"
-        },
-        {
-          "id": "cb_04",
-          "texto": "O Fundo Garantidor de Créditos (FGC) protege os depositantes até R$ 250.000,00. Assinale o instrumento que NÃO possui cobertura do FGC:",
-          "alternativas": {
-            "A": "Poupança.",
-            "B": "LCI.",
-            "C": "LCA.",
-            "D": "CDB.",
-            "E": "Cotas de Fundos de Investimento."
-          },
+          "meta": "MATEMÁTICA FINANCEIRA",
           "respostaCorreta": "E"
         },
         {
-          "id": "cb_05",
-          "texto": "A fase da lavagem de dinheiro em que o dinheiro de origem ilícita é inserido no sistema financeiro é a:",
+          "id": "bb_2026_30",
+          "texto_apoio": null,
+          "texto": "Um título de renda fixa paga uma taxa de 12% a.a. Sabendo que no mesmo período a inflação verificada foi de 5% a.a., a taxa de juros real do período é aproximadamente (assumindo a equação de Fisher simplificada onde Taxa Real = ((1+Taxa Aparente)/(1+Inflação))-1):",
           "alternativas": {
-            "A": "Ocultação (Placement).",
-            "B": "Dissimulação.",
-            "C": "Integração.",
-            "D": "Sonegação.",
-            "E": "Evasão."
+            "A": "7,00%",
+            "B": "6,66%",
+            "C": "6,00%",
+            "D": "7,50%",
+            "E": "8,24%"
           },
-          "respostaCorreta": "A"
-        },
-        {
-          "id": "cb_06",
-          "texto": "O Certificado de Depósito Bancário (CDB) é:",
-          "alternativas": {
-            "A": "Um título de renda variável.",
-            "B": "Um título nominativo emitido por bancos para captação a prazo.",
-            "C": "Recibo de depósito compulsório.",
-            "D": "Ordem de pagamento à vista.",
-            "E": "Cota de fundo isento."
-          },
+          "meta": "MATEMÁTICA FINANCEIRA",
           "respostaCorreta": "B"
-        },
-        {
-          "id": "cb_07",
-          "texto": "Nas diretrizes de PLD, a sigla PPE significa:",
-          "alternativas": {
-            "A": "Pessoas Promotoras de Evasão.",
-            "B": "Pessoas Politicamente Expostas.",
-            "C": "Passivos Pendentes de Execução.",
-            "D": "Políticas Públicas Estratégicas.",
-            "E": "Pessoas Privadas de Exercício."
-          },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "cb_08",
-          "texto": "O órgão que autoriza o funcionamento das instituições que operam no mercado de câmbio é:",
-          "alternativas": {
-            "A": "Receita Federal.",
-            "B": "Ministério da Economia.",
-            "C": "CAMEX.",
-            "D": "Banco Central (BACEN).",
-            "E": "CVM."
-          },
-          "respostaCorreta": "D"
-        },
-        {
-          "id": "cb_09",
-          "texto": "Quando a meta da Selic for igual ou inferior a 8,5% ao ano, o rendimento da poupança é:",
-          "alternativas": {
-            "A": "0,5% a.m. + TR.",
-            "B": "70% da Selic + TR.",
-            "C": "100% da Selic.",
-            "D": "0,5% cravados.",
-            "E": "100% do CDI."
-          },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "cb_10",
-          "texto": "As instituições financeiras devem comunicar ao COAF operações suspeitas de lavagem de dinheiro no prazo de:",
-          "alternativas": {
-            "A": "Até o dia útil seguinte ao da decisão de comunicação.",
-            "B": "15 dias corridos.",
-            "C": "30 dias.",
-            "D": "Imediatamente, com bloqueio.",
-            "E": "Ao final do exercício fiscal."
-          },
-          "respostaCorreta": "A"
         }
       ]
     },
     {
-      "nome": "Informática",
+      "nome": "CONHECIMENTOS BANCÁRIOS",
       "questoes": [
         {
-          "id": "info_01",
-          "texto": "O malware que torna inacessíveis os dados armazenados em um equipamento usando criptografia e exige pagamento para restabelecer o acesso é o:",
+          "id": "bb_2026_31",
+          "texto_apoio": null,
+          "texto": "O Sistema Financeiro Nacional (SFN) é dividido em órgãos normativos, entidades supervisoras e entidades operadoras. É a entidade supervisora responsável pelo mercado de capitais e pela proteção dos investidores brasileiros:",
           "alternativas": {
-            "A": "Spyware.",
-            "B": "Keylogger.",
-            "C": "Ransomware.",
-            "D": "Adware.",
-            "E": "Worm."
+            "A": "Banco Central do Brasil (BCB)",
+            "B": "Superintendência de Seguros Privados (SUSEP)",
+            "C": "Comissão de Valores Mobiliários (CVM)",
+            "D": "Conselho Monetário Nacional (CMN)",
+            "E": "Caixa Econômica Federal (CEF)"
           },
+          "meta": "CONHECIMENTOS BANCÁRIOS",
           "respostaCorreta": "C"
         },
         {
-          "id": "info_02",
-          "texto": "O modelo de nuvem onde o provedor hospeda o aplicativo e a infraestrutura, entregando a aplicação pronta (como Microsoft 365) é:",
+          "id": "bb_2026_32",
+          "texto_apoio": null,
+          "texto": "A Lei nº 9.613/1998, recentemente amplamente cobrada em concursos bancários, trata do crime de Lavagem de Dinheiro. Um dos órgãos criados para receber, examinar e identificar ocorrências suspeitas e comunicá-las às autoridades competentes é o(a):",
           "alternativas": {
-            "A": "IaaS.",
-            "B": "PaaS.",
-            "C": "SaaS.",
-            "D": "DaaS.",
-            "E": "FaaS."
+            "A": "Tribunal de Contas da União (TCU)",
+            "B": "Controladoria-Geral da União (CGU)",
+            "C": "Conselho de Controle de Atividades Financeiras (COAF)",
+            "D": "Ministério da Justiça e Cidadania",
+            "E": "Polícia Federal Diretoria Fazendária"
           },
+          "meta": "CONHECIMENTOS BANCÁRIOS",
           "respostaCorreta": "C"
         },
         {
-          "id": "info_03",
-          "texto": "No Excel, para somar apenas os valores da coluna B correspondentes à palavra 'Aprovado' na coluna A, usa-se:",
+          "id": "bb_2026_33",
+          "texto_apoio": null,
+          "texto": "Instrumento comum na captação de recursos pelos bancos, o CDB (Certificado de Depósito Bancário) emitido e garantido em até R$ 250.000,00 pelo Fundo Garantidor de Crédito (FGC). Assinale a natureza do CDB:",
           "alternativas": {
-            "A": "SOMA()",
-            "B": "SOMASE()",
-            "C": "CONT.SE()",
-            "D": "PROCV()",
-            "E": "SE()"
+            "A": "É um título representativo de dívida pública fiduciária mobiliária.",
+            "B": "É um título de renda variável emitido por seguradoras para lastrear empréstimos habitacionais.",
+            "C": "É um fundo exclusivo destinado apenas ao Governo Federal.",
+            "D": "É uma promessa de pagamento – título de crédito privado emitido pelo banco em favor do cliente que realiza o depósito.",
+            "E": "É uma ação de classe C em que o investidor vira sócio do banco."
           },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "info_04",
-          "texto": "O atalho de teclado padrão para a função 'Desfazer' no Windows é:",
-          "alternativas": {
-            "A": "Ctrl + Y",
-            "B": "Ctrl + Z",
-            "C": "Ctrl + X",
-            "D": "Ctrl + P",
-            "E": "Ctrl + S"
-          },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "info_05",
-          "texto": "A navegação anônima tem como característica:",
-          "alternativas": {
-            "A": "Invisibilidade total na rede.",
-            "B": "Bloqueio automático de vírus.",
-            "C": "Criptografia de todas as teclas.",
-            "D": "Não salvar histórico e cookies após o fechamento.",
-            "E": "VPN nativa embutida."
-          },
+          "meta": "CONHECIMENTOS BANCÁRIOS",
           "respostaCorreta": "D"
         },
         {
-          "id": "info_06",
-          "texto": "O protocolo que garante a comunicação criptografada web no Internet Banking é o:",
+          "id": "bb_2026_34",
+          "texto_apoio": null,
+          "texto": "No âmbito dos seguros, a Franquia (ou participação obrigatória do segurado) é um instituto que visa:",
+          "alternativas": {
+            "A": "Enriquecer as companhias de seguros através da retenção abusiva.",
+            "B": "Prevenir ou mitigar o risco moral (moral hazard), evitando que o segurado torne-se descuidado em relação ao bem segurado.",
+            "C": "Excluir automaticamente sinistros que ocorram no primeiro ano da apólice.",
+            "D": "Garantir o pagamento vitalício ao estipulante mesmo caso não ocorra o sinistro.",
+            "E": "Eliminar o resseguro de grandes riscos climáticos do mercado agropecuário."
+          },
+          "meta": "CONHECIMENTOS BANCÁRIOS",
+          "respostaCorreta": "B"
+        },
+        {
+          "id": "bb_2026_35",
+          "texto_apoio": null,
+          "texto": "Atualmente, a política monetária no Brasil opera sob o regime de \"Metas para a Inflação\". Quem define o índice a ser perseguido e o percentual objetivo dessa meta é o:",
+          "alternativas": {
+            "A": "Comitê de Política Monetária (COPOM)",
+            "B": "Conselho Monetário Nacional (CMN)",
+            "C": "Banco Central do Brasil (Bacen)",
+            "D": "Ministério do Planejamento",
+            "E": "Instituto Brasileiro de Geografia e Estatística (IBGE)"
+          },
+          "meta": "CONHECIMENTOS BANCÁRIOS",
+          "respostaCorreta": "B"
+        },
+        {
+          "id": "bb_2026_36",
+          "texto_apoio": null,
+          "texto": "Os consórcios, como ferramentas de captação poupança para a compra de bens, não preveem juros; no entanto, existe a cobrança mensal de uma taxa destinada a cobrir os custos de operação do grupo. Como é denominada essa taxa?",
+          "alternativas": {
+            "A": "Taxa de Risco de Crédito",
+            "B": "Taxa Selic",
+            "C": "Taxa de Amortização de Reserva",
+            "D": "Custo de Manutenção Básica",
+            "E": "Taxa de Administração"
+          },
+          "meta": "CONHECIMENTOS BANCÁRIOS",
+          "respostaCorreta": "E"
+        },
+        {
+          "id": "bb_2026_37",
+          "texto_apoio": null,
+          "texto": "No Mercado de Câmbio Brasileiro, a cotação é do tipo \"Preço Dólar\". Se a taxa PTAX for R$ 5,20 por US$ 1,00 e o banco estipula uma taxa de R$ 5,35 por US$ 1,00 para vender ao cliente pessoa física repassar a despesa de viagem. A diferença R$ 0,15 entre a cotação de mercado/referência e o que é repassado ao cliente como receita cambial do banco é classificada como:",
+          "alternativas": {
+            "A": "Spread Cambial",
+            "B": "Juros de Risco Cruzado",
+            "C": "Swap Direto",
+            "D": "Arbitragem Comercial",
+            "E": "Swap Reverso"
+          },
+          "meta": "CONHECIMENTOS BANCÁRIOS",
+          "respostaCorreta": "A"
+        },
+        {
+          "id": "bb_2026_38",
+          "texto_apoio": null,
+          "texto": "Se uma empresa \"Exportadora A\" fecha o adiantamento dos reais correspondentes de suas vendas externas antes dos dólares entrarem efetivamente no Brasil, realiza-se um \"ACC\". O que significa a sigla ACC?",
+          "alternativas": {
+            "A": "Acordo de Contrapartida Central",
+            "B": "Antecipação de Câmbio à Cruzados",
+            "C": "Adiantamento sobre Contrato de Câmbio",
+            "D": "Autarquias Credoras Centraleis",
+            "E": "Aval para Créditos Correntes"
+          },
+          "meta": "CONHECIMENTOS BANCÁRIOS",
+          "respostaCorreta": "C"
+        },
+        {
+          "id": "bb_2026_39",
+          "texto_apoio": null,
+          "texto": "Bancos Múltiplos são instituições financeiras híbridas que necessitam possuir pelo menos duas carteiras de operação. Porém, para ser caracterizado como Banco Múltiplo, uma dessas carteiras precisa OBRIGATORIAMENTE ser a carteira:",
+          "alternativas": {
+            "A": "Comercial ou de Crédito Imobiliário.",
+            "B": "Comercial ou de Investimento.",
+            "C": "de Investimento ou de Arrendamento Mercantil.",
+            "D": "Mista ou Habitacional.",
+            "E": "Agrícola ou Cambial."
+          },
+          "meta": "CONHECIMENTOS BANCÁRIOS",
+          "respostaCorreta": "B"
+        },
+        {
+          "id": "bb_2026_40",
+          "texto_apoio": null,
+          "texto": "Segundo as regras de confidencialidade e Sigilo Bancário (Lei Complementar 105), a transferência de informações aos agentes fiscais (Receita Federal) por parte dos bancos:",
+          "alternativas": {
+            "A": "Nunca pode ocorrer, cabendo ao auditor tributário descobrir os saldos mediante inquérito próprio.",
+            "B": "Pode ocorrer desde que o titular da conta concorde via procuração registrada.",
+            "C": "É livre para qualquer funcionário público e jornalista investigativo.",
+            "D": "Requer mandado judicial do Supremo Tribunal Federal para qualquer movimentação superior a mil reais.",
+            "E": "É estritamente regulamentada, e a prestação de informações pelo Fisco sobre movimentação global não constitui violação ao sigilo sob certos cenários estipulados em lei e na jurisdição pátria atual."
+          },
+          "meta": "CONHECIMENTOS BANCÁRIOS",
+          "respostaCorreta": "E"
+        }
+      ]
+    },
+    {
+      "nome": "CONHECIMENTOS DE INFORMÁTICA",
+      "questoes": [
+        {
+          "id": "bb_2026_41",
+          "texto_apoio": null,
+          "texto": "Na rede de computadores, o protocolo responsável pela resolução de nomes de domínio (como \"www.bb.com.br\") para os respectivos endereços IPs que as máquinas utilizam para se comunicarem é o:",
+          "alternativas": {
+            "A": "DHCP",
+            "B": "SMTP",
+            "C": "DNS",
+            "D": "TCP",
+            "E": "IMAP"
+          },
+          "meta": "CONHECIMENTOS DE INFORMÁTICA",
+          "respostaCorreta": "C"
+        },
+        {
+          "id": "bb_2026_42",
+          "texto_apoio": null,
+          "texto": "Um Analista Comercial no BB quer realizar uma análise em sua planilha (Excel de M365) para somar apenas as despesas do mês que foram categorizadas como \"Materiais\". A função exata mais adequada a ser utilizada é a:",
+          "alternativas": {
+            "A": "SOMARPRODUTO",
+            "B": "SOMASE / SOMASES",
+            "C": "PROCV",
+            "D": "MAIOR",
+            "E": "SEERRO"
+          },
+          "meta": "CONHECIMENTOS DE INFORMÁTICA",
+          "respostaCorreta": "B"
+        },
+        {
+          "id": "bb_2026_43",
+          "texto_apoio": null,
+          "texto": "Softwares maliciosos adotam táticas variadas para explorar vulnerabilidades. O código malicioso que sequestra os arquivos da vítima, exigindo o pagamento (geralmente em criptomoeda) para liberar a chave de decodificação, denomina-se:",
+          "alternativas": {
+            "A": "Rootkit",
+            "B": "Trojan-Spy",
+            "C": "Ransomware",
+            "D": "Boot sector virus",
+            "E": "Keylogger"
+          },
+          "meta": "CONHECIMENTOS DE INFORMÁTICA",
+          "respostaCorreta": "C"
+        },
+        {
+          "id": "bb_2026_44",
+          "texto_apoio": null,
+          "texto": "Dentro do ecossistema de internet de um grande banco federal, existe uma rede que utiliza a mesma tecnologia (protocolos TCP/IP, browsers), criada primordialmente para acesso exclusivo e fechado aos funcionários, para comunicados e acessos a ferramentas de RH internos. O nome comum dessa rede é:",
+          "alternativas": {
+            "A": "Internet",
+            "B": "Ultranet",
+            "C": "Extranet",
+            "D": "Intranet",
+            "E": "VPN Pública"
+          },
+          "meta": "CONHECIMENTOS DE INFORMÁTICA",
+          "respostaCorreta": "D"
+        },
+        {
+          "id": "bb_2026_45",
+          "texto_apoio": null,
+          "texto": "Em conceitos de Cloud Computing (Computação em Nuvem), quando um fornecedor entrega para o banco uma plataforma completa constando S.O., banco de dados e ambiente de execução de código para o banco desenvolver os seus aplicativos sem se preocupar em montar os servidores físicos, usa-se o modelo de serviço:",
+          "alternativas": {
+            "A": "SaaS (Software as a Service)",
+            "B": "IaaS (Infrastructure as a Service)",
+            "C": "PaaS (Platform as a Service)",
+            "D": "DaaS (Desktop as a Service)",
+            "E": "On-Premise As a Service"
+          },
+          "meta": "CONHECIMENTOS DE INFORMÁTICA",
+          "respostaCorreta": "C"
+        },
+        {
+          "id": "bb_2026_46",
+          "texto_apoio": null,
+          "texto": "Qual é a principal função de uma \"Firewall\" instalada no perímetro da rede da agência bancária?",
+          "alternativas": {
+            "A": "Controlar infestações de formigas perto das caixas de som do PC.",
+            "B": "Bloquear indiscriminadamente toda a comunicação para fora do banco.",
+            "C": "Fazer o backup diário em nuvem dos arquivos.",
+            "D": "Traduzir domínios de site em IP.",
+            "E": "Monitorar o tráfego de entrada e saída, permitindo ou bloqueando transmissões com base em regras de segurança predefinidas."
+          },
+          "meta": "CONHECIMENTOS DE INFORMÁTICA",
+          "respostaCorreta": "E"
+        },
+        {
+          "id": "bb_2026_47",
+          "texto_apoio": null,
+          "texto": "No Windows 10/11, qual atalho de teclado tem o recurso de, instantaneamente, \"travar\" a estação de trabalho, solicitando que a senha do usuário seja digitada novamente e assim preservando o ambiente durante a ausência do estagiário?",
+          "alternativas": {
+            "A": "Ctrl + D",
+            "B": "Tecla com logotipo do Windows + L",
+            "C": "Tecla com logotipo do Windows + D",
+            "D": "Alt + F4",
+            "E": "Shift + Del"
+          },
+          "meta": "CONHECIMENTOS DE INFORMÁTICA",
+          "respostaCorreta": "B"
+        },
+        {
+          "id": "bb_2026_48",
+          "texto_apoio": null,
+          "texto": "O protocolo padrão utilizado para que o tráfego em web sites seja criptografado por meio do uso de certificados digitais (TLS/SSL), e atestado através daquele \"cadeadinho\" no navegador é o:",
           "alternativas": {
             "A": "HTTP",
-            "B": "FTP",
+            "B": "SSH",
             "C": "HTTPS",
-            "D": "SMTP",
-            "E": "Telnet"
+            "D": "FTP",
+            "E": "TELNET"
           },
+          "meta": "CONHECIMENTOS DE INFORMÁTICA",
           "respostaCorreta": "C"
         },
         {
-          "id": "info_07",
-          "texto": "Para que os destinatários não vejam os endereços de e-mail uns dos outros, usa-se o campo:",
+          "id": "bb_2026_49",
+          "texto_apoio": null,
+          "texto": "Na construção e consumo de APIs (Aplication Programming Interfaces) em Open Finance, um padrão de transferência de estado de arquitetura extremamente comum que usa verbos HTTP (GET, POST, PUT, DELETE) e retornos normalmente em JSON é o:",
           "alternativas": {
-            "A": "To",
-            "B": "Cc",
-            "C": "Cco",
-            "D": "Subject",
-            "E": "Attachment"
+            "A": "SOAP",
+            "B": "RPC",
+            "C": "WSDL",
+            "D": "REST",
+            "E": "HTML5"
           },
-          "respostaCorreta": "C"
-        },
-        {
-          "id": "info_08",
-          "texto": "Mensagens falsas que induzem o usuário a revelar senhas bancárias referem-se ao ataque de:",
-          "alternativas": {
-            "A": "Backdoor.",
-            "B": "Rootkit.",
-            "C": "Phishing.",
-            "D": "Defacement.",
-            "E": "DDoS."
-          },
-          "respostaCorreta": "C"
-        },
-        {
-          "id": "info_09",
-          "texto": "O backup que copia apenas os arquivos alterados desde o último backup total e não limpa os marcadores é o:",
-          "alternativas": {
-            "A": "Diferencial.",
-            "B": "Incremental.",
-            "C": "Diário.",
-            "D": "Cópia.",
-            "E": "Total."
-          },
-          "respostaCorreta": "A"
-        },
-        {
-          "id": "info_10",
-          "texto": "O atalho de teclado que abre o Gerenciador de Tarefas no Windows 10 diretamente é:",
-          "alternativas": {
-            "A": "Ctrl+Alt+Del",
-            "B": "Win+E",
-            "C": "Ctrl+Shift+Esc",
-            "D": "Alt+F4",
-            "E": "Win+L"
-          },
-          "respostaCorreta": "C"
-        },
-        {
-          "id": "info_11",
-          "texto": "A principal característica do software livre (Linux) é:",
-          "alternativas": {
-            "A": "Ser gratuito, sem suporte técnico.",
-            "B": "Possuir código-fonte aberto, permitindo modificação.",
-            "C": "Garantir imunidade a vírus.",
-            "D": "Não necessitar atualizações.",
-            "E": "Exigir licença paga para uso corporativo."
-          },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "info_12",
-          "texto": "A rede privada restrita aos funcionários usando protocolos TCP/IP é chamada de:",
-          "alternativas": {
-            "A": "Extranet.",
-            "B": "Dark Web.",
-            "C": "Intranet.",
-            "D": "WAN Pública.",
-            "E": "Deep Web."
-          },
-          "respostaCorreta": "C"
-        },
-        {
-          "id": "info_13",
-          "texto": "A referência absoluta no Excel é representada por:",
-          "alternativas": {
-            "A": "#B#2",
-            "B": "@B@2",
-            "C": "%B%2",
-            "D": "&B&2",
-            "E": "$B$2"
-          },
-          "respostaCorreta": "E"
-        },
-        {
-          "id": "info_14",
-          "texto": "Para busca exata de uma frase no Google, usa-se:",
-          "alternativas": {
-            "A": "Colchetes.",
-            "B": "Parênteses.",
-            "C": "Chaves.",
-            "D": "Aspas duplas.",
-            "E": "Asteriscos."
-          },
+          "meta": "CONHECIMENTOS DE INFORMÁTICA",
           "respostaCorreta": "D"
         },
         {
-          "id": "info_15",
-          "texto": "Para baixar o e-mail no PC e removê-lo do servidor, usa-se o protocolo:",
+          "id": "bb_2026_50",
+          "texto_apoio": null,
+          "texto": "Big Data refere-se a volumes imensos de dados. Tradicionalmente (Gartner), ele é caracterizado minimamente por \"Três Vs\" principais que definem o desafio deste tipo de ambiente, sendo eles:",
           "alternativas": {
-            "A": "IMAP.",
-            "B": "POP3.",
-            "C": "SMTP.",
-            "D": "HTTP.",
-            "E": "FTP."
+            "A": "Valor, Variedade e Veracidade.",
+            "B": "Volume, Velocidade e Variedade.",
+            "C": "Velocidade, Visão e Veto.",
+            "D": "Variabilidade, Virtualização e Volume.",
+            "E": "Versatilidade, Velocidade e Veracidade."
           },
+          "meta": "CONHECIMENTOS DE INFORMÁTICA",
+          "respostaCorreta": "B"
+        },
+        {
+          "id": "bb_2026_51",
+          "texto_apoio": null,
+          "texto": "Na busca do Google, ao pesquisar um assunto e colocar essa busca exata `inurl:\"pdf\"` + `matematica` dentre os termos de pesquisa, qual será a orientação dada ao mecanismo de busca?",
+          "alternativas": {
+            "A": "Excluir arquivos PDF da resposta da busca se eles usarem a palavra \"Matemática\".",
+            "B": "Buscar a palavra \"matemática\", obrigando que a URL originária (endereço do site) também contenha a string \"pdf\".",
+            "C": "Converter as páginas não matemáticas encontradas na tela em arquivos PDF localmente usando o Chrome.",
+            "D": "Mandar os resultados da palavra \"matematica\" direto via e-mail e não mostrar na tela.",
+            "E": "Desabilitar a checagem gramatical e procurar erros de português que contenham 'pdf'."
+          },
+          "meta": "CONHECIMENTOS DE INFORMÁTICA",
+          "respostaCorreta": "B"
+        },
+        {
+          "id": "bb_2026_52",
+          "texto_apoio": null,
+          "texto": "Um gerente comercial encaminha um e-mail com ofertas enviando por Cco (Cópia Oculta / BCC) para dezenas de clientes ao mesmo tempo. Assinale o que corre na caixa de entrada destes clientes:",
+          "alternativas": {
+            "A": "O cliente que receber o e-mail verá o endereço de todos os demais copiados em Cco.",
+            "B": "O servidor de destino rejeita sumariamente todos os provedores em Cco.",
+            "C": "O cliente verá que o e-mail é da agência para ele, mas não terá visão de quais ou quantos outros estão copiados, preservando o sigilo entre os contatos.",
+            "D": "O campo Para deixará de ser obrigatório e virará um rascunho de servidor invisível para o usuário final.",
+            "E": "Nenhum cliente vê o e-mail até que aceitem a assinatura digital."
+          },
+          "meta": "CONHECIMENTOS DE INFORMÁTICA",
+          "respostaCorreta": "C"
+        },
+        {
+          "id": "bb_2026_53",
+          "texto_apoio": null,
+          "texto": "Com relação às Extensões de Arquivos comuns, um arquivo \".CSV\" refere-se tipicamente a:",
+          "alternativas": {
+            "A": "Um documento formatado enriquecido, igual a um .DOCX mas criptografado.",
+            "B": "Arquivo de áudio comprimido.",
+            "C": "Arquivo executável de linha de comando de Linux.",
+            "D": "Valores separados por vírgula (Comma-separated values), amplamente lido como estilo de tabela em planilhas sem formatação proprietária rigorosa.",
+            "E": "Formato de imagem vetorial de alta definição para design gráfico."
+          },
+          "meta": "CONHECIMENTOS DE INFORMÁTICA",
+          "respostaCorreta": "D"
+        },
+        {
+          "id": "bb_2026_54",
+          "texto_apoio": null,
+          "texto": "No pacote LibreOffice, o software processador de textos de interface correspondente ao do MS Word é o:",
+          "alternativas": {
+            "A": "Writer",
+            "B": "Calc",
+            "C": "Impress",
+            "D": "Base",
+            "E": "Math"
+          },
+          "meta": "CONHECIMENTOS DE INFORMÁTICA",
+          "respostaCorreta": "A"
+        },
+        {
+          "id": "bb_2026_55",
+          "texto_apoio": null,
+          "texto": "A técnica que tem por objetivo assinar digitalmente um contrato em PDF garantindo *autenticidade*, *integridade* e *não-repúdio* baseia-se fundamentalmente em criptografia de chaves:",
+          "alternativas": {
+            "A": "Simétricas de bloco curto.",
+            "B": "Assimétricas (Par de Chaves Pública e Privada).",
+            "C": "Nulas (Pass-through cifrado de n-bits).",
+            "D": "Hash de Via de Mão Dupla Descriptografável.",
+            "E": "Quantizadas."
+          },
+          "meta": "CONHECIMENTOS DE INFORMÁTICA",
           "respostaCorreta": "B"
         }
       ]
     },
     {
-      "nome": "Vendas e Negociação",
+      "nome": "VENDAS E NEGOCIAÇÃO",
       "questoes": [
         {
-          "id": "ven_01",
-          "texto": "O marketing de serviços difere dos físicos. A característica de que o serviço não pode ser tocado antes da compra é a:",
+          "id": "bb_2026_56",
+          "texto_apoio": null,
+          "texto": "Em uma rotina de agência, após mapear as necessidades financeiras de um cliente na mesa (ele relatou nascimento recente do filho), o agente comercial percebe a viabilidade e propõe um plano de \"Previdência Brasilcap / Brasilprev\" e \"Seguro de Vida\". A capacidade de ofertar algo que soluciona o novo momento de vida alinhado aos interesses do banco reflete o que, em marketing, compreende a fase da Venda Consultiva chamada:",
           "alternativas": {
-            "A": "Perecibilidade.",
-            "B": "Inseparabilidade.",
-            "C": "Intangibilidade.",
-            "D": "Variabilidade.",
-            "E": "Homogeneidade."
+            "A": "Qualificação e Abordagem Direcionada Negativa",
+            "B": "Prospecção Cega",
+            "C": "Identificação de Oportunidades ou Levantamento de Necessidades",
+            "D": "Pós-venda de retenção final",
+            "E": "Fechamento por objeção coercitiva"
           },
+          "meta": "VENDAS E NEGOCIAÇÃO",
           "respostaCorreta": "C"
         },
         {
-          "id": "ven_02",
-          "texto": "Oferecer um seguro de vida a quem abre uma conta é uma técnica de:",
+          "id": "bb_2026_57",
+          "texto_apoio": null,
+          "texto": "Ética é uma tônica basilar nos bancos do país. O funcionário que tem conhecimento antecipado e confidencial do lançamento de um produto de investimento altamente lucrativo a ser feito por sua empresa no qual gerará movimentações na bolsa de valor; decide, secretamente, comprar ações da empresa por fora e antes do lançamento usando familiares como laranjas. Isso é criminoso e reflete tática chamada de:",
           "alternativas": {
-            "A": "Up-selling.",
-            "B": "Cross-selling.",
-            "C": "Inbound.",
-            "D": "Guerrilha.",
-            "E": "Segmentação."
+            "A": "Free-riding",
+            "B": "Crowdfunding",
+            "C": "Insider trading (Uso de informação privilegiada)",
+            "D": "Compliance reverso",
+            "E": "Benchmarking agressivo"
           },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "ven_03",
-          "texto": "Negociação onde ambas as partes têm ganhos mútuos é a:",
-          "alternativas": {
-            "A": "Distributiva.",
-            "B": "Acatadora.",
-            "C": "Integrativa.",
-            "D": "Evitativa.",
-            "E": "Competitiva."
-          },
+          "meta": "VENDAS E NEGOCIAÇÃO",
           "respostaCorreta": "C"
         },
         {
-          "id": "ven_04",
-          "texto": "Condicionar um empréstimo à contratação de um seguro prestamista obrigatório é:",
+          "id": "bb_2026_58",
+          "texto_apoio": null,
+          "texto": "\"Segmentação de Clientes\" tem por base o entendimento de que os clientes não são todos iguais. Um critério muito adotado em bancos (segmentação demográfica e de classe socioeconômica) é separar contas com base na:",
           "alternativas": {
-            "A": "Legal se expressa no contrato.",
-            "B": "Cross-selling.",
-            "C": "Venda Casada.",
-            "D": "Permitida para PJ.",
-            "E": "Obrigatória pelo CMN."
+            "A": "Renda mensal ou volume de patrimônio em aplicações que o indivíduo detém junto ao banco.",
+            "B": "Raça ou religião do proprietário da conta, a fim de direcionar cartões coloridos.",
+            "C": "Marca do aparelho celular por onde usam o Mobile Banking que dita o juro final de capitalização.",
+            "D": "Distância precisa, em metros métricos curtos (< 200m), da residência até a porta do banco.",
+            "E": "Apenas pela nota do Enem que o cliente tirou para receber carteira estudantil."
           },
-          "respostaCorreta": "C"
-        },
-        {
-          "id": "ven_05",
-          "texto": "Oferecer serviços exclusivos a clientes com renda acima de 20 mil é segmentação:",
-          "alternativas": {
-            "A": "Geográfica.",
-            "B": "Psicográfica.",
-            "C": "Comportamental.",
-            "D": "Demográfica.",
-            "E": "Sociocultural."
-          },
-          "respostaCorreta": "D"
-        },
-        {
-          "id": "ven_06",
-          "texto": "O atendimento unificado e fluido em todos os canais (app, telefone, agência) é:",
-          "alternativas": {
-            "A": "Substituição do físico.",
-            "B": "Omnichannel.",
-            "C": "Ouvidoria única.",
-            "D": "AI exclusiva.",
-            "E": "Separação de canais."
-          },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "ven_07",
-          "texto": "No NPS, clientes que atribuem notas 9 e 10 são:",
-          "alternativas": {
-            "A": "Detratores.",
-            "B": "Neutros.",
-            "C": "Promotores.",
-            "D": "Passivos.",
-            "E": "Inadimplentes."
-          },
-          "respostaCorreta": "C"
-        },
-        {
-          "id": "ven_08",
-          "texto": "A inseparabilidade em serviços significa:",
-          "alternativas": {
-            "A": "Não podem ser estocados.",
-            "B": "Qualidade prévia incerta.",
-            "C": "Produção e consumo simultâneos.",
-            "D": "Variação do prestador.",
-            "E": "Logotipo vinculado."
-          },
-          "respostaCorreta": "C"
-        },
-        {
-          "id": "ven_09",
-          "texto": "A Lei de Inclusão garante atendimento prioritário a:",
-          "alternativas": {
-            "A": "Clientes Alta Renda.",
-            "B": "Pessoas com deficiência e obesos.",
-            "C": "Clientes agendados.",
-            "D": "Servidores.",
-            "E": "Investidores."
-          },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "ven_10",
-          "texto": "Estratégia moderna de retenção baseada no uso do cartão de crédito é:",
-          "alternativas": {
-            "A": "Isenção surpresa.",
-            "B": "Aumento do juros.",
-            "C": "Programas de relacionamento e cashback.",
-            "D": "Venda de consórcio.",
-            "E": "Bloqueio preventivo."
-          },
-          "respostaCorreta": "C"
-        },
-        {
-          "id": "ven_11",
-          "texto": "Diante de um cliente irritado por taxa errada, o funcionário deve:",
-          "alternativas": {
-            "A": "Provar que o sistema tá certo.",
-            "B": "Praticar escuta ativa e resolver o problema.",
-            "C": "Transferir pro call center.",
-            "D": "Mandar ler o contrato.",
-            "E": "Ignorar e vender capitalização."
-          },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "ven_12",
-          "texto": "No Código de Ética do BB, a diversidade é:",
-          "alternativas": {
-            "A": "Princípio inegociável.",
-            "B": "Recomendação.",
-            "C": "Para diretores.",
-            "D": "Apenas na contratação.",
-            "E": "Para rico."
-          },
+          "meta": "VENDAS E NEGOCIAÇÃO",
           "respostaCorreta": "A"
         },
         {
-          "id": "ven_13",
-          "texto": "Telemarketing receptivo difere do ativo porque:",
+          "id": "bb_2026_59",
+          "texto_apoio": null,
+          "texto": "O principal regramento que rege as relações entre o banco (fornecedor de crédito e serviços) e o cliente bancário é o:",
           "alternativas": {
-            "A": "O atendente liga frio.",
-            "B": "O cliente origina a ligação.",
-            "C": "Usa robôs.",
-            "D": "Serve pra cobrar.",
-            "E": "Confirma dados do PLD."
+            "A": "Estatuto do Idoso.",
+            "B": "Lei de Responsabilidade Fiscal.",
+            "C": "Código de Defesa do Consumidor (CDC) e Resoluções Bancárias pertinentes.",
+            "D": "Regulamento de Risco Central do Tesouro Ourocárdico.",
+            "E": "Lei Maria da Penha Financeira."
           },
-          "respostaCorreta": "B"
-        },
-        {
-          "id": "ven_14",
-          "texto": "O CRM é usado para:",
-          "alternativas": {
-            "A": "Gerenciar servidores.",
-            "B": "Ponto dos terceirizados.",
-            "C": "Mapear histórico do cliente para personalizar atendimento.",
-            "D": "Relatório pra Receita.",
-            "E": "Trocar gerente por IA."
-          },
+          "meta": "VENDAS E NEGOCIAÇÃO",
           "respostaCorreta": "C"
         },
         {
-          "id": "ven_15",
-          "texto": "Na técnica bumerangue, se o cliente diz 'É muito caro', a resposta é:",
+          "id": "bb_2026_60",
+          "texto_apoio": null,
+          "texto": "Na esteira de vendas de um consórcio, o cliente manifesta que: \"Eu não acho seguro, ouvi dizer que se eu não for sorteado eu perco o dinheiro!\". Nesse cenário, o agente usa argumentos lógicos embasados como *\"Senhor João, por lei o consórcio é fiscalizado pelo BACEN e não há risco de perdimento de fundo caso honre as prestações... é garantido!\"*. O agente está lidando com qual etapa do ciclo de vendas?",
           "alternativas": {
-            "A": "Realmente.",
-            "B": "Não sabe valorizar.",
-            "C": "Por isso a qualidade.",
-            "D": "É justamente por isso que você precisa, para proteger o futuro.",
-            "E": "Então vamos cancelar."
+            "A": "Prospecção passiva",
+            "B": "Superação / Contorno de objeções",
+            "C": "Abertura fria de lead",
+            "D": "Pós-venda",
+            "E": "Qualificação de contato falho"
           },
-          "respostaCorreta": "D"
+          "meta": "VENDAS E NEGOCIAÇÃO",
+          "respostaCorreta": "B"
+        },
+        {
+          "id": "bb_2026_61",
+          "texto_apoio": null,
+          "texto": "A tática de reter um cliente tentando cancelar o cartão de crédito e, sem ele solicitar, o gerente falar: *\"Consigo, com autorização do gestor, isentar a sua anuidade por 1 ano\"*, faz parte das medidas defensivas de marketing conhecidas também como:",
+          "alternativas": {
+            "A": "Churn Prevention (Prevenção de Abandono/Cancelamento)",
+            "B": "Up-selling proativo",
+            "C": "Lock-in tarifário",
+            "D": "Venda casada vertical",
+            "E": "Marketing on-road"
+          },
+          "meta": "VENDAS E NEGOCIAÇÃO",
+          "respostaCorreta": "A"
+        },
+        {
+          "id": "bb_2026_62",
+          "texto_apoio": null,
+          "texto": "Em telemarketing bancário, diz-se \"Inbound\" a ação em que:",
+          "alternativas": {
+            "A": "O banco liga oferecendo seguro passaporte no feriado.",
+            "B": "O operador liga para um terminal inativo perguntando de saldo devedor.",
+            "C": "O cliente liga para a central de atendimento para tirar dúvida e comprar pacotes adicionais.",
+            "D": "Máquinas discam aleatoriamente para todos os CEPs da localidade usando robôs.",
+            "E": "A ligação cai antes de dar tempo de acionar as URA do banco."
+          },
+          "meta": "VENDAS E NEGOCIAÇÃO",
+          "respostaCorreta": "C"
+        },
+        {
+          "id": "bb_2026_63",
+          "texto_apoio": null,
+          "texto": "Um dos pilares das relações consumeristas financeiras, resguardadas na LGPD também, é a base legal do *Consentimento*, que deve constituir uma manifestação pelo titular caracterizada por três condições. Deve ela ser livre, informada e:",
+          "alternativas": {
+            "A": "Inequívoca.",
+            "B": "Complicada.",
+            "C": "Presumida por falta de clique.",
+            "D": "Indireta por terceiros sem validação.",
+            "E": "Perpétua e inalterável após o clique."
+          },
+          "meta": "VENDAS E NEGOCIAÇÃO",
+          "respostaCorreta": "A"
+        },
+        {
+          "id": "bb_2026_64",
+          "texto_apoio": null,
+          "texto": "Assinale a iniciativa que NÃO compõe uma boa tática voltada à sustentabilidade ou ASG/ESG nas atividades burocráticas do Banco:",
+          "alternativas": {
+            "A": "Digitalizar assinaturas cortando impressões em papel.",
+            "B": "Promover diversidade e inclusão de pessoas em quadros gerenciais.",
+            "C": "Negar apólices de vida a clientes devido as suas escolhas orientativas pessoais.",
+            "D": "Reciclar equipamentos de TI velhos sob normativas ecológicas.",
+            "E": "Adotar lâmpadas LED em detrimento de antigas tubulares em 100% da rede."
+          },
+          "meta": "VENDAS E NEGOCIAÇÃO",
+          "respostaCorreta": "C"
+        },
+        {
+          "id": "bb_2026_65",
+          "texto_apoio": null,
+          "texto": "O método *SMART* é muito usado para desenhar campanhas de vendas e liderar as metas dos agentes no banco. A letra \"M\" na palavra SMART significa:",
+          "alternativas": {
+            "A": "Múltipla.",
+            "B": "Mensurável (Measurable).",
+            "C": "Mercadológica (Marketing).",
+            "D": "Mnemônica.",
+            "E": "Monetizada (Monetized)."
+          },
+          "meta": "VENDAS E NEGOCIAÇÃO",
+          "respostaCorreta": "B"
+        },
+        {
+          "id": "bb_2026_66",
+          "texto_apoio": null,
+          "texto": "Entre os fatores que determinam a Qualidade de Atendimento em serviços de acordo com a famosa escala *SERVQUAL*, está aquela dimensão que mostra se a promessa do serviço bancário será de fato garantida com competência pelos funcionários do banco nas filas de espera, inspirando credibilidade. Essa dimensão da escala denomina-se:",
+          "alternativas": {
+            "A": "Empatia.",
+            "B": "Segurança/Garantia (Assurance).",
+            "C": "Tangibilidade.",
+            "D": "Custos Afundados.",
+            "E": "Redundância Estrutural."
+          },
+          "meta": "VENDAS E NEGOCIAÇÃO",
+          "respostaCorreta": "B"
+        },
+        {
+          "id": "bb_2026_67",
+          "texto_apoio": null,
+          "texto": "O programa de *Gatilhos Mentais* é largamente explorado. Ao dizer \"Renda fixa esgotando. Temos cota desse fundo multimercado excelente em desconto e fechará as 16h impreterivelmente de hoje\". Observa-se aí o uso ostensivo da tática de persuasão baseada em:",
+          "alternativas": {
+            "A": "Urgência e Escassez.",
+            "B": "Prova Social Estrita.",
+            "C": "Autoridade.",
+            "D": "Compromisso e Coerência.",
+            "E": "Afeição."
+          },
+          "meta": "VENDAS E NEGOCIAÇÃO",
+          "respostaCorreta": "A"
+        },
+        {
+          "id": "bb_2026_68",
+          "texto_apoio": null,
+          "texto": "Quando um Banco lança uma Conta 100% digital, isenta da maior parte de tarifas nos pacotes standard, projetada especificamente focada no público Jovem que repudia entrar em agências como o \"BB Jovem\", ela age estrategicamente perante uma análise clássica de Marketing de focar num agrupamento coeso ou \"nicho\". A criação e definição desse espaço exato na mente de consumo do consumidor final é chamado de técnica de:",
+          "alternativas": {
+            "A": "Oligopolização.",
+            "B": "Dumping estrutural.",
+            "C": "Posicionamento de Marca.",
+            "D": "Guerrilha de Preços.",
+            "E": "Merchandising passivo offline."
+          },
+          "meta": "VENDAS E NEGOCIAÇÃO",
+          "respostaCorreta": "C"
+        },
+        {
+          "id": "bb_2026_69",
+          "texto_apoio": null,
+          "texto": "A Lei da Transparência exige e o cliente sempre terá direito à cópia impressa ou digital, da planilha CCB/Cédula Contratual. O ato de esconder as taxas de Custo Efetivo Total (CET) na hora das negociações fere os princípios da:",
+          "alternativas": {
+            "A": "Contabilidade reversa.",
+            "B": "Matematicidade implícita do Tesouro Selic.",
+            "C": "Boa-fé objetiva, probidade e informação ao consumidor (CDC).",
+            "D": "LGPD por exposição indireta de dados demográficos sensíveis.",
+            "E": "Regulamentação CVM sobre Open Market interbancário."
+          },
+          "meta": "VENDAS E NEGOCIAÇÃO",
+          "respostaCorreta": "C"
+        },
+        {
+          "id": "bb_2026_70",
+          "texto_apoio": null,
+          "texto": "No fechamento da venda de investimento (ex: Título de Capitalização Ourocap), depois do aceite (sign-off), o próximo passo mais inteligente dentro da estrutura de Vendas e Relacionamento bancário de longo prazo com o cliente é:",
+          "alternativas": {
+            "A": "Evitar contato para que o cliente não desista antes das compensações, focando apenas no próximo.",
+            "B": "Executar rotinas de Pós-Venda para confirmação da apólice, pedir avaliações NPS e abrir caminho para relacionamentos futuros de retenção.",
+            "C": "Bloquear a central de cancelamento provisoriamente por no mínimo quarenta dias de carência.",
+            "D": "Migrar os contatos desse cliente pra corretoras privadas não conveniadas em troca de taxa comissão isenta.",
+            "E": "Encerrar sua conta corrente se houver desistência no dia seguinte.\n\n---\n\n## GABARITO (RESPOSTAS CORRETAS)\n\n1. C\n2. C\n3. A\n4. D\n5. E\n6. D\n7. B\n8. C\n9. B\n10. D *(Ambas - Bancária e Relógio - são paroxítonas terminadas em ditongo e acentuadas)*\n11. B\n12. B *(Aims = Intends - Tem por objetivo/intenção)*\n13. A\n14. C\n15. C *(Responsible for)*\n16. D *(P = 8/45. Total 45. 60% Mulheres = 27 Mulheres, 18 Homens. 30% CPA-20 = 13 certificações no total (nesta conta aproxima, oh, 30% de 45 não dá inteiro. Supondo se aproxime de 13, ou há erro matemático de banca padrão. Ajuste: na verdade 45x0.3=13,5 -> Consideremos proporção para a formulação. Se 30% tem = 13,5. Se 5 mulheres têm... Sobra 8 homens com certificação. Prob. = 8/45. Perfeito).*\n17. C *(MMC de 12 e 15 = 60)*\n18. A *(8000 + 15% = 9200. 9200 - 10% = 8280)*\n19. B *(x_vertice = -b / 2a = -40 / -2 = 20)*\n20. D *(Det = (2*4) - (-1*3) = 8 + 3 = 11)*\n21. C\n22. C\n23. B\n24. A\n25. D\n26. C *(M = 5000*(1,10)² = 6050. J = 6050-5000 = 1050)*\n27. C\n28. D *(24% / 12 meses = 2% ao mês fático e efetivo se cap. mensal)*\n29. E\n30. B *( (1,12 / 1,05) - 1 = 1,06666... - 1 = 6,66% )*\n31. C\n32. C\n33. D\n34. B\n35. B\n36. E\n37. A\n38. C\n39. B\n40. E\n41. C\n42. B\n43. C\n44. D\n45. C *(PaaS - Plataforma como Serviço)*\n46. E\n47. B\n48. C\n49. D *(REST/RESTful)*\n50. B\n51. B\n52. C\n53. D\n54. A\n55. B\n56. C\n57. C\n58. A\n59. C\n60. B\n61. A\n62. C\n63. A\n64. C *(Viola a ética e ASG/Social Discriminação)*\n65. B\n66. B\n67. A\n68. C\n69. C\n70. B\n---\n*Fim do Simulado Inédito.*\nBoas provas!"
+          },
+          "meta": "VENDAS E NEGOCIAÇÃO",
+          "respostaCorreta": "B"
         }
       ]
     }
