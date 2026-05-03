@@ -597,7 +597,7 @@ export default function SimuladoPage() {
                 <div className="space-y-6 mb-12">
                   {(() => {
                     const parts = (q.texto || q.enunciado || "").split('\n\n');
-                    return parts.map((part: string, idx: number) => {
+                    return parts.map((part: any, idx: any) => {
                       const isLast = idx === parts.length - 1 && parts.length > 1;
                       return (
                         <p 
@@ -666,7 +666,7 @@ export default function SimuladoPage() {
               </h3>
               
               <div className="space-y-10">
-                {Array.from(new Set(questoesProcessadas.map(q => q.disciplina))).map((disciplina) => {
+                {Array.from(new Set(questoesProcessadas.map(q => q.disciplina))).map((disciplina: any) => {
                   const discQuestions = questoesProcessadas.filter(q => q.disciplina === disciplina);
                   const firstIdx = questoesProcessadas.findIndex(qp => qp === discQuestions[0]);
                   return (
@@ -681,7 +681,7 @@ export default function SimuladoPage() {
                     </button>
                     
                     <div className="space-y-2">
-                      {discQuestions.map((q) => {
+                      {discQuestions.map((q: any) => {
                         const idx = questoesProcessadas.findIndex(qp => qp === q);
                         return (
                           <div key={idx} className={`flex items-center justify-between p-2 rounded-xl transition-all ${currentQuestion === idx ? 'bg-blue-600/5 ring-1 ring-blue-500/20' : 'hover:bg-white/[0.02]'}`}>
@@ -743,7 +743,7 @@ export default function SimuladoPage() {
       "INFORMÁTICA": 1.5
     };
 
-    const stats = Array.from(new Set(questoesProcessadas.map(q => q.disciplina))).map(disciplina => {
+    const stats = Array.from(new Set(questoesProcessadas.map(q => q.disciplina))).map((disciplina: any) => {
       const qMat = questoesProcessadas.filter(q => q.disciplina === disciplina);
       const indices = qMat.map(q => questoesProcessadas.findIndex(qp => qp === q));
       const correct = indices.filter(idx => answers[idx] === questoesProcessadas[idx].respostaCorreta).length;
@@ -796,7 +796,7 @@ export default function SimuladoPage() {
             </div>
 
             <div className="space-y-0.5">
-              {stats.map((s, i) => (
+              {stats.map((s: any, i: number) => (
                 <div key={i} className="grid grid-cols-12 gap-2 items-center p-2 rounded-lg hover:bg-white/[0.02] transition-all border-b border-white/[0.02] last:border-0">
                   <div className="col-span-7 text-[13px] font-medium text-slate-400 leading-tight truncate">{s.disciplina}</div>
                   <div className="col-span-3 text-center text-sm font-mono font-bold text-slate-300">{s.acertos} / {s.total}</div>
@@ -839,7 +839,7 @@ export default function SimuladoPage() {
                 </div>
 
                 <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-                  {questoesProcessadas.map((q, idx) => {
+                  {questoesProcessadas.map((q: any, idx: number) => {
                     const isCorrect = answers[idx] === q.respostaCorreta;
                     if (reviewFilter === 'wrong' && isCorrect) return null;
 
@@ -851,7 +851,7 @@ export default function SimuladoPage() {
                         </div>
                         <p className="text-sm text-slate-300 leading-relaxed mb-6">{q.texto}</p>
                         <div className="space-y-3">
-                          {Object.entries(q.alternativas).map(([letter, text]) => {
+                          {Object.entries(q.alternativas).map(([letter, text]: any) => {
                             const isUserChoice = answers[idx] === letter;
                             const isCorrectAnswer = q.respostaCorreta === letter;
                             
