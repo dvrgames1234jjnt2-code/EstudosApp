@@ -28,6 +28,78 @@ import { AuthModal } from "../components/AuthModal";
 import { RankingModal } from "../components/RankingModal";
 import { DialogOverlay, initDialog, showAlert, showConfirm } from "../components/Dialog";
 
+const ANALYSIS_DATA: Record<string, {
+  subjects: { subject: string, q: number, p: number }[],
+  attention: string,
+  color: string
+}> = {
+  "Informática": {
+    color: "blue",
+    subjects: [
+      { subject: "Windows 10", q: 18, p: 8.87 },
+      { subject: "Protocolos de Redes", q: 12, p: 5.91 },
+      { subject: "Mozilla Firefox", q: 11, p: 5.42 },
+      { subject: "Linux / Unix", q: 10, p: 4.93 },
+      { subject: "Ameaças (Vírus, Worms, Trojans)", q: 9, p: 4.43 },
+      { subject: "Excel 2019", q: 9, p: 4.43 },
+      { subject: "Segurança da Informação", q: 6, p: 2.96 },
+      { subject: "Sistemas Operacionais", q: 6, p: 2.96 },
+      { subject: "Conceitos de Internet", q: 6, p: 2.96 },
+      { subject: "Word 2019 / 2013", q: 12, p: 5.92 },
+      { subject: "Computação em Nuvem", q: 6, p: 2.96 },
+    ],
+    attention: "Windows 10 e Protocolos representam ~15% da prova. Foco total."
+  },
+  "Vendas": {
+    color: "emerald",
+    subjects: [
+      { subject: "Marketing (4 P's, Digital, Relacionamento)", q: 40, p: 19.05 },
+      { subject: "Técnicas de Vendas (Setor Bancário)", q: 26, p: 12.38 },
+      { subject: "Gestão da Qualidade nos Serviços", q: 16, p: 7.62 },
+      { subject: "Estratégia Empresarial", q: 13, p: 6.19 },
+      { subject: "Satisfação e Retenção de Clientes", q: 12, p: 5.71 },
+      { subject: "Etiqueta Empresarial", q: 6, p: 2.86 },
+      { subject: "Resolução CMN nº 4.860/2020", q: 6, p: 2.86 },
+      { subject: "Vendas Remotas e Telemarketing", q: 5, p: 2.38 },
+      { subject: "Imaterialidade e Variabilidade", q: 5, p: 2.38 },
+      { subject: "Igualdade e Não Discriminação", q: 5, p: 2.38 },
+    ],
+    attention: "Marketing e Técnicas de Vendas dominam mais de 30% do conteúdo."
+  },
+  "Financeira": {
+    color: "purple",
+    subjects: [
+      { subject: "Juros Compostos", q: 30, p: 28.85 },
+      { subject: "Juros Simples", q: 15, p: 14.42 },
+      { subject: "Sistema de Amortização Constante (SAC)", q: 11, p: 10.58 },
+      { subject: "Taxas Efetivas e Nominais", q: 10, p: 9.62 },
+      { subject: "Equivalência de Capitais", q: 8, p: 7.69 },
+      { subject: "Sistema Francês (Price)", q: 8, p: 7.69 },
+      { subject: "Inflação e Juros Reais", q: 3, p: 2.88 },
+      { subject: "Série de Pagamentos (Valor Atual)", q: 3, p: 2.88 },
+      { subject: "Conceitos Iniciais (Capital, Montante)", q: 3, p: 2.88 },
+      { subject: "Desconto Racional Composto", q: 2, p: 1.92 },
+    ],
+    attention: "Juros Compostos e Simples sozinhos somam 43% da prova de exatas."
+  },
+  "Bancários": {
+    color: "orange",
+    subjects: [
+      { subject: "Mercado Cambial", q: 37, p: 11.53 },
+      { subject: "Outros Serviços e Produtos Financeiros", q: 13, p: 4.05 },
+      { subject: "BACEN (Banco Central)", q: 12, p: 3.74 },
+      { subject: "Blockchain, Bitcoin e Criptomoedas", q: 12, p: 3.74 },
+      { subject: "Bancos Comerciais", q: 11, p: 3.43 },
+      { subject: "Operações de Crédito", q: 10, p: 3.12 },
+      { subject: "Mercado Monetário", q: 10, p: 3.12 },
+      { subject: "Fintechs, Startups e Big Techs", q: 10, p: 3.12 },
+      { subject: "Bancos na Era Digital", q: 10, p: 3.12 },
+      { subject: "CVM e Crédito Rural", q: 16, p: 4.98 },
+    ],
+    attention: "Mercado Cambial é disparado o tema mais frequente nesta disciplina."
+  }
+};
+
 export default function Home() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
@@ -43,6 +115,7 @@ export default function Home() {
   });
   const [filter, setFilter] = useState("Tudo");
   const [activeView, setActiveView] = useState<"simulados" | "analises">("simulados");
+  const [activeSubject, setActiveSubject] = useState("Informática");
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminJson, setAdminJson] = useState("");
   const [isImporting, setIsImporting] = useState(false);
@@ -450,60 +523,76 @@ export default function Home() {
               </div>
 
               <div className="flex items-center gap-4 overflow-x-auto pb-4 no-scrollbar">
-                <button className="px-6 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-900/20 whitespace-nowrap">Informática</button>
-                <button className="px-6 py-3 bg-white/[0.03] border border-white/5 text-slate-500 rounded-xl text-xs font-black uppercase tracking-widest whitespace-nowrap cursor-not-allowed opacity-50">Conhecimentos Bancários (Em breve)</button>
+                {Object.keys(ANALYSIS_DATA).map((subj) => (
+                  <button 
+                    key={subj}
+                    onClick={() => setActiveSubject(subj)}
+                    className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg ${
+                      activeSubject === subj 
+                        ? (subj === 'Informática' ? 'bg-blue-600 shadow-blue-900/20' : 
+                           subj === 'Vendas' ? 'bg-emerald-600 shadow-emerald-900/20' :
+                           subj === 'Financeira' ? 'bg-purple-600 shadow-purple-900/20' :
+                           'bg-orange-600 shadow-orange-900/20') + ' text-white'
+                        : 'bg-white/[0.03] border border-white/5 text-slate-500 hover:bg-white/10'
+                    } whitespace-nowrap`}
+                  >
+                    {subj === 'Vendas' ? 'Vendas e Negociação' : subj === 'Financeira' ? 'Mat. Financeira' : subj}
+                  </button>
+                ))}
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  {[
-                    { subject: "Windows 10", q: 18, p: 8.87 },
-                    { subject: "Protocolos de Redes", q: 12, p: 5.91 },
-                    { subject: "Mozilla Firefox", q: 11, p: 5.42 },
-                    { subject: "Linux / Unix", q: 10, p: 4.93 },
-                    { subject: "Ameaças (Vírus, Worms, Trojans)", q: 9, p: 4.43 },
-                    { subject: "Excel 2019", q: 9, p: 4.43 },
-                  ].map((item, idx) => (
+                  {ANALYSIS_DATA[activeSubject].subjects.slice(0, 6).map((item, idx) => (
                     <motion.div key={idx} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }} className="p-5 bg-[#0B1224]/60 border border-white/5 rounded-3xl group hover:border-blue-500/30 transition-all">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black ${idx === 0 ? 'bg-yellow-500 text-black' : 'bg-white/5 text-slate-500'}`}>#{idx + 1}</div>
-                          <span className="text-sm font-bold text-slate-200 group-hover:text-blue-400 transition-colors">{item.subject}</span>
+                          <span className="text-sm font-bold text-slate-200 group-hover:text-blue-400 transition-colors truncate max-w-[200px] sm:max-w-none">{item.subject}</span>
                         </div>
                         <span className="text-xs font-black text-blue-500">{item.p}%</span>
                       </div>
                       <div className="relative h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${(item.p / 9) * 100}%` }} transition={{ duration: 1, delay: 0.5 }} className={`absolute top-0 left-0 h-full rounded-full ${idx === 0 ? 'bg-yellow-500' : 'bg-blue-600'}`} />
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${(item.p / (ANALYSIS_DATA[activeSubject].subjects[0].p * 1.2)) * 100}%` }} transition={{ duration: 1, delay: 0.5 }} className={`absolute top-0 left-0 h-full rounded-full ${idx === 0 ? 'bg-yellow-500' : 'bg-blue-600'}`} />
                       </div>
                       <div className="mt-2"><span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">{item.q} Questões Mapeadas</span></div>
                     </motion.div>
                   ))}
                 </div>
                 <div className="space-y-4">
-                  {[
-                    { subject: "Segurança da Informação", q: 6, p: 2.96 },
-                    { subject: "Sistemas Operacionais", q: 6, p: 2.96 },
-                    { subject: "Conceitos de Internet", q: 6, p: 2.96 },
-                    { subject: "Word 2019 / 2013", q: 12, p: 5.92 },
-                    { subject: "Computação em Nuvem", q: 6, p: 2.96 },
-                  ].map((item, idx) => (
+                  {ANALYSIS_DATA[activeSubject].subjects.slice(6).map((item, idx) => (
                     <motion.div key={idx + 6} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: (idx + 6) * 0.05 }} className="p-5 bg-[#0B1224]/40 border border-white/5 rounded-3xl group hover:border-slate-500/30 transition-all">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-xs font-black text-slate-500">#{idx + 7}</div>
-                          <span className="text-sm font-bold text-slate-400 group-hover:text-white transition-colors">{item.subject}</span>
+                          <span className="text-sm font-bold text-slate-400 group-hover:text-white transition-colors truncate max-w-[200px] sm:max-w-none">{item.subject}</span>
                         </div>
                         <span className="text-xs font-black text-slate-500">{item.p}%</span>
                       </div>
                       <div className="relative h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${(item.p / 9) * 100}%` }} transition={{ duration: 1, delay: 0.5 }} className="absolute top-0 left-0 h-full bg-slate-700 rounded-full" />
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${(item.p / (ANALYSIS_DATA[activeSubject].subjects[0].p * 1.2)) * 100}%` }} transition={{ duration: 1, delay: 0.5 }} className="absolute top-0 left-0 h-full bg-slate-700 rounded-full" />
                       </div>
                       <div className="mt-2"><span className="text-[9px] font-black text-slate-700 uppercase tracking-widest">{item.q} Questões Mapeadas</span></div>
                     </motion.div>
                   ))}
-                  <div className="p-8 bg-blue-600/5 border border-blue-500/20 rounded-[32px] flex flex-col items-center text-center gap-4">
-                    <div className="w-12 h-12 bg-blue-600/20 rounded-2xl flex items-center justify-center"><Flame className="w-6 h-6 text-blue-500 animate-pulse" /></div>
-                    <div><h4 className="text-sm font-black text-white uppercase tracking-widest italic">Ponto de Atenção</h4><p className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-widest">Windows 10 e Protocolos representam ~15% da prova. Foco total.</p></div>
+                  <div className={`p-8 rounded-[32px] flex flex-col items-center text-center gap-4 ${
+                    activeSubject === 'Informática' ? 'bg-blue-600/5 border-blue-500/20' :
+                    activeSubject === 'Vendas' ? 'bg-emerald-600/5 border-emerald-500/20' :
+                    activeSubject === 'Financeira' ? 'bg-purple-600/5 border-purple-500/20' :
+                    'bg-orange-600/5 border-orange-500/20'
+                  }`}>
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                      activeSubject === 'Informática' ? 'bg-blue-600/20' :
+                      activeSubject === 'Vendas' ? 'bg-emerald-600/20' :
+                      activeSubject === 'Financeira' ? 'bg-purple-600/20' :
+                      'bg-orange-600/20'
+                    }`}><Flame className={`w-6 h-6 animate-pulse ${
+                      activeSubject === 'Informática' ? 'text-blue-500' :
+                      activeSubject === 'Vendas' ? 'text-emerald-500' :
+                      activeSubject === 'Financeira' ? 'text-purple-500' :
+                      'text-orange-500'
+                    }`} /></div>
+                    <div><h4 className="text-sm font-black text-white uppercase tracking-widest italic">Ponto de Atenção</h4><p className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-widest">{ANALYSIS_DATA[activeSubject].attention}</p></div>
                   </div>
                 </div>
               </div>
