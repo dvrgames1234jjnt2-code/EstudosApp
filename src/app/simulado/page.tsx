@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BookOpen, ChevronRight, GraduationCap, Clock, CheckCircle2, User, LogOut, Mail, KeyRound, Loader2, Lock, X, ShieldCheck, Timer, AlertCircle, Bookmark, ArrowLeft, History, Trophy, Target, Zap, Shield, Activity, Edit2, Check, Scissors } from "lucide-react";
+import { BookOpen, ChevronRight, GraduationCap, Clock, CheckCircle2, User, LogOut, Mail, KeyRound, Loader2, Lock, X, ShieldCheck, Timer, AlertCircle, Bookmark, ArrowLeft, History, Trophy, Target, Zap, Shield, Activity, Edit2, Check, Scissors, FileText } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import simuladoData from "../../data/simulado.json";
@@ -591,6 +591,29 @@ function SimuladoContent() {
                 <div className="flex items-center gap-3 mb-10">
                   <span className="text-[10px] font-black text-blue-500/60 uppercase tracking-[0.2em]">{q.disciplina}</span>
                 </div>
+
+                {q.texto_apoio && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-12 p-6 sm:p-10 bg-white/[0.02] border-l-4 border-blue-600/30 rounded-r-[32px] space-y-6 relative overflow-hidden group"
+                  >
+                    <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
+                      <FileText className="w-24 h-24" />
+                    </div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 bg-blue-600/10 rounded-lg flex items-center justify-center">
+                        <FileText className="w-4 h-4 text-blue-500" />
+                      </div>
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Texto de Apoio</span>
+                    </div>
+                    <div className="space-y-4">
+                      {q.texto_apoio.split('\n\n').map((part: string, idx: number) => (
+                        <p key={idx} className="text-sm sm:text-base leading-relaxed text-slate-400 italic font-medium selection:bg-blue-500/30" dangerouslySetInnerHTML={{ __html: part }} />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
                 
                 <div className="space-y-6 mb-12">
                   {(() => {
