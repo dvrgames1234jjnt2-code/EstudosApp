@@ -1055,7 +1055,7 @@ function SimuladoContent() {
                     </div>
                     <div className="flex p-1 bg-white/[0.02] border border-white/5 rounded-xl mb-6">
                       <button onClick={() => {setAuthMode('password'); setAuthStep('input');}} className={`flex-1 py-2 text-[8px] font-black uppercase tracking-widest rounded-lg transition-all ${authMode==='password' ? 'bg-blue-600 text-white' : 'text-slate-500'}`}>Senha</button>
-                      <button onClick={() => {setAuthMode('otp'); setAuthStep('input');}} className={`flex-1 py-2 text-[8px] font-black uppercase tracking-widest rounded-lg transition-all ${authMode==='otp' ? 'bg-blue-600 text-white' : 'text-slate-500'}`}>Código</button>
+                      <button onClick={() => {setAuthMode('otp'); setAuthStep('input'); setIsSignUp(false);}} className={`flex-1 py-2 text-[8px] font-black uppercase tracking-widest rounded-lg transition-all ${authMode==='otp' ? 'bg-blue-600 text-white' : 'text-slate-500'}`}>Código</button>
                     </div>
                     {authError && <p className="text-[10px] text-red-500 font-bold mb-4 text-center">{authError}</p>}
                     <form onSubmit={handleAuth} className="space-y-3">
@@ -1063,18 +1063,20 @@ function SimuladoContent() {
                         <label className="text-[8px] font-black text-slate-700 uppercase tracking-widest ml-1">E-mail</label>
                         <input type="email" placeholder="nome@exemplo.com" required value={authEmail} onChange={(e)=>setAuthEmail(e.target.value)} className="w-full bg-white/[0.02] border border-white/10 rounded-xl py-3.5 px-4 text-sm outline-none focus:border-blue-600/50 transition-all"/>
                       </div>
-                      {authMode === 'password' && (
+                      {authMode === 'password' || isSignUp ? (
                         <div className="space-y-1">
                           <label className="text-[8px] font-black text-slate-700 uppercase tracking-widest ml-1">Senha</label>
                           <input type="password" placeholder="••••••••" required value={authPassword} onChange={(e)=>setAuthPassword(e.target.value)} className="w-full bg-white/[0.02] border border-white/10 rounded-xl py-3.5 px-4 text-sm outline-none focus:border-blue-600/50 transition-all"/>
                         </div>
-                      )}
+                      ) : null}
                       <button type="submit" disabled={authLoading} className="w-full py-4 bg-gradient-to-r from-blue-700 to-blue-600 text-white rounded-xl font-black uppercase tracking-widest text-[9px] shadow-xl shadow-blue-900/30 active:scale-[0.98] flex items-center justify-center">
-                        {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (isSignUp ? 'Cadastrar' : 'Entrar Agora')}
+                        {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (isSignUp ? 'Finalizar Cadastro' : 'Entrar Agora')}
                       </button>
-                      <button type="button" onClick={() => setIsSignUp(!isSignUp)} className="w-full text-[8px] font-black text-slate-600 uppercase tracking-widest mt-4 hover:text-slate-400 transition-colors">
-                        {isSignUp ? 'Já tenho uma conta' : 'Criar nova conta'}
-                      </button>
+                      {authMode === 'password' && (
+                        <button type="button" onClick={() => setIsSignUp(!isSignUp)} className="w-full text-[8px] font-black text-slate-600 uppercase tracking-widest mt-4 hover:text-slate-400 transition-colors">
+                          {isSignUp ? 'Já tenho uma conta' : 'Criar nova conta'}
+                        </button>
+                      )}
                     </form>
                   </motion.div>
                 )}
