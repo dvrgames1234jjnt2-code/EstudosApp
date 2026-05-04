@@ -360,7 +360,8 @@ export default function Home() {
   };
 
   const handleAuthSuccess = async (email: string, password?: string, mode?: 'password' | 'otp', isSignUp?: boolean) => {
-    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
+    // Pega a URL base (sem barras extras no final para não dar erro de match no Supabase)
+    const redirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
 
     if (isSignUp) {
       return await supabase.auth.signUp({ 

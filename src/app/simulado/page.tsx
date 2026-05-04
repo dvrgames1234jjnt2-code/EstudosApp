@@ -95,7 +95,7 @@ function SimuladoContent() {
     setAuthLoading(true);
     setAuthError("");
     
-    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/simulado` : undefined;
+    const redirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
 
     try {
       if (isSignUp) {
