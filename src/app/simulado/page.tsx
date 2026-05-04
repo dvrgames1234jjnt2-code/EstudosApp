@@ -85,9 +85,52 @@ function SimuladoContent() {
   const [authStep, setAuthStep] = useState<'input' | 'verify_otp' | 'success'>('input');
   const [isSignUp, setIsSignUp] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
   const [dialogState, setDialogState] = useState<any>({ open: false, type: 'info' });
 
   useEffect(() => { initDialog(setDialogState); }, []);
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError("");
+    
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/simulado` : undefined;
+
+    try {
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({
+          email: authEmail,
+          password: authPassword,
+          options: {
+            data: { display_name: authEmail.split('@')[0] },
+            emailRedirectTo: redirectTo
+          }
+        });
+        if (error) throw error;
+        setAuthStep('success');
+      } else if (authMode === 'otp') {
+        const { error } = await supabase.auth.signInWithOtp({
+          email: authEmail,
+          options: { emailRedirectTo: redirectTo }
+        });
+        if (error) throw error;
+        setAuthStep('success');
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: authEmail,
+          password: authPassword
+        });
+        if (error) throw error;
+        setShowAuthModal(false);
+        window.location.reload();
+      }
+    } catch (err: any) {
+      setAuthError(err.message || "Erro ao autenticar");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
   
   const formatMarkdown = (text: string) => {
     if (!text) return "";
@@ -1014,10 +1057,8 @@ function SimuladoContent() {
                       <button onClick={() => {setAuthMode('password'); setAuthStep('input');}} className={`flex-1 py-2 text-[8px] font-black uppercase tracking-widest rounded-lg transition-all ${authMode==='password' ? 'bg-blue-600 text-white' : 'text-slate-500'}`}>Senha</button>
                       <button onClick={() => {setAuthMode('otp'); setAuthStep('input');}} className={`flex-1 py-2 text-[8px] font-black uppercase tracking-widest rounded-lg transition-all ${authMode==='otp' ? 'bg-blue-600 text-white' : 'text-slate-500'}`}>Código</button>
                     </div>
-                    <form onSubmit={(e) => {
-                      e.preventDefault();
-                      setAuthStep('success');
-                    }} className="space-y-3">
+                    {authError && <p className="text-[10px] text-red-500 font-bold mb-4 text-center">{authError}</p>}
+                    <form onSubmit={handleAuth} className="space-y-3">
                       <div className="space-y-1">
                         <label className="text-[8px] font-black text-slate-700 uppercase tracking-widest ml-1">E-mail</label>
                         <input type="email" placeholder="nome@exemplo.com" required value={authEmail} onChange={(e)=>setAuthEmail(e.target.value)} className="w-full bg-white/[0.02] border border-white/10 rounded-xl py-3.5 px-4 text-sm outline-none focus:border-blue-600/50 transition-all"/>
@@ -1030,6 +1071,9 @@ function SimuladoContent() {
                       )}
                       <button type="submit" disabled={authLoading} className="w-full py-4 bg-gradient-to-r from-blue-700 to-blue-600 text-white rounded-xl font-black uppercase tracking-widest text-[9px] shadow-xl shadow-blue-900/30 active:scale-[0.98] flex items-center justify-center">
                         {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (isSignUp ? 'Cadastrar' : 'Entrar Agora')}
+                      </button>
+                      <button type="button" onClick={() => setIsSignUp(!isSignUp)} className="w-full text-[8px] font-black text-slate-600 uppercase tracking-widest mt-4 hover:text-slate-400 transition-colors">
+                        {isSignUp ? 'Já tenho uma conta' : 'Criar nova conta'}
                       </button>
                     </form>
                   </motion.div>

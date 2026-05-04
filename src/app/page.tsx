@@ -360,6 +360,8 @@ export default function Home() {
   };
 
   const handleAuthSuccess = async (email: string, password?: string, mode?: 'password' | 'otp', isSignUp?: boolean) => {
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
+
     if (isSignUp) {
       return await supabase.auth.signUp({ 
         email, 
@@ -367,13 +369,19 @@ export default function Home() {
         options: {
           data: {
             display_name: email.split('@')[0]
-          }
+          },
+          emailRedirectTo: redirectTo
         }
       });
     }
 
     if (mode === 'otp') {
-      return await supabase.auth.signInWithOtp({ email });
+      return await supabase.auth.signInWithOtp({ 
+        email,
+        options: {
+          emailRedirectTo: redirectTo
+        }
+      });
     } else {
       return await supabase.auth.signInWithPassword({ email, password: password || "" });
     }
@@ -553,7 +561,7 @@ export default function Home() {
                               <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-1">
                                 <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider"><CheckCircle2 className="w-3.5 h-3.5 text-blue-500/50" /><span>{qCount} Questões</span></div>
                                 <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider"><Clock className="w-3.5 h-3.5 text-blue-500/50" /><span>{Math.floor(sim.duracao_minutos / 60)}h {sim.duracao_minutos % 60}m</span></div>
-                                {sim.autor && <div className="flex items-center gap-2 text-xs font-bold text-blue-500/40 uppercase tracking-wider truncate max-w-[150px]"><User className="w-3.5 h-3.5" /><span>{sim.autor}</span></div>}
+                                {sim.autor && <div className="flex items-center gap-2 text-xs font-bold text-blue-500/40 uppercase tracking-wider"><User className="w-3.5 h-3.5" /><span>{sim.autor}</span></div>}
                               </div>
                             </div>
                          </div>
