@@ -667,8 +667,6 @@ function SimuladoContent() {
         <div className="flex-1 flex overflow-hidden relative">
            <div className="flex-1 overflow-y-auto p-6 pb-48 sm:p-16 bg-white/[0.01] custom-scrollbar">
               <div className="max-w-3xl mx-auto relative">
-                {/* Drawing overlay */}
-                <DrawOverlay questionKey={currentQuestion} />
 
                 <div className="flex items-center gap-3 mb-10">
                   <span className="text-[10px] font-black text-blue-500/60 uppercase tracking-[0.2em]">{q.disciplina}</span>
@@ -764,6 +762,7 @@ function SimuladoContent() {
                    })}
                 </div>
 
+                <DrawOverlay questionKey={currentQuestion} />
                 <div className="flex flex-col sm:flex-row items-center justify-between mt-20 pt-10 border-t border-white/[0.05] gap-8 sm:gap-0">
                     <button disabled={currentQuestion === 0} onClick={() => setCurrentQuestion(curr => curr - 1)} className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-white/[0.02] sm:bg-transparent border border-white/5 sm:border-0 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white disabled:opacity-0 transition-all active:scale-95"><ArrowLeft className="w-4 h-4" /> Anterior</button>
                     <div className="text-[10px] font-black text-slate-700 uppercase tracking-[0.3em] order-first sm:order-none">Questão {currentQuestion + 1} de {totalQuestions}</div>
