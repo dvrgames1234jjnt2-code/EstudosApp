@@ -99,12 +99,14 @@ export function DrawOverlay({ questionKey }: Props) {
     } else if (s.tool === "laser") {
       ctx.globalCompositeOperation = "source-over";
       
+      const currentOpacity = s.opacity ?? 1;
+
       // 1. Camada de Brilho (Glow)
-      ctx.shadowBlur = 15;
+      ctx.shadowBlur = 15 * currentOpacity;
       ctx.shadowColor = s.color;
       ctx.strokeStyle = s.color;
       ctx.lineWidth = s.width * 1.5;
-      ctx.globalAlpha = 0.6;
+      ctx.globalAlpha = 0.6 * currentOpacity;
       
       ctx.beginPath();
       ctx.moveTo(s.points[0].x, s.points[0].y);
@@ -117,11 +119,11 @@ export function DrawOverlay({ questionKey }: Props) {
       }
       ctx.stroke();
 
-      // 2. Camada de Núcleo (Core - Branco/Brilhante)
+      // 2. Camada de Núcleo (Core)
       ctx.shadowBlur = 0;
       ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = s.width * 0.5;
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = 1 * currentOpacity;
       
       ctx.beginPath();
       ctx.moveTo(s.points[0].x, s.points[0].y);
@@ -135,7 +137,7 @@ export function DrawOverlay({ questionKey }: Props) {
       ctx.stroke();
     } else {
       ctx.globalCompositeOperation = "source-over";
-      ctx.globalAlpha = s.opacity;
+      ctx.globalAlpha = s.opacity ?? 1;
       ctx.strokeStyle = s.color;
       ctx.lineWidth = s.width;
       
@@ -173,6 +175,7 @@ export function DrawOverlay({ questionKey }: Props) {
       width: cfg.width,
       opacity: cfg.opacity,
       points: [pos],
+      timestamp: tool === "laser" ? Date.now() : undefined
     };
   };
 
@@ -197,25 +200,43 @@ export function DrawOverlay({ questionKey }: Props) {
     
     if (currentStroke.current.points.length > 1) {
       const stroke = { ...currentStroke.current };
-      const id = Math.random().toString(36).substr(2, 9);
       
       setAllStrokes((prev) => ({
         ...prev,
         [questionKey]: [...(prev[questionKey] || []), stroke]
       }));
-
-      // If it's a laser, remove it after 2 seconds
-      if (stroke.tool === "laser") {
-        setTimeout(() => {
-          setAllStrokes(prev => ({
-            ...prev,
-            [questionKey]: (prev[questionKey] || []).filter(s => s !== stroke)
-          }));
-        }, 2000);
-      }
     }
     currentStroke.current = null;
   };
+
+  // Timer para efeito de "desfazer" do laser (fade-out gradual)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = Date.now();
+      
+      setAllStrokes(prev => {
+        const currentList = prev[questionKey] || [];
+        if (!currentList.some(s => s.tool === 'laser')) return prev;
+        
+        const newList = currentList.map(s => {
+          if (s.tool === 'laser') {
+            const age = now - (s.timestamp || 0);
+            if (age > 500) {
+              const factor = Math.max(0, 1 - (age - 500) / 1000);
+              return { ...s, opacity: factor };
+            }
+          }
+          return s;
+        }).filter(s => {
+          if (s.tool === 'laser') return (s.opacity ?? 1) > 0.05;
+          return true;
+        });
+
+        return { ...prev, [questionKey]: newList };
+      });
+    }, 50);
+    return () => clearInterval(timer);
+  }, [questionKey]);
 
   const clearAll = () => setAllStrokes(prev => ({ ...prev, [questionKey]: [] }));
 
