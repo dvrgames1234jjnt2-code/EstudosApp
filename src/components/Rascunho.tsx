@@ -14,7 +14,7 @@ export function Rascunho() {
 
   useEffect(() => {
     if (open && !Tldraw) {
-      import("tldraw").then((mod) => {
+      import("tldraw").then((mod: any) => {
         // Tenta pegar o export default ou o export nomeado Tldraw
         const Component = mod.Tldraw || mod.default;
         if (Component) {
