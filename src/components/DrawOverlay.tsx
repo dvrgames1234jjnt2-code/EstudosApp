@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState, useCallback } from "react";
-import { Pencil, Eraser, Highlighter, Trash2 } from "lucide-react";
+import { Pencil, Eraser, Highlighter, Trash2, Zap } from "lucide-react";
 
 /* ─── Types ──────────────────────────────────── */
 type Tool = "pen" | "marker" | "eraser" | "laser";
@@ -20,6 +20,7 @@ const TOOLS: { id: Tool; label: string; icon: React.ElementType; width: number; 
   { id: "pen",     label: "Caneta", icon: Pencil,      width: 2,  opacity: 1    },
   { id: "marker",  label: "Marca-texto", icon: Highlighter, width: 14, opacity: 0.4 },
   { id: "eraser",  label: "Borracha", icon: Eraser,      width: 24, opacity: 1    },
+  { id: "laser",   label: "Laser", icon: Zap,      width: 4,  opacity: 1    },
 ];
 
 const COLORS = ["#ef4444", "#3b82f6", "#22c55e", "#f59e0b", "#a855f7", "#ffffff"];
@@ -175,7 +176,7 @@ export function DrawOverlay({ questionKey }: Props) {
   const clearAll = () => setAllStrokes(prev => ({ ...prev, [questionKey]: [] }));
 
   return (
-    <div className="absolute inset-0 pointer-events-none z-10">
+    <div className="absolute inset-0 pointer-events-none z-[80]">
       {/* Canvas — only pointer-events when active */}
       <canvas
         ref={canvasRef}
@@ -190,10 +191,7 @@ export function DrawOverlay({ questionKey }: Props) {
       <div className="pointer-events-auto fixed lg:absolute bottom-6 left-1/2 -translate-x-1/2 lg:translate-x-0 lg:bottom-auto lg:top-0 lg:right-0 flex items-center gap-1.5 p-2 bg-[#0B1220]/90 backdrop-blur-xl border border-white/[0.08] rounded-2xl shadow-2xl z-[70] max-w-[95vw] overflow-x-auto no-scrollbar">
         {/* Tools */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {[
-            ...TOOLS,
-            { id: "laser" as Tool, label: "Laser", icon: Highlighter, width: 4, opacity: 1 }
-          ].map((t) => {
+          {TOOLS.map((t) => {
             const Icon = t.icon;
             const isActive = active && tool === t.id;
             return (

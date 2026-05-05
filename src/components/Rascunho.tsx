@@ -47,10 +47,12 @@ export function Rascunho() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.96 }}
             transition={{ type: "spring", bounce: 0.18, duration: 0.4 }}
-            className={`fixed z-[199] shadow-2xl rounded-[24px] overflow-hidden border border-white/10 flex flex-col ${
+            className={`fixed z-[199] shadow-2xl overflow-hidden border-l border-white/10 flex flex-col top-0 right-0 h-full transition-all duration-300 ${
+              open ? "translate-x-0" : "translate-x-full"
+            } ${
               maximized
-                ? "inset-6"
-                : "bottom-24 right-6 w-[520px] h-[380px]"
+                ? "w-full"
+                : "w-[450px] sm:w-[600px]"
             }`}
             style={{ background: "#1a1a1a" }}
           >
