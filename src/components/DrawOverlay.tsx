@@ -79,34 +79,78 @@ export function DrawOverlay({ questionKey }: Props) {
   function renderStroke(ctx: CanvasRenderingContext2D, s: Stroke) {
     if (s.points.length < 2) return;
     ctx.save();
-    ctx.globalAlpha = s.opacity;
-    ctx.strokeStyle = s.tool === "eraser" ? "rgba(0,0,0,0)" : s.color;
-    ctx.lineWidth = s.width;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
     if (s.tool === "eraser") {
       ctx.globalCompositeOperation = "destination-out";
       ctx.globalAlpha = 1;
+      ctx.lineWidth = s.width;
+      ctx.beginPath();
+      ctx.moveTo(s.points[0].x, s.points[0].y);
+      for (let i = 1; i < s.points.length; i++) {
+        const prev = s.points[i - 1];
+        const curr = s.points[i];
+        const mx = (prev.x + curr.x) / 2;
+        const my = (prev.y + curr.y) / 2;
+        ctx.quadraticCurveTo(prev.x, prev.y, mx, my);
+      }
+      ctx.stroke();
     } else if (s.tool === "laser") {
       ctx.globalCompositeOperation = "source-over";
-      ctx.shadowBlur = 10;
+      
+      // 1. Camada de Brilho (Glow)
+      ctx.shadowBlur = 15;
       ctx.shadowColor = s.color;
       ctx.strokeStyle = s.color;
+      ctx.lineWidth = s.width * 1.5;
+      ctx.globalAlpha = 0.6;
+      
+      ctx.beginPath();
+      ctx.moveTo(s.points[0].x, s.points[0].y);
+      for (let i = 1; i < s.points.length; i++) {
+        const prev = s.points[i - 1];
+        const curr = s.points[i];
+        const mx = (prev.x + curr.x) / 2;
+        const my = (prev.y + curr.y) / 2;
+        ctx.quadraticCurveTo(prev.x, prev.y, mx, my);
+      }
+      ctx.stroke();
+
+      // 2. Camada de Núcleo (Core - Branco/Brilhante)
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = s.width * 0.5;
+      ctx.globalAlpha = 1;
+      
+      ctx.beginPath();
+      ctx.moveTo(s.points[0].x, s.points[0].y);
+      for (let i = 1; i < s.points.length; i++) {
+        const prev = s.points[i - 1];
+        const curr = s.points[i];
+        const mx = (prev.x + curr.x) / 2;
+        const my = (prev.y + curr.y) / 2;
+        ctx.quadraticCurveTo(prev.x, prev.y, mx, my);
+      }
+      ctx.stroke();
     } else {
       ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = s.opacity;
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = s.width;
+      
+      ctx.beginPath();
+      ctx.moveTo(s.points[0].x, s.points[0].y);
+      for (let i = 1; i < s.points.length; i++) {
+        const prev = s.points[i - 1];
+        const curr = s.points[i];
+        const mx = (prev.x + curr.x) / 2;
+        const my = (prev.y + curr.y) / 2;
+        ctx.quadraticCurveTo(prev.x, prev.y, mx, my);
+      }
+      ctx.stroke();
     }
-
-    ctx.beginPath();
-    ctx.moveTo(s.points[0].x, s.points[0].y);
-    for (let i = 1; i < s.points.length; i++) {
-      const prev = s.points[i - 1];
-      const curr = s.points[i];
-      const mx = (prev.x + curr.x) / 2;
-      const my = (prev.y + curr.y) / 2;
-      ctx.quadraticCurveTo(prev.x, prev.y, mx, my);
-    }
-    ctx.stroke();
+    
     ctx.restore();
   }
 

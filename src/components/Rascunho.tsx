@@ -13,15 +13,18 @@ export function Rascunho() {
   const [Tldraw, setTldraw] = useState<any>(null);
 
   useEffect(() => {
-    if (open && !TldrawComponent) {
+    if (open && !Tldraw) {
       import("tldraw").then((mod) => {
-        TldrawComponent = mod.Tldraw;
-        setTldraw(() => mod.Tldraw);
+        // Tenta pegar o export default ou o export nomeado Tldraw
+        const Component = mod.Tldraw || mod.default;
+        if (Component) {
+          setTldraw(() => Component);
+        }
+      }).catch(err => {
+        console.error("Erro ao carregar Tldraw:", err);
       });
-    } else if (open && TldrawComponent) {
-      setTldraw(() => TldrawComponent);
     }
-  }, [open]);
+  }, [open, Tldraw]);
 
   return (
     <>
