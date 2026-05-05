@@ -13,6 +13,7 @@ interface Stroke {
   width: number;
   opacity: number;
   points: Point[];
+  timestamp?: number;
 }
 
 /* ─── Tool config ────────────────────────────── */
