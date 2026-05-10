@@ -13,56 +13,56 @@ import { DrawOverlay } from "../../components/DrawOverlay";
 // --- Components ---
 const AlternativeItem = ({ id, text, isSelected, onClick, isStrikethrough, onToggleStrikethrough, showFeedback, isCorrectAnswer }: any) => {
   let feedbackStyle = "";
+  let radioColor = "border-slate-700";
+  
   if (showFeedback) {
     if (isCorrectAnswer) {
-      feedbackStyle = "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]";
+      feedbackStyle = "bg-emerald-500/5 border-emerald-500/20 text-emerald-400";
+      radioColor = "border-emerald-500 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]";
     } else if (isSelected) {
-      feedbackStyle = "bg-red-500/10 border-red-500/30 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.1)]";
+      feedbackStyle = "bg-red-500/5 border-red-500/20 text-red-400";
+      radioColor = "border-red-500 bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]";
     }
+  } else if (isSelected) {
+    radioColor = "border-blue-500 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]";
   }
 
   return (
-    <div className="flex items-start group transition-all duration-300 hover:-translate-y-0.5">
+    <div className="flex items-start group transition-all duration-300">
       <button 
         onClick={(e) => { e.stopPropagation(); onToggleStrikethrough(); }} 
-        className={`mt-4 mr-3 w-8 h-8 flex items-center justify-center transition-all ${
-          isStrikethrough ? 'opacity-100 text-red-500/50' : 'opacity-0 group-hover:opacity-40 text-slate-400 hover:text-red-500/50'
+        className={`mt-4 mr-1 w-8 h-8 flex items-center justify-center transition-all ${
+          isStrikethrough ? 'opacity-100 text-red-500/50' : 'opacity-0 group-hover:opacity-40 text-slate-600 hover:text-red-500/50'
         }`}
         title="Eliminar alternativa"
         disabled={showFeedback}
       >
-        <Scissors className="w-4 h-4 -rotate-45" />
+        <Scissors className="w-3 h-3 -rotate-45" />
       </button>
 
       <button 
         onClick={onClick} 
         disabled={showFeedback || isStrikethrough}
-        className={`flex-1 flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border transition-all text-left ${
-          isSelected && !showFeedback ? 'bg-blue-600/10 border-blue-500/30 shadow-lg shadow-blue-900/5' : 
+        className={`flex-1 flex items-start gap-4 p-4 rounded-2xl border transition-all text-left ${
+          isSelected && !showFeedback ? 'bg-white/[0.03] border-white/10' : 
           feedbackStyle ? feedbackStyle : 'bg-transparent border-transparent hover:bg-white/[0.02]'
         } ${isStrikethrough ? 'cursor-not-allowed' : 'cursor-pointer'}`}
       >
-        <div className={`text-[15px] font-medium w-6 shrink-0 transition-colors ${
-          isSelected && !showFeedback ? 'text-blue-400' : 
-          showFeedback && isCorrectAnswer ? 'text-emerald-400' :
-          'text-slate-500'
-        }`}>
-          {id})
+        <div className={`mt-1 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${radioColor}`}>
+          {(isSelected || (showFeedback && isCorrectAnswer)) && (
+            <div className="w-1.5 h-1.5 rounded-full bg-white" />
+          )}
         </div>
+        
         <span className={`text-[15px] font-normal leading-relaxed flex-1 transition-colors ${
-          isSelected && !showFeedback ? 'text-blue-100' : 
-          showFeedback && isCorrectAnswer ? 'text-emerald-100' :
-          'text-slate-300'
+          isSelected && !showFeedback ? 'text-white' : 
+          showFeedback && isCorrectAnswer ? 'text-emerald-50' :
+          'text-slate-400'
         } ${isStrikethrough ? 'line-through opacity-20' : ''}`}>
           {text}
           {showFeedback && isCorrectAnswer && (
-            <motion.span initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="ml-2 inline-flex items-center text-[10px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md">
-              Correto
-            </motion.span>
-          )}
-          {showFeedback && isSelected && !isCorrectAnswer && (
-            <motion.span initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="ml-2 inline-flex items-center text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-500/10 px-2 py-0.5 rounded-md">
-              Incorreto
+            <motion.span initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="ml-3 inline-flex items-center text-[9px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+              Gabarito
             </motion.span>
           )}
         </span>
@@ -70,6 +70,7 @@ const AlternativeItem = ({ id, text, isSelected, onClick, isStrikethrough, onTog
     </div>
   );
 };
+
 
 
 
@@ -750,21 +751,28 @@ function SimuladoContent() {
                   </div>
                 )}
                 
-                <div className="space-y-6 mb-12">
-                  {(() => {
-                    const parts = (q.texto || q.enunciado || "").split('\n\n');
-                    return parts.map((part: any, idx: any) => {
-                      const isLast = idx === parts.length - 1 && parts.length > 1;
-                      return (
-                        <p 
-                          key={idx} 
-                          className={`text-[16px] leading-[1.7] font-normal ${isLast ? 'text-white mt-8' : 'text-slate-300'}`}
-                          dangerouslySetInnerHTML={{ __html: part }}
-                        />
-                      );
-                    });
-                  })()}
-                </div>
+                 <div className="flex gap-6 items-start mb-12">
+                   <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0 text-sm font-bold text-slate-400">
+                     {currentQuestion + 1}
+                   </div>
+                   <div className="space-y-4 pt-2">
+                     <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">Questão {currentQuestion + 1}</span>
+                     <div className="space-y-6">
+                        {(() => {
+                          const parts = (q.texto || q.enunciado || "").split('\n\n');
+                          return parts.map((part: any, idx: any) => {
+                            return (
+                              <p 
+                                key={idx} 
+                                className="text-[16px] leading-[1.7] font-normal text-slate-300 selection:bg-blue-500/30"
+                                dangerouslySetInnerHTML={{ __html: part }}
+                              />
+                            );
+                          });
+                        })()}
+                     </div>
+                   </div>
+                 </div>
 
                 <div className="space-y-1">
                     {Object.entries(q.alternativas).map(([id, text]: any) => {
