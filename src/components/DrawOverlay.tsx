@@ -102,12 +102,12 @@ export function DrawOverlay({ questionKey }: Props) {
       
       const currentOpacity = s.opacity ?? 1;
 
-      // 1. Camada de Brilho (Glow)
-      ctx.shadowBlur = 15 * currentOpacity;
+      // 1. Camada de Brilho Intenso (Glow)
+      ctx.shadowBlur = 20 * currentOpacity;
       ctx.shadowColor = s.color;
       ctx.strokeStyle = s.color;
-      ctx.lineWidth = s.width * 1.5;
-      ctx.globalAlpha = 0.6 * currentOpacity;
+      ctx.lineWidth = s.width * 2.5; // Mais largo para mais brilho
+      ctx.globalAlpha = 0.8 * currentOpacity; // Mais opaco no início
       
       ctx.beginPath();
       ctx.moveTo(s.points[0].x, s.points[0].y);
@@ -120,10 +120,10 @@ export function DrawOverlay({ questionKey }: Props) {
       }
       ctx.stroke();
 
-      // 2. Camada de Núcleo (Core)
+      // 2. Camada de Núcleo (Core - Fino e Branco)
       ctx.shadowBlur = 0;
       ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = s.width * 0.5;
+      ctx.lineWidth = s.width * 0.3; // Mais fino para parecer mais intenso
       ctx.globalAlpha = 1 * currentOpacity;
       
       ctx.beginPath();
@@ -202,6 +202,14 @@ export function DrawOverlay({ questionKey }: Props) {
     if (currentStroke.current.points.length > 1) {
       const stroke = { ...currentStroke.current };
       
+      // Imediatamente limpa o preview para evitar ghosting
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext("2d");
+      if (ctx && canvas) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        strokes.forEach((s) => renderStroke(ctx, s));
+      }
+
       setAllStrokes((prev) => ({
         ...prev,
         [questionKey]: [...(prev[questionKey] || []), stroke]

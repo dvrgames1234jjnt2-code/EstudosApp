@@ -11,37 +11,66 @@ import { Rascunho } from "../../components/Rascunho";
 import { DrawOverlay } from "../../components/DrawOverlay";
 
 // --- Components ---
-const AlternativeItem = ({ id, text, isSelected, onClick, isStrikethrough, onToggleStrikethrough }: any) => (
-  <div className="flex items-start group transition-all duration-300 hover:-translate-y-0.5">
-    <button 
-      onClick={(e) => { e.stopPropagation(); onToggleStrikethrough(); }} 
-      className={`mt-4 mr-3 w-8 h-8 flex items-center justify-center transition-all ${
-        isStrikethrough ? 'opacity-100 text-red-500/50' : 'opacity-0 group-hover:opacity-40 text-slate-400 hover:text-red-500/50'
-      }`}
-      title="Eliminar alternativa"
-    >
-      <Scissors className="w-4 h-4 -rotate-45" />
-    </button>
+const AlternativeItem = ({ id, text, isSelected, onClick, isStrikethrough, onToggleStrikethrough, showFeedback, isCorrectAnswer }: any) => {
+  let feedbackStyle = "";
+  if (showFeedback) {
+    if (isCorrectAnswer) {
+      feedbackStyle = "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]";
+    } else if (isSelected) {
+      feedbackStyle = "bg-red-500/10 border-red-500/30 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.1)]";
+    }
+  }
 
-    <button 
-      onClick={onClick} 
-      className={`flex-1 flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl transition-all text-left ${
-        isSelected ? 'bg-blue-600/10 shadow-lg shadow-blue-900/5' : 'hover:bg-white/[0.02]'
-      } ${isStrikethrough ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-    >
-      <div className={`text-[15px] font-medium w-6 shrink-0 transition-colors ${
-        isSelected ? 'text-blue-400' : 'text-slate-500'
-      }`}>
-        {id})
-      </div>
-      <span className={`text-[15px] font-normal leading-relaxed flex-1 transition-colors ${
-        isSelected ? 'text-blue-100' : 'text-slate-300'
-      } ${isStrikethrough ? 'line-through opacity-20' : ''}`}>
-        {text}
-      </span>
-    </button>
-  </div>
-);
+  return (
+    <div className="flex items-start group transition-all duration-300 hover:-translate-y-0.5">
+      <button 
+        onClick={(e) => { e.stopPropagation(); onToggleStrikethrough(); }} 
+        className={`mt-4 mr-3 w-8 h-8 flex items-center justify-center transition-all ${
+          isStrikethrough ? 'opacity-100 text-red-500/50' : 'opacity-0 group-hover:opacity-40 text-slate-400 hover:text-red-500/50'
+        }`}
+        title="Eliminar alternativa"
+        disabled={showFeedback}
+      >
+        <Scissors className="w-4 h-4 -rotate-45" />
+      </button>
+
+      <button 
+        onClick={onClick} 
+        disabled={showFeedback || isStrikethrough}
+        className={`flex-1 flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border transition-all text-left ${
+          isSelected && !showFeedback ? 'bg-blue-600/10 border-blue-500/30 shadow-lg shadow-blue-900/5' : 
+          feedbackStyle ? feedbackStyle : 'bg-transparent border-transparent hover:bg-white/[0.02]'
+        } ${isStrikethrough ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+      >
+        <div className={`text-[15px] font-medium w-6 shrink-0 transition-colors ${
+          isSelected && !showFeedback ? 'text-blue-400' : 
+          showFeedback && isCorrectAnswer ? 'text-emerald-400' :
+          'text-slate-500'
+        }`}>
+          {id})
+        </div>
+        <span className={`text-[15px] font-normal leading-relaxed flex-1 transition-colors ${
+          isSelected && !showFeedback ? 'text-blue-100' : 
+          showFeedback && isCorrectAnswer ? 'text-emerald-100' :
+          'text-slate-300'
+        } ${isStrikethrough ? 'line-through opacity-20' : ''}`}>
+          {text}
+          {showFeedback && isCorrectAnswer && (
+            <motion.span initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="ml-2 inline-flex items-center text-[10px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+              Correto
+            </motion.span>
+          )}
+          {showFeedback && isSelected && !isCorrectAnswer && (
+            <motion.span initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="ml-2 inline-flex items-center text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-500/10 px-2 py-0.5 rounded-md">
+              Incorreto
+            </motion.span>
+          )}
+        </span>
+      </button>
+    </div>
+  );
+};
+
 
 
 
@@ -60,6 +89,8 @@ function SimuladoContent() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [strikethroughs, setStrikethroughs] = useState<Record<string, boolean>>({});
+  const [estudoMode, setEstudoMode] = useState(true);
+  const [showFeedback, setShowFeedback] = useState<Record<number, boolean>>({});
   const [showTextoApoio, setShowTextoApoio] = useState(true);
   const [timeLeft, setTimeLeft] = useState(300 * 60);
   const [isPaused, setIsPaused] = useState(false);
@@ -603,6 +634,16 @@ function SimuladoContent() {
               </div>
               <div className="flex gap-1.5 sm:gap-2">
                 <button 
+                  onClick={() => setEstudoMode(!estudoMode)}
+                  className={`px-3 sm:px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border flex items-center justify-center gap-2 ${
+                    estudoMode ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white'
+                  }`}
+                  title={estudoMode ? "Modo Estudo Ativado" : "Modo Simulado Ativado"}
+                >
+                  <Zap className={`w-3.5 h-3.5 ${estudoMode ? 'fill-amber-500' : ''}`} />
+                  <span className="hidden md:inline">{estudoMode ? 'Modo Estudo' : 'Modo Simulado'}</span>
+                </button>
+                <button 
                   onClick={async () => {
                     const ok = await showConfirm(
                       "Deseja realmente sair? Seu progresso será salvo para que você possa continuar de onde parou.",
@@ -734,6 +775,8 @@ function SimuladoContent() {
                        <AlternativeItem 
                           key={id} id={id} text={text} 
                           isSelected={isSelected} 
+                          showFeedback={estudoMode && (showFeedback[currentQuestion] || answers[currentQuestion])}
+                          isCorrectAnswer={q.respostaCorreta === id}
                           onClick={() => {
                             if (isCut) return; // Não deixa marcar se estiver riscada
                             if (isSelected) {
@@ -741,9 +784,18 @@ function SimuladoContent() {
                               const newAnswers = {...answers};
                               delete newAnswers[currentQuestion];
                               setAnswers(newAnswers);
+                              
+                              const newFeedback = {...showFeedback};
+                              delete newFeedback[currentQuestion];
+                              setShowFeedback(newFeedback);
                             } else {
                               // Marcar
-                              setAnswers({...answers, [currentQuestion]: id});
+                              const newAnswers = {...answers, [currentQuestion]: id};
+                              setAnswers(newAnswers);
+                              
+                              if (estudoMode) {
+                                setShowFeedback({...showFeedback, [currentQuestion]: true});
+                              }
                             }
                           }}
                           isStrikethrough={isCut}
@@ -814,23 +866,39 @@ function SimuladoContent() {
                             </div>
 
                             <div className="flex items-center gap-1 sm:gap-1.5">
-                              {['A', 'B', 'C', 'D', 'E'].map((alt) => (
-                                <button
-                                  key={alt}
-                                  onClick={() => {
-                                    const newAnswers = {...answers, [idx]: alt};
-                                    setAnswers(newAnswers);
-                                    saveProgress(newAnswers);
-                                  }}
-                                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[9px] sm:text-[10px] font-black border transition-all ${
-                                    answers[idx] === alt 
-                                      ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20' 
-                                      : 'bg-white/5 border-white/5 text-slate-700 hover:border-slate-600 hover:text-slate-400'
-                                  }`}
-                                >
-                                  {alt}
-                                </button>
-                              ))}
+                              {['A', 'B', 'C', 'D', 'E'].map((alt) => {
+                                const isSelected = answers[idx] === alt;
+                                const isCorrect = questoesProcessadas[idx].respostaCorreta === alt;
+                                const showSidebarFeedback = estudoMode && answers[idx];
+
+                                let buttonStyle = "bg-white/5 border-white/5 text-slate-700 hover:border-slate-600 hover:text-slate-400";
+                                if (isSelected) {
+                                  if (showSidebarFeedback) {
+                                    buttonStyle = isCorrect 
+                                      ? "bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-600/20"
+                                      : "bg-red-600 border-red-600 text-white shadow-lg shadow-red-600/20";
+                                  } else {
+                                    buttonStyle = "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20";
+                                  }
+                                } else if (showSidebarFeedback && isCorrect) {
+                                  buttonStyle = "border-emerald-600/50 text-emerald-500/70";
+                                }
+
+                                return (
+                                  <button
+                                    key={alt}
+                                    onClick={() => {
+                                      const newAnswers = {...answers, [idx]: alt};
+                                      setAnswers(newAnswers);
+                                      saveProgress(newAnswers);
+                                      if (estudoMode) setShowFeedback(prev => ({...prev, [idx]: true}));
+                                    }}
+                                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[9px] sm:text-[10px] font-black border transition-all ${buttonStyle}`}
+                                  >
+                                    {alt}
+                                  </button>
+                                );
+                              })}
                             </div>
                           </div>
                         );
