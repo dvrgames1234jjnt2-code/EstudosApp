@@ -767,52 +767,65 @@ function SimuladoContent() {
                 </div>
 
                 <div className="space-y-1">
-                   {Object.entries(q.alternativas).map(([id, text]: any) => {
-                     const isSelected = answers[currentQuestion] === id;
-                     const isCut = strikethroughs[`${currentQuestion}-${id}`];
+                    {Object.entries(q.alternativas).map(([id, text]: any) => {
+                      const isSelected = answers[currentQuestion] === id;
+                      const isCut = strikethroughs[`${currentQuestion}-${id}`];
 
-                     return (
-                       <AlternativeItem 
-                          key={id} id={id} text={text} 
-                          isSelected={isSelected} 
-                          showFeedback={estudoMode && (showFeedback[currentQuestion] || answers[currentQuestion])}
-                          isCorrectAnswer={q.respostaCorreta === id}
-                          onClick={() => {
-                            if (isCut) return; // Não deixa marcar se estiver riscada
-                            if (isSelected) {
-                              // Desmarcar
-                              const newAnswers = {...answers};
-                              delete newAnswers[currentQuestion];
-                              setAnswers(newAnswers);
-                              
-                              const newFeedback = {...showFeedback};
-                              delete newFeedback[currentQuestion];
-                              setShowFeedback(newFeedback);
-                            } else {
-                              // Marcar
-                              const newAnswers = {...answers, [currentQuestion]: id};
-                              setAnswers(newAnswers);
-                              
-                              if (estudoMode) {
-                                setShowFeedback({...showFeedback, [currentQuestion]: true});
-                              }
-                            }
-                          }}
-                          isStrikethrough={isCut}
-                          onToggleStrikethrough={() => {
-                            const newStatus = !isCut;
-                            setStrikethroughs({...strikethroughs, [`${currentQuestion}-${id}`]: newStatus});
-                            // Se estiver riscando e for a selecionada, desmarca
-                            if (newStatus && isSelected) {
-                              const newAnswers = {...answers};
-                              delete newAnswers[currentQuestion];
-                              setAnswers(newAnswers);
-                            }
-                          }}
-                       />
-                     );
-                   })}
-                </div>
+                      return (
+                        <AlternativeItem 
+                           key={id} id={id} text={text} 
+                           isSelected={isSelected} 
+                           showFeedback={estudoMode && showFeedback[currentQuestion]}
+                           isCorrectAnswer={q.respostaCorreta === id}
+                           onClick={() => {
+                             if (isCut) return; // Não deixa marcar se estiver riscada
+                             if (isSelected) {
+                               // Desmarcar
+                               const newAnswers = {...answers};
+                               delete newAnswers[currentQuestion];
+                               setAnswers(newAnswers);
+                             } else {
+                               // Marcar
+                               const newAnswers = {...answers, [currentQuestion]: id};
+                               setAnswers(newAnswers);
+                             }
+                           }}
+                           isStrikethrough={isCut}
+                           onToggleStrikethrough={() => {
+                             const newStatus = !isCut;
+                             setStrikethroughs({...strikethroughs, [`${currentQuestion}-${id}`]: newStatus});
+                             // Se estiver riscando e for a selecionada, desmarca
+                             if (newStatus && isSelected) {
+                               const newAnswers = {...answers};
+                               delete newAnswers[currentQuestion];
+                               setAnswers(newAnswers);
+                             }
+                           }}
+                        />
+                      );
+                    })}
+                 </div>
+
+                 <AnimatePresence>
+                   {estudoMode && answers[currentQuestion] && !showFeedback[currentQuestion] && (
+                     <motion.div 
+                       initial={{ opacity: 0, y: 10 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       exit={{ opacity: 0, y: 10 }}
+                       className="mt-8 flex justify-center"
+                     >
+                       <button 
+                         onClick={() => {
+                           setShowFeedback({...showFeedback, [currentQuestion]: true});
+                           saveProgress(answers);
+                         }}
+                         className="px-10 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] shadow-[0_20px_40px_rgba(16,185,129,0.2)] active:scale-95 transition-all flex items-center gap-2"
+                       >
+                         <CheckCircle2 className="w-4 h-4" /> Confirmar Resposta
+                       </button>
+                     </motion.div>
+                   )}
+                 </AnimatePresence>
 
                 <DrawOverlay questionKey={currentQuestion} />
                 <div className="flex flex-col sm:flex-row items-center justify-between mt-20 pt-10 border-t border-white/[0.05] gap-8 sm:gap-0">
@@ -869,7 +882,7 @@ function SimuladoContent() {
                               {['A', 'B', 'C', 'D', 'E'].map((alt) => {
                                 const isSelected = answers[idx] === alt;
                                 const isCorrect = questoesProcessadas[idx].respostaCorreta === alt;
-                                const showSidebarFeedback = estudoMode && answers[idx];
+                                const showSidebarFeedback = estudoMode && showFeedback[idx];
 
                                 let buttonStyle = "bg-white/5 border-white/5 text-slate-700 hover:border-slate-600 hover:text-slate-400";
                                 if (isSelected) {
@@ -891,7 +904,6 @@ function SimuladoContent() {
                                       const newAnswers = {...answers, [idx]: alt};
                                       setAnswers(newAnswers);
                                       saveProgress(newAnswers);
-                                      if (estudoMode) setShowFeedback(prev => ({...prev, [idx]: true}));
                                     }}
                                     className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[9px] sm:text-[10px] font-black border transition-all ${buttonStyle}`}
                                   >
