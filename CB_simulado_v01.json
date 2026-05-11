@@ -1,0 +1,134 @@
+{
+  "id": "cb_v01",
+  "titulo": "Simulado Específico - Conhecimentos Bancários v.01",
+  "duracao_minutos": 60,
+  "data_json": {
+    "disciplinas": [
+      {
+        "nome": "CONHECIMENTOS BANCÁRIOS",
+        "questoes": [
+          {
+            "id": "cb_01",
+            "texto": "O Conselho Monetário Nacional (CMN) é o órgão deliberativo máximo do Sistema Financeiro Nacional. Entre as suas competências fundamentais, destaca-se:",
+            "alternativas": {
+              "A": "Exercer a fiscalização das instituições financeiras e aplicar as penalidades cabíveis.",
+              "B": "Fixar as diretrizes e normas da política monetária, creditícia e cambial do País.",
+              "C": "Emitir papel-moeda e moeda metálica, nas condições e limites fixados pelo Banco Central.",
+              "D": "Atuar como banco dos bancos, provendo liquidez ao sistema financeiro em momentos de crise.",
+              "E": "Regular e fiscalizar o mercado de títulos e valores mobiliários no âmbito das bolsas de valores."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "cb_02",
+            "texto": "A Lei Complementar nº 179/2021 estabeleceu a autonomia do Banco Central do Brasil (BCB). De acordo com a referida lei, o objetivo fundamental do BCB é:",
+            "alternativas": {
+              "A": "Zelar pela estabilidade e pelo desenvolvimento do sistema financeiro nacional.",
+              "B": "Fomentar o pleno emprego através de políticas fiscais expansionistas.",
+              "C": "Assegurar a estabilidade de preços, visando manter a inflação dentro das metas.",
+              "D": "Fiscalizar o mercado de capitais para proteger os investidores minoritários.",
+              "E": "Gerenciar a dívida pública mobiliária federal interna e externa."
+            },
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "cb_03",
+            "texto": "No que tange à estrutura do Sistema Financeiro Nacional, as Instituições Financeiras Monetárias (ou Bancárias) distinguem-se das não monetárias por:",
+            "alternativas": {
+              "A": "Possuírem autorização exclusiva para operar no mercado de câmbio de taxas livres.",
+              "B": "Serem as únicas autorizadas a captar depósitos à vista, criando moeda escritural.",
+              "C": "Atuarem obrigatoriamente como intermediárias no mercado de seguros e previdência.",
+              "D": "Terem como principal função o financiamento de capital fixo e de giro para empresas.",
+              "E": "Serem constituídas necessariamente sob a forma de sociedades anônimas de capital aberto."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "cb_04",
+            "texto": "As Cooperativas de Crédito desempenham um papel relevante na inclusão financeira. Sobre o seu funcionamento, é correto afirmar que:",
+            "alternativas": {
+              "A": "Podem captar depósitos à vista e a prazo de qualquer cidadão, independentemente de associação.",
+              "B": "São instituições sem fins lucrativos que prestam serviços bancários exclusivamente aos seus associados.",
+              "C": "Estão dispensadas da fiscalização do Banco Central do Brasil por possuírem regramento próprio.",
+              "D": "Não podem realizar operações de crédito, limitando-se à custódia de valores dos cooperados.",
+              "E": "Possuem o objetivo principal de maximizar o lucro para distribuição de dividendos aos acionistas."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "cb_05",
+            "texto": "O Mercado de Capitais é fundamental para o financiamento de longo prazo das empresas. A entidade responsável por regulamentar e fiscalizar esse mercado é a:",
+            "alternativas": {
+              "A": "Secretaria do Tesouro Nacional (STN).",
+              "B": "Comissão de Valores Mobiliários (CVM).",
+              "C": "Superintendência de Seguros Privados (SUSEP).",
+              "D": "Federação Brasileira de Bancos (FEBRABAN).",
+              "E": "Caixa Econômica Federal (CEF)."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "cb_06",
+            "texto": "Um cliente decide investir em um Certificado de Depósito Bancário (CDB). Sobre esse produto bancário, é correto afirmar que:",
+            "alternativas": {
+              "A": "É um título de renda variável cujo rendimento está atrelado exclusivamente ao Ibovespa.",
+              "B": "Representa um título de dívida emitido por instituições financeiras para captar recursos.",
+              "C": "Possui isenção total de Imposto de Renda para pessoas físicas em qualquer prazo.",
+              "D": "Não conta com a garantia do Fundo Garantidor de Créditos (FGC).",
+              "E": "É um investimento de alto risco, pois não há obrigatoriedade de devolução do principal."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "cb_07",
+            "texto": "Diferente da Fiança, o Aval é uma garantia específica de títulos de crédito. Uma característica distintiva do Aval é:",
+            "alternativas": {
+              "A": "A necessidade de ser formalizado em um contrato acessório e separado do título principal.",
+              "B": "A autonomia da obrigação, significando que o avalista responde mesmo que a obrigação principal seja nula (exceto vício de forma).",
+              "C": "O benefício de ordem, que permite ao avalista exigir que os bens do devedor sejam executados primeiro.",
+              "D": "A aplicação exclusiva a contratos de aluguel e financiamentos imobiliários.",
+              "E": "A exigência de que o avalista seja obrigatoriamente uma instituição financeira pública."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "cb_08",
+            "texto": "A Lei nº 9.613/1998 trata dos crimes de lavagem de dinheiro. De acordo com a norma e as circulares do BCB, a fase da lavagem que consiste em dificultar o rastreamento dos recursos através de diversas transações é chamada de:",
+            "alternativas": {
+              "A": "Colocação (Placement).",
+              "B": "Ocultação ou Estratificação (Layering).",
+              "C": "Integração (Integration).",
+              "D": "Arrecadação (Collection).",
+              "E": "Conversão (Conversion)."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "cb_10",
+            "texto": "O Pix revolucionou o sistema de pagamentos brasileiro. Sobre o funcionamento do Pix, é correto afirmar que:",
+            "alternativas": {
+              "A": "As transações ocorrem em tempo real e estão disponíveis apenas em dias úteis no horário bancário.",
+              "B": "É um ecossistema aberto onde o Banco Central atua como regulador e operador do diretório de chaves.",
+              "C": "É obrigatória a cobrança de tarifas de pessoas físicas em todas as transferências realizadas.",
+              "D": "A utilização de chaves aleatórias impede que o usuário receba transferências de contas de outros bancos.",
+              "E": "As transações são limitadas ao valor máximo de R$ 1.000,00 por dia para todos os usuários."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "cb_11",
+            "texto": "O Open Finance (Sistema Financeiro Aberto) permite o compartilhamento de dados e serviços entre instituições. Para que esse compartilhamento ocorra, é indispensável:",
+            "alternativas": {
+              "A": "A autorização prévia e expressa do cliente para cada finalidade específica.",
+              "B": "Que as instituições envolvidas pertençam ao mesmo conglomerado econômico.",
+              "C": "O pagamento de uma taxa de adesão por parte do consumidor ao Banco Central.",
+              "D": "Que o cliente possua conta em pelo menos três bancos differentes.",
+              "E": "A renúncia total ao sigilo bancário por parte do usuário perante o Ministério da Fazenda."
+            },
+            "respostaCorreta": "A"
+          }
+        ]
+      }
+    ]
+  }
+}

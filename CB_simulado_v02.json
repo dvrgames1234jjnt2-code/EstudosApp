@@ -1,0 +1,659 @@
+{
+  "id": "cb_v02",
+  "titulo": "Simulado Específico - Conhecimentos Bancários v.02",
+  "duracao_minutos": 60,
+  "data_json": {
+    "disciplinas": [
+      {
+        "nome": "CONHECIMENTOS BANCÁRIOS",
+        "questoes": [
+          {
+            "id": "cb_v2_01",
+            "texto": "No Sistema Financeiro Nacional (SFN), a distinção entre as esferas de atuação do Banco Central do Brasil (BCB) e da Comissão de Valores Mobiliários (CVM) é fundamental. Sobre essa divisão de competências, é correto afirmar que:",
+            "alternativas": {
+              "A": "O BCB fiscaliza o mercado de capitais, enquanto a CVM regula as instituições financeiras bancárias.",
+              "B": "A CVM possui autoridade sobre o mercado de câmbio, ao passo que o BCB foca no mercado de seguros.",
+              "C": "O BCB regula e fiscaliza as instituições financeiras e o mercado de crédito, enquanto a CVM atua no mercado de títulos e valores mobiliários.",
+              "D": "Ambos possuem competência concorrente para a emissão de papel-moeda e controle da base monetária.",
+              "E": "A CVM é subordinada hierarquicamente ao BCB em todas as decisões que envolvam sociedades anônimas de capital aberto."
+            },
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "cb_v2_02",
+            "texto": "O Conselho Monetário Nacional (CMN) é o órgão responsável por formular as diretrizes do SFN. No que tange à política de metas de inflação, cabe ao CMN:",
+            "alternativas": {
+              "A": "Executar as operações de mercado aberto para garantir que a inflação fique no centro da meta.",
+              "B": "Fixar a meta para a inflação e os respectivos intervalos de tolerância.",
+              "C": "Alterar a Taxa Selic em reuniões periódicas do COPOM para controlar o IPCA.",
+              "D": "Emitir relatórios trimestrais de inflação para explicar o descumprimento das metas.",
+              "E": "Propor ao Congresso Nacional a alteração do regime de metas por decreto legislativo."
+            },
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "cb_v2_03",
+            "texto": "O Brasil adota atualmente um regime de câmbio flutuante (sujo). Uma característica central desse regime é:",
+            "alternativas": {
+              "A": "A fixação de uma paridade rígida entre o Real e o Dólar americano pelo Banco Central.",
+              "B": "A determinação da taxa de câmbio exclusivamente pelas forças de oferta e demanda no mercado, sem qualquer intervenção oficial.",
+              "C": "A permissão para que o mercado determine o preço da moeda estrangeira, com intervenções eventuais do Banco Central para suavizar volatilidades excessivas.",
+              "D": "A existência de uma banda cambial fixa dentro da qual a moeda deve oscilar obrigatoriamente.",
+              "E": "A proibição de transações cambiais por instituições privadas, centralizando todo o fluxo no Tesouro Nacional."
+            },
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "cb_v2_04",
+            "texto": "As operações de câmbio envolvem diversos mecanismos de liquidação internacional. O sistema de mensagens amplamente utilizado para a comunicação financeira segura entre bancos ao redor do mundo é o:",
+            "alternativas": {
+              "A": "STR (Sistema de Transferência de Reservas).",
+              "B": "SELIC (Sistema Especial de Liquidação e de Custódia).",
+              "C": "SWIFT (Society for Worldwide Interbank Financial Telecommunication).",
+              "D": "SPB (Sistema de Pagamentos Brasileiro).",
+              "E": "COMPE (Serviço de Compensação de Cheques e Outros Papéis)."
+            },
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "cb_v2_05",
+            "texto": "O Mercado Financeiro desempenha o papel de intermediação financeira. Sobre a intermediação direta e indireta, assinale a alternativa correta:",
+            "alternativas": {
+              "A": "Na intermediação indireta, o poupador e o tomador de recursos negociam diretamente através da Bolsa de Valores.",
+              "B": "A intermediação direta ocorre quando uma instituição financeira capta recursos via depósitos e assume o risco de crédito ao emprestá-los.",
+              "C": "A intermediação indireta é caracterizada pela presença de um banco que atua como 'ponte', transformando prazos e riscos entre poupadores e tomadores.",
+              "D": "Os corretores de valores são os principais agentes da intermediação indireta no mercado bancário.",
+              "E": "A intermediação direta é proibida no Brasil para evitar o risco sistêmico no mercado de capitais."
+            },
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "cb_v2_06",
+            "texto": "No âmbito do Mercado Financeiro, a segmentação entre Mercado Monetário e Mercado de Capitais é essencial para o entendimento dos fluxos de liquidez. Sobre as diferenças entre esses mercados, é correto afirmar que:",
+            "alternativas": {
+              "A": "O Mercado Monetário é voltado ao financiamento de longo prazo das empresas, enquanto o Mercado de Capitais foca na liquidez de curto prazo.",
+              "B": "As operações no Mercado Monetário são tipicamente de curtíssimo prazo e visam o controle da liquidez da economia, tendo os títulos públicos como principal lastro.",
+              "C": "O Mercado de Capitais é regulado exclusivamente pelo Banco Central, enquanto o Mercado Monetário é de competência da CVM.",
+              "D": "A principal função do Mercado Monetário é a capitalização das companhias abertas através da emissão de debêntures e ações.",
+              "E": "Diferente do Mercado de Capitais, o Mercado Monetário não sofre influência das variações da Taxa Selic-Over."
+            },
+            "meta": "Mercado Financeiro e Seus Desdobramentos",
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "cb_v2_07",
+            "texto": "O Banco Central utiliza os depósitos compulsórios como um dos instrumentos de política monetária. Em um cenário onde a autoridade monetária deseja reduzir a liquidez do sistema para conter pressões inflacionárias, a medida correta seria:",
+            "alternativas": {
+              "A": "Reduzir a alíquota do compulsório, permitindo que os bancos comerciais ampliem a oferta de crédito.",
+              "B": "Elevar a alíquota do compulsório, aumentando a parcela dos depósitos que as instituições financeiras devem manter retida no Banco Central.",
+              "C": "Manter a alíquota estável, mas reduzir a taxa de remuneração paga sobre os saldos recolhidos pelos bancos.",
+              "D": "Extinguir a exigibilidade do compulsório sobre depósitos à vista, incentivando a circulação de moeda escritural.",
+              "E": "Substituir o recolhimento compulsório por operações de swap cambial reverso com o objetivo de valorizar o Real."
+            },
+            "meta": "Moeda e Política Monetária",
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "cb_v2_08",
+            "texto": "Na classificação dos agregados monetários no Brasil, o conceito de M2 diferencia-se do M1 por incluir, além do papel-moeda em poder do público e depósitos à vista:",
+            "alternativas": {
+              "A": "As quotas de fundos de renda fixa e os títulos públicos de alta liquidez em poder do público.",
+              "B": "Os depósitos de poupança e os títulos emitidos por instituições financeiras (como depósitos a prazo).",
+              "C": "Apenas as moedas metálicas e os cheques de viagem em circulação nacional.",
+              "D": "As reservas internacionais e os saldos em moeda estrangeira mantidos por residentes no exterior.",
+              "E": "O montante total de moedas digitais e criptoativos autorizados pela CVM."
+            },
+            "meta": "Moeda e Política Monetária",
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "cb_v2_09",
+            "texto": "O Tesouro Nacional emite diversos títulos com características distintas de rentabilidade. Um investidor que busca proteger seu poder de compra contra a inflação, recebendo uma taxa de juros real acrescida da variação do IPCA, deve optar pela:",
+            "alternativas": {
+              "A": "LTN (Letra do Tesouro Nacional), que é um título prefixado com rentabilidade definida no momento da compra.",
+              "B": "LFT (Letra Financeira do Tesouro), cuja rentabilidade é pós-fixada e atrelada à variação da taxa Selic.",
+              "C": "NTN-B (Nota do Tesouro Nacional - Série B), que garante uma taxa de juros fixa mais a variação do índice de inflação oficial.",
+              "D": "NTN-F (Nota do Tesouro Nacional - Série F), que é um título prefixado com pagamento de cupons semestrais de juros.",
+              "E": "Debênture incentivada, que é um título de dívida pública emitido pelo Tesouro para financiar obras de infraestrutura."
+            },
+            "meta": "Orçamento Público, Títulos do Tesouro Nacional e Dívida Pública",
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "cb_v2_10",
+            "texto": "A Dívida Bruta do Governo Geral (DBGG) é um dos principais indicadores de solvência do Estado brasileiro. Diferente da Dívida Líquida do Setor Público (DLSP), a DBGG:",
+            "alternativas": {
+              "A": "Abate os ativos do governo, como as reservas internacionais e os créditos do Tesouro junto ao BNDES.",
+              "B": "Contabiliza apenas os passivos do governo federal, estadual e municipal, sem subtrair os ativos financeiros do setor público.",
+              "C": "Inclui os passivos das empresas estatais federais independentes, como a Petrobras e a Eletrobras.",
+              "D": "É calculada pelo Ministério da Fazenda, enquanto a DLSP é de responsabilidade exclusiva do Tribunal de Contas da União.",
+              "E": "Reduz-se automaticamente sempre que o Banco Central realiza lucros com a desvalorização cambial."
+            },
+            "meta": "Orçamento Público, Títulos do Tesouro Nacional e Dívida Pública",
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "cb_v2_11",
+            "texto": "As Letras de Crédito Imobiliário (LCI) e do Agronegócio (LCA) são títulos de renda fixa populares entre investidores pessoa física. Uma característica fundamental desses instrumentos, conforme as normas vigentes, é que:",
+            "alternativas": {
+              "A": "Contam com isenção de Imposto de Renda para pessoas físicas, sendo lastreadas em créditos imobiliários ou do agronegócio.",
+              "B": "São tributados pelo Imposto de Renda conforme a tabela regressiva, independentemente do tipo de investidor.",
+              "C": "Possuem liquidez diária obrigatória desde o primeiro dia de aplicação, por determinação do Banco Central.",
+              "D": "Não são cobertos pelo Fundo Garantidor de Créditos (FGC), por serem considerados títulos de risco privado.",
+              "E": "Só podem ser emitidos por cooperativas de crédito de livre admissão, sendo vedada a emissão por bancos comerciais."
+            },
+            "meta": "Produtos Bancários",
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "cb_v2_12",
+            "texto": "No que se refere aos planos de previdência complementar aberta, a escolha entre os modelos PGBL (Plano Gerador de Benefício Livre) e VGBL (Vida Gerador de Benefício Livre) depende do perfil tributário do cliente. Sobre o PGBL, é correto afirmar que:",
+            "alternativas": {
+              "A": "O Imposto de Renda incide apenas sobre o rendimento obtido no período.",
+              "B": "É indicado para quem utiliza a declaração simplificada de Imposto de Renda.",
+              "C": "É um produto destinado exclusivamente a funcionários públicos de carreira do Poder Executivo.",
+              "D": "Permite deduzir as contribuições da base de cálculo do IR até o limite de 12% da renda bruta anual, na declaração completa.",
+              "E": "Não permite a escolha do regime de tributação regressivo, sendo obrigatório o regime progressivo."
+            },
+            "meta": "Produtos Bancários",
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "cb_v2_13",
+            "texto": "O Mercado de Câmbio no Brasil possui normas operacionais específicas. No que diz respeito ao conceito de 'spread' cambial, este pode ser definido como:",
+            "alternativas": {
+              "A": "A diferença entre a taxa de câmbio oficial do Banco Central (Ptax) e a taxa de câmbio turismo.",
+              "B": "A taxa fixa cobrada pelo SWIFT para processar mensagens de remessa internacional.",
+              "C": "O imposto sobre operações financeiras (IOF) que incide sobre a compra de papel-moeda.",
+              "D": "A variação percentual da moeda estrangeira em relação ao Real no fechamento do dia útil anterior.",
+              "E": "A margem de lucro ou custo operacional resultante da diferença entre o preço de compra e o preço de venda da moeda estrangeira pela instituição autorizada."
+            },
+            "meta": "Noções de Mercado de Câmbio",
+            "respostaCorreta": "E"
+          },
+          {
+            "id": "cb_v2_14",
+            "texto": "Nas operações de câmbio, o momento em que ocorre a entrega efetiva das moedas (nacional e estrangeira) é chamado de liquidação. Quando uma operação é liquidada no mesmo dia em que foi contratada, diz-se que o prazo é:",
+            "alternativas": {
+              "A": "Spot (D + 0).",
+              "B": "D + 1 (Próximo dia útil).",
+              "C": "D + 2 (Dois dias úteis).",
+              "D": "Forward (Longo prazo).",
+              "E": "Futuro (BM&F)."
+            },
+            "meta": "Noções de Mercado de Câmbio",
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "cb_v2_15",
+            "texto": "Dentre os diversos regimes cambiais, o regime de 'Banda Cambial' (Target Zone) caracteriza-se por:",
+            "alternativas": {
+              "A": "Permitir que a taxa de câmbio flutue livremente sem qualquer limite superior ou inferior definido.",
+              "B": "Estabelecer limites máximos e mínimos para a cotação da moeda, dentro dos quais a autoridade monetária não intervém, mas atua caso as bordas sejam atingidas.",
+              "C": "Fixar a moeda nacional a uma âncora metálica, como o ouro ou a prata.",
+              "D": "Unificar a moeda nacional com a de um bloco econômico vizinho, como ocorre na Zona do Euro.",
+              "E": "Proibir a posse de moeda estrangeira por residentes, centralizando o câmbio no Banco Central."
+            },
+            "meta": "Regimes de Taxas de Câmbio",
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "cb_v2_16",
+            "texto": "No regime de câmbio flutuante adotado pelo Brasil, o Banco Central pode intervir no mercado através de diversos instrumentos. Quando a autoridade monetária realiza a venda de dólares no mercado à vista (spot) com o compromisso de recomprá-los em uma data futura, essa operação é denominada:",
+            "alternativas": {
+              "A": "Leilão de Swap Cambial Tradicional.",
+              "B": "Leilão de Swap Cambial Reverso.",
+              "C": "Venda Direta de Reservas Internacionais.",
+              "D": "Ajuste de Ptax por intervenção direta em derivativos.",
+              "E": "Linha de Câmbio com Compromisso de Recompra."
+            },
+            "meta": "Regimes de Taxas de Câmbio",
+            "respostaCorreta": "E"
+          },
+          {
+            "id": "cb_v2_17",
+            "texto": "A Taxa de Câmbio Real é um indicador de competitividade internacional. Se a Taxa de Câmbio Nominal (Real/Dólar) permanecer estável, mas a inflação no Brasil for significativamente superior à inflação nos Estados Unidos em um determinado período, o resultado será:",
+            "alternativas": {
+              "A": "Uma depreciação real do Real, aumentando a competitividade das exportações brasileiras.",
+              "B": "A manutenção do equilíbrio do poder de compra (PPP) entre as duas moedas.",
+              "C": "Uma queda automática na taxa de juros Selic para compensar o diferencial de preços.",
+              "D": "Uma apreciação real do Real, tornando os produtos brasileiros mais caros para os estrangeiros.",
+              "E": "O aumento imediato das reservas internacionais brasileiras devido ao fluxo comercial."
+            },
+            "meta": "Taxas de Câmbio Nominais e Reais",
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "cb_v2_18",
+            "texto": "Diferente da Taxa de Câmbio Nominal, que expressa o preço de uma moeda em termos de outra, a Taxa de Câmbio Real Multilateral leva em consideração:",
+            "alternativas": {
+              "A": "Apenas a cotação do Dólar americano em relação ao Euro e ao Iene.",
+              "B": "O valor das exportações de commodities dividido pelo valor das importações de produtos manufaturados.",
+              "C": "A variação média das taxas de câmbio nominais ponderada pelo peso comercial dos principais parceiros econômicos, ajustada pela inflação relativa.",
+              "D": "A diferença entre a taxa de juros de curto prazo brasileira e a taxa de juros do Federal Reserve.",
+              "E": "O custo total logístico para o transporte de mercadorias entre os portos nacionais e internacionais."
+            },
+            "meta": "Taxas de Câmbio Nominais e Reais",
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "cb_v2_19",
+            "texto": "Um cenário de desvalorização acentuada da moeda nacional (elevação da taxa Real/Dólar) tende a produzir efeitos imediatos no comércio exterior. Sobre esses efeitos, é correto afirmar que:",
+            "alternativas": {
+              "A": "Estimula as exportações, pois os produtores nacionais recebem mais Reais por cada unidade de dólar exportada.",
+              "B": "Favorece as importações, pois os produtos estrangeiros tornam-se mais baratos em Reais.",
+              "C": "Prejudica as exportações brasileiras, que perdem competitividade em termos de preço no mercado internacional.",
+              "D": "Reduz o saldo da balança comercial, gerando déficits persistentes por encarecer os insumos importados.",
+              "E": "Não possui impacto sobre o preço final dos combustíveis e insumos agrícolas no mercado interno."
+            },
+            "meta": "Taxas de Câmbio sobre Exportações e Importações",
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "cb_v2_20",
+            "texto": "A elasticidade-preço das exportações e importações determina a eficácia de uma desvalorização cambial na melhoria do saldo comercial. O fenômeno em que a balança comercial piora inicialmente após uma desvalorização para só depois melhorar é conhecido como:",
+            "alternativas": {
+              "A": "Efeito Pass-through cambial.",
+              "B": "Curva de Laffer comercial.",
+              "C": "Efeito Dutch Disease (Doença Holandesa).",
+              "D": "Apreciação por contágio especulativo.",
+              "E": "Curva em J (J-Curve)."
+            },
+            "meta": "Taxas de Câmbio sobre Exportações e Importações",
+            "respostaCorreta": "E"
+          },
+          {
+            "id": "cb_v2_21",
+            "texto": "O diferencial entre a taxa de juros praticada no Brasil e as taxas vigentes em mercados desenvolvidos (como a Fed Funds Rate dos EUA) atrai fluxos de capitais internacionais. A estratégia de tomar recursos em países com juros baixos para investir em países com juros altos é conhecida como:",
+            "alternativas": {
+              "A": "Swap de Taxa de Juros.",
+              "B": "Arbitragem de Dividendos.",
+              "C": "Hedge de Volatilidade.",
+              "D": "Carry Trade.",
+              "E": "Underwriting de Performance."
+            },
+            "meta": "Diferencial de Juros Interno e Externo",
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "cb_v2_22",
+            "texto": "A eficácia do Carry Trade depende não apenas do diferencial nominal de juros, mas também da expectativa de variação cambial. Se um investidor realiza Carry Trade no Brasil e ocorre uma desvalorização repentina e acentuada do Real frente ao Dólar, o resultado mais provável para esse investidor será:",
+            "alternativas": {
+              "A": "A anulação dos ganhos de juros ou até mesmo prejuízo total, devido à perda de valor do principal investido ao ser convertido de volta para a moeda de origem.",
+              "B": "Um aumento extraordinário nos lucros, pois o Real vale mais em termos internacionais.",
+              "C": "A manutenção da rentabilidade fixa, já que o diferencial de juros não é afetado pela taxa de câmbio.",
+              "D": "O recebimento de um prêmio de liquidez pago pelo Banco Central para compensar a volatilidade.",
+              "E": "A obrigação de converter todos os ativos em títulos prefixados (LTN) para evitar novas perdas."
+            },
+            "meta": "Diferencial de Juros Interno e Externo",
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "cb_v2_23",
+            "texto": "Na dinâmica do mercado financeiro, as expressões 'Bull Market' e 'Bear Market' são utilizadas para descrever tendências de preços. Um 'Bear Market' é caracterizado por:",
+            "alternativas": {
+              "A": "Um período de otimismo generalizado, com forte volume de compras e preços em trajetória ascendente.",
+              "B": "Um cenário de estagnação total, onde não há variações de preços ou volume de negociações.",
+              "C": "O momento em que as taxas de juros de curto prazo superam as taxas de longo prazo (curva invertida).",
+              "D": "A regulação estrita do mercado por órgãos governamentais para impedir a especulação agressiva.",
+              "E": "Uma tendência persistente de queda nos preços dos ativos, geralmente acompanhada de pessimismo e aversão ao risco por parte dos investidores."
+            },
+            "meta": "Dinâmica do Mercado",
+            "respostaCorreta": "E"
+          },
+          {
+            "id": "cb_v2_24",
+            "texto": "A liquidez de mercado é um componente vital da dinâmica financeira. Um ativo financeiro é considerado altamente líquido quando:",
+            "alternativas": {
+              "A": "Possui uma data de vencimento superior a dez anos, garantindo rendimentos constantes.",
+              "B": "Pode ser convertido em dinheiro rapidamente, em grandes volumes, com impacto mínimo ou nulo sobre o seu preço de mercado.",
+              "C": "Sua rentabilidade está atrelada obrigatoriamente à variação do Produto Interno Bruto (PIB).",
+              "D": "Não pode ser vendido no mercado secundário, devendo ser mantido pelo investidor até o vencimento.",
+              "E": "É emitido exclusivamente por empresas de pequeno porte em mercados de balcão não organizados."
+            },
+            "meta": "Dinâmica do Mercado",
+            "respostaCorreta": "B"
+          },
+          {
+            "id": "cb_v2_25",
+            "texto": "O Mercado Bancário brasileiro apresenta um alto índice de concentração. Sobre as consequências e a regulação desse cenário, é correto afirmar que:",
+            "alternativas": {
+              "A": "A concentração bancária é incentivada por lei para garantir que apenas um banco controle todas as operações de crédito do país.",
+              "B": "O spread bancário é composto exclusivamente pela margem de lucro do banco, não sofrendo influência de tributos ou inadimplência.",
+              "C": "Bancos públicos, como o Banco do Brasil, são proibidos de competir com bancos privados no mercado de crédito rotativo.",
+              "D": "O Banco Central busca reduzir as barreiras de entrada para novos competidores (como as Fintechs e Bancos Digitais) visando aumentar a concorrência e reduzir spreads.",
+              "E": "A implementação do Open Finance visa aumentar ainda mais a fidelidade dos clientes aos grandes bancos, dificultando a portabilidade de dados."
+            },
+            "meta": "Mercado Bancário",
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "cb_v2_26",
+            "texto": "As instituições financeiras operam em diferentes segmentos do mercado. Sobre as funções e restrições dos Bancos de Investimento, é correto afirmar que:",
+            "alternativas": {
+              "A": "São autorizados a captar depósitos à vista e manter contas-correntes para seus clientes.",
+              "B": "Atuam exclusivamente no mercado de seguros e previdência privada, sem realizar operações de crédito.",
+              "C": "Têm como objetivo principal o financiamento de capital de giro e de capital fixo a médio e longo prazos, sendo proibidos de captar depósitos à vista.",
+              "D": "São as únicas instituições autorizadas a emitir papel-moeda em parceria com a Casa da Moeda.",
+              "E": "Focam no crédito direto ao consumidor (CDC) para pessoas físicas de baixa renda."
+            },
+            "meta": "Mercado Bancário",
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "cb_v2_27",
+            "texto": "A estrutura a termo das taxas de juros (ETTJ), também conhecida como Curva de Juros, reflete as expectativas do mercado para o futuro. Quando a curva de juros apresenta uma inclinação negativa (curva invertida), isso geralmente sinaliza que:",
+            "alternativas": {
+              "A": "Há uma expectativa de que as taxas de juros caiam no futuro, possivelmente devido a uma desaceleração econômica ou recessão.",
+              "B": "O mercado espera um crescimento acelerado do PIB e aumento da inflação no longo prazo.",
+              "C": "As taxas de juros de curto prazo estão menores do que as taxas de longo prazo.",
+              "D": "O Banco Central acaba de elevar a taxa Selic para o maior patamar histórico.",
+              "E": "O governo federal decidiu zerar a dívida pública mobiliária interna."
+            },
+            "meta": "Taxas de Juros de Curto Prazo e a Curva de Juros",
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "cb_v2_28",
+            "texto": "A Taxa Selic é a taxa básica de juros da economia brasileira. Sobre a diferença entre a Selic Meta e a Selic Over, é correto afirmar que:",
+            "alternativas": {
+              "A": "A Selic Meta é a taxa efetiva apurada no mercado interbancário, enquanto a Selic Over é definida pelo COPOM.",
+              "B": "Não há diferença entre elas, sendo termos sinônimos utilizados para a taxa do CDI.",
+              "C": "A Selic Over é sempre o dobro da Selic Meta para garantir a liquidez do sistema.",
+              "D": "A Selic Meta aplica-se apenas aos bancos públicos e a Selic Over apenas aos bancos privados.",
+              "E": "A Selic Meta é o alvo estabelecido pelo COPOM para a política monetária, enquanto a Selic Over é a média ponderada das operações de um dia lastreadas em títulos públicos."
+            },
+            "meta": "Taxas de Juros de Curto Prazo e a Curva de Juros",
+            "respostaCorreta": "E"
+          },
+          {
+            "id": "cb_v2_29",
+            "texto": "No Sistema Financeiro Nacional, as garantias reais visam mitigar o risco de crédito. A Alienação Fiduciária em garantia distingue-se da Hipoteca principalmente por:",
+            "alternativas": {
+              "A": "Exigir que o bem seja obrigatoriamente um automóvel, não podendo ser aplicada a imóveis.",
+              "B": "Manter a propriedade plena com o devedor, registrando apenas um ônus na matrícula do imóvel.",
+              "C": "Ser uma garantia pessoal (fidejussória) onde um terceiro assume a dívida.",
+              "D": "Transferir a propriedade resolúvel do bem ao credor até a quitação da dívida, permitindo uma retomada mais célere em caso de inadimplência.",
+              "E": "Dispensar qualquer tipo de registro em cartório para ter validade jurídica."
+            },
+            "meta": "Garantias do Sistema Financeiro Nacional",
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "cb_v2_30",
+            "texto": "O Penhor é uma garantia real que recai sobre bens móveis. Sobre o Penhor Mercantil, é correto afirmar que:",
+            "alternativas": {
+              "A": "O devedor deve obrigatoriamente entregar a posse física do bem ao credor (tradição real).",
+              "B": "Só pode ser realizado sobre joias e metais preciosos custodiados na Caixa Econômica Federal.",
+              "C": "O bem empenhado permanece em poder do devedor, que assume a responsabilidade de depositário.",
+              "D": "É uma garantia que não exige contrato escrito, bastando o acordo verbal entre as partes.",
+              "E": "Extingue-se automaticamente caso a taxa de juros do contrato seja alterada."
+            },
+            "meta": "Garantias do Sistema Financeiro Nacional",
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "cb_v2_31",
+            "texto": "A Lei nº 9.613/1998, que dispõe sobre os crimes de lavagem de dinheiro, impõe obrigações às instituições financeiras. Sobre o dever de comunicação, é correto afirmar que:",
+            "alternativas": {
+              "A": "Operações que apresentem indícios de crimes de lavagem de dinheiro devem ser comunicadas ao COAF, abstendo-se a instituição de dar ciência de tal ato aos clientes ou a terceiros.",
+              "B": "As comunicações ao COAF (Conselho de Controle de Atividades Financeiras) devem ser precedidas de notificação imediata ao cliente suspeito.",
+              "C": "As instituições devem comunicar ao COAF apenas as operações que ultrapassarem o valor de R$ 1.000.000,00, independentemente da natureza.",
+              "D": "A responsabilidade pela comunicação é exclusiva do gerente da conta, ficando a instituição financeira isenta de qualquer penalidade administrativa.",
+              "E": "O COAF possui autoridade para prender preventivamente os envolvidos em transações atípicas logo após a comunicação."
+            },
+            "meta": "Crime de Lavagem de Dinheiro",
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "cb_v2_32",
+            "texto": "No contexto da Prevenção à Lavagem de Dinheiro e ao Financiamento do Terrorismo (PLD/FT), o conceito de 'Pessoas Expostas Politicamente' (PEP) refere-se a:",
+            "alternativas": {
+              "A": "Qualquer cidadão que exerça o direito ao voto em eleições municipais ou estaduais.",
+              "B": "Apenas os detentores de mandatos eletivos no Poder Legislativo Federal (Deputados e Senadores).",
+              "C": "Investidores que possuem mais de 50% das ações de empresas estatais listadas na bolsa.",
+              "D": "Agentes públicos que desempenham ou tenham desempenhado, nos últimos cinco anos, no Brasil ou no exterior, cargos, funções ou empregos públicos relevantes.",
+              "E": "Funcionários de carreira de bancos públicos que ocupem cargos técnicos sem poder de decisão."
+            },
+            "meta": "Crime de Lavagem de Dinheiro",
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "cb_v2_33",
+            "texto": "O Sistema de Autorregulação Bancária (SARB), instituído pela FEBRABAN, visa estabelecer padrões de conduta para as instituições financeiras signatárias. Sobre o SARB, é correto afirmar que:",
+            "alternativas": {
+              "A": "Suas normas possuem força de lei federal e aplicam-se obrigatoriamente a todos os cidadãos brasileiros.",
+              "B": "Substitui integralmente a fiscalização exercida pelo Banco Central do Brasil sobre os bancos privados.",
+              "C": "Proíbe as instituições signatárias de cobrarem qualquer tipo de tarifa bancária sobre contas de depósito à vista.",
+              "D": "É coordenado diretamente pelo Ministério da Justiça para fiscalizar preços e cartéis bancários.",
+              "E": "É um conjunto de normas privadas que complementam a regulação estatal, visando elevar os padrões de ética, transparência e eficiência no relacionamento com o consumidor."
+            },
+            "meta": "Autorregulação Bancária e Normativos SARB",
+            "respostaCorreta": "E"
+          },
+          {
+            "id": "cb_v2_34",
+            "texto": "O normativo de autorregulação da FEBRABAN sobre o Tratamento de Clientes e Usuários de Serviços Financeiros estabelece que as instituições devem:",
+            "alternativas": {
+              "A": "Garantir que os contratos sejam redigidos em linguagem técnica jurídica complexa para evitar interpretações dúbias.",
+              "B": "Limitar o atendimento presencial a apenas duas horas por dia para incentivar o uso dos canais digitais.",
+              "C": "Assegurar a adequação dos produtos e serviços oferecidos ao perfil e às necessidades do cliente (princípio do Suitability).",
+              "D": "Compartilhar dados sigilosos dos clientes com empresas de telemarketing sem necessidade de autorização prévia.",
+              "E": "Impedir o cancelamento de serviços contratados por telefone, exigindo a presença física na agência de origem."
+            },
+            "meta": "Autorregulação Bancária e Normativos SARB",
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "cb_v2_35",
+            "texto": "A Lei Complementar nº 105/2001 dispõe sobre o sigilo das operações de instituições financeiras. Sobre o dever de sigilo, NÃO constitui quebra de sigilo:",
+            "alternativas": {
+              "A": "A troca de informações entre instituições financeiras, para fins cadastrais, inclusive por meio de centrais de risco.",
+              "B": "A divulgação de informações financeiras de clientes em redes sociais para fins de marketing institucional.",
+              "C": "O fornecimento de dados bancários de qualquer cidadão a jornalistas para fins de investigação de denúncias públicas.",
+              "D": "A venda de históricos de crédito de clientes para empresas de comércio varejista sem o consentimento do titular.",
+              "E": "A exibição de extratos bancários de terceiros em audiências públicas de conselhos municipais sem ordem judicial."
+            },
+            "meta": "Sigilo Bancário",
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "cb_v2_36",
+            "texto": "Sobre o acesso a dados sigilosos por autoridades administrativas e judiciais, conforme a Lei Complementar nº 105/2001 e a jurisprudência consolidada do STF, é correto afirmar que:",
+            "alternativas": {
+              "A": "O Ministério Público possui poder irrestrito para acessar contas bancárias de qualquer cidadão sem ordem judicial em qualquer fase da investigação.",
+              "B": "Comissões Parlamentares de Inquérito (CPIs) não possuem competência para quebrar o sigilo bancário de investigados.",
+              "C": "O dever de sigilo impede que o Banco Central forneça dados de instituições financeiras ao Poder Judiciário mesmo sob ordem específica.",
+              "D": "A Receita Federal pode requisitar informações bancárias diretamente às instituições financeiras, sem necessidade de prévia autorização judicial, desde que haja processo administrativo instaurado.",
+              "E": "A quebra de sigilo por autoridade administrativa dispensa a obrigação de manter o segredo dos dados obtidos perante terceiros."
+            },
+            "meta": "Sigilo Bancário",
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "cb_v2_37",
+            "texto": "A Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018) estabelece diretrizes para o tratamento de dados pessoais. Sobre o 'dado pessoal sensível', a lei define como aquele que se refere a:",
+            "alternativas": {
+              "A": "Nome completo, CPF, RG e endereço residencial do titular.",
+              "B": "Histórico de compras em sites de e-commerce e preferências de consumo em redes sociais.",
+              "C": "Saldo médio em conta-corrente e limites de cartão de crédito aprovados por instituições financeiras.",
+              "D": "Número de telefone celular e endereços de correio eletrônico corporativo.",
+              "E": "Origem racial ou étnica, convicção religiosa, opinião política, filiação a sindicato ou a organização de caráter religioso, filosófico ou político, dado referente à saúde ou à vida sexual, dado genético ou biométrico."
+            },
+            "meta": "Lei Geral de Proteção de Dados (LGPD)",
+            "respostaCorreta": "E"
+          },
+          {
+            "id": "cb_v2_38",
+            "texto": "De acordo com a LGPD, o 'Titular de Dados' possui diversos direitos que podem ser exercidos perante o controlador. Um desses direitos é a 'portabilidade dos dados', que consiste em:",
+            "alternativas": {
+              "A": "Exigir que a instituição financeira apague todos os seus dados imediatamente, mesmo que haja uma obrigação legal de guarda.",
+              "B": "Transferir a dívida de um empréstimo bancário para outra instituição sem a necessidade de avaliação de crédito.",
+              "C": "Receber seus dados pessoais em formato estruturado e interoperável para transmiti-los a outro fornecedor de serviço ou produto.",
+              "D": "Impedir que o governo tenha acesso aos seus dados cadastrais em bases de dados públicas.",
+              "E": "Alterar o nome do titular da conta sem a apresentação de documentos comprobatórios."
+            },
+            "meta": "Lei Geral de Proteção de Dados (LGPD)",
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "cb_v2_39",
+            "texto": "A Lei nº 12.846/2013 (Lei Anticorrupção) dispõe sobre a responsabilização administrativa e civil de pessoas jurídicas. Uma inovação fundamental desta lei é a adoção da:",
+            "alternativas": {
+              "A": "Responsabilidade Objetiva, o que significa que a empresa será responsabilizada independentemente da comprovação de culpa ou dolo de seus administradores, bastando a prova do ato ilícito em seu benefício.",
+              "B": "Responsabilidade Subjetiva, onde a empresa só responde se houver prova de culpa ou dolo de seus dirigentes.",
+              "C": "Isenção total de multas para empresas que possuam capital social inferior a um milhão de reais.",
+              "D": "Responsabilidade exclusiva das pessoas físicas, sendo vedada a aplicação de sanções ao patrimônio da empresa.",
+              "E": "Obrigatoriedade de prisão imediata do Conselho de Administração sempre que houver suspeita de fraude em licitações."
+            },
+            "meta": "Legislação Anticorrupção",
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "cb_v2_40",
+            "texto": "No âmbito da Lei Anticorrupção, o 'Acordo de Leniência' pode ser celebrado com pessoas jurídicas que colaborem com a investigação. Para que o acordo seja válido, a empresa deve:",
+            "alternativas": {
+              "A": "Ser a segunda a se manifestar sobre o interesse em cooperar para a apuração do ato ilícito.",
+              "B": "Pagar uma multa fixa de 50% do seu faturamento bruto anual como condição sine qua non.",
+              "C": "Identificar apenas os concorrentes que participaram do ato, omitindo os seus próprios funcionários envolvidos.",
+              "D": "Cessar completamente o seu envolvimento na infração investigada a partir da data de proposição do acordo.",
+              "E": "Realizar o acordo em segredo de justiça eterno, sem que os fatos sejam jamais revelados ao público."
+            },
+            "meta": "Legislação Anticorrupção",
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "cb_v2_41",
+            "texto": "A segurança cibernética é uma prioridade para o Sistema Financeiro Nacional, conforme a Resolução CMN nº 4.893/2021. Sobre os ataques cibernéticos baseados em engenharia social, o 'Phishing' caracteriza-se por:",
+            "alternativas": {
+              "A": "Redirecionar o tráfego de um site legítimo para um site falso através da corrupção do sistema de nomes de domínio (DNS).",
+              "B": "Instalar um software malicioso (malware) que criptografa os dados do banco e exige um resgate em criptomoedas.",
+              "C": "Realizar milhares de acessos simultâneos a um servidor para provocar a queda do sistema por sobrecarga (ataque DoS).",
+              "D": "Acessar fisicamente o terminal de autoatendimento para instalar dispositivos de leitura de trilha de cartões ('chupa-cabra').",
+              "E": "Utilizar comunicações eletrônicas (e-mails, SMS, mensagens de apps) que parecem vir de fontes confiáveis para enganar o usuário e obter dados sensíveis."
+            },
+            "meta": "Segurança Cibernética",
+            "respostaCorreta": "E"
+          },
+          {
+            "id": "cb_v2_42",
+            "texto": "As instituições financeiras devem possuir uma Política de Segurança Cibernética aprovada pelo Conselho de Administração. De acordo com a regulação do Banco Central, em caso de incidentes relevantes, a instituição deve:",
+            "alternativas": {
+              "A": "Ocultar o fato do público e das autoridades para evitar danos à imagem e corrida bancária.",
+              "B": "Aguardar o encerramento total da investigação interna antes de realizar qualquer tipo de reporte externo.",
+              "C": "Comunicar o ocorrido ao Banco Central do Brasil em conformidade com os prazos e procedimentos estabelecidos na norma.",
+              "D": "Delegar a responsabilidade da segurança exclusivamente à empresa terceira que fornece os serviços de nuvem (cloud).",
+              "E": "Indenizar apenas os clientes que possuam seguros específicos contra ataques de hackers."
+            },
+            "meta": "Segurança Cibernética",
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "cb_v2_43",
+            "texto": "A Ética Aplicada no ambiente bancário orienta o comportamento dos colaboradores diante de dilemas morais. O Código de Ética do Banco do Brasil estabelece que, diante de um conflito de interesses, o funcionário deve:",
+            "alternativas": {
+              "A": "Comunicar formalmente a situação à sua chefia imediata e abster-se de participar de qualquer decisão relacionada ao tema.",
+              "B": "Priorizar o seu interesse pessoal ou de seus familiares, desde que não cause prejuízo financeiro direto ao Banco.",
+              "C": "Resolver o conflito de forma informal, sem registro, para não gerar burocracia desnecessária.",
+              "D": "Aceitar presentes de fornecedores de alto valor como forma de cortesia comercial padrão do mercado.",
+              "E": "Utilizar informações privilegiadas obtidas no cargo para orientar investimentos de amigos próximos."
+            },
+            "meta": "Ética Aplicada",
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "cb_v2_44",
+            "texto": "No que se refere ao sigilo e à conduta ética, o uso de informações privilegiadas ('Insider Trading') para obtenção de vantagem própria ou de terceiros no mercado de capitais é considerado:",
+            "alternativas": {
+              "A": "Uma prática legítima de mercado, incentivada para premiar a eficiência dos gestores.",
+              "B": "Uma infração ética leve que gera apenas advertência verbal interna no Banco.",
+              "C": "Uma operação isenta de fiscalização pela CVM quando realizada por funcionários de bancos públicos.",
+              "D": "Um ato ilícito administrativo e também um crime tipificado na legislação brasileira.",
+              "E": "Um benefício acessório concedido aos acionistas majoritários de companhias abertas."
+            },
+            "meta": "Ética Aplicada",
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "cb_v2_45",
+            "texto": "A Política de Responsabilidade Socioambiental (PRSA) do Banco do Brasil orienta a atuação da instituição em prol do desenvolvimento sustentável. Um dos princípios fundamentais da PRSA é:",
+            "alternativas": {
+              "A": "A busca exclusiva pela maximização do lucro trimestral, independentemente dos impactos ambientais causados pelos clientes financiados.",
+              "B": "O financiamento obrigatório de qualquer projeto industrial, mesmo que comprovadamente utilize mão de obra análoga à escravidão.",
+              "C": "A recusa em atender clientes que pertençam a minorias sociais para reduzir o risco reputacional do Banco.",
+              "D": "A desconsideração de critérios de sustentabilidade na análise de risco de crédito de grandes empreendimentos agrícolas.",
+              "E": "A integração das dimensões econômica, social e ambiental na gestão de negócios e processos, visando à perenidade da organização."
+            },
+            "meta": "Política de Responsabilidade Socioambiental do Banco do Brasil",
+            "respostaCorreta": "E"
+          },
+          {
+            "id": "cb_v2_46",
+            "texto": "A Governança da Política de Responsabilidade Socioambiental (PRSA) do Banco do Brasil envolve instâncias específicas de decisão. Sobre a estrutura que orienta a PRSA no Banco, é correto afirmar que:",
+            "alternativas": {
+              "A": "É gerida exclusivamente por uma empresa de auditoria externa, sem participação de funcionários do Banco.",
+              "B": "Não permite a participação de acionistas minoritários nas decisões sobre investimentos sustentáveis.",
+              "C": "Possui um Comitê de Sustentabilidade que assessora o Conselho de Administração na definição de diretrizes e estratégias socioambientais.",
+              "D": "É restrita apenas às agências localizadas na região amazônica, não se aplicando às unidades urbanas.",
+              "E": "É uma política facultativa que pode ser suspensa pelo Presidente do Banco em períodos de crise econômica."
+            },
+            "meta": "Política de Responsabilidade Socioambiental do Banco do Brasil",
+            "respostaCorreta": "C"
+          },
+          {
+            "id": "cb_v2_47",
+            "texto": "O conceito de ASG (Ambiental, Social e Governança) tem se tornado central na análise de riscos das instituições financeiras. O pilar da 'Governança' (G) refere-se especificamente a:",
+            "alternativas": {
+              "A": "Práticas de transparência, equidade, prestação de contas (accountability) and responsabilidade corporativa na gestão da empresa.",
+              "B": "Ações de reflorestamento e redução da emissão de gases de efeito estufa pela empresa.",
+              "C": "Políticas de diversidade, inclusão e relacionamento da empresa com as comunidades locais.",
+              "D": "O montante total de impostos pagos pela instituição ao governo federal no último ano fiscal.",
+              "E": "A quantidade de agências bancárias localizadas em áreas rurais de difícil acesso."
+            },
+            "meta": "ASG (Ambiental, Social e Governança)",
+            "respostaCorreta": "A"
+          },
+          {
+            "id": "cb_v2_48",
+            "texto": "Na integração dos critérios ASG na análise de investimentos, as instituições que seguem os Princípios para o Investimento Responsável (PRI) comprometem-se a:",
+            "alternativas": {
+              "A": "Investir apenas em empresas que possuam lucro líquido superior a um bilhão de reais.",
+              "B": "Excluir obrigatoriamente todas as empresas do setor de mineração e energia de sua carteira de ativos.",
+              "C": "Priorizar o ganho de capital de curtíssimo prazo (day trade) em detrimento da sustentabilidade corporativa.",
+              "D": "Incorporar questões ASG nas análises de investimento e nos processos de tomada de decisão, buscando melhores retornos de longo prazo e gestão de riscos.",
+              "E": "Divulgar os dados bancários sigilosos das empresas que não cumprirem metas ambientais."
+            },
+            "meta": "ASG (Ambiental, Social e Governança)",
+            "respostaCorreta": "D"
+          },
+          {
+            "id": "cb_v2_49",
+            "texto": "O mercado bancário brasileiro tem passado por transformações tecnológicas significativas. O conceito de 'Bank as a Service' (BaaS) permite que:",
+            "alternativas": {
+              "A": "Os clientes utilizem apenas dinheiro em espécie para realizar pagamentos de contas públicas.",
+              "B": "O Banco Central proíba a existência de bancos digitais que não possuam agências físicas.",
+              "C": "Cada cidadão brasileiro seja obrigado a possuir ações de pelo menos dois bancos públicos.",
+              "D": "As taxas de juros sejam fixadas pelo Ministério da Fazenda sem a participação do COPOM.",
+              "E": "Empresas não financeiras ofereçam produtos e serviços bancários aos seus próprios clientes, utilizando a infraestrutura tecnológica de um banco licenciado."
+            },
+            "meta": "Mercado Bancário",
+            "respostaCorreta": "E"
+          },
+          {
+            "id": "cb_v2_50",
+            "texto": "A dinâmica das taxas de juros no Brasil é influenciada pelo risco-país. O indicador 'CDS' (Credit Default Swap) é frequentemente utilizado para medir:",
+            "alternativas": {
+              "A": "A quantidade de cédulas de Real em circulação na economia em relação ao PIB.",
+              "B": "A taxa de desemprego oficial apurada mensalmente pelo IBGE.",
+              "C": "O custo de proteção contra o calote (default) da dívida soberana de um país, funcionando como um termômetro da percepção de risco dos investidores estrangeiros.",
+              "D": "O volume total de depósitos na caderneta de poupança no mês de referência.",
+              "E": "A variação média dos preços das passagens aéreas internacionais."
+            },
+            "meta": "Dinâmica do Mercado",
+            "respostaCorreta": "C"
+          }
+        ]
+      }
+    ]
+  }
+}
