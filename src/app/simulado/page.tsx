@@ -9,6 +9,7 @@ import simuladoData from "../../data/simulado.json";
 import { DialogOverlay, initDialog, showConfirm } from "../../components/Dialog";
 import { Rascunho } from "../../components/Rascunho";
 import { DrawOverlay } from "../../components/DrawOverlay";
+import confetti from "canvas-confetti";
 
 // --- Components ---
 const AlternativeItem = ({ id, text, isSelected, onClick, isStrikethrough, onToggleStrikethrough, showFeedback, isCorrectAnswer }: any) => {
@@ -59,6 +60,7 @@ const AlternativeItem = ({ id, text, isSelected, onClick, isStrikethrough, onTog
           showFeedback && isCorrectAnswer ? 'text-emerald-50' :
           'text-slate-400'
         } ${isStrikethrough ? 'line-through opacity-20' : ''}`}>
+          <span className="font-bold mr-2 text-slate-500 uppercase">{id})</span>
           {text}
           {showFeedback && isCorrectAnswer && (
             <motion.span initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="ml-3 inline-flex items-center text-[9px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
@@ -184,11 +186,34 @@ function SimuladoContent() {
 
     if (!simuladoDb || !simuladoDb.data_json) return [];
     
+    const normalizeQuestion = (q: any, defaultDisc = "Geral") => {
+      let alternativas = q.alternativas || {};
+      let respostaCorreta = q.respostaCorreta || q.resposta_correta;
+      let texto = q.texto || q.enunciado;
+      
+      // Converte array de {letra, texto} para objeto se necessário
+      if (Array.isArray(alternativas)) {
+        const altObj: any = {};
+        alternativas.forEach((a: any) => {
+          if (a.letra && a.texto) altObj[a.letra] = a.texto;
+        });
+        if (Object.keys(altObj).length > 0) alternativas = altObj;
+      }
+
+      return {
+        ...q,
+        texto,
+        alternativas,
+        respostaCorreta,
+        disciplina: q.disciplina || defaultDisc
+      };
+    };
+
     // Helper para extrair questões de uma estrutura de disciplinas
     const fromDisciplinas = (obj: any) => {
       if (obj?.disciplinas && Array.isArray(obj.disciplinas)) {
         return obj.disciplinas.flatMap((disc: any) => 
-          (disc.questoes || []).map((q: any) => ({ ...q, disciplina: disc.nome || "Geral" }))
+          (disc.questoes || []).map((q: any) => normalizeQuestion(q, disc.nome))
         );
       }
       return null;
@@ -197,12 +222,11 @@ function SimuladoContent() {
     // Helper para extrair questões de uma lista direta
     const fromDirect = (obj: any) => {
       if (obj?.questoes && Array.isArray(obj.questoes)) {
-        return obj.questoes.map((q: any) => ({ ...q, disciplina: q.disciplina || "Geral" }));
+        return obj.questoes.map((q: any) => normalizeQuestion(q));
       }
       return null;
     };
 
-    // Tenta em diferentes níveis (para casos de JSON aninhado)
     const root = simuladoDb.data_json;
     
     // 1. Tenta no nível raiz do data_json
@@ -217,7 +241,7 @@ function SimuladoContent() {
 
     // 3. Caso o objeto seja o array diretamente
     if (Array.isArray(root)) {
-      return root.map((q: any) => ({ ...q, disciplina: q.disciplina || "Geral" }));
+      return root.map((q: any) => normalizeQuestion(q));
     }
 
     return [];
@@ -248,10 +272,10 @@ function SimuladoContent() {
           setSimuladoDb(data);
           setTimeLeft(data.duracao_minutos * 60);
         } else {
-          console.error("Simulado não encontrado:", simuladoId);
+          console.warn("Simulado não encontrado no banco, utilizando fallback se disponível:", simuladoId);
         }
       } catch (err: any) {
-        console.error("Erro ao carregar simulado:", err.message);
+        console.warn("Erro ao carregar simulado:", err.message);
       } finally {
         setLoadingSimulado(false);
       }
@@ -826,6 +850,14 @@ function SimuladoContent() {
                          onClick={() => {
                            setShowFeedback({...showFeedback, [currentQuestion]: true});
                            saveProgress(answers);
+                           if (answers[currentQuestion] === q.respostaCorreta) {
+                             confetti({
+                               particleCount: 150,
+                               spread: 90,
+                               origin: { y: 0.6 },
+                               colors: ['#3b82f6', '#10b981', '#f59e0b', '#ffffff']
+                             });
+                           }
                          }}
                          className="px-10 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] shadow-[0_20px_40px_rgba(16,185,129,0.2)] active:scale-95 transition-all flex items-center gap-2"
                        >

@@ -19,7 +19,16 @@ import {
   BarChart3,
   PieChart,
   Target,
-  Flame
+  Flame,
+  Laptop,
+  Briefcase,
+  Building2,
+  Globe2,
+  BookA,
+  Calculator,
+  DollarSign,
+  Languages,
+  Library
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
@@ -359,6 +368,8 @@ export default function Home() {
     });
   };
 
+  const [simuladoSubject, setSimuladoSubject] = useState("Todos");
+
   const handleAuthSuccess = async (email: string, password?: string, mode?: 'password' | 'otp', isSignUp?: boolean) => {
     // Pega a URL base (sem barras extras no final para não dar erro de match no Supabase)
     const redirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
@@ -388,9 +399,42 @@ export default function Home() {
     }
   };
 
-  const filteredSimulados = filter === "Tudo" ? simulados : simulados.filter((s: any) => {
-    return s.nivel === filter.toUpperCase();
+  const filteredSimulados = simulados.filter((s: any) => {
+    const matchLevel = filter === "Tudo" || s.nivel === filter.toUpperCase();
+    
+    let matchSubject = true;
+    if (simuladoSubject !== "Todos") {
+      const normalize = (str: string) => (str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+      
+      const titleUpper = normalize(s.titulo);
+      const materiaUpper = normalize(s.materia);
+      const subjectUpper = normalize(simuladoSubject);
+      
+      // Termos de busca equivalentes
+      let searchTerms = [subjectUpper];
+      if (subjectUpper === "PORTUGUESA") searchTerms.push("PORTUGUES");
+      if (subjectUpper === "MATEMATICA FINANCEIRA") searchTerms.push("FINANCEIRA");
+      if (subjectUpper === "CONHECIMENTOS BANCARIOS") searchTerms.push("BANCARIO");
+      
+      // Filtra ESTRITAMENTE pela coluna matéria do Supabase
+      matchSubject = searchTerms.some(term => materiaUpper === term || materiaUpper.includes(term));
+    }
+
+    return matchLevel && matchSubject;
   });
+
+  const SUBJECTS = [
+    { name: "Todos", icon: <BookOpen className="w-4 h-4" />, color: "from-slate-600 to-slate-400" },
+    { name: "Geral", icon: <Library className="w-4 h-4" />, color: "from-slate-500 to-slate-300" },
+    { name: "Informática", icon: <Laptop className="w-4 h-4" />, color: "from-blue-600 to-cyan-400" },
+    { name: "Vendas e Negociações", icon: <Briefcase className="w-4 h-4" />, color: "from-emerald-600 to-teal-400" },
+    { name: "Conhecimentos Bancários", icon: <Building2 className="w-4 h-4" />, color: "from-orange-600 to-amber-400" },
+    { name: "Atualidades", icon: <Globe2 className="w-4 h-4" />, color: "from-pink-600 to-rose-400" },
+    { name: "Portuguesa", icon: <BookA className="w-4 h-4" />, color: "from-purple-600 to-fuchsia-400" },
+    { name: "Matemática", icon: <Calculator className="w-4 h-4" />, color: "from-yellow-600 to-orange-400" },
+    { name: "Matemática Financeira", icon: <DollarSign className="w-4 h-4" />, color: "from-green-600 to-emerald-400" },
+    { name: "Inglês", icon: <Languages className="w-4 h-4" />, color: "from-indigo-600 to-blue-400" },
+  ];
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans selection:bg-blue-500/20">
@@ -482,27 +526,59 @@ export default function Home() {
                   <p className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em]">Selecione seu próximo protocolo de treinamento</p>
                 </div>
 
-                <div className="flex items-center gap-2 p-1 bg-[#0F172A]/40 border border-white/5 rounded-2xl backdrop-blur-xl overflow-x-auto no-scrollbar max-w-full">
-                  {["Tudo", "Básico", "Padrão", "Avançado"].map((lvl) => (
-                    <button 
-                      key={lvl}
-                      onClick={() => setFilter(lvl)}
-                      className={`relative px-5 sm:px-6 py-3 text-xs sm:text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 shrink-0 ${
-                        filter === lvl 
-                          ? 'text-white' 
-                          : 'text-slate-600 hover:text-slate-400'
-                      }`}
-                    >
-                      {filter === lvl && (
-                        <motion.div 
-                          layoutId="filter-bg"
-                          className="absolute inset-0 bg-blue-600 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.3)]"
-                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                        />
-                      )}
-                      <span className="relative z-10">{lvl}</span>
-                    </button>
-                  ))}
+                <div className="flex flex-col gap-4 items-end">
+                  <div className="flex items-center gap-2 p-1 bg-[#0F172A]/40 border border-white/5 rounded-2xl backdrop-blur-xl overflow-x-auto no-scrollbar max-w-full">
+                    {["Tudo", "Básico", "Padrão", "Avançado"].map((lvl) => (
+                      <button 
+                        key={lvl}
+                        onClick={() => setFilter(lvl)}
+                        className={`relative px-5 sm:px-6 py-3 text-xs sm:text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 shrink-0 ${
+                          filter === lvl 
+                            ? 'text-white' 
+                            : 'text-slate-600 hover:text-slate-400'
+                        }`}
+                      >
+                        {filter === lvl && (
+                          <motion.div 
+                            layoutId="filter-bg"
+                            className="absolute inset-0 bg-blue-600 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+                            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                          />
+                        )}
+                        <span className="relative z-10">{lvl}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Filtro de Matérias Premium */}
+              <div className="mb-10 w-full">
+                <div className="flex flex-wrap items-center gap-3 py-2">
+                  {SUBJECTS.map((sub) => {
+                    const isActive = simuladoSubject === sub.name;
+                    return (
+                      <button
+                        key={sub.name}
+                        onClick={() => setSimuladoSubject(sub.name)}
+                        className={`relative group px-4 py-3 rounded-2xl border transition-all duration-300 flex items-center gap-3 overflow-hidden
+                          ${isActive 
+                            ? 'bg-white/[0.05] border-white/10 text-white shadow-xl' 
+                            : 'bg-transparent border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/[0.02]'
+                          }
+                        `}
+                      >
+                        <div className={`absolute inset-0 bg-gradient-to-br transition-opacity duration-300 ${isActive ? 'opacity-20 ' + sub.color : 'opacity-0'}`} />
+                        
+                        <div className={`relative z-10 p-2 rounded-xl transition-all duration-300 ${isActive ? 'bg-gradient-to-br shadow-lg text-white scale-105 ' + sub.color : 'bg-white/5 text-slate-400 group-hover:scale-105 group-hover:text-white'}`}>
+                          {sub.icon}
+                        </div>
+                        <span className="relative z-10 text-[10px] sm:text-xs font-black uppercase tracking-widest whitespace-nowrap">
+                          {sub.name}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
