@@ -525,20 +525,6 @@ export default function Home() {
             <BarChart3 className="w-3.5 h-3.5" />
             Análises
           </button>
-          <button 
-            onClick={() => setActiveView("memorizacao")}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs sm:text-[10px] font-black uppercase tracking-widest transition-all ${activeView === "memorizacao" ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-500 hover:text-slate-300'}`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            Memorização
-          </button>
-          <button 
-            onClick={() => setActiveView("flashcards")}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs sm:text-[10px] font-black uppercase tracking-widest transition-all ${activeView === "flashcards" ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-500 hover:text-slate-300'}`}
-          >
-            <Flame className="w-3.5 h-3.5" />
-            Flashcards
-          </button>
         </div>
 
         <AnimatePresence mode="wait">
@@ -693,7 +679,7 @@ export default function Home() {
                 )}
               </div>
             </motion.div>
-          ) : activeView === "analises" ? (
+          ) : (
             <motion.div
               key="analises-view"
               initial={{ opacity: 0, y: 20 }}
@@ -702,7 +688,6 @@ export default function Home() {
               transition={{ duration: 0.3 }}
               className="space-y-12"
             >
-              {/* ... (existing analises content) ... */}
               <div className="flex items-center justify-between">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3"><div className="h-px w-8 bg-orange-500/50" /><span className="text-[10px] font-black uppercase tracking-[0.4em] text-orange-500/60">Inteligência Competitiva</span></div>
@@ -799,38 +784,6 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-            </motion.div>
-          ) : activeView === "memorizacao" ? (
-            <motion.div
-              key="memorizacao-view"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <LinuxMemorization />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="flashcards-view"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="flex items-center gap-3 mb-10">
-                <div className="h-px w-8 bg-blue-500/50" />
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500/60">Sistema de Repetição Espaçada</span>
-              </div>
-              <FlashcardDashboard 
-                flashcards={flashcards}
-                configLevels={srsConfig}
-                isLoading={loadingFlashcards}
-                onStartStudy={(selectedCards) => {
-                  setStudyFlashcards(selectedCards);
-                  setIsFlashcardStudyMode(true);
-                }}
-              />
             </motion.div>
           )}
         </AnimatePresence>

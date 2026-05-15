@@ -106,48 +106,45 @@ export default function StudyInterface({ cards, onExit, configLevels }: StudyInt
             >
               {/* The Card */}
               <motion.div 
-                className="w-full h-full relative cursor-pointer"
+                className="w-full h-full relative preserve-3d"
                 onClick={() => !isUpdating && setIsFlipped(!isFlipped)}
                 animate={{ rotateY: isFlipped ? 180 : 0 }}
                 transition={{ type: 'spring', damping: 20, stiffness: 100 }}
               >
                 {/* Front */}
-                <div className="absolute inset-0 backface-hidden rounded-[2.5rem] bg-gradient-to-br from-gray-800 to-black border border-white/5 p-12 flex flex-col items-center justify-center text-center shadow-2xl">
-                  <div className="absolute top-8 left-12 right-12 flex flex-col items-center gap-1 opacity-40">
-                    <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">{currentCard.materia}</span>
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{currentCard.topico}</span>
+                <div className="absolute inset-0 backface-hidden rounded-[2.5rem] bg-gradient-to-br from-[#1e293b] to-[#0f172a] border border-white/10 p-12 flex flex-col items-center justify-center text-center shadow-2xl">
+                  <div className="absolute top-10 flex flex-col items-center gap-1 opacity-60">
+                    <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">{currentCard.materia}</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{currentCard.topico}</span>
                   </div>
                   
-                  <h2 className="text-2xl md:text-3xl font-bold leading-tight text-gray-200">
+                  <h2 className="text-2xl md:text-4xl font-black leading-tight text-white max-w-lg">
                     {currentCard.pergunta}
                   </h2>
 
-                  <div className="absolute bottom-8 text-[10px] font-bold text-blue-500/50 uppercase tracking-widest animate-pulse">
-                    Clique para revelar a resposta
+                  <div className="absolute bottom-10 text-[10px] font-black text-blue-500/40 uppercase tracking-[0.4em] animate-pulse">
+                    Toque para girar
                   </div>
                 </div>
 
                 {/* Back */}
                 <div 
-                  className="absolute inset-0 backface-hidden rounded-[2.5rem] bg-gradient-to-br from-[#1e1b4b] to-black border border-blue-500/20 p-12 flex flex-col items-center justify-center text-center shadow-2xl overflow-hidden"
+                  className="absolute inset-0 backface-hidden rounded-[2.5rem] bg-gradient-to-br from-[#1e1b4b] to-[#020617] border border-blue-500/30 p-12 flex flex-col items-center justify-center text-center shadow-2xl overflow-hidden"
                   style={{ transform: 'rotateY(180deg)' }}
                 >
-                  {/* Background Decoration */}
-                  <div className="absolute top-0 right-0 p-8 opacity-10">
-                    <Info className="w-32 h-32" />
-                  </div>
-
                   <div className="w-full h-full flex flex-col">
-                    <div className="flex-1 flex flex-col justify-center gap-6">
-                      <p className="text-sm font-bold text-blue-400 uppercase tracking-widest opacity-40">RESPOSTA</p>
-                      <h2 className="text-2xl md:text-4xl font-black text-white leading-tight">
-                        {currentCard.resposta}
-                      </h2>
+                    <div className="flex-1 flex flex-col justify-center gap-8">
+                      <div>
+                        <p className="text-[10px] font-black text-blue-400/50 uppercase tracking-[0.4em] mb-4">RESPOSTA</p>
+                        <h2 className="text-2xl md:text-4xl font-black text-white leading-tight">
+                          {currentCard.resposta}
+                        </h2>
+                      </div>
                       
                       {currentCard.explicacao && (
-                        <div className="mt-4 p-6 bg-white/5 border border-white/10 rounded-2xl text-left">
-                          <p className="text-xs font-bold text-blue-400 mb-2">EXPLICAÇÃO</p>
-                          <p className="text-sm text-gray-300 leading-relaxed">
+                        <div className="mt-4 p-6 bg-blue-500/5 border border-blue-500/20 rounded-3xl text-left max-h-[40%] overflow-y-auto custom-scrollbar">
+                          <p className="text-[9px] font-black text-blue-400 mb-3 uppercase tracking-widest">Explicação</p>
+                          <p className="text-sm text-slate-300 leading-relaxed font-medium">
                             {currentCard.explicacao}
                           </p>
                         </div>
@@ -213,12 +210,15 @@ export default function StudyInterface({ cards, onExit, configLevels }: StudyInt
       <style jsx global>{`
         .preserve-3d {
           transform-style: preserve-3d;
+          -webkit-transform-style: preserve-3d;
         }
         .backface-hidden {
           backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
         }
         .perspective-2000 {
           perspective: 2000px;
+          -webkit-perspective: 2000px;
         }
         @keyframes juice-shake {
           0% { transform: translateX(0); }

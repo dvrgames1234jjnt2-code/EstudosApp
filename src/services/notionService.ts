@@ -60,16 +60,16 @@ export function parseNotionCard(page: any) {
     referencia: extractUrl(props['Referencia']),
     explicacao: extractText(props['Explicacao']),
     deck: extractFlexible(props['Deck']),
-    deckPai: extractFlexible(props['Deck Pai']),
-    materia: extractFlexible(props['Matéria']),
-    topico: extractFlexible(props['Tópico']),
+    deckPai: extractFlexible(props['Deck_pai']),
+    materia: extractFlexible(props['Materia']),
+    topico: extractFlexible(props['Topico']),
     assunto: extractFlexible(props['Assunto']),
-    subAssunto: extractFlexible(props['Sub Assunto']),
+    subAssunto: extractFlexible(props['Sub_Assunto']),
     categoria: extractFlexible(props['Categoria']),
-    srsLevel: extractFlexible(props['SRS Level']),
+    srsLevel: extractFlexible(props['Score']), // Mapping Score to SRS level
     feedback: extractFlexible(props['Feedback']),
-    proximaRevisao: props['Próxima Revisão']?.date?.start || null,
-    ultimaRevisao: props['Última Revisão']?.date?.start || null,
+    proximaRevisao: props['Proxima_Revisao']?.date?.start || null,
+    ultimaRevisao: props['Ultima_Revisao']?.date?.start || null,
   };
 }
 
@@ -84,7 +84,7 @@ export async function fetchFlashcards() {
       headers: getHeaders(),
       body: JSON.stringify({
         page_size: 100,
-        sorts: [{ property: 'Próxima Revisão', direction: 'ascending' }]
+        sorts: [{ property: 'Proxima_Revisao', direction: 'ascending' }]
       })
     });
     const data = await response.json();
@@ -104,7 +104,7 @@ export async function updateCardSRS(cardId: string, feedback: string) {
       body: JSON.stringify({
         properties: {
           'Feedback': { select: { name: feedback } },
-          'Última Revisão': { date: { start: new Date().toISOString() } }
+          'Ultima_Revisao': { date: { start: new Date().toISOString() } }
         }
       })
     });
@@ -126,10 +126,10 @@ export async function fetchSRSConfig() {
     
     return data.results.map((page: any) => ({
       id: page.id,
-      name: extractText(page.properties['Name']),
-      color: extractFlexible(page.properties['Color']),
-      order: page.properties['Order']?.number || 0,
-      days: page.properties['Days']?.number || 0,
+      name: extractText(page.properties['Nivel']),
+      color: 'blue', 
+      order: parseInt(extractText(page.properties['Carga'])) || 0,
+      days: page.properties['Fato de dias']?.number || 0,
     })).sort((a: any, b: any) => a.order - b.order);
   } catch (error) {
     console.error("Erro ao buscar config SRS:", error);
