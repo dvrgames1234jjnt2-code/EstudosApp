@@ -28,7 +28,8 @@ import {
   Calculator,
   DollarSign,
   Languages,
-  Library
+  Library,
+  Brain
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
@@ -36,6 +37,11 @@ import { UserHeader } from "../components/UserHeader";
 import { AuthModal } from "../components/AuthModal";
 import { RankingModal } from "../components/RankingModal";
 import { DialogOverlay, initDialog, showAlert, showConfirm } from "../components/Dialog";
+import { LinuxMemorization } from "../components/LinuxMemorization";
+import FlashcardDashboard from "../components/flashcards/FlashcardDashboard";
+import StudyInterface from "../components/flashcards/StudyInterface";
+import { fetchFlashcards, fetchSRSConfig } from "../services/notionService";
+import { Flashcard, SRSConfig } from "../types/flashcards";
 
 const ANALYSIS_DATA: Record<string, {
   subjects: { subject: string, q: number, p: number }[],
@@ -187,7 +193,12 @@ export default function Home() {
     title: ""
   });
   const [filter, setFilter] = useState("Tudo");
-  const [activeView, setActiveView] = useState<"simulados" | "analises">("simulados");
+  const [activeView, setActiveView] = useState<"simulados" | "analises" | "memorizacao" | "flashcards">("simulados");
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
+  const [srsConfig, setSrsConfig] = useState<SRSConfig[]>([]);
+  const [loadingFlashcards, setLoadingFlashcards] = useState(false);
+  const [isFlashcardStudyMode, setIsFlashcardStudyMode] = useState(false);
+  const [studyFlashcards, setStudyFlashcards] = useState<Flashcard[]>([]);
   const [activeSubject, setActiveSubject] = useState("Informática");
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminJson, setAdminJson] = useState("");
@@ -224,8 +235,20 @@ export default function Home() {
     });
 
     fetchSimulados();
+    loadFlashcards();
     return () => subscription.unsubscribe();
   }, []);
+
+  const loadFlashcards = async () => {
+    setLoadingFlashcards(true);
+    const [cards, config] = await Promise.all([
+      fetchFlashcards(),
+      fetchSRSConfig()
+    ]);
+    setFlashcards(cards);
+    setSrsConfig(config);
+    setLoadingFlashcards(false);
+  };
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -502,6 +525,20 @@ export default function Home() {
             <BarChart3 className="w-3.5 h-3.5" />
             Análises
           </button>
+          <button 
+            onClick={() => setActiveView("memorizacao")}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs sm:text-[10px] font-black uppercase tracking-widest transition-all ${activeView === "memorizacao" ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            <Brain className="w-3.5 h-3.5" />
+            Memorização
+          </button>
+          <button 
+            onClick={() => setActiveView("flashcards")}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs sm:text-[10px] font-black uppercase tracking-widest transition-all ${activeView === "flashcards" ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            <Flame className="w-3.5 h-3.5" />
+            Flashcards
+          </button>
         </div>
 
         <AnimatePresence mode="wait">
@@ -656,7 +693,7 @@ export default function Home() {
                 )}
               </div>
             </motion.div>
-          ) : (
+          ) : activeView === "analises" ? (
             <motion.div
               key="analises-view"
               initial={{ opacity: 0, y: 20 }}
@@ -665,19 +702,12 @@ export default function Home() {
               transition={{ duration: 0.3 }}
               className="space-y-12"
             >
+              {/* ... (existing analises content) ... */}
               <div className="flex items-center justify-between">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3"><div className="h-px w-8 bg-orange-500/50" /><span className="text-[10px] font-black uppercase tracking-[0.4em] text-orange-500/60">Inteligência Competitiva</span></div>
                   <h2 className="text-2xl sm:text-5xl font-light text-white tracking-tighter leading-none">Engenharia de <span className="font-black text-slate-700 italic">Dados</span></h2>
                   <p className="text-[9px] sm:text-[10px] text-slate-500 uppercase font-bold tracking-[0.1em] sm:tracking-[0.2em]">O que realmente cai na sua prova (Top Assuntos)</p>
-                </div>
-                <div className="hidden xs:flex flex-col items-end gap-1 opacity-20 sm:hidden">
-                  <div className="flex gap-1">
-                    <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
-                    <div className="w-1 h-1 bg-white rounded-full animate-pulse [animation-delay:200ms]" />
-                    <div className="w-1 h-1 bg-white rounded-full animate-pulse [animation-delay:400ms]" />
-                  </div>
-                  <span className="text-[8px] font-black uppercase tracking-widest text-white">Deslize</span>
                 </div>
               </div>
 
@@ -685,8 +715,6 @@ export default function Home() {
                 {Object.keys(ANALYSIS_DATA).map((subj) => {
                   const color = ANALYSIS_DATA[subj].color;
                   const isActive = activeSubject === subj;
-                  
-                  // Mapeamento manual de cores tailwind para garantir que o JIT pegue as classes
                   const colorClasses: Record<string, string> = {
                     blue: isActive ? 'bg-blue-600 shadow-blue-900/20 text-white' : 'text-slate-500',
                     emerald: isActive ? 'bg-emerald-600 shadow-emerald-900/20 text-white' : 'text-slate-500',
@@ -697,15 +725,8 @@ export default function Home() {
                     cyan: isActive ? 'bg-cyan-600 shadow-cyan-900/20 text-white' : 'text-slate-500',
                     indigo: isActive ? 'bg-indigo-600 shadow-indigo-900/20 text-white' : 'text-slate-500',
                   };
-
                   return (
-                    <button 
-                      key={subj}
-                      onClick={() => setActiveSubject(subj)}
-                      className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all shadow-lg whitespace-nowrap border ${
-                        isActive ? 'border-transparent' : 'bg-white/[0.03] border-white/5 hover:bg-white/10'
-                      } ${colorClasses[color]}`}
-                    >
+                    <button key={subj} onClick={() => setActiveSubject(subj)} className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all shadow-lg whitespace-nowrap border ${isActive ? 'border-transparent' : 'bg-white/[0.03] border-white/5 hover:bg-white/10'} ${colorClasses[color]}`}>
                       {subj === 'Vendas' ? 'Vendas' : subj === 'Financeira' ? 'Mat. Fin.' : subj}
                     </button>
                   );
@@ -747,7 +768,6 @@ export default function Home() {
                     </motion.div>
                   ))}
                   
-                  {/* Ponto de Atenção Dinâmico */}
                   <div className={`p-6 sm:p-8 rounded-[24px] sm:rounded-[32px] border-2 border-dashed flex flex-col items-center text-center gap-4 ${
                     activeSubject === 'Informática' ? 'bg-blue-600/5 border-blue-500/10' :
                     activeSubject === 'Vendas' ? 'bg-emerald-600/5 border-emerald-500/10' :
@@ -779,6 +799,38 @@ export default function Home() {
                   </div>
                 </div>
               </div>
+            </motion.div>
+          ) : activeView === "memorizacao" ? (
+            <motion.div
+              key="memorizacao-view"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <LinuxMemorization />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="flashcards-view"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="flex items-center gap-3 mb-10">
+                <div className="h-px w-8 bg-blue-500/50" />
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500/60">Sistema de Repetição Espaçada</span>
+              </div>
+              <FlashcardDashboard 
+                flashcards={flashcards}
+                configLevels={srsConfig}
+                isLoading={loadingFlashcards}
+                onStartStudy={(selectedCards) => {
+                  setStudyFlashcards(selectedCards);
+                  setIsFlashcardStudyMode(true);
+                }}
+              />
             </motion.div>
           )}
         </AnimatePresence>
@@ -951,6 +1003,19 @@ export default function Home() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isFlashcardStudyMode && (
+          <StudyInterface 
+            cards={studyFlashcards}
+            configLevels={srsConfig}
+            onExit={() => {
+              setIsFlashcardStudyMode(false);
+              loadFlashcards(); // Refresh cards status
+            }}
+          />
         )}
       </AnimatePresence>
 

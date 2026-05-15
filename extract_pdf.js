@@ -8,7 +8,10 @@ function extractPdf(filename, outname) {
         let line = "";
         
         new PdfReader().parseFileItems(filename, (err, item) => {
-            if (err) return reject(err);
+            if (err) {
+                console.error(`Error parsing ${filename}:`, err);
+                return reject(err);
+            }
             if (!item) {
                 if (line) lines.push(line);
                 fs.writeFileSync(outname, lines.join("\n"));
@@ -28,14 +31,8 @@ function extractPdf(filename, outname) {
 
 async function run() {
     try {
-        console.log("Extracting simulado...");
-        await extractPdf('SIMULADO BB (1).pdf', 'simulado_2_raw.txt');
-        console.log("Extracting gabarito...");
-        try {
-            await extractPdf('GABARITO SIMULADO BB (1).pdf', 'gabarito_2_raw.txt');
-        } catch(e) {
-            console.log("No gabarito pdf found or error.");
-        }
+        console.log("Extracting renan 50 questões.pdf...");
+        await extractPdf('renan 50 questões.pdf', 'renan_raw.txt');
         console.log("Done");
     } catch(e) {
         console.error(e);
