@@ -1,0 +1,1615 @@
+17771166784 - Danielle Roger
+06 de Fevereiro de 2026
+Diego Carvalho
+Autor:
+de Informática 
+Comercial) Passo Estratégico de Noções
+Banco do Brasil (Escriturário - Agente
+Aula 02
+----------------Page (0) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+2
+..............................................................................................................................................................................................2) Simulado - Protocolos de Redes                                                                                                                                    18
+..............................................................................................................................................................................................1) Simulado - Redes de Computadores                                                                                                                               3
+Índice
+Aula 02
+Diego Carvalho
+----------------Page (1) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+3
+ 
+ 
+transmitir dados a todos os outros dispositivos da rede, evitando congestionamento. 
+b)  Em  um  enlace  ponto-multiponto,  cada  dispositivo  tem  um  link  dedicado  exclusivo  para 
+ 
+tempo, sendo ideal para transmissões broadcast em redes WAN. 
+a)  O  enlace  ponto-a-ponto  permite  a  comunicação  entre  múltiplos  dispositivos  ao  mesmo 
+ 
+3.  A respeito dos tipos de enlaces em redes de computadores, é correto afirmar que: 
+ 
+podem se comunicar diretamente sem passar pelo n ó central. 
+e)  A  topologia  estrela  possui  uma  topologia  lógica  de  malha,  pois  todos  os  dispositivos 
+ 
+os dispositivos. 
+e complexa para redes de grande escala devido à quantidade de conexões necessárias entre 
+d) A topologia em malha, embora ofereça alta redundância e confiabilidade, pode ser custosa 
+ 
+dispositivos se comuniquem simultaneamente sem risco de colisão. 
+c)  Na  topologia  em  anel,  a  transmiss  ão  ocorre  em  full -duplex,  permitindo  que  v ários 
+ 
+um cabo afeta toda a rede, tornando-a inviável para redes empresariais. 
+b) A topologia estrela facilita a detec ção e o isolamento de falhas, j á que o rompimento de 
+ 
+forma ponto-a-ponto, garantindo maior segurança dos dados trafegados. 
+a) A topologia em barramento utiliza cabos coaxiais e permite que a comunicação ocorra de 
+ 
+2.  Em relação às topologias de rede, é correto afirmar que: 
+ 
+restrito a redes locais, como PAN e LAN. 
+e) O modo multicast não pode ser utilizado em redes de grandes escalas como WAN, sendo 
+ 
+destinatários, sem risco de colisões em redes Ethernet. 
+d)  No  modo  unicast,  a  transmissão  de  dados  ocorre  de  forma  simultânea  entre  múltiplos 
+ 
+funcionamento de um controle remoto de televisão infravermelho. 
+c)   Broadcast   limita-se   a   enviar   mensagens   para   um   único   destinatário,   similar   ao 
+ 
+sendo eficaz para aplicações como videoconferências e streaming de mídia em tempo real. 
+b) Multicast permite a transmissão de mensagens para um grupo específico de destinatários, 
+ 
+simultaneamente, sendo adequado para listas de transmissão em redes sociais. 
+a)    Unicast    permite    que    uma    mensagem    seja    enviada    para    múltiplos    destinos 
+ 
+1.  Sobre os modos de transmissão de redes de computadores, é correto afirmar que: 
+ 
+IMULADO       EDES DE    OMPUTADORES
+S               –R              C                         
+ 
+                                                                                                                                                                                                                                
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (2) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+4
+ 
+a) I, II e III. 
+ 
+Quais estão corretas? 
+ 
+transmitidos por meios anal ógicos como linhas telef ônicas. 
+V. Um modem realiza a modula ção e demodula ção de sinais para que os dados possam ser 
+ 
+correto com base no endere ço MAC. 
+IV.  As  bridges  são  responsáveis  por  regenerar  sinais  e  encaminhar  pacotes  para  o  destino 
+ 
+rota para que os dados cheguem ao destino, com base nos endere ços IP. 
+III.  Um  roteador é  capaz  de  segmentar  redes  em diferentes  sub-redes  e  escolher  a  melhor 
+ 
+múltiplas transmissões simultâneas entre diferentes dispositivos.  
+II.  Um  switch  opera  em  full-duplex,  eliminando  a  possibilidade  de  colisões  e  permitindo 
+ 
+ao destinatário final, sem congestionamentos.  
+I. Um hub é considerado um dispositivo inteligente, capaz de encaminhar dados diretamente 
+ 
+5.  Em relação ao funcionamento dos dispositivos de rede, considere as afirmações abaixo: 
+ 
+suportar altas velocidades e permitir comunicação full-duplex. 
+e)  A  categoria  CAT3  de  cabos  de  par  trançado é  a  mais  utilizada  em  redes  modernas,  por 
+ 
+maior largura de banda e baixa atenuação, permitindo transmissões mais rápidas e seguras. 
+d)  A  fibra óptica é  amplamente  utilizada  em  redes  de  longa  distância  (WAN),  graças  à  sua 
+ 
+capacidade de cobrir maiores distâncias sem perda significativa de sinal. 
+c)  O  cabo  coaxial  é  preferido  em  instalações  residenciais  devido  à  sua  flexibilidade  e 
+ 
+repetidores para funcionar adequadamente. 
+sinais  a  distâncias  maiores  que  os  cabos  coaxiais,  mas  requer  um  número  elevado  de 
+b) A fibra óptica oferece maior imunidade à interferência eletromagnética e pode transportar 
+ 
+mais indicados para redes com altas taxas de transferência de dados em WANs. 
+a) Cabos de par trançado possuem maior largura de banda que cabos de fibra óptica, sendo 
+ 
+4.  Sobre os meios de transmissão guiados e não guiados, marque a alternativa correta: 
+ 
+garantir uma comunicação eficiente e sem falhas. 
+e) Redes ponto -multiponto exigem o uso de cabos coaxiais em todos os seus enlaces para 
+ 
+pois requer que cada dispositivo esteja conectado a todos os outros dispositivos da rede. 
+d)  O  enlace  ponto-multiponto  só  pode  ser  implementado  em  redes  com  topologia  malha, 
+ 
+redes complexas. 
+o  que  garante  maior  segurança,  mas  com  menor  escalabilidade,  sendo  inadequado  para 
+c) O enlace ponto-a-ponto é caracterizado por uma conexão dedicada entre dois dispositivos, 
+ 
+                                                                                                                                                                                                                                
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (3) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+5
+ 
+ 
+com uma taxa máxima de apenas 11 Mbps. 
+GHz, mas é considerado obsoleto em termos de velocidade, comparado ao padrão 802.11b, 
+d) O padrão IEEE 802.11ac trouxe a possibilidade de operar em frequências de 2.4 GHz e 5.0 
+ 
+segurança de redes sem fio em comparação com seus antecessores. 
+primeiro   padrão   a   introduzir   a   criptografia   WPA3,   que   melhora   significativamente   a 
+c)  O  IEEE  802.11n é  um  dos  mais  recentes,  oferecendo  taxas  de  até  14  Gbps  e  sendo  o 
+ 
+melhorias na taxa de interferência com dispositivos domésticos. 
+com o padrão 802.11b, operando em 2.4 GHz com uma taxa de até 54 Mbps, ademais trouxe 
+b) O padrão IEEE 802.11g foi introduzido após o IEEE 802.11a e manteve a compatibilidade 
+ 
+evitar interferências com outros dispositivos. 
+de  transmissão  superiores  a  600  Mbps,  sendo  um dos  primeiros  a  operar  em  Dual  Band  e 
+a) O padrão IEEE 802.11b introduziu uma tecnologia de 5.0 GHz, com capacidade para taxas 
+ 
+descreve corretamente suas caracter ísticas e evolução? 
+7.  Em  relação  à  evolução  do  padrão  Wi-Fi  (IEEE  802.11),  qual  das  alternativas  abaixo 
+ 
+interrupções. 
+MAU   específicos   para   que   a   comunicação   possa   acontecer   de   forma   estável   e   sem 
+e) A arquitetura do Token Ring  é baseada em uma topologia l ógica de estrela e requer hubs 
+ 
+redes com alta demanda.  
+superando devido  à menor confiabilidade e  à maior vulnerabilidade a colis ões de dados em 
+d) Embora o Token Ring tenha se tornado o padrão dominante na indústria, a Ethernet acabou 
+ 
+em redes maiores. 
+prevenindo colis ões de dados e garantindo baixa lat ência, mas com escalabilidade limitada 
+c) No Token Ring, um único dispositivo tem o controle de transmitir dados ao possuir o token, 
+ 
+disponível. 
+transmitam  dados  simultaneamente,  o  que  maximiza  a  utiliza  ção  da  largura  de  banda 
+b)  O  Token  circula  na  rede  de  forma  bidirecional,  permitindo  que  múltiplos  dispositivos 
+ 
+canais separados. 
+central,  permitindo  a  transmissão  simultânea  de  múltiplos  dispositivos  através  do  uso  de 
+a) O Token Ring utiliza uma topologia em estrela, conectando todos os dispositivos a um hub 
+ 
+6.  Sobre o padrão Token Ring (IEEE 802.5), qual das afirmações abaixo está correta? 
+ 
+e) II, III e V. 
+d) I, IV e V. 
+c) III, IV e V. 
+b) II, III e IV. 
+ 
+                                                                                                                                                                                                                                
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (4) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+6
+ 
+de dados em aplicações críticas de grande escala. 
+Bluetooth Low Energy (BLE), o que garante conectividade global e alta taxa de transfer ência 
+e) O principal benefício da IoT é sua capacidade de operar em redes de curto alcance, como 
+ 
+eliminando a necessidade de sensores e atuadores. 
+fibra óptica, que permitem a integração de dispositivos em ambientes altamente din âmicos, 
+d) Dispositivos na IoT t êm sua conectividade garantida por redes de telefonia m  óvel (5G) e 
+ 
+permitindo decisões automatizadas em tempo real. 
+Zigbee e LoRa para transmitir esses dados para a nuvem, onde são processados e analisados, 
+c)  Sensores  IoT  coletam  dados  do  ambiente  e  utilizam  tecnologias  de  comunicação  como 
+ 
+tornando as redes de sensores compatíveis com dispositivos residenciais. 
+Bluetooth,  que  oferecem  uma  conexão  de  longa  distância  e  alta  taxa  de  transferência, 
+b)  A  comunicação  na  IoT  é  feita  exclusivamente  por  tecnologias  sem  fio  como  Wi-Fi  e 
+ 
+velocidade de transmissão, mesmo em áreas urbanas densas. 
+dispositivos  em  distâncias  curtas,  como  sensores  e  dispositivos  móveis,  garantindo  alta 
+a)  A  IoT  é  altamente  dependente  da  tecnologia  PLC,  que  permite  a  comunicação  entre 
+ 
+componentes e tecnologias de comunicação. 
+9.  Sobre a Internet das Coisas (IoT), assinale a alternativa que descreve corretamente seus 
+ 
+necessidade de passar pelo dispositivo mestre.  
+dispositivos  escravos  de  diferentes  redes  se  comuniquem  diretamente  entre  si,  sem  a 
+e)  As  scatternets  são  formadas  por  múltiplas  piconets  interconectadas,  permitindo  que  os 
+ 
+permitida para aumentar a efici ência da rede. 
+pode  atuar  como  mestre  em  uma  scatternet,  onde  a  comunicação  direta  entre  mestres é 
+d) Um dispositivo Bluetooth pode ser escravo em v  árias piconets ao mesmo tempo, mas s  ó 
+ 
+diminuição do tempo de latência. 
+necessidade  de  passar  pelo  dispositivo  mestre,  o  que  aumenta  a  flexibilidade  da  rede  e  a 
+c) Em uma piconet, os dispositivos escravos podem se comunicar diretamente entre si, sem a 
+ 
+comunicação com o escravo. 
+ao  mesmo  tempo  em  uma  piconet,  onde  apenas  o  dispositivo  mestre  pode  iniciar  a 
+b) A topologia mestre -escravo do Bluetooth permite que até oito dispositivos estejam ativos 
+ 
+integração mais eficiente em piconets com at é 255 dispositivos. 
+conectados  a  um  n ó  central  que  controla  a  comunica  ção  entre  eles,  permitindo  uma 
+a) O padr ão Bluetooth utiliza a topologia em barramento, onde todos os dispositivos est       ão 
+ 
+8.  Qual das afirmações sobre o padr ão Bluetooth (IEEE 802.15) e sua topologia   é correta?  
+ 
+ambientes com maior densidade de dispositivos conectados simultaneamente. 
+suscetibilidade  a  interferências  em  redes  congestionadas  e  a  capacidade  de  operar  em 
+e)  A  principal  vantagem  do  padr  ão  802.11a  sobre  o  padr ão  802.11b  era  sua  menor 
+ 
+                                                                                                                                                                                                                                
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (5) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+7
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+tornando-o a opção mais eficiente em ambientes corporativos. 
+grandes  distâncias  e  oferecendo  taxas  de  transmiss ão  equivalentes  às  da  fibra   óptica, 
+e) O PLC utiliza a rede el  étrica existente para transmiss ão de dados, sendo adequado para 
+ 
+uma cobertura limitada a áreas urbanas. 
+de download e upload, sendo amplamente utilizada em servi  ços de TV a cabo, por ém tem 
+d) A tecnologia HFC combina fibra  óptica com cabos coaxiais, oferecendo altas velocidades 
+ 
+videoconferências de baixa qualidade. 
+e baixa latência, tornando-as ideais para aplicações de alta velocidade como streaming 4K e 
+c) As redes de fibra óptica, devido à baixa atenuação do sinal, oferecem alta largura de banda 
+ 
+adequada para transmissões de grandes volumes de dados. 
+conexão  assimétrica,  onde  a  taxa  de  upload é  maior  que  a  de  download,  o  que  a  torna 
+b)  A  tecnologia  ADSL,  por  utilizar  frequências  separadas  para  voz  e  dados,  oferece  uma 
+ 
+com cobertura Wi-Fi. 
+de vídeo, além de permitir a transmissão de dados em tempo real, mesmo em áreas urbanas 
+a) A tecnologia de sat élite oferece baixa latência, sendo ideal para jogos online e streaming 
+ 
+correta? 
+10.     Em  relação  às  tecnologias  de  acesso à  Internet,  qual  das  alternativas  abaixo  está 
+ 
+ 
+                                                                                                                                                                                                                                
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (6) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+8
+ 
+ 
+um cabo afeta toda a rede, tornando-a inviável para redes empresariais. 
+b) A topologia estrela facilita a detec ção e o isolamento de falhas, j á que o rompimento de 
+ 
+forma ponto-a-ponto, garantindo maior segurança dos dados trafegados. 
+a) A topologia em barramento utiliza cabos coaxiais e permite que a comunicação ocorra de 
+ 
+2.  Em relação às topologias de rede, é correto afirmar que: 
+Gabarito: Letra B 
+ 
+LAN e PAN. 
+(e) Errado. O modo Multicast pode ser utilizado em redes de larga escala como WAN, além de 
+ 
+transmissões simultâneas para múltiplos destinos; 
+(d) Errado. Unicast realiza a comunicação entre um emissor e um receptor único por vez, sem 
+ 
+para um destinatário; 
+(c) Errado. O modo Broadcast envia a mensagem para todos os dispositivos na rede, não apenas 
+ 
+sendo usado em aplicações como videoconferências e streaming; 
+(b) Correto. O modo Multicast permite a transmissão para um grupo específico de destinatários, 
+ 
+destinatário, não para múltiplos destinos simultâneos; 
+(a) Errado. O modo Unicast é destinado à comunicação entre um único remetente e um único 
+ 
+Comentários: 
+ 
+restrito a redes locais, como PAN e LAN. 
+e) O modo multicast não pode ser utilizado em redes de grandes escalas como WAN, sendo 
+ 
+destinatários, sem risco de colisões em redes Ethernet. 
+d)  No  modo  unicast,  a  transmissão  de  dados  ocorre  de  forma  simultânea  entre  múltiplos 
+ 
+funcionamento de um controle remoto de televisão infravermelho. 
+c)   Broadcast   limita-se   a   enviar   mensagens   para   um   único   destinatário,   similar   ao 
+ 
+sendo eficaz para aplicações como videoconferências e streaming de mídia em tempo real. 
+b) Multicast permite a transmissão de mensagens para um grupo específico de destinatários, 
+ 
+simultaneamente, sendo adequado para listas de transmissão em redes sociais. 
+a)    Unicast    permite    que    uma    mensagem    seja    enviada    para    múltiplos    destinos 
+ 
+1.  Sobre os modos de transmissão de redes de computadores, é correto afirmar que: 
+ 
+IMULADO    OMENTADO       EDES DE    OMPUTADORES
+S               C                   –R              C                         
+ 
+                                                                                                                                                                                                                                
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (7) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+9
+ 
+ 
+garantir uma comunicação eficiente e sem falhas. 
+e) Redes ponto -multiponto exigem o uso de cabos coaxiais em todos os seus enlaces para 
+ 
+pois requer que cada dispositivo esteja conectado a todos os outros dispositivos da rede. 
+d)  O  enlace  ponto-multiponto  só  pode  ser  implementado  em  redes  com  topologia  malha, 
+ 
+redes complexas. 
+o  que  garante  maior  segurança,  mas  com  menor  escalabilidade,  sendo  inadequado  para 
+c) O enlace ponto-a-ponto é caracterizado por uma conexão dedicada entre dois dispositivos, 
+ 
+transmitir dados a todos os outros dispositivos da rede, evitando congestionamento. 
+b)  Em  um  enlace  ponto-multiponto,  cada  dispositivo  tem  um  link  dedicado  exclusivo  para 
+ 
+tempo, sendo ideal para transmissões broadcast em redes WAN. 
+a)  O  enlace  ponto-a-ponto  permite  a  comunicação  entre  múltiplos  dispositivos  ao  mesmo 
+ 
+3.  A respeito dos tipos de enlaces em redes de computadores, é correto afirmar que: 
+ 
+Gabarito: Letra D 
+ 
+comunicação passa pelo nó central.  
+(e) Errado. A topologia estrela possui uma topologia física centralizada, não em malha, pois toda 
+ 
+complexidade aumentam com o número de conexões;  
+(d) Correto. A topologia em malha oferece alta redundância e confiabilidade, mas o custo e a 
+ 
+simultaneamente para todos os dispositivos;  
+(c) Errado. Na topologia em anel, a transmissão ocorre de forma unidirecional (half-duplex) e não 
+ 
+a ele, facilitando a detecção e o isolamento de falhas;  
+(b) Errado. Na topologia estrela, o rompimento de um cabo afeta apenas o dispositivo conectado 
+ 
+segurança dos dados; 
+ponto a ponto; todos os dispositivos compartilham o mesmo meio, o que pode comprometer a 
+(a)  Errado.  A  topologia  em  barramento  utiliza  cabos  coaxiais,  mas  a  comunicação  não  ocorre 
+ 
+Comentários: 
+ 
+podem se comunicar diretamente sem passar pelo n ó central. 
+e)  A  topologia  estrela  possui  uma  topologia  lógica  de  malha,  pois  todos  os  dispositivos 
+ 
+os dispositivos. 
+e complexa para redes de grande escala devido à quantidade de conexões necessárias entre 
+d) A topologia em malha, embora ofereça alta redundância e confiabilidade, pode ser custosa 
+ 
+dispositivos se comuniquem simultaneamente sem risco de colisão. 
+c)  Na  topologia  em  anel,  a  transmiss  ão  ocorre  em  full -duplex,  permitindo  que  v ários 
+ 
+                                                                                                                                                                                                                                
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (8) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+10
+ 
+ 
+de par trançado e fibra óptica são mais comuns; 
+(c) Errado. O cabo coaxial não é o mais indicado para instalações residenciais atualmente; cabos 
+ 
+distâncias, mas requer menos repetidores que o cobre em redes de longa distância; 
+(b)  Errado.  A  fibra  óptica  oferece  alta  imunidade  à  interferência  e  transporta  sinais  a  longas 
+ 
+mais indicada para altas taxas de transferência em redes WAN; 
+(a) Errado. Cabos de par trançado possuem menor largura de banda que a fibra óptica, que é 
+ 
+Comentários: 
+ 
+suportar altas velocidades e permitir comunicação full-duplex. 
+e)  A  categoria  CAT3  de  cabos  de  par  trançado é  a  mais  utilizada  em  redes  modernas,  por 
+ 
+maior largura de banda e baixa atenuação, permitindo transmissões mais rápidas e seguras. 
+d)  A  fibra óptica é  amplamente  utilizada  em  redes  de  longa  distância  (WAN),  graças  à  sua 
+ 
+capacidade de cobrir maiores distâncias sem perda significativa de sinal. 
+c)  O  cabo  coaxial  é  preferido  em  instalações  residenciais  devido  à  sua  flexibilidade  e 
+ 
+repetidores para funcionar adequadamente. 
+sinais  a  distâncias  maiores  que  os  cabos  coaxiais,  mas  requer  um  número  elevado  de 
+b) A fibra óptica oferece maior imunidade à interferência eletromagnética e pode transportar 
+ 
+mais indicados para redes com altas taxas de transferência de dados em WANs. 
+a) Cabos de par trançado possuem maior largura de banda que cabos de fibra óptica, sendo 
+ 
+4.  Sobre os meios de transmissão guiados e não guiados, marque a alternativa correta: 
+ 
+Gabarito: Letra C 
+ 
+diferentes tipos de meios de comunicação, como fibra ótica ou wireless. 
+(e) Errado. Redes ponto-multiponto não exigem especificamente cabos coaxiais; podem utilizar 
+ 
+apenas na topologia em malha; 
+(d) Errado. O enlace ponto -multiponto pode ser implementado em diferentes topologias, não 
+ 
+segurança, mas tem baixa escalabilidade, sendo menos adequado para redes complexas; 
+(c)   Correto.   O   enlace   ponto-a-ponto   conecta   dois   dispositivos   diretamente,   garantindo 
+ 
+compartilham o mesmo meio, o que pode causar congestionamento; 
+(b)  Errado.  No  enlace  ponto-multiponto,  não  há  links  dedicados  exclusivos,  e  os  dispositivos 
+ 
+adequado para transmissões broadcast ou múltiplos dispositivos simultaneamente; 
+(a)  Errado.  O  enlace  ponto-a-ponto  conecta  apenas  dois  dispositivos  diretamente,  não  sendo 
+ 
+Comentários: 
+ 
+                                                                                                                                                                                                                                
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (9) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+11
+ 
+ 
+pacotes com base no endereço MAC;  
+(IV) Errado. As bridges não regeneram sinais; elas operam na camada de enlace e encaminham 
+ 
+endereços IP, otimizando a entrega dos pacotes;  
+(III) Correto. O roteador segmenta redes em sub   -redes e escolhe a melhor rota com base nos 
+ 
+colisões entre os dispositivos conectados;  
+(II) Correto. Um switch opera em full -duplex, permitindo transmissões simultâneas e eliminando 
+ 
+sem identificar o destinatário, podendo causar congestionamentos;  
+(I) Errado. Um hub é um dispositivo simples que apenas replica os dados para todas as portas, 
+ 
+Comentários: 
+ 
+e) II, III e V. 
+d) I, IV e V. 
+c) III, IV e V. 
+b) II, III e IV. 
+a) I, II e III. 
+ 
+Quais estão corretas? 
+ 
+transmitidos por meios anal ógicos como linhas telef ônicas. 
+V. Um modem realiza a modula ção e demodula ção de sinais para que os dados possam ser 
+ 
+correto com base no endere ço MAC. 
+IV.  As  bridges  são  responsáveis  por  regenerar  sinais  e  encaminhar  pacotes  para  o  destino 
+ 
+rota para que os dados cheguem ao destino, com base nos endere ços IP. 
+III.  Um  roteador é  capaz  de  segmentar  redes  em diferentes  sub-redes  e  escolher  a  melhor 
+ 
+múltiplas transmissões simultâneas entre diferentes dispositivos.  
+II.  Um  switch  opera  em  full-duplex,  eliminando  a  possibilidade  de  colisões  e  permitindo 
+ 
+ao destinatário final, sem congestionamentos.  
+I. Um hub é considerado um dispositivo inteligente, capaz de encaminhar dados diretamente 
+ 
+5.  Em relação ao funcionamento dos dispositivos de rede, considere as afirmações abaixo: 
+ 
+Gabarito: Letra D 
+ 
+categorias como CAT5e, CAT6 ou superiores. 
+(e)  Errado.  A  categoria  CAT3  é  obsoleta  e  não  é  usada  em  redes  modernas,  que  preferem 
+ 
+baixa atenuação e segurança nas transmissões; 
+(d) Correto. A fibra óptica é amplamente utilizada em redes WAN por sua alta largura de banda, 
+ 
+                                                                                                                                                                                                                                
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (10) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+12
+ 
+ 
+Gabarito: Letra C 
+ 
+de anel, não de estrela.  
+(e) Errado. O Token Ring utiliza hubs MAU, mas a comunicação ocorre em uma topologia lógica 
+ 
+Ring tem alta confiabilidade, já que não há colisões;  
+(d) Errado. A Ethernet superou o Token Ring pela simplicidade e custo   -benefício, mas o Token 
+ 
+de espera pelo token; 
+colisões. No entanto, a escalabilidade é limitada em redes maiores devido ao aumento no tempo 
+(c) Correto. No Token Ring, o dispositivo que possui o token controla a transmissão, prevenindo 
+ 
+vez, o que evita colisões, mas não maximiza a largura de banda;  
+(b) Errado. O token circula de forma unidirecional, e apenas um dispositivo pode transmitir por 
+ 
+com o token pode transmitir;  
+anel. A transmissão simultânea de múltiplos dispositivos não ocorre, pois apenas o dispositivo 
+(a) Errado. O Token Ring utiliza uma topologia física em estrela, mas uma topologia lógica em 
+ 
+Comentários: 
+ 
+interrupções. 
+MAU   específicos   para   que   a   comunicação   possa   acontecer   de   forma   estável   e   sem 
+e) A arquitetura do Token Ring  é baseada em uma topologia l ógica de estrela e requer hubs 
+ 
+redes com alta demanda.  
+superando devido  à menor confiabilidade e  à maior vulnerabilidade a colis ões de dados em 
+d) Embora o Token Ring tenha se tornado o padrão dominante na indústria, a Ethernet acabou 
+ 
+em redes maiores. 
+prevenindo colis ões de dados e garantindo baixa lat ência, mas com escalabilidade limitada 
+c) No Token Ring, um único dispositivo tem o controle de transmitir dados ao possuir o token, 
+ 
+disponível. 
+transmitam  dados  simultaneamente,  o  que  maximiza  a  utiliza  ção  da  largura  de  banda 
+b)  O  Token  circula  na  rede  de  forma  bidirecional,  permitindo  que  múltiplos  dispositivos 
+ 
+canais separados. 
+central,  permitindo  a  transmissão  simultânea  de  múltiplos  dispositivos  através  do  uso  de 
+a) O Token Ring utiliza uma topologia em estrela, conectando todos os dispositivos a um hub 
+ 
+6.  Sobre o padrão Token Ring (IEEE 802.5), qual das afirmações abaixo está correta? 
+ 
+Gabarito: Letra E 
+ 
+transmitidos por meios analógicos, como linhas telefônicas. 
+(V)  Correto.  O  modem  realiza  modulação  e  demodulação,  permitindo  que  dados  sejam 
+ 
+                                                                                                                                                                                                                                
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (11) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+13
+ 
+ 
+8.  Qual das afirmações sobre o padr ão Bluetooth (IEEE 802.15) e sua topologia   é correta?  
+ 
+Gabarito: Letra E 
+ 
+de dispositivos. 
+devido ao uso da frequência de 5.0 GHz, sendo adequado para ambientes com maior densidade 
+(e) Correto. O padrão 802.11a era menos suscetível a interferências em redes congestionadas 
+ 
+taxas de até vários Gbps, superando o 802.11b; 
+(d)  Errado.  O  IEEE  802.11ac  é bem mais  rápido  que  o  802.11b,  operando  em  5.0  GHz  e  com 
+ 
+introduzir o WPA3, que foi introduzido posteriormente; 
+(c) Errado. O IEEE 802.11n oferece taxas de até 600 Mbps e não 14 Gbps, e não foi o primeiro a 
+ 
+significativas na interferência com outros dispositivos; 
+até  54  Mbps  e  mantendo  a  compatibilidade  com  o  802.11b,  mas  não  trouxe  melhorias 
+(b) Correto. O padrão IEEE 802.11g sucedeu o 802.11a, operando em 2.4 GHz com uma taxa de 
+ 
+um dos primeiros a operar em Dual Band e não oferece 600 Mbps; 
+(a) Errado. O padrão IEEE 802.11b opera em 2.4 GHz com uma taxa de até 11 Mbps. Ele não foi 
+ 
+Comentários: 
+ 
+ambientes com maior densidade de dispositivos conectados simultaneamente. 
+suscetibilidade  a  interferências  em  redes  congestionadas  e  a  capacidade  de  operar  em 
+e)  A  principal  vantagem  do  padr ão  802.11a  sobre  o  padr ão  802.11b  era  sua  menor 
+ 
+com uma taxa máxima de apenas 11 Mbps. 
+GHz, mas é considerado obsoleto em termos de velocidade, comparado ao padrão 802.11b, 
+d) O padrão IEEE 802.11ac trouxe a possibilidade de operar em frequências de 2.4 GHz e 5.0 
+ 
+segurança de redes sem fio em comparação com seus antecessores. 
+primeiro   padrão   a   introduzir   a   criptografia   WPA3,   que   melhora   significativamente   a 
+c)  O  IEEE  802.11n é  um  dos  mais  recentes,  oferecendo  taxas  de  até  14  Gbps  e  sendo  o 
+ 
+melhorias na taxa de interferência com dispositivos domésticos. 
+com o padrão 802.11b, operando em 2.4 GHz com uma taxa de até 54 Mbps, ademais trouxe 
+b) O padrão IEEE 802.11g foi introduzido após o IEEE 802.11a e manteve a compatibilidade 
+ 
+evitar interferências com outros dispositivos. 
+de  transmissão  superiores  a  600  Mbps,  sendo  um dos  primeiros  a  operar  em  Dual  Band  e 
+a) O padrão IEEE 802.11b introduziu uma tecnologia de 5.0 GHz, com capacidade para taxas 
+ 
+descreve corretamente suas caracter ísticas e evolução? 
+7.  Em  relação  à  evolução  do  padrão  Wi-Fi  (IEEE  802.11),  qual  das  alternativas  abaixo 
+ 
+                                                                                                                                                                                                                                
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (12) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+14
+ 
+ 
+velocidade de transmissão, mesmo em áreas urbanas densas. 
+dispositivos  em  distâncias  curtas,  como  sensores  e  dispositivos  móveis,  garantindo  alta 
+a)  A  IoT  é  altamente  dependente  da  tecnologia  PLC,  que  permite  a  comunicação  entre 
+ 
+componentes e tecnologias de comunicação. 
+9.  Sobre a Internet das Coisas (IoT), assinale a alternativa que descreve corretamente seus 
+ 
+Gabarito: Letra B 
+ 
+dispositivos ainda passa pelos mestres, não diretamente entre escravos.  
+(e)  Errado.  Em  uma  scatternet,  as  piconets  são  interconectadas,  mas  a  comunicação  entre 
+ 
+em uma scatternet com comunicação direta entre mestres;  
+(d) Errado. Um dispositivo pode ser escravo em várias piconets, mas não pode atuar como mestre 
+ 
+toda comunicação passa pelo dispositivo mestre;  
+(c)  Errado.  Em  uma  piconet,  os  dispositivos  escravos  não  se  comunicam  diretamente  entre  si; 
+ 
+uma piconet. Apenas o mestre pode iniciar a comunicação  e os escravos respondem ; 
+(b) Correto. Na topologia mestre-escravo do Bluetooth, até 8 dispositivos podem estar ativos em 
+ 
+barramento. Em uma piconet, até 8 dispositivos podem estar ativos simultaneamente, não 255;  
+(a)  Errado.  O  padrão  Bluetooth  utiliza  a  topologia  mestre-escravo,  e  não  uma  topologia  em 
+ 
+Comentários: 
+ 
+necessidade de passar pelo dispositivo mestre.  
+dispositivos  escravos  de  diferentes  redes  se  comuniquem  diretamente  entre  si,  sem  a 
+e)  As  scatternets  são  formadas  por  múltiplas  piconets  interconectadas,  permitindo  que  os 
+ 
+==2bbd1a==
+permitida para aumentar a efici ência da rede. 
+pode  atuar  como  mestre  em  uma  scatternet,  onde  a  comunicação  direta  entre  mestres é 
+d) Um dispositivo Bluetooth pode ser escravo em v  árias piconets ao mesmo tempo, mas s  ó 
+ 
+diminuição do tempo de latência. 
+necessidade  de  passar  pelo  dispositivo  mestre,  o  que  aumenta  a  flexibilidade  da  rede  e  a 
+c) Em uma piconet, os dispositivos escravos podem se comunicar diretamente entre si, sem a 
+ 
+comunicação com o escravo. 
+ao  mesmo  tempo  em  uma  piconet,  onde  apenas  o  dispositivo      mestre  pode  iniciar  a 
+b) A topologia mestre -escravo do Bluetooth permite que at é oito dispositivos estejam ativos 
+ 
+integração mais eficiente em piconets com at é 255 dispositivos. 
+conectados  a  um  n ó  central  que  controla  a  comunica  ção  entre  eles,  permitindo  uma 
+a) O padr ão Bluetooth utiliza a topologia em barramento, onde todos os dispositivos est   ão 
+ 
+                                                                                                                                                                                                                                
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (13) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+15
+ 
+adequada para transmissões de grandes volumes de dados. 
+conexão  assimétrica,  onde  a  taxa  de  upload é  maior  que  a  de  download,  o  que  a  torna 
+b)  A  tecnologia  ADSL,  por  utilizar  frequências  separadas  para  voz  e  dados,  oferece  uma 
+ 
+com cobertura Wi-Fi. 
+de vídeo, além de permitir a transmissão de dados em tempo real, mesmo em áreas urbanas 
+a) A tecnologia de sat élite oferece baixa latência, sendo ideal para jogos online e streaming 
+ 
+correta? 
+10.     Em  relação  às  tecnologias  de  acesso à  Internet,  qual  das  alternativas  abaixo  está 
+ 
+Gabarito: Letra C 
+ 
+conectividade global, sendo mais adequado para aplicações de baixo consumo e curto alcance. 
+(e)   Errado.   Embora   BLE   seja   importante   para   redes   de   curto   alcance,   ele   não   garante 
+ 
+mas sensores e atuadores são essenciais para coletar e atuar com base nos dados do ambiente; 
+(d) Errado. Redes de telefonia móvel e fibra óptica são importantes para a conectividade da IoT, 
+ 
+decisões automatizadas em tempo real; 
+como  Zigbee  e  LoRa  para  transmitir  os  dados  para  a  nuvem,  permitindo  processamento  e 
+(c) Correto. Sensores na IoT coletam dados do ambiente e utilizam tecnologias de comunicação 
+ 
+taxas de transferência; 
+tecnologias como Zigbee, LoRa e 5G são usadas para comunicação em diferentes distâncias e 
+(b) Errado. A IoT usa uma variedade de tecnologias, não apenas Wi-Fi e Bluetooth. Além dessas, 
+ 
+Wi-Fi e Zigbee, são mais utilizadas; 
+da IoT, especialmente em distâncias curtas ou áreas urbanas densas. Tecnologias sem fio, como 
+(a) Errado. A tecnologia PLC (Power Line Communication) não é o principal meio de comunicação 
+ 
+Comentários: 
+ 
+de dados em aplicações críticas de grande escala. 
+Bluetooth Low Energy (BLE), o que garante conectividade global e alta taxa de transfer ência 
+e) O principal benefício da IoT é sua capacidade de operar em redes de curto alcance, como 
+ 
+eliminando a necessidade de sensores e atuadores. 
+fibra óptica, que permitem a integra ção de dispositivos em ambientes altamente din âmicos, 
+d) Dispositivos na IoT t êm sua conectividade garantida por redes de telefonia m  óvel (5G) e 
+ 
+permitindo decisões automatizadas em tempo real. 
+Zigbee e LoRa para transmitir esses dados para a nuvem, onde são processados e analisados, 
+c)  Sensores  IoT  coletam  dados  do  ambiente  e  utilizam  tecnologias  de  comunicação  como 
+ 
+tornando as redes de sensores compatíveis com dispositivos residenciais. 
+Bluetooth,  que  oferecem  uma  conexão  de  longa  distância  e  alta  taxa  de  transferência, 
+b)  A  comunicação  na  IoT  é  feita  exclusivamente  por  tecnologias  sem  fio  como  Wi-Fi  e 
+ 
+                                                                                                                                                                                                                                
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (14) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+16
+ 
+ 
+ 
+ 
+ 
+ 
+Gabarito: Letra D 
+ 
+distâncias. 
+mas  não  atinge  as  altas  taxas  de  transmissão  da  fibra  óptica  e  tem  limitações  para  longas 
+(e) Errado. O PLC (Power Line Communication) utiliza a rede elétrica para transmissão de dados, 
+ 
+cobertura mais comum em áreas urbanas; 
+oferecendo altas velocidades e é amplamente usada para serviços de TV a cabo e internet, com 
+(d)  Correto.  A  tecnologia  HFC  (Hybrid  Fiber-Coaxial)  combina  fibra  óptica  e  cabos  coaxiais, 
+ 
+4K e videoconferências de alta qualidade, devido à sua alta largura de banda e baixa latência; 
+(c) Errado. As redes de fibra óptica são ideais para aplicações de alta velocidade, como streaming 
+ 
+transmissões de dados; 
+maior que a de upload, sendo mais adequada para consumo de conteúdo, não para grandes 
+(b) Errado. A tecnologia ADSL oferece uma conexão assimétrica, mas com a taxa de download 
+ 
+para atividades que exigem resposta rápida, como jogos online e streaming em tempo real; 
+(a) Errado. A tecnologia de satélite geralmente apresenta alta latência, o que a torna inadequada 
+ 
+Comentários: 
+ 
+tornando-o a opção mais eficiente em ambientes corporativos. 
+grandes  distâncias  e  oferecendo  taxas  de  transmiss ão  equivalentes  às  da  fibra   óptica, 
+e) O PLC utiliza a rede el  étrica existente para transmiss ão de dados, sendo adequado para 
+ 
+uma cobertura limitada a áreas urbanas. 
+de download e upload, sendo amplamente utilizada em servi  ços de TV a cabo, por ém tem 
+d) A tecnologia HFC combina fibra  óptica com cabos coaxiais, oferecendo altas velocidades 
+ 
+videoconferências de baixa qualidade. 
+e baixa latência, tornando-as ideais para aplicações de alta velocidade como streaming 4K e 
+c) As redes de fibra óptica, devido à baixa atenuação do sinal, oferecem alta largura de banda 
+ 
+ 
+                                                                                                                                                                                                                                
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (15) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+17
+ 
+10. LETRA D 
+9.   LETRA C 
+8.   LETRA B 
+7.   LETRA E 
+6.   LETRA C 
+5.   LETRA E 
+4.   LETRA D 
+3.   LETRA C 
+2.   LETRA D 
+1.   LETRA B 
+ 
+ABARITO       EDES DE    OMPUTADORES
+G              –R              C                         
+ 
+                                                                                                                                                                                                                                
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (16) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+18
+ 
+depois o transmite em sua totalidade.  
+b)  O  protocolo  IP  armazena  o  arquivo  na  memória  cache  de  roteadores  intermediários  e 
+ 
+separadamente até o destino, onde serão reagrupados.  
+a)  O  protocolo  IP  divide  o  arquivo  em  188  fragmentos  de  64  KB  e  envia  cada  um 
+ 
+KB. Como o protocolo IP lida com esse envio?  
+MB deve ser enviada pela rede, mas o protocolo IP limita o tamanho dos pacotes a 64 
+3.  Sobre a fragmentação de pacotes no IPv4, considere o cenário em que uma foto de 12 
+ 
+endereçamento lógico e roteamento.  
+e)   Cuida   da   entrega   de   pacotes   entre   sistemas   de   origem   e   destino,   utilizando 
+ 
+erros e controle de fluxo.  
+d)  Garante  a  comunicação  direta  entre  dispositivos  adjacentes  na  rede  local,  gerenciando 
+ 
+comum para a troca de informações.  
+c)  Realiza  a  tradução,  compressão  e  criptografia  de  dados,  estabelecendo  um  formato 
+ 
+do controle de transporte.  
+b) Garante que os pacotes cheguem ao destino livre de erros e na ordem correta, por meio 
+ 
+mensagens. 
+a) Responsável por controlar o fluxo de dados entre dois sistemas e pela segmentação das 
+ 
+Camada de Apresentação.  
+2.  Considerando  as  camadas  do  Modelo  OSI,  identifique  a  função  correta  associada  à 
+ 
+e) Somente I e IV estão corretas.  
+d) Somente II, III e IV estão corretas.  
+c) Somente I, II e III estão corretas.  
+b) Somente II e IV estão corretas.  
+a) Somente I e III estão corretas.  
+ 
+Quais afirmações estão corretas?  
+ 
+IV. O IP divide dados grandes em pacotes menores devido ao limite de tamanho de pacote.   
+transmitir pacotes.  
+III.  O  protocolo  IP  é  orientado  à  conexão,  estabelecendo  uma  conexão  prévia  antes  de 
+dispositivos.  
+II. O roteamento no protocolo IP é responsável por escolher o caminho mais      eficiente entre 
+I. O protocolo IP garante a entrega confiável dos pacotes de dados na rede.   
+ 
+1.  Em relação ao protocolo IP, considere as afirmações a seguir:   
+ 
+IMULADO       ROTOCOLOS DE    EDES
+S               –P                         R         
+ 
+                                                                                                                                                                                                                                         
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (17) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+19
+ 
+ 
+capacidade permite endereçamento público para todos os dispositivos.   
+e)  O  IPv6  elimina  completamente  a  necessidade  de  endereços  privados,  uma  vez  que  sua 
+ 
+adaptação, garantindo interoperabilidade automática.  
+d)  O  IPv6  foi  projetado  para  operar  diretamente  sobre  redes  IPv4  sem  necessidade  de 
+ 
+utilizando 128 bits para gerar uma quantidade massiva de endereços.   
+c)  O  IPv6  substitui  o  endereçamento  por  classes  do  IPv4  por  uma  estrutura  mais  flexível, 
+ 
+a quantidade de endereços para até 2³² combinações possíveis.   
+b) O IPv6 mantém a mesma estrutura de classes de endereçamento que o IPv4, mas expande 
+ 
+um maior número de dispositivos conectados à internet.  
+a) O IPv6 utiliza endereços de 32 bits, sendo sua principal vantagem a capacidade de suportar 
+ 
+5.  Sobre o endereçamento IPv6, é correto afirmar que:  
+ 
+gerenciam a tradução de IPs privados para públicos, sem aplicação em redes domésticas.   
+e) O NAT é utilizado apenas em grandes empresas, onde roteadores e servidores dedicados 
+ 
+entre as duas versões do protocolo IP sem a  necessidade de roteadores intermediários.  
+d)  O  NAT  converte  pacotes  de  IPv4  em  pacotes  de  IPv6,  permitindo  a  interoperabilidade 
+ 
+de uma tabela de tradução.  
+público para se comunicar com a internet, gerenciando o tráfego de entrada e saída por meio 
+c) O NAT permite que dispositivos de uma rede privada compartilhem um único endereço IP 
+ 
+necessidade de tradução, eliminando a necessidade de endereços públicos.   
+b)  O  NAT  garante  que  endereços  privados  possam  ser  utilizados  na  internet  sem  a 
+ 
+que dispositivos privados possam se conectar sem limitação de endereços IP.   
+a) O NAT cria endereços dinâmicos para cada dispositivo em uma rede pública, permitindo 
+ 
+NAT? 
+privadas.  Qual  das  seguintes  alternativas  descreve  corretamente  o  funcionamento  do 
+4.  O protocolo NAT (Network Address Translation) desempenha um papel crucial em redes 
+ 
+fragmentação, garantindo a entrega eficiente. 
+e)  O  IP  solicita  ao  dispositivo  de  destino  que  aumente  o  limite  de  carga  útil  para  evitar  a 
+ 
+o protocolo NAT para comprimir os dados. 
+d) O arquivo é encapsulado em um único pacote, e se o tamanho exceder 64 KB, o IP utiliza 
+ 
+caminho e chegue ao destino em ordem. 
+c)  O  IP  estabelece  uma  conexão  prévia  para  garantir  que  cada  fragmento  siga  o  mesmo 
+ 
+ 
+                                                                                                                                                                                                                                         
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (18) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+20
+ 
+ 
+simultâneos para vários destinos de uma única vez, otimizando o tráfego de rede.   
+c)  O  TCP  utiliza  o  modelo  de  comunicação  multicast,  permitindo  o  envio  de  pacotes 
+ 
+ou controle de fluxo, sendo mais eficiente para transmissões rápidas de dados.   
+b) O TCP é um protocolo sem conexão, que não realiza qualquer tipo de verificação de erro 
+ 
+retransmitidos em caso de perda.  
+envio   de   dados   para   evitar   sobrecarga,   garantindo   que   todos   os   pacotes   sejam 
+a) O TCP utiliza um mecanismo de controle de fluxo que permite ao receptor ajustar a taxa de 
+ 
+alternativas a seguir descreve corretamente um aspecto fundamental do TCP?   
+8.  O  protocolo  TCP  oferece  um  serviço  confiável  e  orientado  à  conexão.  Qual  das 
+ 
+e) Somente II e III estão corretas.  
+d) Todas estão corretas.  
+c) Somente II está correta.  
+b) Somente I e III estão corretas.  
+a) Somente I está correta.  
+ 
+Quais estão corretas?  
+ 
+III. O ARP mantém uma tabela de conversão de endereços lógicos em endereços físicos.   
+pacotes através da Internet.  
+II. O ARP atua na camada de aplicação e é utilizado para garantir a integridade da entrega de 
+locais. 
+I. O ARP é um protocolo utilizado para mapear endereços IP para    endereços MAC em redes 
+ 
+7.  Sobre o Address Resolution Protocol (ARP), considere as seguintes afirmações:   
+ 
+através de mecanismos de controle de fluxo e retransmissão.   
+e)  Ele  atua  na  camada  de transporte  para  garantir a  confiabilidade  da entrega  de  pacotes, 
+ 
+proteção contra interceptações maliciosas.  
+d)  O  ICMP  estabelece  conexões  de  rede  seguras,  criptografando  pacotes  para  garantir  a 
+ 
+excedido" quando pacotes não podem ser entregues corretamente.   
+c) O ICMP notifica a fonte de dados sobre problemas como "destino inalcançável" ou "tempo 
+ 
+comunicação entre dispositivos em uma rede local.  
+b)  Ele  é  responsável  por  mapear  endereços  IP  para  endereços  MAC,  garantindo  a  correta 
+ 
+a integridade da comunicação fim -a-fim. 
+a) O ICMP realiza a retransmissão automática de pacotes de dados corrompidos para garantir 
+ 
+rede. Qual das alternativas a seguir descreve corretamente uma função típica do ICMP?   
+6.  O  protocolo  ICMP  desempenha  um  papel  fundamental  na  comunicação  de  erros  na 
+ 
+                                                                                                                                                                                                                                         
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (19) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+21
+ 
+ 
+ 
+ 
+incompatível com redes públicas, como a Internet.  
+e)  O  VoIP  é  uma  tecnologia  que  requer  o  uso  exclusivo  de  redes  locais  (LAN),  sendo 
+ 
+a transferência de dados de áudio entre servidores e clientes de comunicação.   
+d) O VoIP substitui os protocolos de transporte tradicionais, utilizando o protocolo HTTP para 
+ 
+voz seja transmitida de forma criptografada e sem interrupções.   
+c) O VoIP exige uma conexão dedicada e segura, baseada no protocolo HTTPS, para que a 
+ 
+correta ou sua retransmissão em caso de perda.  
+permitir uma comunicação mais rápida, embora não garanta a entrega dos pacotes na ordem 
+b)  O  VoIP  converte  sinais  de  voz  em  pacotes  de  dados,  utilizando  o  protocolo  UDP  para 
+ 
+priorizando a entrega de pacotes em vez da velocidade da transmissão.   
+a) O VoIP utiliza o protocolo TCP para garantir a transmissão confiável de voz em tempo real, 
+ 
+VoIP? 
+internet.  Qual  das  alternativas  a  seguir  descreve  corretamente  o  funcionamento  do 
+10.     O  protocolo  VoIP  utiliza  diversas  técnicas  para  otimizar  a  transmissão  de  voz  pela 
+ 
+são transmitidas exclusivamente por canais criptografados.   
+e) O DNS possui mecanismos de autenticação que garantem que as informações de domínio 
+ 
+transferências de arquivos entre servidores de nome.  
+d) O DNS funciona como uma extensão do protocolo FTP, sendo responsável por gerenciar 
+ 
+frequentes. 
+domínio em endereços IP, utilizando cache para reduzir o tempo de resposta em consultas 
+c) O DNS trabalha com uma hierarquia de servidores que colaboram para resolver nomes de 
+ 
+otimizar futuras resoluções.  
+de  endereços  IP,  mas  não  é  capaz  de  armazenar  temporariamente  as  consultas  feitas  para 
+b) O DNS permite que dispositivos conversem diretamente usando   nomes amigáveis em vez 
+ 
+em nomes de domínio, facilitando a comunicação entre redes locais.   
+a) O DNS é um protocolo da camada de enlace responsável por transformar endereços MAC 
+ 
+domínio. Qual das afirmações a seguir está correta sobre o DNS?   
+9.  O  protocolo  DNS  (Domain  Name  System)  é  responsável  pela  resolução  de  nomes  de 
+ 
+comunicações, garantindo maior segurança nas transmissões. 
+e) O TCP utiliza portas dinâmicas para cada conexão, o que impossibilita o rastreamento das 
+ 
+controle de fluxo e congestionamento, priorizando apenas a entrega dos dados. 
+d) O TCP estabelece uma conexão com o destinatário usando o protocolo IP, mas ignora o 
+ 
+                                                                                                                                                                                                                                         
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (20) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+22
+ 
+comum para a troca de informações.  
+c)  Realiza  a  tradução,  compressão  e  criptografia  de  dados,  estabelecendo  um  formato 
+ 
+do controle de transporte.  
+b) Garante que os pacotes cheguem ao destino livre de erros e na ordem correta, por meio 
+ 
+mensagens. 
+a)  Responsável por controlar o fluxo de dados entre dois sistemas e pela segmentação das 
+ 
+Camada de Apresentação.  
+2.  Considerando  as  camadas  do  Modelo  OSI,  identifique  a  função  correta  associada  à 
+ 
+Gabarito: Letra B 
+ 
+ser transmitidos dentro dos limites de tamanho de pacotes da rede.   
+(IV) Correto. O IP divide dados grandes em pacotes menores (fragmentação) para que possam 
+ 
+de transmitir pacotes;  
+(III) Errado. O IP não é orientado à conexão, ou seja, não estabelece uma conexão prévia antes 
+ 
+ao destino; 
+(II) Correto. O  roteamento no IP seleciona o caminho mais eficiente para os pacotes chegarem 
+ 
+orientado à conexão. A confiabilidade é função de protocolos como o TCP;   
+(I) Errado. O protocolo IP não garante a entrega confiável dos pacotes, sendo um protocolo não 
+ 
+Comentários: 
+ 
+e) Somente I e IV estão corretas.  
+d) Somente II, III e IV estão corretas.  
+c) Somente I, II e III estão corretas.  
+b) Somente II e IV estão corretas.  
+==2bbd1a==
+a) Somente I e III estão corretas.  
+ 
+Quais afirmações estão corretas?  
+ 
+IV. O IP divide dados grandes em pacotes menores devido ao limite de tamanho de pacote.   
+transmitir pacotes.  
+III.  O  protocolo  IP  é  orientado  à  conexão,  estabelecendo  uma  conexão  prévia  antes  de 
+dispositivos.  
+II. O roteamento no protocolo IP é responsável por escolher o caminho mais eficiente entre 
+I. O protocolo IP garante a entrega  confiável dos pacotes de dados na rede.  
+ 
+1.  Em relação ao protocolo IP, considere as afirmações a seguir:   
+ 
+IMULADO    OMENTADO       ROTOCOLOS DE    EDES
+S               C                   –P                         R         
+ 
+                                                                                                                                                                                                                                         
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (21) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+23
+ 
+ 
+Comentários: 
+ 
+fragmentação, garantindo a entrega eficiente.  
+e)  O  IP  solicita  ao  dispositivo  de  destino  que  aumente  o  limite  de  carga  útil  para  evitar  a 
+ 
+o protocolo NAT para comprimir os dados.  
+d) O arquivo é encapsulado em um único pacote, e se o tamanho exceder 64 KB, o IP utiliza 
+ 
+caminho e chegue ao destino em ordem.  
+c)  O  IP  estabelece  uma  conexão  prévia  para  garantir  que  cada  fragmento  siga  o  mesmo 
+ 
+depois o transmite em sua totalidade.  
+b)  O  protocolo  IP  armazena  o  arquivo  na  memória  cache  de  roteadores intermediários  e 
+ 
+separadamente até o destino, onde serão reagrupados.  
+a)  O  protocolo  IP  divide  o  arquivo  em  188  fragmentos  de  64  KB  e  envia  cada  um 
+ 
+KB. Como o protocolo IP lida com esse envio?  
+MB deve ser enviada pela rede, mas o protocolo IP limita o tamanho dos pacotes a 64 
+3.  Sobre a fragmentação de pacotes no IPv4, considere o cenário em que uma foto de 12 
+ 
+Gabarito: Letra C 
+ 
+lógico e roteamento, é função da Camada de Rede. 
+(e) Errado. A entrega de pacotes entre sistemas de origem e destino, utilizando endereçamento 
+ 
+adjacentes e pelo gerenciamento de erros e controle de fluxo; 
+(d)  Errado.  A  Camada  de  Enlace  é  responsável  pela  comunicação  direta  entre  dispositivos 
+ 
+estabelecendo um formato comum para a troca de informações entre diferentes sistemas; 
+(c) Correto. A Camada de Apresentação realiza a tradução, compressão e criptografia de dados, 
+ 
+correta é responsabilidade da Camada de Transporte; 
+(b) Errado. A função de garantir que os pacotes cheguem ao destino livre de erros e na ordem 
+ 
+Camada de Transporte no modelo OSI; 
+(a) Errado. Controlar o fluxo de dados e realizar a segmentação das mensagens são funções da 
+ 
+Comentários: 
+ 
+endereçamento lógico e roteamento. 
+e)   Cuida   da   entrega   de   pacotes   entre   sistemas   de     origem   e   destino,   utilizando 
+ 
+erros e controle de fluxo. 
+d)  Garante  a  comunicação  direta  entre  dispositivos  adjacentes  na  rede  local,  gerenciando 
+ 
+ 
+                                                                                                                                                                                                                                         
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (22) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+24
+ 
+ 
+privados. Ele justamente traduz esses endereços privados em públicos;   
+(b) Errado. O NAT não elimina a necessidade de tradução para acessar a internet com endereços 
+ 
+endereço IP público para acessar a internet;  
+dispositivos  em  redes  privadas  usem  endereços  IP  privados,  mas  compartilhem  um  único 
+(a)  Errado.  O  NAT  não  cria  endereços  dinâmicos  para  redes  públicas.  Ele  permite  que 
+ 
+Comentários: 
+ 
+gerenciam a tradução de IPs privados para públicos, sem aplicação em redes domésticas.   
+e) O NAT é utilizado apenas em grandes empresas, onde roteadores e servidores dedicados 
+ 
+entre as duas versões do protocolo IP sem a necessidade de roteadores intermediários.   
+d)  O  NAT  converte  pacotes  de  IPv4  em  pacotes  de  IPv6,  permitindo  a  interoperabilidade 
+ 
+de uma tabela de tradução.  
+público para se comunicar com a internet, gerenciando o tráfego de entrada e saída por meio 
+c) O NAT permite que dispositivos de uma rede privada compartilhem um único endereço IP 
+ 
+necessidade de tradução, eliminando a necessidade de endereços públicos.   
+b)  O  NAT  garante  que  endereços  privados  possam  ser  utilizados  na  internet  sem  a 
+ 
+que dispositivos privados possam se conectar sem limitação de endereços IP.   
+a) O NAT cria endereços dinâmicos para cada dispositivo em uma rede pública, permitindo 
+ 
+NAT? 
+privadas.  Qual  das  seguintes  alternativas  descreve  corretamente  o  funcionamento  do 
+4.  O protocolo NAT (Network Address Translation) desempenha um papel crucial em redes 
+ 
+Gabarito: Letra A 
+ 
+fragmentação. 
+(e)  Errado.  O  IP  não  solicita  ao  destino  alterações  no  limite  de  carga  útil  para  evitar  a 
+ 
+(d) Errado. O IP não encapsula tudo em um único pacote nem utiliza NAT para comprimir dados; 
+ 
+os fragmentos podem seguir caminhos diferentes; 
+(c) Errado. O IP não estabelece conexão prévia, sendo um protocolo não orientado à conexão, e 
+ 
+transmite o arquivo em sua totalidade; 
+(b) Errado. O IP não armazena arquivos na memória cache dos roteadores intermediários, nem 
+ 
+enviados separadamente e reagrupados no destino; 
+limite  de  64  KB.  No  exemplo,  a  foto  de  12  MB  seria  dividida  em  188  fragmentos,  que  seriam 
+(a) Correto. O protocolo IPv4 fragmenta dados grandes em pacotes menores, de acordo com o 
+ 
+                                                                                                                                                                                                                                         
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (23) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+25
+ 
+Gabarito: Letra C 
+ 
+endereços públicos disponíveis minimize a necessidade deles.   
+(e) Errado. O IPv6 ainda permite o uso de endereços privados, embora a quantidade massiva de 
+ 
+Dual Stack ou Tunneling para garantir interoperabilidade;  
+(d)  Errado.  O  IPv6  não  opera diretamente  sobre  redes  IPv4.  A  transição  requer  técnicas  como 
+ 
+endereços; 
+e   utiliza   endereços   de   128   bits,   permitindo   uma   quantidade   extremamente   grande   de 
+(c) Correto. O IPv6 substitui o endereçamento por classes do IPv4 por uma estrutura mais flexível 
+ 
+mais do que 2³² combinações, permitindo 2¹² ⁸ endereços possíveis; 
+(b) Errado. O IPv6 não mantém a estrutura de classes de endereçamento do IPv4 e oferece muito 
+ 
+capacidade de suportar um número exponencialmente maior de dispositivos conectados;   
+(a)  Errado.  O  IPv6  utiliza  endereços  de  128  bits,  não  32  bits.  Sua     principal  vantagem  é  a 
+ 
+Comentários: 
+ 
+capacidade permite endereçamento público para todos os dispositivos.   
+e)  O  IPv6  elimina  completamente  a  necessidade  de  endereços  privados,  uma  vez  que  sua 
+ 
+adaptação, garantindo interoperabilidade automática.  
+d)  O  IPv6  foi  projetado  para  operar  diretamente  sobre  redes  IPv4  sem  necessidade  de 
+ 
+utilizando 128 bits para gerar uma quantidade massiva de endereços.   
+c)  O  IPv6  substitui  o  endereçamento  por  classes  do  IPv4  por  uma  estrutura  mais  flexível, 
+ 
+a quantidade de endereços para até 2³² combinações possíveis.   
+b) O IPv6 mantém a mesma estrutura de classes de endereçamento que o IPv4, mas expande 
+ 
+um maior número de dispositivos conectados à internet.  
+a) O IPv6 utiliza endereços de 32 bits, sendo sua principal vantagem a capacidade de suportar 
+ 
+5.  Sobre o endereçamento IPv6, é correto afirmar que:  
+ 
+Gabarito: Letra C 
+ 
+grandes empresas, permitindo a comunicação de dispositivos privados com a internet. 
+(e)  Errado.  O  NAT  é  amplamente  utilizado  também  em  redes  domésticas,  não  apenas  em 
+ 
+essas versões de IP exige outras técnicas, como Dual Stack ou Tunneling; 
+(d) Errado. O NAT não é responsável por converter pacotes de IPv4 para IPv6. A transição entre 
+ 
+de tradução; 
+único endereço IP público para acessar a internet, gerenciando o tráfego por meio de uma tabela 
+(c)  Correto. O  NAT permite que  múltiplos  dispositivos de  uma  rede privada  compartilhem  um 
+ 
+                                                                                                                                                                                                                                         
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (24) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+26
+ 
+Quais estão corretas?  
+ 
+III. O ARP mantém uma tabela de conversão de endereços lógicos em endereços físicos.   
+pacotes através da Internet.  
+II. O ARP atua na camada de aplicação e é utilizado para garantir a integridade da entrega de 
+locais. 
+I. O ARP é um protocolo utilizado para mapear   endereços IP para endereços MAC em redes 
+ 
+7.  Sobre o Address Resolution Protocol (ARP), considere as seguintes afirmações:   
+ 
+Gabarito: Letra C 
+ 
+confiabilidade nem retransmissão de pacotes.  
+(e) Errado. O ICMP opera na camada de rede, e não na camada de transporte. Ele não garante 
+ 
+relatar erros e fornecer diagnósticos de rede;  
+(d)  Errado.  O  ICMP  não  criptografa  pacotes  nem  estabelece  conexões  seguras.  Sua  função  é 
+ 
+relatórios de erros;  
+excedido",  quando  pacotes  não  podem  ser  entregues,  sendo  utilizado  para  diagnóstico  e 
+(c) Correto. O ICMP notifica a origem sobre problemas, como "destino inalcançável" ou "tempo 
+ 
+ARP, não pelo ICMP;  
+(b)  Errado.  O  mapeamento  de  endereços  IP  para  endereços  MAC  é  realizado  pelo  protocolo 
+ 
+integridade da comunicação fim -a-fim; 
+(a) Errado. O ICMP não realiza retransmissão de pacotes; essa função é do TCP, que garante a 
+ 
+Comentários: 
+ 
+através de mecanismos de controle de fluxo e retransmissão.   
+e)  Ele  atua  na camada  de transporte  para  garantir a  confiabilidade  da entrega  de  pacotes, 
+ 
+proteção contra interceptações maliciosas.  
+d)  O  ICMP  estabelece  conexões  de  rede  seguras,  criptografando  pacotes  para  garantir  a 
+ 
+excedido" quando pacotes não podem ser entregues corretamente.   
+c) O ICMP notifica a fonte de dados sobre problemas como "destino inalcançável" ou "tempo 
+ 
+comunicação entre dispositivos em uma rede local.  
+b)  Ele  é  responsável  por  mapear  endereços  IP  para  endereços  MAC,  garantindo  a  correta 
+ 
+a integridade da comunicação fim -a-fim. 
+a) O ICMP realiza a retransmissão automática de pacotes de dados corrompidos para garantir 
+ 
+rede. Qual das alternativas a seguir descreve corretamente uma função típica do ICMP?   
+6.  O  protocolo  ICMP  desempenha  um  papel  fundamental  na  comunicação  de  erros  na 
+ 
+ 
+                                                                                                                                                                                                                                         
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (25) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+27
+ 
+ 
+erros, garantindo a entrega confiável dos dados;  
+(b) Errado. O TCP é orientado à conexão, com mecanismos de controle de fluxo e verificação de 
+ 
+retransmissão de pacotes em caso de perda;  
+receptor  ajustar  a  taxa  de    envio  de  dados  para  evitar  sobrecarga.  Além  disso,  garante  a 
+(a) Correto. O TCP utiliza um mecanismo de controle de fluxo (janela deslizante) que permite ao 
+ 
+Comentários: 
+ 
+comunicações, garantindo maior segurança nas transmissões.   
+e) O TCP utiliza portas dinâmicas para cada conexão, o que impossibilita o rastreamento das 
+ 
+controle de fluxo e congestionamento, priorizando apenas a entrega dos dados.   
+d) O TCP estabelece uma conexão com o destinatário usando o protocolo IP, mas ignora o 
+ 
+simultâneos para vários destinos de uma única vez, otimizando o tráfego de rede.   
+c)  O  TCP  utiliza  o  modelo  de  comunicação  multicast,  permitindo  o  envio  de  pacotes 
+ 
+ou controle de fluxo, sendo mais eficiente para transmissões rápidas de dados.   
+b) O TCP é um protocolo sem conexão, que não realiza qualquer tipo de verificação de erro 
+ 
+retransmitidos em caso de perda.  
+envio   de   dados   para   evitar   sobrecarga,   garantindo   que   todos   os   pacotes   sejam 
+a) O TCP utiliza um mecanismo de controle de fluxo que permite ao receptor ajustar a taxa de 
+ 
+alternativas a seguir descreve corretamente um aspecto fundamental do TCP?   
+8.  O  protocolo  TCP  oferece  um  serviço  confiável  e  orientado  à  conexão.  Qual  das 
+ 
+Gabarito: Letra B 
+ 
+endereços MAC. 
+(III)  Correto. O  ARP  mantém  uma tabela  (cache  ARP)  que  faz a  conversão  de endereços  IP  em 
+ 
+integridade da entrega de pacotes através da internet; 
+(II)  Errado.  O  ARP  atua  na  camada  de  enlace,  não  na  camada  de  aplicação,  e  não  garante  a 
+ 
+em redes locais, permitindo a comunicação entre dispositivos na mesma rede; 
+(I) Correto. O ARP é responsável por mapear endereços IP (lógicos) para endereços MAC (físicos) 
+ 
+Comentários: 
+ 
+e) Somente II e III estão corretas. 
+d) Todas estão corretas. 
+c) Somente II está correta. 
+b) Somente I e III estão corretas. 
+a) Somente I está correta. 
+ 
+ 
+                                                                                                                                                                                                                                         
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (26) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+28
+ 
+ 
+de arquivos, mas na resolução de nomes de domínio;  
+(d) Errado. O DNS não é uma extensão do protocolo FTP, nem está envolvido na transferência 
+ 
+também utiliza cache para consultas frequentes, melhorando a eficiênc  ia; 
+Domain) servers e servidores autoritativos, para resolver nomes de domínio em endereços IP. Ele 
+(c)  Correto.  O  DNS  utiliza  uma  hierarquia  de  servidores,  como  root  servers,  TLD  (Top-Level 
+ 
+resoluções e reduzir o tempo de resposta;  
+(b)  Errado.  O  DNS  armazena  temporariamente  consultas  feitas  em  cache  para  otimizar  futuras 
+ 
+domínio em endereços IP, não por transformar endereços MAC;   
+(a) Errado. O DNS é um protocolo da camada de    aplicação, responsável por traduzir nomes de 
+ 
+Comentários: 
+ 
+são transmitidas exclusivamente por canais criptografados.   
+e) O DNS possui mecanismos de autenticação que garantem que as informações de domínio 
+ 
+transferências de arquivos entre servidores de nome.  
+d) O DNS funciona como uma extensão do protocolo FTP, sendo responsável por gerenciar 
+ 
+frequentes. 
+domínio em endereços IP, utilizando cache para reduzir o tempo de resposta em consultas 
+c) O DNS trabalha com uma hierarquia de  servidores que colaboram para resolver nomes de 
+ 
+otimizar futuras resoluções.  
+de  endereços  IP,  mas  não  é  capaz  de  armazenar  temporariamente  as  consultas  feitas  para 
+b) O DNS permite que dispositivos conversem diretamente usando nomes amigáveis em vez 
+ 
+em nomes de domínio, facilitando a comunicação entre redes locais.   
+a) O DNS é um protocolo da camada de enlace responsável por transformar endereços MAC 
+ 
+domínio. Qual das afirmações a seguir está correta sobre o DNS?   
+9.  O  protocolo  DNS  (Domain  Name  System)  é  responsável  pela  resolução  de  nomes  de 
+ 
+Gabarito: Letra A 
+ 
+rastreamento das comunicações, mas não garante segurança por si só. 
+(e)  Errado.  O  TCP  utiliza  portas  fixas  (números  de  porta)  para  cada  conexão,  o  que  permite  o 
+ 
+confiável dos dados quanto o controle de fluxo e congestionamento; 
+(d) Errado. O TCP não ignora o controle de fluxo e congestionamento. Ele prioriza tanto a entrega 
+ 
+um único remetente e um único destinatário; 
+(c) Errado. O TCP é um protocolo de unicast, não multicast. Ele estabelece uma conexão entre 
+ 
+                                                                                                                                                                                                                                         
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (27) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+29
+ 
+ 
+Gabarito: Letra B 
+ 
+a redes locais (LAN).  
+(e) Errado. O VoIP pode ser utilizado em redes públicas, como a internet, e não é restrito apenas 
+ 
+usa o protocolo HTTP para a transferência de dados de áudio;   
+(d) Errado. O VoIP não substitui os protocolos tradicionais de transporte, como TCP ou UDP, nem 
+ 
+VoIP; 
+Embora  a  criptografia  possa  ser  usada,  não  é  uma  exigência  para  o  funcionamento  básico  do 
+(c)  Errado.  O  VoIP  não  exige  uma  conexão  dedicada  e  segura  baseada  no  protocolo  HTTPS. 
+ 
+nem a retransmissão em caso de perda;  
+permite uma comunicação mais rápida, embora não garanta a entrega ou a ordem dos pacotes, 
+(b) Correto. O VoIP converte a voz em pacotes de dados e geralmente usa o protocolo UDP, que 
+ 
+comunicação em tempo real;  
+retransmissão  de  pacotes  (como  ocorre  no  TCP)  pode  introduzir  atrasos  indesejados  para  a 
+(a)  Errado.  O  VoIP  normalmente  utiliza  o  protocolo  UDP,  que  prioriza  a  velocidade,  pois  a 
+ 
+Comentários: 
+ 
+incompatível com redes públicas, como a Internet.  
+e)  O  VoIP  é  uma  tecnologia  que  requer  o  uso  exclusivo  de  redes  locais  (LAN),  sendo 
+ 
+a transferência de dados de áudio entre servidores e clientes de comunicação.   
+d) O VoIP substitui os protocolos de transporte tradicionais, utilizando o protocolo HTTP para 
+ 
+voz seja transmitida de forma criptografada e sem interrupções.   
+c) O VoIP exige uma conexão dedicada e segura, baseada no protocolo HTTPS, para que a 
+ 
+correta ou sua retransmissão em caso de perda.  
+permitir uma comunicação mais rápida, embora não garanta a entrega dos pacotes na ordem 
+b)  O  VoIP  converte  sinais  de  voz  em  pacotes  de  dados,  utilizando  o  protocolo  UDP  para 
+ 
+priorizando a entrega de pacotes em vez da velocidade da transmissão.   
+a) O VoIP utiliza o protocolo TCP para garantir a transmissão confiável de voz em tempo real, 
+ 
+VoIP? 
+internet.  Qual  das  alternativas  a  seguir  descreve  corretamente  o   funcionamento  do 
+10.     O  protocolo  VoIP  utiliza  diversas  técnicas  para  otimizar  a  transmissão  de  voz  pela 
+ 
+Gabarito: Letra C 
+ 
+obrigatórias do DNS original. 
+Protocolos como DNSSEC e DoH (DNS over HTTPS) adicionam segurança, mas não são partes 
+(e)  Errado.  O  DNS  por  padrão  não  possui  mecanismos  de  autenticação  ou  criptografia. 
+ 
+                                                                                                                                                                                                                                         
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (28) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+31
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+30
+ 
+10.     LETRA B 
+9.       LETRA C 
+8.       LETRA A 
+7.       LETRA B 
+6.       LETRA C 
+5.       LETRA C 
+4.       LETRA C 
+3.       LETRA A 
+2.       LETRA C 
+1.       LETRA B 
+ 
+ABARITO       ROTOCOLOS DE    EDES
+G               –P                         R         
+ 
+                                                                                                                                                                                                                                         
+Aula 02
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (29) Break----------------
+
+----------------Page (30) Break----------------
