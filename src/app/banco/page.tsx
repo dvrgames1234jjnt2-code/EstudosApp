@@ -123,8 +123,8 @@ export default function BancoPage() {
 
       const normalized: BancoQuestion[] = (data || []).map((row: any) => ({
         id: row.id,
-        materia:  row.Disciplina || row.materia   || row.disciplina || "Geral",
-        tema:     row.tema       || row.Tema       || undefined,
+        materia:  row.Materia || row.Disciplina || row.materia || row.disciplina || "Geral",
+        tema:     row.tema       || row.Tema       || row.Tópico || row.Assunto || undefined,
         title:    row.Enunciado  || row.enunciado  || row.texto      || row.title || "",
         dificuldade: row.dificuldade || row.Dificuldade || undefined,
         prova:    row.PROVA      || row.prova      || undefined,
@@ -289,10 +289,6 @@ export default function BancoPage() {
       {/* Navbar */}
       <nav className="sticky top-0 z-50 h-16 border-b border-white/[0.05] bg-[#020617]/80 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/")} className="group flex items-center gap-2 text-slate-500 hover:text-white transition-all">
-            <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-0.5" />
-          </button>
-          <div className="h-5 w-px bg-white/10" />
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/30">
               <GraduationCap size={16} className="text-white" />

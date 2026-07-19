@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Mail, Loader2, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
+import { supabase } from "../lib/supabase";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -10,9 +11,9 @@ interface AuthModalProps {
   onAuthSuccess: (email: string, password?: string, mode?: 'password' | 'otp', isSignUp?: boolean) => Promise<any>;
 }
 
-/** Senha fixa para todos os usuários — nunca exposta na UI */
+/** Senha fixa para todos os usuários — mínimo 6 caracteres exigido pelo Supabase */
 function emailToPassword(_email: string): string {
-  return "123";
+  return "123456";
 }
 
 export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
@@ -32,38 +33,59 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
     const password = emailToPassword(trimmed);
 
     try {
-      // 1. Tenta login com senha gerada
-      const signIn = await onAuthSuccess(trimmed, password, "password", false);
+      // 1. Verificar se o e-mail inserido já existe no banco de dados.
+      // Como não temos uma API de admin para ver a lista diretamente na ponta, a forma
+      // mais segura, robusta e rápida de detecção é tentar o signIn primeiro.
+      const signInResult = await onAuthSuccess(trimmed, password, "password", false);
 
-      if (!signIn?.error) {
+      if (!signInResult?.error) {
+        // Usuário existe e login foi bem-sucedido
         setWelcome(trimmed.split("@")[0]);
         setStep("done");
-        setTimeout(() => { handleClose(); window.location.reload(); }, 1100);
+        setTimeout(() => {
+          handleClose();
+          window.location.reload();
+        }, 1100);
         return;
       }
 
-      // 2. Usuário não existe → cria conta silenciosamente
-      const signUp = await onAuthSuccess(trimmed, password, "password", true);
+      // Se o erro for de credenciais inválidas ou usuário não encontrado
+      const errMsg = signInResult.error.message.toLowerCase();
+      
+      // 2. Se o erro for usuário não cadastrado ou credenciais inválidas, tentamos criar a conta (Sign Up)
+      if (
+        errMsg.includes("invalid login credentials") || 
+        errMsg.includes("user not found") || 
+        errMsg.includes("not found")
+      ) {
+        const signUpResult = await onAuthSuccess(trimmed, password, "password", true);
 
-      if (signUp?.error) {
-        setError("Não foi possível entrar. Verifique o e-mail e tente novamente.");
+        if (signUpResult?.error) {
+          setError(signUpResult.error.message || "Não foi possível criar sua conta.");
+          setStep("input");
+          return;
+        }
+
+        // 3. Login imediatamente após o cadastro
+        const signInAfterSignUp = await onAuthSuccess(trimmed, password, "password", false);
+        if (signInAfterSignUp?.error) {
+          setError("Conta criada! Digite seu e-mail novamente para entrar.");
+          setStep("input");
+          return;
+        }
+
+        setWelcome(trimmed.split("@")[0]);
+        setStep("done");
+        setTimeout(() => {
+          handleClose();
+          window.location.reload();
+        }, 1100);
+      } else {
+        // Outros tipos de erro (ex: Failed to fetch, RLS, etc.)
+        setError(signInResult.error.message || "Erro de conexão. Tente novamente.");
         setStep("input");
-        return;
       }
-
-      // 3. Login após cadastro
-      const signIn2 = await onAuthSuccess(trimmed, password, "password", false);
-      if (signIn2?.error) {
-        setError("Conta criada! Tente entrar novamente.");
-        setStep("input");
-        return;
-      }
-
-      setWelcome(trimmed.split("@")[0]);
-      setStep("done");
-      setTimeout(() => { handleClose(); window.location.reload(); }, 1100);
-
-    } catch {
+    } catch (err: any) {
       setError("Erro inesperado. Tente novamente.");
       setStep("input");
     }

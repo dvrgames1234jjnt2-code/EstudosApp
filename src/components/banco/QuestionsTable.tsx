@@ -102,10 +102,10 @@ export default function QuestionsTable({
 
   const filteredQuestions = questions.filter(q => {
     const matchesSearch =
-      q.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      q.materia?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      q.tema?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      String(q.id).includes(searchTerm);
+      (q.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (q.materia || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (q.tema || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(q.id || "").includes(searchTerm);
 
     const matchesMateria = materiaFilter === 'Todas' || q.materia === materiaFilter;
     const matchesProva = provaFilter === 'Todas' || q.prova === provaFilter;
@@ -173,7 +173,7 @@ export default function QuestionsTable({
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
         </span>
         <span className="leading-relaxed">
-          <strong>Banco Interativo:</strong> Clique em qualquer questão para abrí-la na aba de resolução. Selecione múltiplas para gerar um simulado personalizado.
+          <strong>Banco Interativo:</strong> Clique em qualquer questão para abrí-la na aba de resolução.
         </span>
       </div>
 
@@ -250,10 +250,11 @@ export default function QuestionsTable({
               key={i}
               value={sel.value}
               onChange={e => sel.onChange(e.target.value)}
-              className="px-3 py-1.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-[11px] font-bold outline-none cursor-pointer text-slate-300 hover:bg-white/[0.06] transition-all"
+              className="px-3 py-1.5 bg-[#0F172A] border border-white/[0.08] rounded-xl text-[11px] font-bold outline-none cursor-pointer text-slate-300 hover:bg-white/[0.06] hover:text-white transition-all appearance-none"
+              style={{ colorScheme: "dark" }}
             >
               {sel.options.map(o => (
-                <option key={o.value} value={o.value} className="bg-[#0F172A]">
+                <option key={o.value} value={o.value} className="bg-[#0F172A] text-slate-200">
                   {o.label}
                 </option>
               ))}
