@@ -23,7 +23,8 @@ import {
   History,
   BarChart3,
   Flame,
-  Volume2
+  Volume2,
+  FileText
 } from "lucide-react";
 
 interface BancoQuestion {
@@ -147,6 +148,7 @@ export default function QuestionResolver({
   );
   const [showFeedback, setShowFeedback] = useState<boolean>(!!existingAnswer);
   const [showComment, setShowComment] = useState<boolean>(false);
+  const [showTextoApoio, setShowTextoApoio] = useState<boolean>(false);
   const [isShaking, setIsShaking] = useState<boolean>(false);
   const [strikethroughs, setStrikethroughs] = useState<Record<string, boolean>>({});
   const [showHistory, setShowHistory] = useState(false);
@@ -156,11 +158,16 @@ export default function QuestionResolver({
     setSelectedOption(existingAnswer?.answer ?? null);
     setShowFeedback(!!existingAnswer);
     setShowComment(false);
+    setShowTextoApoio(false);
     setStrikethroughs({});
     setIsShaking(false);
   }, [question.id, existingAnswer]);
 
   const gabarito = question.respostaCorreta || question.Gabarito || "";
+  const textoApoio =
+    question["Texto de apoio"] ||
+    (question as any).texto_apoio ||
+    (question as any).textoApoio;
   const comentarioTexto =
     question.explicacao ||
     question.comentario ||
@@ -215,6 +222,7 @@ export default function QuestionResolver({
     setSelectedOption(null);
     setShowFeedback(false);
     setShowComment(false);
+    setShowTextoApoio(false);
     setStrikethroughs({});
     setIsShaking(false);
     onNext();
@@ -224,6 +232,7 @@ export default function QuestionResolver({
     setSelectedOption(null);
     setShowFeedback(false);
     setShowComment(false);
+    setShowTextoApoio(false);
     setStrikethroughs({});
     setIsShaking(false);
     onPrev();
@@ -346,15 +355,51 @@ export default function QuestionResolver({
             {/* Area de Scroll (Enunciado + Alternativas) */}
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 relative z-10 space-y-6">
               
-              {/* Tópico com visual premium */}
-              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500 bg-blue-500/10 px-3 py-1.5 rounded-lg w-fit">
-                {question.tema || question.materia || "GERAL"}
+              {/* Tópico & Botão Texto de Apoio */}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500 bg-blue-500/10 px-3 py-1.5 rounded-lg w-fit">
+                  {question.tema || question.materia || "GERAL"}
+                </div>
+
+                {textoApoio && (
+                  <button
+                    onClick={() => setShowTextoApoio(!showTextoApoio)}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border shadow-sm ${
+                      showTextoApoio
+                        ? "bg-blue-600/20 border-blue-500/40 text-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.2)]"
+                        : "bg-[#121626] border-white/[0.06] text-slate-400 hover:text-white hover:border-white/10"
+                    }`}
+                  >
+                    <FileText size={12} className="text-blue-400" />
+                    {showTextoApoio ? "Ocultar Texto de Apoio" : "Ver Texto de Apoio"}
+                    <ChevronDown size={12} className={`transition-transform duration-200 ${showTextoApoio ? "rotate-180" : ""}`} />
+                  </button>
+                )}
               </div>
 
-              {question["Texto de apoio"] && (
-                <div className="p-4 rounded-xl bg-white/[0.02] border-l-2 border-slate-600 my-4">
-                  <p className="text-sm sm:text-base text-slate-300 leading-relaxed font-medium" dangerouslySetInnerHTML={{ __html: question["Texto de apoio"].replace(/\n/g, "<br/>") }} />
-                </div>
+              {/* Texto de Apoio Colapsável (Sempre inicia em oculto) */}
+              {textoApoio && (
+                <AnimatePresence>
+                  {showTextoApoio && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="p-4 sm:p-5 rounded-2xl bg-[#121626] border border-blue-500/20 my-2 relative overflow-hidden shadow-lg">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
+                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-400 mb-2">
+                          <FileText size={13} /> Texto de Apoio
+                        </div>
+                        <p
+                          className="text-xs sm:text-sm text-slate-300 leading-relaxed font-medium"
+                          dangerouslySetInnerHTML={{ __html: textoApoio.replace(/\n/g, "<br/>") }}
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               )}
 
               {/* Enunciado */}
