@@ -1,0 +1,374 @@
+{
+  "id": "info_backup_30q",
+  "titulo": "Backup estratégico",
+  "duracao_minutos": 60,
+  "data_json": {
+    "disciplinas": [
+      {
+        "nome": "INFORMÁTICA",
+        "questoes": [
+          {
+            "id": "info_backup_30q_1",
+            "texto": "Um administrador de rede do Banco do Brasil precisa implementar uma rotina de contingência diária. Na segunda-feira, realiza um backup completo. Na terça e na quarta, executa backups que copiam apenas os dados alterados desde o backup de segunda-feira. Esse tipo de backup executado na terça e na quarta-feira é classificado como:",
+            "alternativas": {
+              "A": "Diferencial.",
+              "B": "Incremental.",
+              "C": "Sintético.",
+              "D": "Cópia.",
+              "E": "Espelhamento."
+            },
+            "respostaCorreta": "A",
+            "explicacao": "O backup diferencial copia todos os dados alterados *desde o último backup completo* (full). O incremental copiaria apenas os dados alterados desde o *último backup de qualquer tipo*."
+          },
+          {
+            "id": "info_backup_30q_2",
+            "texto": "Para recuperar um servidor que sofreu falha crítica na sexta-feira, a equipe de TI possui as seguintes mídias: um backup normal (full) feito no domingo e quatro backups incrementais feitos de segunda a quinta-feira. Para restaurar o sistema integralmente com o menor tempo de processamento *durante o backup*, mas exigindo uma restauração específica, a equipe precisará utilizar:",
+            "alternativas": {
+              "A": "Apenas a fita de domingo e a de quinta-feira.",
+              "B": "Apenas a fita de quinta-feira.",
+              "C": "A fita de domingo e as quatro fitas incrementais, em ordem cronológica.",
+              "D": "A fita de domingo e a de quinta-feira, na ordem inversa.",
+              "E": "Apenas as quatro fitas incrementais."
+            },
+            "respostaCorreta": "C",
+            "explicacao": "O pulo do gato do backup incremental: embora seja rápido para *fazer*, para *restaurar* exige o full e TODOS os incrementais subsequentes na exata ordem cronológica até o momento da falha."
+          },
+          {
+            "id": "info_backup_30q_3",
+            "texto": "Na arquitetura de armazenamento em nuvem do Banco, optou-se pelo uso de *Snapshots* ao invés de backups tradicionais para a máquina virtual principal durante o expediente. Em relação à diferença técnica primária entre um Backup Full e um Snapshot, é correto afirmar que o Snapshot:",
+            "alternativas": {
+              "A": "Move fisicamente os blocos de dados inativos para uma unidade de fita off-site.",
+              "B": "Cria uma imagem estática do estado atual do sistema apontando para os blocos originais, sem duplicar imediatamente a massa de dados.",
+              "C": "Compacta os arquivos do sistema operacional e os envia para um servidor FTP criptografado.",
+              "D": "Interrompe as transações do banco de dados até que a cópia bloco-a-bloco seja concluída.",
+              "E": "Substitui a necessidade de redundância em RAID 1, agindo como espelho em tempo real."
+            },
+            "respostaCorreta": "B",
+            "explicacao": "*Snapshots* não são backups independentes no primeiro momento; eles criam um \"ponteiro\" de estado. Se o disco original corromper fisicamente, o snapshot no mesmo disco é inútil."
+          },
+          {
+            "id": "info_backup_30q_4",
+            "texto": "A política de retenção de dados de uma agência bancária adota o esquema de rotação conhecido como Avô-Pai-Filho (Grandfather-Father-Son - GFS). Nesse modelo clássico, a mídia designada como \"Avô\" (Grandfather) armazena, tipicamente, o backup:",
+            "alternativas": {
+              "A": "Diário incremental.",
+              "B": "Semanal diferencial.",
+              "C": "Mensal completo.",
+              "D": "Semestral sintético.",
+              "E": "Anual de arquivamento."
+            },
+            "respostaCorreta": "C",
+            "explicacao": "No GFS, Filho = Diário, Pai = Semanal, Avô = Mensal. A pegadinha é lembrar da hierarquia de tempo de retenção desse método clássico de arquivamento."
+          },
+          {
+            "id": "info_backup_30q_5",
+            "texto": "Um analista de TI do Banco foi instruído a esvaziar espaço no servidor principal. Ele deve copiar os projetos finalizados de 2025 para um armazenamento secundário e, simultaneamente, remover esses arquivos originais do servidor de produção. O procedimento técnico correto que atende a essa exigência é o:",
+            "alternativas": {
+              "A": "Backup incremental.",
+              "B": "Backup diferencial.",
+              "C": "Espelhamento de disco.",
+              "D": "Clonagem de volume.",
+              "E": "Arquivamento (Archiving)."
+            },
+            "respostaCorreta": "E",
+            "explicacao": "Cuidado com os conceitos. \"Backup\" copia mantendo o original na fonte. Quando você move a informação e a remove da origem para liberar espaço (longo prazo), trata-se de *Archiving* (Arquivamento)."
+          },
+          {
+            "id": "info_backup_30q_6",
+            "texto": "O comitê de segurança de um banco definiu que, em caso de pane no data center principal, a instituição pode tolerar, no máximo, a perda das transações realizadas nos últimos 15 minutos. Além disso, o sistema deve voltar a operar em até 2 horas. As métricas de 15 minutos e 2 horas referem-se, respectivamente, aos seguintes conceitos técnicos de continuidade de negócios:",
+            "alternativas": {
+              "A": "RTO (Recovery Time Objective) e RPO (Recovery Point Objective).",
+              "B": "MTBF (Mean Time Between Failures) e MTTR (Mean Time to Repair).",
+              "C": "RPO (Recovery Point Objective) e RTO (Recovery Time Objective).",
+              "D": "SLA (Service Level Agreement) e BIA (Business Impact Analysis).",
+              "E": "MTTR (Mean Time to Repair) e RTO (Recovery Time Objective)."
+            },
+            "respostaCorreta": "C",
+            "explicacao": "RPO refere-se ao PONTO de recuperação (quanta perda de dados é tolerada, ex: 15 min de transações perdidas). RTO refere-se ao TEMPO de recuperação (quanto tempo o sistema pode ficar fora do ar, ex: 2 horas para voltar)."
+          },
+          {
+            "id": "info_backup_30q_7",
+            "texto": "Para reduzir drasticamente o custo com armazenamento de backups na nuvem, o Banco do Brasil implementou uma tecnologia que analisa os blocos de dados antes da gravação e garante que apenas instâncias únicas de um bloco de arquivo sejam armazenadas, substituindo cópias redundantes por ponteiros para o bloco original. Essa técnica é conhecida estritamente como:",
+            "alternativas": {
+              "A": "Compressão LZ77.",
+              "B": "Desfragmentação contínua.",
+              "C": "Criptografia assimétrica.",
+              "D": "Deduplicação de dados.",
+              "E": "Thin Provisioning."
+            },
+            "respostaCorreta": "D",
+            "explicacao": "A Deduplicação elimina blocos de dados redundantes, armazenando apenas uma cópia única e usando ponteiros (referências) para as repetições. A compressão atua de forma diferente, reduzindo o tamanho dos bits do arquivo em si."
+          },
+          {
+            "id": "info_backup_30q_8",
+            "texto": "Como parte do seu Plano de Recuperação de Desastres (DRP), uma instituição financeira alugou um espaço físico secundário que possui energia, refrigeração e infraestrutura de rede básica, mas NÃO possui servidores configurados, storages ou dados atualizados. Em caso de desastre, a equipe precisará levar e configurar os equipamentos do zero. Esse tipo de instalação é classificado como:",
+            "alternativas": {
+              "A": "Hot site.",
+              "B": "Warm site.",
+              "C": "Cold site.",
+              "D": "Mirror site.",
+              "E": "Mobile site."
+            },
+            "respostaCorreta": "C",
+            "explicacao": "O 'Cold site' (site frio) tem a infraestrutura básica (sala, energia, rede), mas exige a instalação dos computadores e restauração dos backups do zero, sendo a opção mais barata, porém com o maior RTO."
+          },
+          {
+            "id": "info_backup_30q_9",
+            "texto": "Auditorias de segurança da informação frequentemente recomendam a 'Regra 3-2-1' para políticas de backup corporativas. O número '2' nesta regra específica orienta que a organização deve:",
+            "alternativas": {
+              "A": "Manter pelo menos duas cópias físicas no mesmo data center.",
+              "B": "Realizar o backup completo duas vezes por semana.",
+              "C": "Armazenar os backups em dois tipos de mídia diferentes.",
+              "D": "Garantir que a recuperação ocorra em até duas horas.",
+              "E": "Ter dois funcionários com privilégios de administrador para restaurar os dados."
+            },
+            "respostaCorreta": "C",
+            "explicacao": "A regra 3-2-1 diz: Tenha 3 cópias dos dados, em 2 tipos de mídia diferentes (ex: disco e fita), e mantenha 1 cópia off-site (fora da empresa/nuvem)."
+          },
+          {
+            "id": "info_backup_30q_10",
+            "texto": "Após um ataque de ransomware que corrompeu totalmente o sistema operacional de um servidor crítico, a equipe técnica precisou utilizar uma técnica de recuperação que permite instalar o sistema operacional, os aplicativos e os dados diretamente em um hardware limpo (sem sistema operacional prévio), utilizando uma imagem do sistema. Esse procedimento é tecnicamente denominado:",
+            "alternativas": {
+              "A": "File-level Restore.",
+              "B": "Bare Metal Restore (BMR).",
+              "C": "Continuous Data Protection (CDP).",
+              "D": "System State Backup.",
+              "E": "Failback automático."
+            },
+            "respostaCorreta": "B",
+            "explicacao": "Bare Metal Restore (Restauração em 'Metal Nu') é a capacidade de restaurar o sistema inteiro (SO + dados) em um hardware completamente limpo, sem precisar instalar o Windows ou Linux antes."
+          },
+          {
+            "id": "info_backup_30q_11",
+            "texto": "Para aumentar a resiliência do servidor de banco de dados, a equipe de infraestrutura configurou um arranjo de discos em RAID 1 (Espelhamento). Pouco tempo depois, um administrador acidentalmente excluiu uma tabela crítica do banco de dados principal com o comando DROP TABLE. Em relação ao papel do RAID 1 neste cenário de exclusão acidental, é correto afirmar que:",
+            "alternativas": {
+              "A": "O RAID 1 recuperará automaticamente a tabela, pois atua como um backup contínuo do sistema.",
+              "B": "O dado foi perdido em ambos os discos simultaneamente, provando que RAID protege contra falha de hardware, mas não substitui uma política de backup.",
+              "C": "A tabela poderá ser resgatada do disco secundário, desde que o espelhamento seja pausado em até 15 minutos.",
+              "D": "O RAID 1 utilizará a paridade distribuída para recalcular e reconstruir a tabela excluída.",
+              "E": "O arranjo protegerá o dado revertendo a transação através de um snapshot interno dos discos espelhados."
+            },
+            "respostaCorreta": "B",
+            "explicacao": "Regra de ouro: RAID não é backup! O espelhamento (RAID 1) duplica o erro instantaneamente. Se o usuário apaga um arquivo, ele é apagado nos dois discos ao mesmo tempo. Serve apenas para tolerância à quebra física do disco."
+          },
+          {
+            "id": "info_backup_30q_12",
+            "texto": "Durante o expediente de uma agência, os funcionários mantêm dezenas de planilhas abertas e em uso constante. Para permitir que o software de backup corporativo consiga realizar a cópia desses arquivos bloqueados pelo sistema sem corrompê-los e sem exigir que os usuários fechem as aplicações, os administradores de rede Windows ativam o serviço:",
+            "alternativas": {
+              "A": "BitLocker Drive Encryption.",
+              "B": "Windows Defender Advanced Threat Protection.",
+              "C": "Volume Shadow Copy Service (VSS).",
+              "D": "NTFS File Compression.",
+              "E": "Active Directory Federation Services (AD FS)."
+            },
+            "respostaCorreta": "C",
+            "explicacao": "O VSS (Cópia de Sombra de Volume) é o recurso do Windows que permite fazer o backup de arquivos que estão atualmente abertos ou bloqueados (em uso) por outras aplicações."
+          },
+          {
+            "id": "info_backup_30q_13",
+            "texto": "Quando o data center primário do banco sofreu um apagão prolongado, o tráfego e as operações foram redirecionados automaticamente para o data center secundário para manter o sistema no ar. Após 48 horas, o data center primário foi consertado e as operações foram devolvidas a ele. O processo técnico de DEVOLVER as operações ao ambiente original recuperado é tecnicamente chamado de:",
+            "alternativas": {
+              "A": "Failover.",
+              "B": "Failback.",
+              "C": "Rollback.",
+              "D": "Disaster Recovery.",
+              "E": "Switchover automático."
+            },
+            "respostaCorreta": "B",
+            "explicacao": "Failover é a transferência DA origem PARA a contingência na hora da queda. Failback é o retorno DA contingência PARA a origem quando o problema é resolvido."
+          },
+          {
+            "id": "info_backup_30q_14",
+            "texto": "O banco migrou seus backups para um provedor de nuvem pública (Cloud Computing). Para baratear custos, foi configurada uma política onde os backups com mais de 90 dias, que raramente são acessados, são movidos automaticamente para uma camada de armazenamento de menor custo e com tempo de recuperação muito maior (ex: horas). Essa automatização na gestão de mídias na nuvem recebe o nome técnico de:",
+            "alternativas": {
+              "A": "Elastic Load Balancing (ELB).",
+              "B": "Continuous Integration (CI).",
+              "C": "Gerenciamento de Ciclo de Vida (Lifecycle Management).",
+              "D": "Criptografia ponta a ponta (E2EE).",
+              "E": "Sincronização Bidirecional Assíncrona."
+            },
+            "respostaCorreta": "C",
+            "explicacao": "O Gerenciamento de Ciclo de Vida é usado para transitar dados automaticamente entre 'camadas' (tiers) na nuvem (ex: do Hot Storage para o Cold/Archive Storage) baseado na idade do arquivo para economizar dinheiro."
+          },
+          {
+            "id": "info_backup_30q_15",
+            "texto": "Um auditor do Banco Central analisa o plano de contingência de uma cooperativa de crédito e constata que os backups full e diferenciais são feitos rigorosamente nos prazos estipulados e armazenados em cofres off-site. No entanto, o auditor emite uma não-conformidade grave na política de backup porque a cooperativa falhou em realizar periodicamente o procedimento de:",
+            "alternativas": {
+              "A": "Criptografar as fitas com padrão AES-256.",
+              "B": "Teste de Restore (Validação de Restauração).",
+              "C": "Atualizar a versão do sistema operacional do storage.",
+              "D": "Contratar links dedicados e redundantes de internet.",
+              "E": "Desfragmentar as unidades de disco do data center principal."
+            },
+            "respostaCorreta": "B",
+            "explicacao": "A maior regra prática cobrada em auditoria e provas: 'O backup só é válido se a restauração for testada e comprovada'. Fazer backup cega e rotineiramente sem testar o restore (recuperação) é considerado uma falha crítica de governança."
+          },
+          {
+            "id": "info_backup_30q_16",
+            "texto": "A rotina de backup do Sistema Gerenciador de Banco de Dados (SGBD) de uma agência bancária requer que uma cópia de segurança seja realizada ao meio-dia, horário de pico de atendimento. Para não interromper o banco de dados e garantir que as transações incompletas (em andamento no momento do backup) não gerem inconsistências na cópia, a equipe deve configurar a ferramenta para realizar um:",
+            "alternativas": {
+              "A": "Cold Backup (Backup a frio).",
+              "B": "Hot Backup (Backup a quente).",
+              "C": "Backup Off-line estático.",
+              "D": "Dump físico de hardware.",
+              "E": "Backup bare-metal."
+            },
+            "respostaCorreta": "B",
+            "explicacao": "Hot Backup (Backup a Quente) é feito com o banco de dados em funcionamento, permitindo transações simultâneas. O sistema lida com a consistência interna das transações ativas. O Cold Backup exige o desligamento do banco de dados (offline)."
+          },
+          {
+            "id": "info_backup_30q_17",
+            "texto": "Com o aumento global de ataques de ransomware que não apenas criptografam os dados de produção, mas também corrompem os backups online, uma instituição financeira adotou repositórios de armazenamento WORM para os arquivos mais críticos. A tecnologia WORM garante segurança contra exclusão ou alteração porque seu acrônimo e princípio de funcionamento significam:",
+            "alternativas": {
+              "A": "Write Offline, Read Mostly (Gravação Offline, Leitura Frequente).",
+              "B": "Write Once, Read Many (Grave uma vez, Leia várias vezes).",
+              "C": "Wide Object Recovery Management (Gerenciamento de Recuperação de Objeto Amplo).",
+              "D": "Window of Recovery Memory (Memória de Janela de Recuperação).",
+              "E": "Wipe Out Ransomware Malware (Apagar Ransomware e Malware)."
+            },
+            "respostaCorreta": "B",
+            "explicacao": "WORM (Write Once, Read Many) impede que os dados sejam alterados ou apagados após serem gravados na mídia. É a principal defesa contra ransomwares que tentam destruir backups."
+          },
+          {
+            "id": "info_backup_30q_18",
+            "texto": "Ao conectar o data center primário em São Paulo a um data center secundário na Bahia, os engenheiros de rede decidiram utilizar Replicação Assíncrona de dados, em oposição à Replicação Síncrona. A justificativa técnica primária e correta para essa escolha, baseada na longa distância geográfica, é evitar:",
+            "alternativas": {
+              "A": "Que o atraso na resposta (latência) da rede entre os estados congele o processamento no data center principal.",
+              "B": "Que as fitas magnéticas LTO desmagnetizem durante o trânsito dos dados pela internet.",
+              "C": "Que os backups incrementais sejam convertidos automaticamente em backups full pelo provedor.",
+              "D": "A necessidade de criptografar os dados em repouso (Data at Rest).",
+              "E": "A duplicação exata dos dados na Bahia, garantindo um backup menor e mais rápido."
+            },
+            "respostaCorreta": "A",
+            "explicacao": "Na Replicação Síncrona, a aplicação principal TEM QUE ESPERAR o data center secundário confirmar a gravação. Se a distância for muito longa (alta latência), o sistema principal fica lento. A Assíncrona grava no principal primeiro e depois envia para o secundário em background."
+          },
+          {
+            "id": "info_backup_30q_19",
+            "texto": "Nos sistemas operacionais da família Windows, as ferramentas nativas e de terceiros que executam backups baseiam-se fortemente em um atributo de arquivo específico para determinar se aquele arquivo foi modificado e precisa ser incluído em um backup incremental ou diferencial. Ao concluir com sucesso o backup de um arquivo, o software de backup normalmente realiza qual ação sobre esse atributo?",
+            "alternativas": {
+              "A": "Ativa o atributo de 'Oculto' (Hidden).",
+              "B": "Remove a extensão do arquivo.",
+              "C": "Altera o atributo de 'Sistema' (System) para falso.",
+              "D": "Limpa (desmarca) o atributo de 'Arquivo' (Archive Bit).",
+              "E": "Atribui uma flag de 'Somente Leitura' (Read-only)."
+            },
+            "respostaCorreta": "D",
+            "explicacao": "O Windows usa a flag 'Archive' (Atributo de Arquivo). Quando você altera um arquivo, a flag é 'marcada'. Durante o backup incremental ou full, o programa copia o arquivo e 'limpa' a flag, avisando ao sistema que aquele arquivo já está salvo."
+          },
+          {
+            "id": "info_backup_30q_20",
+            "texto": "Apesar do crescimento do armazenamento em nuvem, o Banco Ainda utiliza largamente bibliotecas robóticas equipadas com fitas LTO (Linear Tape-Open) para arquivamento de longo prazo. Uma característica intrínseca às tecnologias de fita magnética que deve ser levada em conta no planejamento do RTO (Tempo de Recuperação) é que a leitura dos dados nela armazenados ocorre de forma:",
+            "alternativas": {
+              "A": "Totalmente aleatória (Random Access), como em um SSD.",
+              "B": "Sequencial, exigindo que a fita seja enrolada ou desenrolada até o ponto exato da informação.",
+              "C": "Baseada em blocos flutuantes carregados em memória RAM estática.",
+              "D": "Matricial paralela, lendo múltiplos arquivos de extremidades diferentes da fita simultaneamente.",
+              "E": "Virtualizada através de ponteiros iSCSI."
+            },
+            "respostaCorreta": "B",
+            "explicacao": "A principal desvantagem da fita para RTO baixo é que o acesso não é aleatório como em um disco rígido. É um acesso Sequencial. Se o arquivo estiver no final da fita, a unidade robótica precisa fisicamente avançar o carretel até aquele ponto."
+          },
+          {
+            "id": "info_backup_30q_21",
+            "texto": "A restauração de dados a partir de um esquema de backup que utiliza um backup completo (Full) semanal associado a backups diários diferenciais exige, em caso de falha no sábado, a restauração do backup completo inicial e de todos os backups diferenciais diários realizados até sexta-feira.",
+            "alternativas": {
+              "C": "Certo.",
+              "E": "Errado."
+            },
+            "respostaCorreta": "E",
+            "explicacao": "Errado. O backup diferencial já contém TODAS as alterações acumuladas desde o último Full. Logo, você só precisa restaurar o Full inicial e o ÚLTIMO diferencial (o de sexta-feira), e não todos."
+          },
+          {
+            "id": "info_backup_30q_22",
+            "texto": "Armazenar os arquivos de backup do servidor do banco em uma unidade de disco externa conectada fisicamente à mesma máquina e mapeada de forma contínua com uma letra de unidade (ex: Disco E:) garante proteção integral contra ataques de Ransomware do tipo criptográfico.",
+            "alternativas": {
+              "C": "Certo.",
+              "E": "Errado."
+            },
+            "respostaCorreta": "E",
+            "explicacao": "Errado. Um ransomware moderno infecta não apenas a unidade C:, mas escaneia e criptografa qualquer unidade montada ou mapeada na rede à qual o usuário logado tenha acesso (inclusive o disco E: de backup)."
+          },
+          {
+            "id": "info_backup_30q_23",
+            "texto": "A implementação de um conceito de 'Air Gap' em políticas avançadas de backup consiste em isolar logicamente a rede de backup utilizando firewalls rigorosos, enquanto se mantém a conexão física dos cabos de rede com o switch de produção, garantindo isolamento total dos dados.",
+            "alternativas": {
+              "C": "Certo.",
+              "E": "Errado."
+            },
+            "respostaCorreta": "E",
+            "explicacao": "Errado. O 'Air Gap' verdadeiro exige a DESCONEXÃO FÍSICA da mídia. Se há cabo de rede conectado (mesmo com firewall), não é um Air Gap, pois a mídia continua fisicamente acessível pela rede."
+          },
+          {
+            "id": "info_backup_30q_24",
+            "texto": "A tecnologia de Snapshot, implementada em ambientes virtualizados e storages corporativos, dispensa e substitui com vantagem as políticas tradicionais de backup externo, pois permite a recuperação instantânea (rollback) do sistema operacional sem consumir banda de rede.",
+            "alternativas": {
+              "C": "Certo.",
+              "E": "Errado."
+            },
+            "respostaCorreta": "E",
+            "explicacao": "Errado. Snapshot NÃO é backup e não substitui o backup. Snapshot depende da integridade do disco original e do hardware para funcionar. Se o disco físico original queimar, o snapshot é perdido junto."
+          },
+          {
+            "id": "info_backup_30q_25",
+            "texto": "A principal desvantagem da implementação de um 'Hot Site' em relação a um 'Cold Site' no planejamento de contingência de um banco comercial é o altíssimo custo operacional de se manter um parque tecnológico redundante ocioso ou em espelhamento ativo.",
+            "alternativas": {
+              "C": "Certo.",
+              "E": "Errado."
+            },
+            "respostaCorreta": "C",
+            "explicacao": "Certo. O Hot site possui infraestrutura completa e servidores espelhados em tempo real, sendo extremamente caro de se manter em comparação com um Cold site, que é apenas uma 'sala vazia' preparada."
+          },
+          {
+            "id": "info_backup_30q_26",
+            "texto": "Sistemas de Proteção Contínua de Dados (CDP) capturam e gravam as modificações dos dados em tempo real, possibilitando restaurar o estado do banco de dados para qualquer instante específico no tempo imediatamente anterior a um erro ou ataque.",
+            "alternativas": {
+              "C": "Certo.",
+              "E": "Errado."
+            },
+            "respostaCorreta": "C",
+            "explicacao": "Certo. A tecnologia CDP salva literalmente cada transação feita no storage em tempo real. Se um arquivo for apagado às 14:05:03, o administrador pode voltar o sistema para 14:05:02 (o ponto exato anterior)."
+          },
+          {
+            "id": "info_backup_30q_27",
+            "texto": "A métrica RTO (Recovery Time Objective) define o volume máximo aceitável de perda de dados transacionais, medido em gigabytes ou em unidades de tempo, que a instituição financeira tolera após uma interrupção.",
+            "alternativas": {
+              "C": "Certo.",
+              "E": "Errado."
+            },
+            "respostaCorreta": "E",
+            "explicacao": "Errado. Quem define a perda de DADOS aceitável é o RPO (Recovery Point Objective). O RTO diz respeito apenas ao TEMPO que a empresa ficará de portas fechadas ou sistema fora do ar (Downtime)."
+          },
+          {
+            "id": "info_backup_30q_28",
+            "texto": "A adoção da estratégia 3-2-1 preconiza que a organização deva manter três cópias independentes da massa de dados em dois continentes diferentes, com ao menos uma cópia criptografada com chave de 256 bits.",
+            "alternativas": {
+              "C": "Certo.",
+              "E": "Errado."
+            },
+            "respostaCorreta": "E",
+            "explicacao": "Errado. A regra diz: 3 cópias, em 2 formatos/mídias diferentes, sendo 1 cópia off-site. Não há exigência de continentes diferentes nem especificação técnica do tamanho da chave criptográfica nesta regra clássica."
+          },
+          {
+            "id": "info_backup_30q_29",
+            "texto": "Em cenários de backup na nuvem gerenciados por softwares modernos, o processo inicial (semente) geralmente transfere todos os blocos de dados (Full). Contudo, nas execuções subsequentes, o software transfere estritamente as partes dos arquivos que sofreram modificação (incremental de nível de bloco) para poupar banda larga.",
+            "alternativas": {
+              "C": "Certo.",
+              "E": "Errado."
+            },
+            "respostaCorreta": "C",
+            "explicacao": "Certo. Na nuvem, transferir um Full de terabytes todos os dias inviabiliza a internet corporativa. Após a 'semente' (Seed) inicial, os softwares transferem apenas blocos de dados incrementais e deduplicados."
+          },
+          {
+            "id": "info_backup_30q_30",
+            "texto": "Durante uma janela de backup noturno, se um arquivo crucial como o arquivo de logs do servidor estiver em uso e travado exclusivamente pelo sistema operacional, um backup padrão (cópia simples sem uso de ferramentas de Cópia de Sombra) irá forçar o fechamento do arquivo para realizar a gravação.",
+            "alternativas": {
+              "C": "Certo.",
+              "E": "Errado."
+            },
+            "respostaCorreta": "E",
+            "explicacao": "Errado. Sem ferramentas como o VSS (no Windows), uma cópia simples falha silenciosamente ou retorna um erro de 'Acesso Negado' ou 'Arquivo em Uso', sem conseguir fechar ou copiar o arquivo bloqueado pelo kernel."
+          }
+        ]
+      }
+    ]
+  }
+}

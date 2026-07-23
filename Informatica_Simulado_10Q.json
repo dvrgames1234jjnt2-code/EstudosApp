@@ -1,0 +1,144 @@
+{
+  "id": "info_redes_10q",
+  "titulo": "Redes de Computadores e Protocolos",
+  "duracao_minutos": 30,
+  "data_json": {
+    "disciplinas": [
+      {
+        "nome": "INFORMÁTICA",
+        "questoes": [
+          {
+            "id": "info_redes_1",
+            "texto": "Sobre os modos de transmissão de redes de computadores, é correto afirmar que:",
+            "alternativas": {
+              "A": "Unicast permite que uma mensagem seja enviada para múltiplos destinos simultaneamente, sendo adequado para listas de transmissão em redes sociais.",
+              "B": "Multicast permite a transmissão de mensagens para um grupo específico de destinatários, sendo eficaz para aplicações como videoconferências e streaming de mídia em tempo real.",
+              "C": "Broadcast limita-se a enviar mensagens para um único destinatário, similar ao funcionamento de um controle remoto de televisão infravermelho.",
+              "D": "No modo unicast, a transmissão de dados ocorre de forma simultânea entre múltiplos destinatários, sem risco de colisões em redes Ethernet.",
+              "E": "O modo multicast não pode ser utilizado em redes de grandes escalas como WAN, sendo restrito a redes locais, como PAN e LAN."
+            },
+            "respostaCorreta": "B",
+            "explicacao": "O modo Multicast permite a transmissão para um grupo específico de destinatários, sendo usado em aplicações como videoconferências e streaming."
+          },
+          {
+            "id": "info_redes_2",
+            "texto": "Em relação às topologias de rede, é correto afirmar que:",
+            "alternativas": {
+              "A": "A topologia em barramento utiliza cabos coaxiais e permite que a comunicação ocorra de forma ponto-a-ponto, garantindo maior segurança dos dados trafegados.",
+              "B": "A topologia estrela facilita a detecção e o isolamento de falhas, já que o rompimento de um cabo afeta toda a rede, tornando-a inviável para redes empresariais.",
+              "C": "Na topologia em anel, a transmissão ocorre em full-duplex, permitindo que vários dispositivos se comuniquem simultaneamente sem risco de colisão.",
+              "D": "A topologia em malha, embora ofereça alta redundância e confiabilidade, pode ser custosa e complexa para redes de grande escala devido à quantidade de conexões necessárias entre os dispositivos.",
+              "E": "A topologia estrela possui uma topologia lógica de malha, pois todos os dispositivos podem se comunicar diretamente sem passar pelo nó central."
+            },
+            "respostaCorreta": "D",
+            "explicacao": "A topologia em malha oferece alta redundância e confiabilidade, mas o custo e a complexidade aumentam com o número de conexões."
+          },
+          {
+            "id": "info_redes_3",
+            "texto": "A respeito dos tipos de enlaces em redes de computadores, é correto afirmar que:",
+            "alternativas": {
+              "A": "O enlace ponto-a-ponto permite a comunicação entre múltiplos dispositivos ao mesmo tempo, sendo ideal para transmissões broadcast em redes WAN.",
+              "B": "Em um enlace ponto-multiponto, cada dispositivo tem um link dedicado exclusivo para transmitir dados a todos os outros dispositivos da rede, evitando congestionamento.",
+              "C": "O enlace ponto-a-ponto é caracterizado por uma conexão dedicada entre dois dispositivos, o que garante maior segurança, mas com menor escalabilidade, sendo inadequado para redes complexas.",
+              "D": "O enlace ponto-multiponto só pode ser implementado em redes com topologia malha, pois requer que cada dispositivo esteja conectado a todos os outros dispositivos da rede.",
+              "E": "Redes ponto-multiponto exigem o uso de cabos coaxiais em todos os seus enlaces para garantir uma comunicação eficiente e sem falhas."
+            },
+            "respostaCorreta": "C",
+            "explicacao": "O enlace ponto-a-ponto conecta dois dispositivos diretamente, garantindo segurança, mas tem baixa escalabilidade, sendo menos adequado para redes complexas."
+          },
+          {
+            "id": "info_redes_4",
+            "texto": "Sobre os meios de transmissão guiados e não guiados, marque a alternativa correta:",
+            "alternativas": {
+              "A": "Cabos de par trançado possuem maior largura de banda que cabos de fibra óptica, sendo mais indicados para redes com altas taxas de transferência de dados em WANs.",
+              "B": "A fibra óptica oferece maior imunidade à interferência eletromagnética e pode transportar sinais a distâncias maiores que os cabos coaxiais, mas requer um número elevado de repetidores para funcionar adequadamente.",
+              "C": "O cabo coaxial é preferido em instalações residenciais devido à sua flexibilidade e capacidade de cobrir maiores distâncias sem perda significativa de sinal.",
+              "D": "A fibra óptica é amplamente utilizada em redes de longa distância (WAN), graças à sua maior largura de banda e baixa atenuação, permitindo transmissões mais rápidas e seguras.",
+              "E": "A categoria CAT3 de cabos de par trançado é a mais utilizada em redes modernas, por suportar altas velocidades e permitir comunicação full-duplex."
+            },
+            "respostaCorreta": "D",
+            "explicacao": "A fibra óptica é amplamente utilizada em redes WAN por sua alta largura de banda, baixa atenuação e segurança nas transmissões."
+          },
+          {
+            "id": "info_redes_5",
+            "texto": "Em relação ao funcionamento dos dispositivos de rede, considere as afirmações abaixo:\n\nI. Um hub é considerado um dispositivo inteligente, capaz de encaminhar dados diretamente ao destinatário final, sem congestionamentos.\nII. Um switch opera em full-duplex, eliminando a possibilidade de colisões e permitindo múltiplas transmissões simultâneas entre diferentes dispositivos.\nIII. Um roteador é capaz de segmentar redes em diferentes sub-redes e escolher a melhor rota para que os dados cheguem ao destino, com base nos endereços IP.\nIV. As bridges são responsáveis por regenerar sinais e encaminhar pacotes para o destino correto com base no endereço MAC.\nV. Um modem realiza a modulação e demodulação de sinais para que os dados possam ser transmitidos por meios analógicos como linhas telefônicas.\n\nQuais estão corretas?",
+            "alternativas": {
+              "A": "I, II e III.",
+              "B": "II, III e IV.",
+              "C": "III, IV e V.",
+              "D": "I, IV e V.",
+              "E": "II, III e V."
+            },
+            "respostaCorreta": "E",
+            "explicacao": "I está incorreta (Hub não é inteligente), IV está incorreta (bridges não regeneram sinais como repetidores, operam na camada de enlace). II, III e V estão corretas."
+          },
+          {
+            "id": "info_redes_6",
+            "texto": "Sobre o padrão Token Ring (IEEE 802.5), qual das afirmações abaixo está correta?",
+            "alternativas": {
+              "A": "O Token Ring utiliza uma topologia em estrela, conectando todos os dispositivos a um hub central, permitindo a transmissão simultânea de múltiplos dispositivos através do uso de canais separados.",
+              "B": "O Token circula na rede de forma bidirecional, permitindo que múltiplos dispositivos transmitam dados simultaneamente, o que maximiza a utilização da largura de banda disponível.",
+              "C": "No Token Ring, um único dispositivo tem o controle de transmitir dados ao possuir o token, prevenindo colisões de dados e garantindo baixa latência, mas com escalabilidade limitada em redes maiores.",
+              "D": "Embora o Token Ring tenha se tornado o padrão dominante na indústria, a Ethernet acabou superando devido à menor confiabilidade e à maior vulnerabilidade a colisões de dados em redes com alta demanda.",
+              "E": "A arquitetura do Token Ring é baseada em uma topologia lógica de estrela e requer hubs MAU específicos para que a comunicação possa acontecer de forma estável e sem interrupções."
+            },
+            "respostaCorreta": "C",
+            "explicacao": "No Token Ring, o dispositivo que possui o token controla a transmissão, prevenindo colisões. No entanto, a escalabilidade é limitada em redes maiores devido ao aumento no tempo de espera pelo token."
+          },
+          {
+            "id": "info_redes_7",
+            "texto": "Em relação à evolução do padrão Wi-Fi (IEEE 802.11), qual das alternativas abaixo descreve corretamente suas características e evolução?",
+            "alternativas": {
+              "A": "O padrão IEEE 802.11b introduziu uma tecnologia de 5.0 GHz, com capacidade para taxas de transmissão superiores a 600 Mbps, sendo um dos primeiros a operar em Dual Band e evitar interferências com outros dispositivos.",
+              "B": "O padrão IEEE 802.11g foi introduzido após o IEEE 802.11a e manteve a compatibilidade com o padrão 802.11b, operando em 2.4 GHz com uma taxa de até 54 Mbps, ademais trouxe melhorias na taxa de interferência com dispositivos domésticos.",
+              "C": "O IEEE 802.11n é um dos mais recentes, oferecendo taxas de até 14 Gbps e sendo o primeiro padrão a introduzir a criptografia WPA3, que melhora significativamente a segurança de redes sem fio em comparação com seus antecessores.",
+              "D": "O padrão IEEE 802.11ac trouxe a possibilidade de operar em frequências de 2.4 GHz e 5.0 GHz, mas é considerado obsoleto em termos de velocidade, comparado ao padrão 802.11b, com uma taxa máxima de apenas 11 Mbps.",
+              "E": "A principal vantagem do padrão 802.11a sobre o padrão 802.11b era sua menor suscetibilidade a interferências em redes congestionadas e a capacidade de operar em ambientes com maior densidade de dispositivos conectados simultaneamente."
+            },
+            "respostaCorreta": "E",
+            "explicacao": "O padrão 802.11a era menos suscetível a interferências em redes congestionadas devido ao uso da frequência de 5.0 GHz, sendo adequado para ambientes com maior densidade de dispositivos."
+          },
+          {
+            "id": "info_redes_8",
+            "texto": "Qual das afirmações sobre o padrão Bluetooth (IEEE 802.15) e sua topologia é correta?",
+            "alternativas": {
+              "A": "O padrão Bluetooth utiliza a topologia em barramento, onde todos os dispositivos estão conectados a um nó central que controla a comunicação entre eles, permitindo uma integração mais eficiente em piconets com até 255 dispositivos.",
+              "B": "A topologia mestre-escravo do Bluetooth permite que até oito dispositivos estejam ativos ao mesmo tempo em uma piconet, onde apenas o dispositivo mestre pode iniciar a comunicação com o escravo.",
+              "C": "Em uma piconet, os dispositivos escravos podem se comunicar diretamente entre si, sem a necessidade de passar pelo dispositivo mestre, o que aumenta a flexibilidade da rede e a diminuição do tempo de latência.",
+              "D": "Um dispositivo Bluetooth pode ser escravo em várias piconets ao mesmo tempo, mas só pode atuar como mestre em uma scatternet, onde a comunicação direta entre mestres é permitida para aumentar a eficiência da rede.",
+              "E": "As scatternets são formadas por múltiplas piconets interconectadas, permitindo que os dispositivos escravos de diferentes redes se comuniquem diretamente entre si, sem a necessidade de passar pelo dispositivo mestre."
+            },
+            "respostaCorreta": "B",
+            "explicacao": "Na topologia mestre-escravo do Bluetooth, até 8 dispositivos podem estar ativos em uma piconet. Apenas o mestre pode iniciar a comunicação e os escravos respondem."
+          },
+          {
+            "id": "info_redes_9",
+            "texto": "Sobre a Internet das Coisas (IoT), assinale a alternativa que descreve corretamente seus componentes e tecnologias de comunicação.",
+            "alternativas": {
+              "A": "A IoT é altamente dependente da tecnologia PLC, que permite a comunicação entre dispositivos em distâncias curtas, como sensores e dispositivos móveis, garantindo alta velocidade de transmissão, mesmo em áreas urbanas densas.",
+              "B": "A comunicação na IoT é feita exclusivamente por tecnologias sem fio como Wi-Fi e Bluetooth, que oferecem uma conexão de longa distância e alta taxa de transferência, tornando as redes de sensores compatíveis com dispositivos residenciais.",
+              "C": "Sensores IoT coletam dados do ambiente e utilizam tecnologias de comunicação como Zigbee e LoRa para transmitir esses dados para a nuvem, onde são processados e analisados, permitindo decisões automatizadas em tempo real.",
+              "D": "Dispositivos na IoT têm sua conectividade garantida por redes de telefonia móvel (5G) e fibra óptica, que permitem a integração de dispositivos em ambientes altamente dinâmicos, eliminando a necessidade de sensores e atuadores.",
+              "E": "O principal benefício da IoT é sua capacidade de operar em redes de curto alcance, como Bluetooth Low Energy (BLE), o que garante conectividade global e alta taxa de transferência de dados em aplicações críticas de grande escala."
+            },
+            "respostaCorreta": "C",
+            "explicacao": "Sensores na IoT coletam dados do ambiente e utilizam tecnologias de comunicação como Zigbee e LoRa para transmitir os dados para a nuvem, permitindo processamento e decisões automatizadas em tempo real."
+          },
+          {
+            "id": "info_redes_10",
+            "texto": "Em relação às tecnologias de acesso à Internet, qual das alternativas abaixo está correta?",
+            "alternativas": {
+              "A": "A tecnologia de satélite oferece baixa latência, sendo ideal para jogos online e streaming de vídeo, além de permitir a transmissão de dados em tempo real, mesmo em áreas urbanas com cobertura Wi-Fi.",
+              "B": "A tecnologia ADSL, por utilizar frequências separadas para voz e dados, oferece uma conexão assimétrica, onde a taxa de upload é maior que a de download, o que a torna adequada para transmissões de grandes volumes de dados.",
+              "C": "As redes de fibra óptica, devido à baixa atenuação do sinal, oferecem alta largura de banda e baixa latência, tornando-as ideais para aplicações de alta velocidade como streaming 4K e videoconferências de baixa qualidade.",
+              "D": "A tecnologia HFC combina fibra óptica com cabos coaxiais, oferecendo altas velocidades de download e upload, sendo amplamente utilizada em serviços de TV a cabo, porém tem uma cobertura limitada a áreas urbanas.",
+              "E": "O PLC utiliza a rede elétrica existente para transmissão de dados, sendo adequado para grandes distâncias e oferecendo taxas de transmissão equivalentes às da fibra óptica, tornando-o a opção mais eficiente em ambientes corporativos."
+            },
+            "respostaCorreta": "D",
+            "explicacao": "A tecnologia HFC (Hybrid Fiber-Coaxial) combina fibra óptica com cabos coaxiais, oferecendo altas velocidades, sendo amplamente utilizada em serviços de TV a cabo e internet banda larga."
+          }
+        ]
+      }
+    ]
+  }
+}

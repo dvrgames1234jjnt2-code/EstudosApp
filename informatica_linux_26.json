@@ -1,0 +1,318 @@
+{
+  "titulo": "Simulado de Informática - Redes, Protocolos e Linux",
+  "materia": "Informática",
+  "questoes": [
+    {
+      "pergunta": "Qual das seguintes topologias de rede utiliza um dispositivo central, como um switch ou hub, para conectar todos os outros nós da rede?",
+      "alternativas": {
+        "A": "Barramento",
+        "B": "Anel",
+        "C": "Estrela",
+        "D": "Malha",
+        "E": "Árvore"
+      },
+      "respostaCorreta": "C",
+      "explicacao": "Na topologia em estrela, todos os dispositivos são conectados a um ponto central (hub ou switch). Se o cabo de um dispositivo falha, apenas ele perde a conexão, mas se o dispositivo central falhar, toda a rede cai."
+    },
+    {
+      "pergunta": "Qual modelo de referência divide as funções de rede em sete camadas distintas, desde a camada física até a de aplicação?",
+      "alternativas": {
+        "A": "Modelo TCP/IP",
+        "B": "Modelo OSI",
+        "C": "Modelo IEEE 802",
+        "D": "Modelo Ethernet",
+        "E": "Modelo Peer-to-Peer"
+      },
+      "respostaCorreta": "B",
+      "explicacao": "O Modelo OSI (Open Systems Interconnection) é composto por 7 camadas: Física, Enlace, Rede, Transporte, Sessão, Apresentação e Aplicação."
+    },
+    {
+      "pergunta": "Em uma rede local (LAN), qual equipamento opera na Camada 2 (Enlace) do modelo OSI e utiliza endereços MAC para encaminhar frames?",
+      "alternativas": {
+        "A": "Roteador",
+        "B": "Hub",
+        "C": "Switch",
+        "D": "Repetidor",
+        "E": "Gateway"
+      },
+      "respostaCorreta": "C",
+      "explicacao": "O Switch trabalha na Camada 2 (Enlace), filtrando e encaminhando quadros (frames) com base nos endereços MAC dos dispositivos conectados."
+    },
+    {
+      "pergunta": "O endereço IP 192.168.1.50 pertence a qual classe de endereçamento IP clássico?",
+      "alternativas": {
+        "A": "Classe A",
+        "B": "Classe B",
+        "C": "Classe C",
+        "D": "Classe D",
+        "E": "Classe E"
+      },
+      "respostaCorreta": "C",
+      "explicacao": "Endereços IP que começam no intervalo de 192 a 223 pertencem à Classe C."
+    },
+    {
+      "pergunta": "Qual a principal diferença entre o protocolo TCP e o UDP?",
+      "alternativas": {
+        "A": "O TCP é mais rápido que o UDP.",
+        "B": "O UDP garante a entrega dos pacotes, enquanto o TCP não.",
+        "C": "O TCP é orientado à conexão e garante a entrega, enquanto o UDP não é orientado à conexão.",
+        "D": "O UDP utiliza a porta 80, enquanto o TCP utiliza a porta 443.",
+        "E": "Não há diferença significativa entre eles."
+      },
+      "respostaCorreta": "C",
+      "explicacao": "O TCP (Transmission Control Protocol) é confiável e orientado à conexão. O UDP (User Datagram Protocol) prioriza a velocidade e não garante a entrega ou ordem dos pacotes."
+    },
+    {
+      "pergunta": "Qual dispositivo é responsável por interconectar diferentes redes e determinar a melhor rota para o tráfego de dados na Camada 3 (Rede) do modelo OSI?",
+      "alternativas": {
+        "A": "Bridge",
+        "B": "Modem",
+        "C": "Roteador",
+        "D": "Access Point",
+        "E": "Switch Layer 2"
+      },
+      "respostaCorreta": "C",
+      "explicacao": "O Roteador opera na Camada 3 (Rede) e utiliza endereços IP para encaminhar pacotes entre redes distintas."
+    },
+    {
+      "pergunta": "O que caracteriza uma rede do tipo WAN (Wide Area Network)?",
+      "alternativas": {
+        "A": "Conecta dispositivos em uma única sala.",
+        "B": "Abrange uma área geográfica limitada, como um campus.",
+        "C": "Conecta redes em grandes distâncias, como cidades, países ou continentes.",
+        "D": "É uma rede sem fio doméstica.",
+        "E": "Utiliza exclusivamente cabos de par trançado."
+      },
+      "respostaCorreta": "C",
+      "explicacao": "As WANs cobrem grandes áreas geográficas. A Internet é o maior exemplo de uma WAN."
+    },
+    {
+      "pergunta": "Qual o objetivo da utilização de uma VLAN (Virtual Local Area Network)?",
+      "alternativas": {
+        "A": "Aumentar a velocidade física dos cabos.",
+        "B": "Agrupar dispositivos logicamente em redes separadas, mesmo que estejam no mesmo switch físico.",
+        "C": "Substituir a necessidade de roteadores na rede.",
+        "D": "Fornecer acesso à internet sem fio.",
+        "E": "Criptografar todo o tráfego da rede local."
+      },
+      "respostaCorreta": "B",
+      "explicacao": "VLANs permitem segmentar uma rede física em várias redes lógicas, melhorando a segurança e o gerenciamento do tráfego de broadcast."
+    },
+    {
+      "pergunta": "O que é o endereço MAC (Media Access Control)?",
+      "alternativas": {
+        "A": "Um endereço lógico alterável pelo usuário.",
+        "B": "Um identificador único gravado no hardware da placa de rede.",
+        "C": "O endereço do servidor DNS da rede.",
+        "D": "Um protocolo de roteamento dinâmico.",
+        "E": "Uma senha de acesso ao Wi-Fi."
+      },
+      "respostaCorreta": "B",
+      "explicacao": "O endereço MAC é o endereço físico da interface de rede, representado em hexadecimal e atribuído pelo fabricante."
+    },
+    {
+      "pergunta": "Em relação à segurança de redes sem fio, qual o padrão de criptografia mais seguro atualmente?",
+      "alternativas": {
+        "A": "WEP",
+        "B": "WPA",
+        "C": "WPA2",
+        "D": "WPA3",
+        "E": "TKIP"
+      },
+      "respostaCorreta": "D",
+      "explicacao": "O WPA3 é a evolução do WPA2, trazendo correções de vulnerabilidades conhecidas e maior proteção contra ataques de força bruta."
+    },
+    {
+      "pergunta": "Qual protocolo é responsável por atribuir automaticamente endereços IP aos dispositivos em uma rede?",
+      "alternativas": {
+        "A": "DNS",
+        "B": "DHCP",
+        "C": "FTP",
+        "D": "HTTP",
+        "E": "SNMP"
+      },
+      "respostaCorreta": "B",
+      "explicacao": "O DHCP (Dynamic Host Configuration Protocol) automatiza a configuração de rede dos hosts, fornecendo IP, máscara, gateway e DNS."
+    },
+    {
+      "pergunta": "Qual a função do protocolo DNS (Domain Name System)?",
+      "alternativas": {
+        "A": "Transferir arquivos de forma segura.",
+        "B": "Criptografar mensagens de e-mail.",
+        "C": "Converter nomes de domínio (como google.com) em endereços IP.",
+        "D": "Gerenciar o acesso remoto a servidores.",
+        "E": "Monitorar o desempenho da rede."
+      },
+      "respostaCorreta": "C",
+      "explicacao": "O DNS funciona como uma 'lista telefônica' da internet, traduzindo URLs amigáveis para endereços IP numéricos."
+    },
+    {
+      "pergunta": "Qual protocolo é utilizado para a navegação segura na web, utilizando criptografia para proteger os dados?",
+      "alternativas": {
+        "A": "HTTP",
+        "B": "HTTPS",
+        "C": "FTP",
+        "D": "SMTP",
+        "E": "Telnet"
+      },
+      "respostaCorreta": "B",
+      "explicacao": "O HTTPS (HTTP Secure) utiliza os protocolos SSL/TLS para cifrar a comunicação entre o navegador e o servidor web."
+    },
+    {
+      "pergunta": "Os protocolos SMTP, POP3 e IMAP estão relacionados a qual serviço de rede?",
+      "alternativas": {
+        "A": "Transferência de arquivos",
+        "B": "Navegação web",
+        "C": "Correio eletrônico (E-mail)",
+        "D": "Acesso remoto",
+        "E": "Streaming de vídeo"
+      },
+      "respostaCorreta": "C",
+      "explicacao": "SMTP é para envio, enquanto POP3 e IMAP são para recebimento e gerenciamento de mensagens de e-mail."
+    },
+    {
+      "pergunta": "Qual protocolo é utilizado para transferir arquivos entre um cliente e um servidor na rede?",
+      "alternativas": {
+        "A": "SSH",
+        "B": "FTP",
+        "C": "SNMP",
+        "D": "NTP",
+        "E": "ICMP"
+      },
+      "respostaCorreta": "B",
+      "explicacao": "O FTP (File Transfer Protocol) é o protocolo padrão para movimentação de arquivos em redes TCP/IP."
+    },
+    {
+      "pergunta": "O protocolo ICMP é fundamental para o funcionamento de qual ferramenta de diagnóstico de rede?",
+      "alternativas": {
+        "A": "Nslookup",
+        "B": "Ipconfig",
+        "C": "Ping",
+        "D": "Netstat",
+        "E": "Tasklist"
+      },
+      "respostaCorreta": "C",
+      "explicacao": "O comando 'ping' utiliza mensagens ICMP Echo Request e Echo Reply para testar a conectividade e latência entre dispositivos."
+    },
+    {
+      "pergunta": "Qual protocolo permite o acesso remoto seguro a um terminal de comando em outro computador?",
+      "alternativas": {
+        "A": "Telnet",
+        "B": "SSH",
+        "C": "RDP",
+        "D": "VNC",
+        "E": "HTTP"
+      },
+      "respostaCorreta": "B",
+      "explicacao": "O SSH (Secure Shell) substituiu o antigo Telnet por oferecer uma conexão criptografada para administração remota."
+    },
+    {
+      "pergunta": "Qual a principal função do protocolo SNMP (Simple Network Management Protocol)?",
+      "alternativas": {
+        "A": "Sincronizar o horário dos dispositivos.",
+        "B": "Gerenciar e monitorar dispositivos de rede.",
+        "C": "Resolver nomes de computadores locais.",
+        "D": "Bloquear tráfego indesejado (Firewall).",
+        "E": "Compartilhar impressoras na rede."
+      },
+      "respostaCorreta": "B",
+      "explicacao": "O SNMP é usado para coletar informações e configurar dispositivos de rede como roteadores, switches e servidores."
+    },
+    {
+      "pergunta": "Qual protocolo é utilizado para sincronizar os relógios dos computadores em uma rede?",
+      "alternativas": {
+        "A": "NTP",
+        "B": "TCP",
+        "C": "UDP",
+        "D": "ARP",
+        "E": "SIP"
+      },
+      "respostaCorreta": "A",
+      "explicacao": "O NTP (Network Time Protocol) garante que todos os dispositivos de uma rede tenham o horário preciso e sincronizado."
+    },
+    {
+      "pergunta": "Com relação ao correio eletrônico, o protocolo IMAP:",
+      "alternativas": {
+        "A": "permite que mensagens sejam baixadas para o cliente e removidas do servidor.",
+        "B": "sincroniza as mensagens entre o cliente e o servidor, permitindo acesso de múltiplos dispositivos.",
+        "C": "é utilizado exclusivamente para o envio de mensagens.",
+        "D": "opera na porta 25 por padrão.",
+        "E": "não permite a criação de pastas no servidor."
+      },
+      "respostaCorreta": "B",
+      "explicacao": "Diferente do POP3, o IMAP mantém as mensagens no servidor e sincroniza as alterações em tempo real entre todos os dispositivos conectados."
+    },
+    {
+      "pergunta": "(CESGRANRIO / BB – 2023) O usuário de um computador com sistema operacional MS Windows 10 precisa formatar um pendrive para transferir arquivos desse computador para um outro, com sistema operacional Linux SUSE SLES 15 SP2. Tal formatação deve ser feita de modo que o caminho contrário possa ser feito, ou seja, transferir arquivos desse computador que utiliza Linux SUSE SLES 15 SP2 para aquele que utiliza o Windows 10. Nesse caso, o pendrive deve ser formatado no sistema de arquivos do tipo:",
+      "alternativas": {
+        "A": "BtrFS",
+        "B": "FAT32",
+        "C": "Ext4",
+        "D": "HPFS",
+        "E": "NTFS"
+      },
+      "respostaCorreta": "B",
+      "explicacao": "O FAT32 é amplamente suportado tanto pelo Windows quanto pelo Linux, sendo a escolha ideal para compatibilidade entre os sistemas."
+    },
+    {
+      "pergunta": "(CESGRANRIO / BB – 2021) Ao visitar uma agência, um funcionário de TI de um banco percebeu, durante sua conversa com um bancário, que a cada 15 minutos, um alarme tocava no celular do empregado, e que, nesse momento, ele executava um programa no computador servidor do banco, que rodava o Linux SUSE. O funcionário de TI resolveu mudar o processo, fazendo esse programa ser executado automaticamente de forma periódica. Para alcançar esse objetivo, esse funcionário utilizou a funcionalidade do comando:",
+      "alternativas": {
+        "A": "jobs",
+        "B": "timedatectl",
+        "C": "cron",
+        "D": "touch",
+        "E": "curl"
+      },
+      "respostaCorreta": "C",
+      "explicacao": "O cron é o agendador de tarefas padrão no Linux, permitindo que comandos ou scripts sejam executados automaticamente em horários ou intervalos programados."
+    },
+    {
+      "pergunta": "(CESGRANRIO / BASA – 2018) Considere o seguinte comando do sistema operacional Linux: 'find / -name '*''. Esse comando irá:",
+      "alternativas": {
+        "A": "encontrar o arquivo * no diretório raiz.",
+        "B": "listar os atributos dos arquivos e das pastas no diretório raiz, com exceção dos nomes dos arquivos.",
+        "C": "listar apenas os arquivos e as pastas no diretório raiz.",
+        "D": "listar apenas os arquivos no diretório raiz.",
+        "E": "recursivamente listar todas as pastas e arquivos visíveis ao usuário a partir do diretório raiz."
+      },
+      "respostaCorreta": "E",
+      "explicacao": "O comando 'find /' busca a partir da raiz ('/'). O parâmetro '-name '*'' utiliza um caractere curinga para encontrar todos os nomes de arquivos e diretórios recursivamente."
+    },
+    {
+      "pergunta": "(CESGRANRIO / BB – 2014) O sistema operacional cujas características são utilizar código aberto e interface por linha de comando é o:",
+      "alternativas": {
+        "A": "Mac OS",
+        "B": "iOS",
+        "C": "Linux",
+        "D": "Windows",
+        "E": "Android"
+      },
+      "respostaCorreta": "C",
+      "explicacao": "O Linux é o exemplo clássico de sistema operacional de código aberto (Open Source) com forte foco em CLI (Command Line Interface)."
+    },
+    {
+      "pergunta": "(CESGRANRIO / PETROBRÁS – 2011) Nos sistemas Linux, um processo pode ser interrompido por meio do comando kill. Para isso, é necessário saber o pid desse processo. Qual comando deve ser utilizado para obter esse pid?",
+      "alternativas": {
+        "A": "ps",
+        "B": "ls",
+        "C": "du",
+        "D": "set",
+        "E": "pwd"
+      },
+      "respostaCorreta": "A",
+      "explicacao": "O comando 'ps' (process status) lista os processos em execução e seus respectivos PIDs (Process IDs)."
+    },
+    {
+      "pergunta": "Qual diretório no Linux é o local padrão para armazenar os arquivos de configuração do sistema?",
+      "alternativas": {
+        "A": "/home",
+        "B": "/bin",
+        "C": "/etc",
+        "D": "/var",
+        "E": "/usr"
+      },
+      "respostaCorreta": "C",
+      "explicacao": "O diretório /etc contém os arquivos de configuração globais do sistema e de diversos serviços instalados."
+    }
+  ]
+}
