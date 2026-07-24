@@ -61,8 +61,9 @@ interface UserAnswers {
 interface QuestionsTableProps {
   questions: BancoQuestion[];
   userAnswers: UserAnswers;
-  onSelect: (q: BancoQuestion) => void;
+  onSelect: (q: BancoQuestion, filtered?: BancoQuestion[]) => void;
   onGenerateTest: (questions: BancoQuestion[]) => void;
+  onFilteredQuestionsChange?: (filtered: BancoQuestion[]) => void;
 }
 
 const CustomDropdown = ({ value, onChange, options }: any) => {
@@ -119,6 +120,7 @@ export default function QuestionsTable({
   userAnswers,
   onSelect,
   onGenerateTest,
+  onFilteredQuestionsChange,
 }: QuestionsTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [materiaFilter, setMateriaFilter] = useState('Todas');
@@ -131,13 +133,6 @@ export default function QuestionsTable({
     if (answer) return answer.isCorrect ? 'Acertei' : 'Errei';
     return 'Pendente';
   };
-
-  // Stats
-  const totalQuestions = questions.length;
-  const answeredCount = questions.filter(q => userAnswers[String(q.id)]).length;
-  const correctCount = questions.filter(q => userAnswers[String(q.id)]?.isCorrect).length;
-  const incorrectCount = answeredCount - correctCount;
-  const rate = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
 
   const filteredQuestions = questions.filter(q => {
     const matchesSearch =
@@ -158,6 +153,25 @@ export default function QuestionsTable({
 
     return matchesSearch && matchesMateria && matchesProva && matchesStatus;
   });
+
+  // Notifica o componente pai sobre a lista filtrada sempre que os filtros mudarem
+  React.useEffect(() => {
+    if (onFilteredQuestionsChange) {
+      onFilteredQuestionsChange(filteredQuestions);
+    }
+  }, [searchTerm, materiaFilter, provaFilter, statusFilter, questions]);
+
+  // Stats (Dinâmicos conforme filtro)
+  const isFiltered = materiaFilter !== 'Todas' || provaFilter !== 'Todas' || statusFilter !== 'Todos' || searchTerm.trim() !== '';
+  const currentTotal = filteredQuestions.length;
+  const answeredCount = filteredQuestions.filter(q => userAnswers[String(q.id)]).length;
+  const correctCount = filteredQuestions.filter(q => userAnswers[String(q.id)]?.isCorrect).length;
+  const incorrectCount = answeredCount - correctCount;
+  const rate = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
+
+  const handleSelectQuestion = (q: BancoQuestion) => {
+    onSelect(q, filteredQuestions);
+  };
 
   const getDifficultyStyles = (diff?: string) => {
     switch (diff) {
@@ -189,8 +203,8 @@ export default function QuestionsTable({
       {/* Mini Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { icon: <BookOpen size={16} />, color: 'text-blue-400 bg-blue-500/10', label: 'Banco Total', value: `${totalQuestions} Questões` },
-          { icon: <HelpCircle size={16} />, color: 'text-purple-400 bg-purple-500/10', label: 'Resolvidas', value: `${answeredCount} (${Math.round(totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0)}%)` },
+          { icon: <BookOpen size={16} />, color: 'text-blue-400 bg-blue-500/10', label: isFiltered ? 'Filtradas' : 'Banco Total', value: isFiltered ? `${currentTotal} / ${questions.length}` : `${questions.length} Questões` },
+          { icon: <HelpCircle size={16} />, color: 'text-purple-400 bg-purple-500/10', label: 'Resolvidas', value: `${answeredCount} (${Math.round(currentTotal > 0 ? (answeredCount / currentTotal) * 100 : 0)}%)` },
           { icon: <CheckCircle size={16} />, color: 'text-emerald-400 bg-emerald-500/10', label: 'Acertos', value: `${correctCount} (${rate}%)` },
           { icon: <XCircle size={16} />, color: 'text-rose-400 bg-rose-500/10', label: 'Erros', value: `${incorrectCount} Questões` },
         ].map((stat, i) => (
@@ -308,7 +322,7 @@ export default function QuestionsTable({
                       getStatus={getStatus}
                       getDifficultyStyles={getDifficultyStyles}
                       getDifficultyDot={getDifficultyDot}
-                      onSelect={onSelect}
+                      onSelect={handleSelectQuestion}
                     />
                   ))
                 : materias
@@ -332,7 +346,7 @@ export default function QuestionsTable({
                               getStatus={getStatus}
                               getDifficultyStyles={getDifficultyStyles}
                               getDifficultyDot={getDifficultyDot}
-                              onSelect={onSelect}
+                              onSelect={handleSelectQuestion}
                             />
                           ))}
                         </React.Fragment>
@@ -348,7 +362,7 @@ export default function QuestionsTable({
             <MobileQuestionRow
               key={q.id || idx}
               q={q}
-              onSelect={onSelect}
+              onSelect={handleSelectQuestion}
               getStatus={getStatus}
               getDifficultyStyles={getDifficultyStyles}
             />

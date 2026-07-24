@@ -186,10 +186,18 @@ export default function BancoPage() {
   }, [user, fetchUserAnswers]);
 
   // ── Selecionar questão ────────────────────
-  const handleSelectQuestion = (q: BancoQuestion) => {
+  const handleFilteredQuestionsChange = useCallback((filtered: BancoQuestion[]) => {
+    setResolverQueue(filtered);
+  }, []);
+
+  const handleSelectQuestion = (q: BancoQuestion, filteredList?: BancoQuestion[]) => {
     if (!user) { setShowAuthModal(true); return; }
-    setResolverQueue(questions);
-    setResolverIndex(questions.findIndex(x => x.id === q.id));
+    const queueToUse = (filteredList && filteredList.length > 0)
+      ? filteredList
+      : (resolverQueue.length > 0 ? resolverQueue : questions);
+    setResolverQueue(queueToUse);
+    const idx = queueToUse.findIndex(x => x.id === q.id);
+    setResolverIndex(idx >= 0 ? idx : 0);
     setSelectedQuestion(q);
     setActiveTab("resolver");
   };
@@ -429,6 +437,7 @@ export default function BancoPage() {
                     userAnswers={tableAnswers}
                     onSelect={handleSelectQuestion}
                     onGenerateTest={handleGenerateTest}
+                    onFilteredQuestionsChange={handleFilteredQuestionsChange}
                   />
                 </>
               )}
@@ -500,9 +509,16 @@ export default function BancoPage() {
               }
             });
 
-            // Se não houver questão ativa selecionada ainda, pegamos o primeiro simulado disponível da fila
-            const firstWithProva = resolverQueue.find(q => q.prova);
-            const currentProvaName = selectedQuestion?.prova || firstWithProva?.prova || "SIMULADO PADRÃO";
+            // Detecta se o resolverQueue é um subconjunto (filtrado) do total
+            const isQueueFiltered = resolverQueue.length < questions.length;
+            // Exibe a prova única do filtro, ou "Filtro Ativo" se misturadas, ou "Todas as Questões"
+            const uniqueProvas = Array.from(new Set(resolverQueue.map(q => q.prova).filter(Boolean)));
+            const currentProvaName = uniqueProvas.length === 1
+              ? uniqueProvas[0]!
+              : (isQueueFiltered ? "Filtro Ativo" : "Todas as Questões");
+            const filteredLabel = isQueueFiltered
+              ? `${resolverQueue.length} de ${questions.length} questões`
+              : `${questions.length} questões`;
 
             return (
               <motion.div
@@ -524,7 +540,8 @@ export default function BancoPage() {
                         <h2 className="text-sm font-black text-white leading-none">Desempenho & Resultados</h2>
                         <div className="flex items-center gap-2 mt-1">
                           <div className="relative group cursor-pointer">
-                            <span className="text-[10px] font-bold text-slate-400 bg-[#1e2436] px-2 py-0.5 rounded-md flex items-center gap-1 hover:text-slate-200 transition-colors">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 transition-colors ${isQueueFiltered ? 'text-blue-300 bg-blue-500/20 border border-blue-500/30' : 'text-slate-400 bg-[#1e2436] hover:text-slate-200'}`}>
+                              {isQueueFiltered && <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse shrink-0" />}
                               {currentProvaName} <ChevronDown size={10} className="opacity-50" />
                             </span>
                             <div className="absolute top-full left-0 mt-1.5 w-max bg-[#1e2436] border border-white/[0.04] rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 max-h-56 overflow-y-auto custom-scrollbar">
@@ -545,13 +562,28 @@ export default function BancoPage() {
                               </div>
                             </div>
                           </div>
+                          {/* Badge de quantidade filtrada */}
+                          {isQueueFiltered && (
+                            <span className="text-[9px] font-black text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
+                              {filteredLabel}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button className="px-3 py-1.5 rounded-xl bg-blue-600/10 border border-blue-500/20 text-[9px] font-black uppercase tracking-wider text-blue-400 hover:bg-blue-600/20 transition-all flex items-center gap-1.5">
-                        <RefreshCw size={10} /> Comparar
-                      </button>
+                      {/* Botão para limpar filtro (ir para todas as questões) */}
+                      {isQueueFiltered && (
+                        <button
+                          onClick={() => {
+                            setResolverQueue(questions);
+                            setResolverIndex(0);
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-blue-600/10 border border-blue-500/20 text-[9px] font-black uppercase tracking-wider text-blue-400 hover:bg-blue-600/20 transition-all flex items-center gap-1.5"
+                        >
+                          <RefreshCw size={10} /> Ver Todas
+                        </button>
+                      )}
                       <button onClick={() => {
                         // Limpa respostas locais deste simulado para simular um reinicio
                         const updatedAnswers = { ...userAnswers };
