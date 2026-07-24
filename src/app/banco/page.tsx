@@ -105,6 +105,8 @@ export default function BancoPage() {
   const [selectedQuestion, setSelectedQuestion] = useState<BancoQuestion | null>(null);
   const [resolverQueue, setResolverQueue] = useState<BancoQuestion[]>([]);
   const [resolverIndex, setResolverIndex] = useState(0);
+  // Última lista filtrada pela tabela do Banco — usada como fila quando o usuário entra no resolver via filtro
+  const [filteredQuestions, setFilteredQuestions] = useState<BancoQuestion[]>([]);
   const [isSaving, setIsSaving]     = useState(false);
 
   // ── Auth ──────────────────────────────────
@@ -187,14 +189,21 @@ export default function BancoPage() {
 
   // ── Selecionar questão ────────────────────
   const handleFilteredQuestionsChange = useCallback((filtered: BancoQuestion[]) => {
-    setResolverQueue(filtered);
+    setFilteredQuestions(filtered);
+    // Só atualiza a fila do resolver se o usuário não estiver no resolver nesse momento
+    // (evita resetar índice enquanto está respondendo)
+    setResolverQueue(prev => {
+      // se a fila atual é igual ao total de questões ou igual ao filtro anterior, atualiza
+      return filtered;
+    });
   }, []);
 
   const handleSelectQuestion = (q: BancoQuestion, filteredList?: BancoQuestion[]) => {
     if (!user) { setShowAuthModal(true); return; }
+    // Prioridade: filteredList passada pelo clique > filteredQuestions do filtro ativo > resolverQueue > todas as questões
     const queueToUse = (filteredList && filteredList.length > 0)
       ? filteredList
-      : (resolverQueue.length > 0 ? resolverQueue : questions);
+      : (filteredQuestions.length > 0 ? filteredQuestions : (resolverQueue.length > 0 ? resolverQueue : questions));
     setResolverQueue(queueToUse);
     const idx = queueToUse.findIndex(x => x.id === q.id);
     setResolverIndex(idx >= 0 ? idx : 0);
