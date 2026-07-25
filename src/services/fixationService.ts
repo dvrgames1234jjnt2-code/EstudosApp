@@ -5,6 +5,7 @@ import {
   FixationSubject,
   FixationTopic,
   FixationDeck,
+  FixationPackage,
   FixationItem,
   ItemStats,
   FeedbackCounts,
@@ -107,7 +108,6 @@ export async function fetchDecksByTopic(topicId?: string | number): Promise<Fixa
 
   const rawDecks = data ?? [];
 
-  // Busca contagem de cartões de cada deck
   const deckIds = rawDecks.map(d => d.id);
   const cardCountsMap: Record<string, number> = {};
 
@@ -133,6 +133,67 @@ export async function fetchDecksByTopic(topicId?: string | number): Promise<Fixa
     topic_id: row.topic_id,
     created_at: row.created_at,
     cardCount: cardCountsMap[String(row.id)] || 0,
+  }));
+}
+
+// ─── Pacotes de Prática agrupados por `title` do card ────────────────────────
+
+/**
+ * Agrupa os cartões de um tópico pelo campo `title` da tabela `cards_minigames`.
+ * Ex: Se um deck possui vários cards com title="Atalhos", eles formam um pacote "Atalhos" com a contagem exata de cartões!
+ */
+export async function fetchPackagesByTopic(topicId: string | number): Promise<FixationPackage[]> {
+  const decks = await fetchDecksByTopic(topicId);
+  if (decks.length === 0) return [];
+
+  const deckIds = decks.map(d => d.id);
+  const deckTitleMap: Record<string, string> = {};
+  decks.forEach(d => { deckTitleMap[String(d.id)] = d.title; });
+
+  let { data: cardsData } = await supabase
+    .from('cards_minigames')
+    .select('id, deck_minigame_id, title, front, back, explanation, position')
+    .in('deck_minigame_id', deckIds)
+    .order('position', { ascending: true });
+
+  if (!cardsData || cardsData.length === 0) {
+    const { data: singularData } = await supabase
+      .from('cards_minigame')
+      .select('id, deck_minigame_id, title, front, back, explanation, position')
+      .in('deck_minigame_id', deckIds)
+      .order('position', { ascending: true });
+    cardsData = singularData || [];
+  }
+
+  const packageMap: Record<string, FixationItem[]> = {};
+
+  (cardsData || []).forEach(row => {
+    const item: FixationItem = {
+      id: row.id,
+      deck_id: row.deck_minigame_id,
+      term: row.front || row.title || 'Termo',
+      description: row.back || '',
+      explanation: row.explanation || undefined,
+      category: row.title || undefined,
+    };
+
+    // O título do pacote é o `card.title` se preenchido, ou o `deck.title`
+    const packageTitle = (row.title && row.title.trim())
+      ? row.title.trim()
+      : (deckTitleMap[String(row.deck_minigame_id)] || 'Pacote de Estudo');
+
+    if (!packageMap[packageTitle]) {
+      packageMap[packageTitle] = [];
+    }
+    packageMap[packageTitle].push(item);
+  });
+
+  return Object.entries(packageMap).map(([title, items]) => ({
+    id: `pkg-${title}`,
+    title,
+    cardCount: items.length,
+    deck_id: items[0]?.deck_id || 0,
+    cards: items,
   }));
 }
 
@@ -301,10 +362,6 @@ export async function fetchUserProgress(
   return statsMap;
 }
 
-/**
- * Calcula a contagem de feedbacks (ERREI, QUASE, PENSEI, RÁPIDO, AUTOMÁTICO, NOVO)
- * para todos os cartões dos decks de um tópico.
- */
 export async function fetchTopicFeedbackStats(
   deckIds: (string | number)[]
 ): Promise<{ counts: FeedbackCounts; cardsByFeedback: Record<string, (string | number)[]> }> {
@@ -320,7 +377,6 @@ export async function fetchTopicFeedbackStats(
 
   if (deckIds.length === 0) return { counts, cardsByFeedback };
 
-  // Busca todos os cards desses decks
   const { data: cardsData } = await supabase
     .from('cards_minigames')
     .select('id')
@@ -329,7 +385,6 @@ export async function fetchTopicFeedbackStats(
   const cardIds = (cardsData ?? []).map(c => c.id);
   if (cardIds.length === 0) return { counts, cardsByFeedback };
 
-  // Busca o progresso desses cards
   const { data: progressData } = await supabase
     .from('card_progress')
     .select('card_id, last_review_option_id')

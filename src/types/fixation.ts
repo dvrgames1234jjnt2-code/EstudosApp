@@ -30,7 +30,7 @@ export interface FixationItem {
   term: string;        // Mapeado da coluna `front` (ou `title`) da tabela `cards_minigames`
   description: string; // Mapeado da coluna `back` da tabela `cards_minigames`
   explanation?: string; // Mapeado da coluna `explanation` da tabela `cards_minigames`
-  category?: string;
+  category?: string;   // Mapeado da coluna `title` da tabela `cards_minigames` (ex: "Atalhos", "Portas Clássicas")
   // Campos computados localmente
   originalIndex?: number;
   _stableId?: string | number;
@@ -49,6 +49,15 @@ export interface FixationDeck {
   // Campos de progresso
   totalItems?: number;
   masteredCount?: number;
+}
+
+// Pacote de cards agrupados por título do card (ex: "Atalhos", "Portas Clássicas")
+export interface FixationPackage {
+  id: string;
+  title: string;
+  cardCount: number;
+  deck_id: string | number;
+  cards: FixationItem[];
 }
 
 export interface FixationProgress {

@@ -14,6 +14,7 @@ import {
   FixationSubject,
   FixationTopic,
   FixationDeck,
+  FixationPackage,
   FixationItem,
   FeedbackCounts,
 } from '@/types/fixation';
@@ -22,7 +23,7 @@ import {
   fetchSubjectsByCollection,
   fetchTopicsBySubject,
   fetchDecksByTopic,
-  fetchItemsByDeck,
+  fetchPackagesByTopic,
   fetchTopicFeedbackStats,
   saveCardProgress,
   saveSessionProgress,
@@ -43,14 +44,15 @@ export default function FixationDashboardView() {
   const [selectedCollection, setSelectedCollection] = useState<FixationCollection | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<FixationSubject | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<FixationTopic | null>(null);
-  const [selectedDeck, setSelectedDeck] = useState<FixationDeck | null>(null);
+  const [selectedPackage, setSelectedPackage] = useState<FixationPackage | null>(null);
 
   // Listas de dados por nível
   const [collections, setCollections] = useState<FixationCollection[]>([]);
   const [subjects, setSubjects] = useState<FixationSubject[]>([]);
   const [topics, setTopics] = useState<FixationTopic[]>([]);
-  const [decks, setDecks] = useState<FixationDeck[]>([]);
+  const [packages, setPackages] = useState<FixationPackage[]>([]);
   const [gameItems, setGameItems] = useState<FixationItem[]>([]);
+  const [cardsByFeedbackMap, setCardsByFeedbackMap] = useState<Record<string, (string | number)[]>>({});
 
   // Feedback stats do tópico selecionado
   const [feedbackCounts, setFeedbackCounts] = useState<FeedbackCounts>({
@@ -82,7 +84,6 @@ export default function FixationDashboardView() {
       const data = await fetchCollections();
       setCollections(data);
       if (data.length === 1) {
-        // Se houver só 1 coleção (ex: Banco do Brasil), já seleciona automaticamente
         const first = data[0];
         setSelectedCollection(first);
         const subData = await fetchSubjectsByCollection(first.id);
@@ -132,16 +133,20 @@ export default function FixationDashboardView() {
     }
   };
 
-  // ── Selecionar Tópico → carregar Decks & Feedback Stats ──────────────────
+  // ── Selecionar Tópico → carregar Pacotes & Feedback Stats ─────────────────
   const handleSelectTopic = async (top: FixationTopic) => {
     setSelectedTopic(top);
     setLoading(true);
     try {
+      const pkgs = await fetchPackagesByTopic(top.id);
+      setPackages(pkgs);
+
       const decksData = await fetchDecksByTopic(top.id);
-      setDecks(decksData);
       const deckIds = decksData.map(d => d.id);
-      const { counts } = await fetchTopicFeedbackStats(deckIds);
+      const { counts, cardsByFeedback } = await fetchTopicFeedbackStats(deckIds);
       setFeedbackCounts(counts);
+      setCardsByFeedbackMap(cardsByFeedback);
+      setSelectedFeedbackFilter(null);
       setStep('decks');
     } catch (e) {
       console.error(e);
@@ -150,18 +155,47 @@ export default function FixationDashboardView() {
     }
   };
 
-  // ── Selecionar Deck / Pacote → Iniciar Jogo ───────────────────────────────
-  const handleSelectDeck = async (deck: FixationDeck) => {
-    setSelectedDeck(deck);
-    setLoading(true);
-    try {
-      const items = await fetchItemsByDeck(deck.id);
-      setGameItems(items);
-      setStep('game');
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
+  // ── Selecionar Pacote → Iniciar Jogo ─────────────────────────────────────
+  const handleSelectPackage = (pkg: FixationPackage) => {
+    setSelectedPackage(pkg);
+    let itemsToPlay = pkg.cards;
+
+    // Se houver um filtro de feedback ativo (ex: ERREI ou QUASE), filtra os cards do pacote
+    if (selectedFeedbackFilter && cardsByFeedbackMap[selectedFeedbackFilter]) {
+      const allowedIds = new Set(cardsByFeedbackMap[selectedFeedbackFilter].map(String));
+      const filtered = itemsToPlay.filter(item => allowedIds.has(String(item.id)));
+      if (filtered.length > 0) {
+        itemsToPlay = filtered;
+      }
+    }
+
+    setGameItems(itemsToPlay);
+    setStep('game');
+  };
+
+  // ── Selecionar Filtro de Feedback para jogar direto ──────────────────────
+  const handleSelectFeedbackFilter = (filterKey: string) => {
+    const isSame = selectedFeedbackFilter === filterKey;
+    const newFilter = isSame ? null : filterKey;
+    setSelectedFeedbackFilter(newFilter);
+
+    if (newFilter && cardsByFeedbackMap[newFilter]) {
+      const allowedIds = new Set(cardsByFeedbackMap[newFilter].map(String));
+      // Junta todos os cards de todos os pacotes que batem com o feedback
+      const allCards = packages.flatMap(p => p.cards);
+      const filteredCards = allCards.filter(item => allowedIds.has(String(item.id)));
+
+      if (filteredCards.length > 0) {
+        setSelectedPackage({
+          id: `feedback-${newFilter}`,
+          title: `Filtro: ${filterKey.toUpperCase()}`,
+          cardCount: filteredCards.length,
+          deck_id: 0,
+          cards: filteredCards,
+        });
+        setGameItems(filteredCards);
+        setStep('game');
+      }
     }
   };
 
@@ -185,11 +219,11 @@ export default function FixationDashboardView() {
   }, [user, isNoCommitment, sessionId]);
 
   // ── Tela de Jogo ──────────────────────────────────────────────────────────
-  if (step === 'game' && selectedDeck) {
+  if (step === 'game' && selectedPackage) {
     return (
       <div className="w-full h-[calc(100vh-140px)] min-h-[550px] bg-zinc-950 rounded-2xl overflow-hidden flex flex-col border border-white/[0.06]">
         <FixationGame
-          title={selectedDeck.title}
+          title={selectedPackage.title}
           items={gameItems}
           onUpdateCard={handleUpdateCard}
           isNoCommitment={isNoCommitment}
@@ -404,7 +438,7 @@ export default function FixationDashboardView() {
           )}
 
           {/* ──────────────────────────────────────────────────────────────────
-              PASSO 4: FILTRAR FEEDBACKS & ESCOLHER PACOTE (DECKS)
+              PASSO 4: FILTRAR FEEDBACKS & ESCOLHER PACOTE DE CARD (TITLE)
              ────────────────────────────────────────────────────────────────── */}
           {step === 'decks' && (
             <motion.div
@@ -438,8 +472,9 @@ export default function FixationDashboardView() {
                     return (
                       <button
                         key={fb.key}
-                        onClick={() => setSelectedFeedbackFilter(isSelected ? null : fb.key)}
-                        className={`p-3.5 rounded-2xl border flex items-center justify-between transition-all ${fb.color} ${
+                        onClick={() => handleSelectFeedbackFilter(fb.key)}
+                        disabled={fb.count === 0}
+                        className={`p-3.5 rounded-2xl border flex items-center justify-between transition-all disabled:opacity-40 disabled:cursor-not-allowed ${fb.color} ${
                           isSelected ? 'ring-2 ring-indigo-500 bg-white/5' : 'bg-black/20'
                         }`}
                       >
@@ -458,11 +493,11 @@ export default function FixationDashboardView() {
                 </h3>
 
                 <div className="space-y-3">
-                  {decks.map(deck => (
+                  {packages.map(pkg => (
                     <motion.div
-                      key={deck.id}
+                      key={pkg.id}
                       whileHover={{ scale: 1.01, x: 4 }}
-                      onClick={() => handleSelectDeck(deck)}
+                      onClick={() => handleSelectPackage(pkg)}
                       className="group bg-[#0c101d] border border-white/[0.06] hover:border-indigo-500/40 rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all shadow-lg"
                     >
                       <div className="flex items-center gap-4">
@@ -471,10 +506,10 @@ export default function FixationDashboardView() {
                         </div>
                         <div>
                           <h4 className="text-sm sm:text-base font-black text-white uppercase tracking-tight group-hover:text-indigo-300 transition-colors">
-                            {deck.title}
+                            {pkg.title}
                           </h4>
                           <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mt-0.5">
-                            {deck.cardCount ?? 0} CARTÕES
+                            {pkg.cardCount} {pkg.cardCount === 1 ? 'CARTÃO' : 'CARTÕES'}
                           </span>
                         </div>
                       </div>
