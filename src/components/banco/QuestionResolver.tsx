@@ -328,7 +328,7 @@ export default function QuestionResolver({
                   <ArrowLeft size={18} />
                 </button>
                 <div className="w-11 h-11 rounded-xl bg-blue-600 flex items-center justify-center shadow-[0_0_20px_rgba(37,99,235,0.3)] text-sm font-black text-white shrink-0">
-                  {String(question.id).substring(0,2)}
+                  {questionIndex + 1}
                 </div>
                 <div>
                   <h2 className="text-[11px] sm:text-xs font-black text-blue-500 uppercase tracking-widest max-w-[200px] sm:max-w-xs truncate">
