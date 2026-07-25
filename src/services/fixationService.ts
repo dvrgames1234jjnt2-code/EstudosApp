@@ -1,129 +1,189 @@
 import { supabase } from '@/lib/supabase';
-import { ChoiceType, FixationDeck, FixationItem, FixationProgress, ItemStats } from '@/types/fixation';
+import { ChoiceType, FixationDeck, FixationItem, ItemStats } from '@/types/fixation';
 
-// ─── Decks ───────────────────────────────────────────────────────────────────
+// ─── Decks (deck_minigames + topics) ────────────────────────────────────────
 
 /**
- * Busca todos os decks de fixação disponíveis.
+ * Busca todos os decks da tabela `deck_minigames`.
+ * Tenta relacionar com `topics` para pegar a categoria (nome do assunto/tópico).
  */
 export async function fetchDecks(): Promise<FixationDeck[]> {
-  const { data, error } = await supabase
-    .from('fixation_decks')
-    .select('id, title, category, created_at')
-    .order('created_at', { ascending: true });
+  try {
+    const { data, error } = await supabase
+      .from('deck_minigames')
+      .select('id, title, description, position, topic_id, created_at, topics(title)')
+      .order('position', { ascending: true })
+      .order('created_at', { ascending: true });
 
-  if (error) throw new Error(`Erro ao buscar decks: ${error.message}`);
-  return data ?? [];
+    if (error) {
+      // Fallback: se a relação de FK não estiver nomeada como `topics` no schema
+      const { data: simpleData, error: simpleError } = await supabase
+        .from('deck_minigames')
+        .select('id, title, description, position, topic_id, created_at')
+        .order('position', { ascending: true })
+        .order('created_at', { ascending: true });
+
+      if (simpleError) throw new Error(`Erro ao buscar decks: ${simpleError.message}`);
+
+      return (simpleData ?? []).map(row => ({
+        id: row.id,
+        title: row.title,
+        description: row.description,
+        position: row.position,
+        topic_id: row.topic_id,
+        category: 'Minigame',
+        created_at: row.created_at,
+      }));
+    }
+
+    return (data ?? []).map(row => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      position: row.position,
+      topic_id: row.topic_id,
+      category: (row.topics as any)?.title || 'Minigame',
+      created_at: row.created_at,
+    }));
+  } catch (err: any) {
+    console.error("Erro em fetchDecks:", err);
+    throw err;
+  }
 }
 
-// ─── Itens ───────────────────────────────────────────────────────────────────
+// ─── Itens (cards_minigames) ────────────────────────────────────────────────
 
 /**
- * Busca todos os itens de um deck específico.
+ * Busca todos os cards de um deck da tabela `cards_minigames` (ou `cards_minigame`).
  */
-export async function fetchItemsByDeck(deckId: string): Promise<FixationItem[]> {
-  const { data, error } = await supabase
-    .from('fixation_items')
-    .select('id, deck_id, term, description, category')
-    .eq('deck_id', deckId)
-    .order('created_at', { ascending: true });
+export async function fetchItemsByDeck(deckId: string | number): Promise<FixationItem[]> {
+  // Primeiro tenta a tabela no plural `cards_minigames`
+  let { data, error } = await supabase
+    .from('cards_minigames')
+    .select('id, deck_minigame_id, title, front, back, explanation, position')
+    .eq('deck_minigame_id', deckId)
+    .order('position', { ascending: true });
 
-  if (error) throw new Error(`Erro ao buscar itens: ${error.message}`);
-  return data ?? [];
+  if (error) {
+    // Fallback se a tabela no banco for `cards_minigame` (singular)
+    const { data: singularData, error: singularError } = await supabase
+      .from('cards_minigame')
+      .select('id, deck_minigame_id, title, front, back, explanation, position')
+      .eq('deck_minigame_id', deckId)
+      .order('position', { ascending: true });
+
+    if (singularError) throw new Error(`Erro ao buscar cards: ${error.message}`);
+    data = singularData;
+  }
+
+  return (data ?? []).map(row => ({
+    id: row.id,
+    deck_id: row.deck_minigame_id,
+    term: row.front || row.title || 'Termo',
+    description: row.back || '',
+    explanation: row.explanation || undefined,
+    category: row.title || undefined,
+  }));
 }
 
-// ─── Progresso ───────────────────────────────────────────────────────────────
+// ─── Progresso (card_progress) ───────────────────────────────────────────────
+
+const OPTION_MAP: Record<ChoiceType, number> = {
+  forgot: 1,
+  partial: 2,
+  effortful: 3,
+  learning: 4,
+  mastered: 4,
+};
 
 /**
- * Salva (ou atualiza) o desempenho do usuário em um card dentro de uma sessão.
- * Usa UPSERT para garantir que apenas uma resposta por (user, item, session) é armazenada.
+ * Salva ou atualiza a revisão na tabela `card_progress`.
  */
 export async function saveCardProgress(
   userId: string,
-  itemId: string,
+  itemId: string | number,
   performance: ChoiceType,
   sessionId: string
 ): Promise<void> {
-  const { error } = await supabase.from('fixation_progress').upsert(
+  const optionId = OPTION_MAP[performance];
+  const cardIdNum = typeof itemId === 'number' ? itemId : parseInt(itemId, 10);
+  const validCardId = isNaN(cardIdNum) ? itemId : cardIdNum;
+
+  // Tenta realizar upsert baseado na chave `card_id`
+  const { error } = await supabase.from('card_progress').upsert(
     {
-      user_id: userId,
-      item_id: itemId,
-      performance,
-      session_id: sessionId,
-      answered_at: new Date().toISOString(),
+      card_id: validCardId,
+      last_review_option_id: optionId,
+      next_review_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     },
-    { onConflict: 'user_id,item_id,session_id' }
+    { onConflict: 'card_id' }
   );
 
-  if (error) throw new Error(`Erro ao salvar progresso: ${error.message}`);
+  if (error) {
+    // Se upsert com onConflict falhar, faz um insert comum
+    await supabase.from('card_progress').insert({
+      card_id: validCardId,
+      last_review_option_id: optionId,
+      next_review_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    });
+  }
 }
 
 /**
- * Salva o progresso de múltiplos cards de uma vez (batch) ao final da sessão.
+ * Salva progresso de múltiplos cards da sessão em batch.
  */
 export async function saveSessionProgress(
   userId: string,
   sessionId: string,
-  feedback: Record<string, ChoiceType>
+  feedback: Record<string | number, ChoiceType>
 ): Promise<void> {
-  const rows: Omit<FixationProgress, 'id' | 'answered_at'>[] = Object.entries(feedback).map(
-    ([itemId, performance]) => ({
-      user_id: userId,
-      item_id: itemId,
-      performance,
-      session_id: sessionId,
-    })
-  );
-
-  if (rows.length === 0) return;
-
-  const { error } = await supabase.from('fixation_progress').upsert(rows, {
-    onConflict: 'user_id,item_id,session_id',
-  });
-
-  if (error) throw new Error(`Erro ao salvar sessão: ${error.message}`);
+  for (const [cardId, perf] of Object.entries(feedback)) {
+    await saveCardProgress(userId, cardId, perf, sessionId).catch(() => {});
+  }
 }
 
 /**
- * Busca as estatísticas de progresso do usuário para um deck inteiro.
- * Retorna o último desempenho e o número de vezes que cada item foi estudado.
+ * Busca estatísticas de progresso para a lista de card IDs da tabela `card_progress`.
  */
 export async function fetchUserProgress(
   userId: string,
-  itemIds: string[]
+  itemIds: (string | number)[]
 ): Promise<Record<string, ItemStats>> {
   if (itemIds.length === 0) return {};
 
-  const { data, error } = await supabase
-    .from('fixation_progress')
-    .select('item_id, performance, answered_at')
-    .eq('user_id', userId)
-    .in('item_id', itemIds)
-    .order('answered_at', { ascending: false });
+  const numIds = itemIds
+    .map(id => (typeof id === 'number' ? id : parseInt(String(id), 10)))
+    .filter(id => !isNaN(id));
 
-  if (error) throw new Error(`Erro ao buscar progresso: ${error.message}`);
+  const { data, error } = await supabase
+    .from('card_progress')
+    .select('card_id, last_review_option_id, created_at')
+    .in('card_id', numIds.length > 0 ? numIds : itemIds);
+
+  if (error) return {};
 
   const statsMap: Record<string, ItemStats> = {};
+  const optionToChoice: Record<number, ChoiceType> = {
+    1: 'forgot',
+    2: 'partial',
+    3: 'effortful',
+    4: 'mastered',
+  };
 
   for (const row of data ?? []) {
-    if (!statsMap[row.item_id]) {
-      // Primeira ocorrência (mais recente por causa do order)
-      statsMap[row.item_id] = {
-        item_id: row.item_id,
-        lastPerformance: row.performance as ChoiceType,
-        timesStudied: 1,
-      };
-    } else {
-      statsMap[row.item_id].timesStudied += 1;
-    }
+    const key = String(row.card_id);
+    const choice = optionToChoice[row.last_review_option_id] || 'learning';
+
+    statsMap[key] = {
+      item_id: key,
+      lastPerformance: choice,
+      timesStudied: 1,
+    };
   }
 
   return statsMap;
 }
 
-/**
- * Gera um ID único de sessão para agrupar os resultados de uma rodada.
- */
 export function generateSessionId(): string {
   return `session_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }

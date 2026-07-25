@@ -547,11 +547,17 @@ export default function FixationGame({
                             initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
                             className="space-y-3"
                           >
-                            <div className="p-3 md:p-5 bg-zinc-950 border border-indigo-500/20 rounded-xl text-center shadow-inner">
+                            <div className="p-3 md:p-5 bg-zinc-950 border border-indigo-500/20 rounded-xl text-center shadow-inner space-y-2">
                               <span
                                 className="text-xs md:text-lg font-black text-indigo-100 leading-relaxed block"
                                 dangerouslySetInnerHTML={{ __html: isInverted ? item.term : item.description }}
                               />
+                              {item.explanation && (
+                                <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-left text-xs text-blue-200">
+                                  <span className="text-[9px] font-black uppercase tracking-widest text-blue-400 block mb-1">Explicação:</span>
+                                  <span dangerouslySetInnerHTML={{ __html: item.explanation }} />
+                                </div>
+                              )}
                             </div>
 
                             {!isTypingMode && (
