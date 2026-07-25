@@ -16,11 +16,13 @@ import {
   BarChart3,
   ChevronDown,
   RotateCcw,
+  Flame,
 } from "lucide-react";
 import { supabase, supabasePublic } from "../../lib/supabase";
 import { AuthModal } from "../../components/AuthModal";
 import QuestionsTable, { BancoQuestion } from "../../components/banco/QuestionsTable";
 import QuestionResolver from "../../components/banco/QuestionResolver";
+import FixationDashboardView from "../../components/fixacao/FixationDashboardView";
 
 // ──────────────────────────────────────────────
 // Types
@@ -39,7 +41,7 @@ export interface QuestionStats {
 /** Mapa questao_id → stats (derivado do histórico completo) */
 type UserAnswers = Record<string, QuestionStats>;
 
-type ActiveTab = "banco" | "resolver" | "desempenho";
+type ActiveTab = "banco" | "resolver" | "desempenho" | "fixacao";
 
 // ──────────────────────────────────────────────
 // Helpers
@@ -366,9 +368,10 @@ export default function BancoPage() {
       <div className="sticky top-16 z-40 border-b border-white/[0.05] bg-[#020617]/90 backdrop-blur-md px-4 sm:px-8">
         <div className="flex items-center gap-1 max-w-7xl mx-auto">
           {[
-            { id: "banco",    icon: <BookOpen size={13} />, label: "Banco de Questões", count: questions.length },
-            { id: "resolver", icon: <Layers size={13} />, label: "Questão Ativa", badge: selectedQuestion ? "●" : null },
+            { id: "banco",      icon: <BookOpen size={13} />,  label: "Banco de Questões", count: questions.length },
+            { id: "resolver",   icon: <Layers size={13} />,    label: "Questão Ativa", badge: selectedQuestion ? "●" : null },
             { id: "desempenho", icon: <BarChart3 size={13} />, label: "Desempenho", badge: resolverQueue.length > 0 ? "●" : null },
+            { id: "fixacao",    icon: <Flame size={13} />,     label: "Fixação (Minigame)" },
           ].map(tab => (
             <button
               key={tab.id}
@@ -725,6 +728,19 @@ export default function BancoPage() {
               </motion.div>
             );
           })()}
+
+          {/* ── FIXAÇÃO ── */}
+          {activeTab === "fixacao" && (
+            <motion.div
+              key="fixacao"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+            >
+              <FixationDashboardView />
+            </motion.div>
+          )}
 
         </AnimatePresence>
       </main>
