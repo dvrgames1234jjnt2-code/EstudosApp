@@ -19,6 +19,7 @@ export interface FixationDeck {
   title: string;       // Mapeado da coluna `title` da tabela `deck_minigames`
   description?: string;// Mapeado da coluna `description` da tabela `deck_minigames`
   category?: string;   // Derivado do tópico (tabela `topics.title`)
+  materia?: string;    // Derivado da matéria (tabela `subjects.title`)
   topic_id?: number;
   position?: number;
   created_at?: string;

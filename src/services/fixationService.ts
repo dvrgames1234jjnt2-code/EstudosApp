@@ -1,50 +1,54 @@
 import { supabase } from '@/lib/supabase';
 import { ChoiceType, FixationDeck, FixationItem, ItemStats } from '@/types/fixation';
 
-// ─── Decks (deck_minigames + topics) ────────────────────────────────────────
+// ─── Decks (deck_minigames + topics + subjects) ─────────────────────────────
 
 /**
- * Busca todos os decks da tabela `deck_minigames`.
- * Tenta relacionar com `topics` para pegar a categoria (nome do assunto/tópico).
+ * Busca todos os decks da tabela `deck_minigames`, correlacionando com `topics` e `subjects`
+ * para identificar a Matéria (ex: "Informática", "Conhecimentos Bancários", "Português") e o Tópico.
  */
 export async function fetchDecks(): Promise<FixationDeck[]> {
   try {
-    const { data, error } = await supabase
-      .from('deck_minigames')
-      .select('id, title, description, position, topic_id, created_at, topics(title)')
-      .order('position', { ascending: true })
-      .order('created_at', { ascending: true });
+    // Executa as consultas em paralelo para máxima velocidade e resiliência
+    const [decksRes, topicsRes, subjectsRes] = await Promise.all([
+      supabase.from('deck_minigames').select('id, title, description, position, topic_id, created_at').order('position', { ascending: true }).order('created_at', { ascending: true }),
+      supabase.from('topics').select('id, title, subject_id'),
+      supabase.from('subjects').select('id, title'),
+    ]);
 
-    if (error) {
-      // Fallback: se a relação de FK não estiver nomeada como `topics` no schema
-      const { data: simpleData, error: simpleError } = await supabase
-        .from('deck_minigames')
-        .select('id, title, description, position, topic_id, created_at')
-        .order('position', { ascending: true })
-        .order('created_at', { ascending: true });
+    if (decksRes.error) throw new Error(`Erro ao buscar decks: ${decksRes.error.message}`);
 
-      if (simpleError) throw new Error(`Erro ao buscar decks: ${simpleError.message}`);
+    const rawDecks = decksRes.data ?? [];
+    const rawTopics = topicsRes.data ?? [];
+    const rawSubjects = subjectsRes.data ?? [];
 
-      return (simpleData ?? []).map(row => ({
+    // Mapeamentos para associação rápida
+    const subjectsMap: Record<number, string> = {};
+    for (const sub of rawSubjects) {
+      subjectsMap[sub.id] = sub.title;
+    }
+
+    const topicsMap: Record<number, { title: string; subject_id: number | null }> = {};
+    for (const top of rawTopics) {
+      topicsMap[top.id] = { title: top.title, subject_id: top.subject_id };
+    }
+
+    return rawDecks.map(row => {
+      const topicInfo = row.topic_id ? topicsMap[row.topic_id] : null;
+      const topicTitle = topicInfo?.title || undefined;
+      const subjectTitle = topicInfo?.subject_id ? subjectsMap[topicInfo.subject_id] : undefined;
+
+      return {
         id: row.id,
         title: row.title,
         description: row.description,
         position: row.position,
         topic_id: row.topic_id,
-        category: 'Minigame',
+        category: topicTitle || 'Geral',
+        materia: subjectTitle || 'Geral',
         created_at: row.created_at,
-      }));
-    }
-
-    return (data ?? []).map(row => ({
-      id: row.id,
-      title: row.title,
-      description: row.description,
-      position: row.position,
-      topic_id: row.topic_id,
-      category: (row.topics as any)?.title || 'Minigame',
-      created_at: row.created_at,
-    }));
+      };
+    });
   } catch (err: any) {
     console.error("Erro em fetchDecks:", err);
     throw err;
@@ -57,7 +61,6 @@ export async function fetchDecks(): Promise<FixationDeck[]> {
  * Busca todos os cards de um deck da tabela `cards_minigames` (ou `cards_minigame`).
  */
 export async function fetchItemsByDeck(deckId: string | number): Promise<FixationItem[]> {
-  // Primeiro tenta a tabela no plural `cards_minigames`
   let { data, error } = await supabase
     .from('cards_minigames')
     .select('id, deck_minigame_id, title, front, back, explanation, position')
@@ -65,7 +68,6 @@ export async function fetchItemsByDeck(deckId: string | number): Promise<Fixatio
     .order('position', { ascending: true });
 
   if (error) {
-    // Fallback se a tabela no banco for `cards_minigame` (singular)
     const { data: singularData, error: singularError } = await supabase
       .from('cards_minigame')
       .select('id, deck_minigame_id, title, front, back, explanation, position')
@@ -96,9 +98,6 @@ const OPTION_MAP: Record<ChoiceType, number> = {
   mastered: 4,
 };
 
-/**
- * Salva ou atualiza a revisão na tabela `card_progress`.
- */
 export async function saveCardProgress(
   userId: string,
   itemId: string | number,
@@ -106,10 +105,9 @@ export async function saveCardProgress(
   sessionId: string
 ): Promise<void> {
   const optionId = OPTION_MAP[performance];
-  const cardIdNum = typeof itemId === 'number' ? itemId : parseInt(itemId, 10);
+  const cardIdNum = typeof itemId === 'number' ? itemId : parseInt(String(itemId), 10);
   const validCardId = isNaN(cardIdNum) ? itemId : cardIdNum;
 
-  // Tenta realizar upsert baseado na chave `card_id`
   const { error } = await supabase.from('card_progress').upsert(
     {
       card_id: validCardId,
@@ -120,7 +118,6 @@ export async function saveCardProgress(
   );
 
   if (error) {
-    // Se upsert com onConflict falhar, faz um insert comum
     await supabase.from('card_progress').insert({
       card_id: validCardId,
       last_review_option_id: optionId,
@@ -129,9 +126,6 @@ export async function saveCardProgress(
   }
 }
 
-/**
- * Salva progresso de múltiplos cards da sessão em batch.
- */
 export async function saveSessionProgress(
   userId: string,
   sessionId: string,
@@ -142,9 +136,6 @@ export async function saveSessionProgress(
   }
 }
 
-/**
- * Busca estatísticas de progresso para a lista de card IDs da tabela `card_progress`.
- */
 export async function fetchUserProgress(
   userId: string,
   itemIds: (string | number)[]
