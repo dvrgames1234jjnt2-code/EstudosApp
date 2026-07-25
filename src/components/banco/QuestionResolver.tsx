@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
@@ -102,6 +103,62 @@ const playSuccessSound = () => {
     // Ignore audio policy restrictions
   }
 };
+
+// ── Formatador de Enunciado ────────────────────────────────────────────────
+// Detecta itens romanos (I., II., III., ...) no meio do texto e os exibe
+// em linhas separadas com recuo e cor diferenciada.
+function formatQuestionText(text: string): React.ReactElement {
+  if (!text) return <></>
+
+  // Regex que captura o padrão: um ou mais algarismos romanos seguidos de ponto e espaço
+  // Exemplos válidos: "I. ", "II. ", "III. ", "IV. ", "V. ", "VI. ", "VII. ", "VIII. ", "IX. ", "X. "
+  const romanPattern = /(?<=[\s\S])((?:X{0,3})(?:IX|IV|V?I{0,3}))\.\s/g
+
+  // Divide usando um split que mantém os delimitadores (lookahead)
+  // Estratégia: primeiro detectamos se o texto TEM itens romanos
+  const hasRoman = /\b(I{1,3}V?|IV|V|VI{0,3}|IX|X)\.\s/.test(text)
+
+  if (!hasRoman) {
+    // Texto simples: só exibe normalmente
+    return <span>{text}</span>
+  }
+
+  // Divide o texto nos marcadores romanos
+  // Padrão: "XXXX I. item1 II. item2 III. item3"
+  // Separamos em: [introducao, "I", item1, "II", item2, ...]
+  const parts = text.split(/\b((?:X{0,3})(?:IX|IV|V?I{0,3}))\.\s/)
+
+  const elements: React.ReactElement[] = []
+
+  // parts[0] = introdução (antes do primeiro numeral)
+  if (parts[0].trim()) {
+    elements.push(
+      <span key="intro" className="block mb-3 leading-relaxed">
+        {parts[0].trim()}
+      </span>
+    )
+  }
+
+  // Itens: parts[1]=numeral, parts[2]=texto, parts[3]=numeral, parts[4]=texto...
+  for (let i = 1; i + 1 < parts.length; i += 2) {
+    const numeral = parts[i]
+    const content = parts[i + 1]
+    if (!numeral || !content) continue
+    elements.push(
+      <span
+        key={`item-${i}`}
+        className="flex gap-2.5 py-1.5 border-l-2 border-indigo-500/20 pl-3 mb-1 leading-relaxed"
+      >
+        <span className="shrink-0 text-indigo-400 font-black text-[13px] min-w-[1.5rem]">
+          {numeral}.
+        </span>
+        <span className="text-slate-300">{content.trimEnd()}</span>
+      </span>
+    )
+  }
+
+  return <>{elements}</>
+}
 
 const playErrorSound = () => {
   try {
@@ -403,15 +460,15 @@ export default function QuestionResolver({
               )}
 
               {/* Enunciado */}
-              <p className="text-sm sm:text-[15px] text-slate-400 leading-relaxed font-normal">
-                {question.title}
-              </p>
+              <div className="text-sm sm:text-[15px] text-slate-400 leading-relaxed font-normal">
+                {formatQuestionText(question.title ?? '')}
+              </div>
 
               {/* Pergunta problema */}
               {question.perguntaProblema && (
-                <p className="text-sm sm:text-[15px] text-slate-400 leading-relaxed font-normal mt-2">
-                  {question.perguntaProblema}
-                </p>
+                <div className="text-sm sm:text-[15px] text-slate-400 leading-relaxed font-normal mt-3">
+                  {formatQuestionText(question.perguntaProblema)}
+                </div>
               )}
 
               {/* Banner de Feedback Animado (Certo vs Errado) */}
