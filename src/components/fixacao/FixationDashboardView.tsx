@@ -1,64 +1,67 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import FixationGame from '@/components/fixacao/FixationGame';
 import {
-  Flame, BookOpen, Trophy, ChevronRight,
-  Loader2, Lock, RefreshCw, Zap, Layers, Filter,
+  Flame, Database, BookOpen, ChevronRight,
+  Loader2, Lock, ArrowLeft, CheckCircle2,
 } from 'lucide-react';
-import { ChoiceType, FixationDeck, FixationItem } from '@/types/fixation';
 import {
-  fetchDecks,
+  ChoiceType,
+  FixationCollection,
+  FixationSubject,
+  FixationTopic,
+  FixationDeck,
+  FixationItem,
+  FeedbackCounts,
+} from '@/types/fixation';
+import {
+  fetchCollections,
+  fetchSubjectsByCollection,
+  fetchTopicsBySubject,
+  fetchDecksByTopic,
   fetchItemsByDeck,
+  fetchTopicFeedbackStats,
   saveCardProgress,
   saveSessionProgress,
-  fetchUserProgress,
   generateSessionId,
 } from '@/services/fixationService';
 import type { User } from '@supabase/supabase-js';
 
-// Dados de exemplo caso a conexão ainda não retorne
-const DEMO_DECKS: FixationDeck[] = [
-  { id: 'demo-1', title: 'Open Finance', category: 'Sistema Financeiro', materia: 'Conhecimentos Bancários' },
-  { id: 'demo-2', title: 'CRM e Estratégias', category: 'Marketing', materia: 'Vendas e Negociações' },
-  { id: 'demo-3', title: 'Ambiente Linux', category: 'Noções de Sistemas Operacionais', materia: 'Informática' },
-];
-
-const DEMO_ITEMS: Record<string, FixationItem[]> = {
-  'demo-1': [
-    { id: 'd1-1', term: 'Consentimento no Open Finance', description: 'Deve incluir identificação do cliente, linguagem clara, prazo limitado a 12 meses, e discriminar a instituição transmissora e os dados compartilhados.', category: 'Open Finance' },
-    { id: 'd1-2', term: 'Open Finance', description: 'Sistema que permite o compartilhamento padronizado de dados e serviços financeiros entre instituições autorizadas pelo BACEN, mediante consentimento do cliente.', category: 'Open Finance' },
-  ],
-  'demo-2': [
-    { id: 'd2-1', term: 'CRM Operacional', description: 'Nível responsável pela adaptação e customização prática do sistema de CRM ao modelo de negócios da empresa, incluindo campos personalizados e integrações com sistemas ERP.', category: 'CRM' },
-  ],
-  'demo-3': [
-    { id: 'd3-1', term: 'Diretório /bin', description: 'Contém comandos essenciais do sistema operacionais utilizados por todos os usuários.', category: 'Linux' },
-  ],
-};
-
-type Screen = 'dashboard' | 'game';
+type Step = 'collections' | 'subjects' | 'topics' | 'decks' | 'game';
 
 export default function FixationDashboardView() {
   const [user, setUser] = useState<User | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
 
+  // Navegação por passos
+  const [step, setStep] = useState<Step>('collections');
+
+  // Seleções ativas
+  const [selectedCollection, setSelectedCollection] = useState<FixationCollection | null>(null);
+  const [selectedSubject, setSelectedSubject] = useState<FixationSubject | null>(null);
+  const [selectedTopic, setSelectedTopic] = useState<FixationTopic | null>(null);
+  const [selectedDeck, setSelectedDeck] = useState<FixationDeck | null>(null);
+
+  // Listas de dados por nível
+  const [collections, setCollections] = useState<FixationCollection[]>([]);
+  const [subjects, setSubjects] = useState<FixationSubject[]>([]);
+  const [topics, setTopics] = useState<FixationTopic[]>([]);
   const [decks, setDecks] = useState<FixationDeck[]>([]);
-  const [loadingDecks, setLoadingDecks] = useState(true);
-  const [selectedMateria, setSelectedMateria] = useState<string>('TODAS');
+  const [gameItems, setGameItems] = useState<FixationItem[]>([]);
 
-  const [screen, setScreen] = useState<Screen>('dashboard');
-  const [activeDeck, setActiveDeck] = useState<FixationDeck | null>(null);
-  const [activeItems, setActiveItems] = useState<FixationItem[]>([]);
-  const [loadingItems, setLoadingItems] = useState(false);
+  // Feedback stats do tópico selecionado
+  const [feedbackCounts, setFeedbackCounts] = useState<FeedbackCounts>({
+    forgot: 0, partial: 0, effortful: 0, learning: 0, mastered: 0, newCards: 0,
+  });
+  const [selectedFeedbackFilter, setSelectedFeedbackFilter] = useState<string | null>(null);
 
+  // Loaders
+  const [loading, setLoading] = useState(true);
   const [isNoCommitment, setIsNoCommitment] = useState(false);
   const [sessionId] = useState(generateSessionId);
-
-  // Progresso do usuário por deck (deckId → { mastered, total })
-  const [deckProgress, setDeckProgress] = useState<Record<string, { mastered: number; total: number }>>({});
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -72,74 +75,97 @@ export default function FixationDashboardView() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // ── Carregar decks ────────────────────────────────────────────────────────
-  useEffect(() => {
-    async function load() {
-      setLoadingDecks(true);
-      try {
-        const data = await fetchDecks();
-        setDecks(data.length > 0 ? data : DEMO_DECKS);
-      } catch {
-        setDecks(DEMO_DECKS);
-      } finally {
-        setLoadingDecks(false);
-      }
-    }
-    load();
-  }, []);
-
-  // ── Lista única de Matérias para filtro ───────────────────────────────────
-  const materias = useMemo(() => {
-    const set = new Set<string>();
-    decks.forEach(d => {
-      if (d.materia) set.add(d.materia);
-    });
-    return Array.from(set).sort();
-  }, [decks]);
-
-  // ── Agrupamento por Matéria ───────────────────────────────────────────────
-  const groupedDecks = useMemo(() => {
-    const map: Record<string, FixationDeck[]> = {};
-    decks.forEach(d => {
-      const m = d.materia || 'Geral';
-      if (selectedMateria !== 'TODAS' && m !== selectedMateria) return;
-      if (!map[m]) map[m] = [];
-      map[m].push(d);
-    });
-    return map;
-  }, [decks, selectedMateria]);
-
-  // ── Carregar progresso do usuário nos decks ───────────────────────────────
-  const loadProgress = useCallback(async () => {
-    if (!user || decks.length === 0) return;
+  // ── Carregar Coleções (Passo 1) ───────────────────────────────────────────
+  const loadCollections = useCallback(async () => {
+    setLoading(true);
     try {
-      for (const deck of decks) {
-        const items = DEMO_ITEMS[deck.id] ?? await fetchItemsByDeck(deck.id);
-        if (items.length === 0) continue;
-        const stats = await fetchUserProgress(user.id, items.map(i => i.id));
-        const mastered = Object.values(stats).filter(s => s.lastPerformance === 'mastered').length;
-        setDeckProgress(prev => ({ ...prev, [deck.id]: { mastered, total: items.length } }));
+      const data = await fetchCollections();
+      setCollections(data);
+      if (data.length === 1) {
+        // Se houver só 1 coleção (ex: Banco do Brasil), já seleciona automaticamente
+        const first = data[0];
+        setSelectedCollection(first);
+        const subData = await fetchSubjectsByCollection(first.id);
+        setSubjects(subData);
+        setStep('subjects');
+      } else {
+        setStep('collections');
       }
-    } catch { /* silencioso */ }
-  }, [user, decks]);
-
-  useEffect(() => { loadProgress(); }, [loadProgress]);
-
-  // ── Abrir deck ────────────────────────────────────────────────────────────
-  const handleOpenDeck = async (deck: FixationDeck) => {
-    setLoadingItems(true);
-    setActiveDeck(deck);
-    try {
-      const items = DEMO_ITEMS[deck.id] ?? await fetchItemsByDeck(deck.id);
-      setActiveItems(items);
-      setScreen('game');
     } catch (e) {
       console.error(e);
     } finally {
-      setLoadingItems(false);
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCollections();
+  }, [loadCollections]);
+
+  // ── Selecionar Coleção → carregar Matérias ───────────────────────────────
+  const handleSelectCollection = async (col: FixationCollection) => {
+    setSelectedCollection(col);
+    setLoading(true);
+    try {
+      const data = await fetchSubjectsByCollection(col.id);
+      setSubjects(data);
+      setStep('subjects');
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
     }
   };
 
+  // ── Selecionar Matéria → carregar Tópicos ─────────────────────────────────
+  const handleSelectSubject = async (sub: FixationSubject) => {
+    setSelectedSubject(sub);
+    setLoading(true);
+    try {
+      const data = await fetchTopicsBySubject(sub.id);
+      setTopics(data);
+      setStep('topics');
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Selecionar Tópico → carregar Decks & Feedback Stats ──────────────────
+  const handleSelectTopic = async (top: FixationTopic) => {
+    setSelectedTopic(top);
+    setLoading(true);
+    try {
+      const decksData = await fetchDecksByTopic(top.id);
+      setDecks(decksData);
+      const deckIds = decksData.map(d => d.id);
+      const { counts } = await fetchTopicFeedbackStats(deckIds);
+      setFeedbackCounts(counts);
+      setStep('decks');
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Selecionar Deck / Pacote → Iniciar Jogo ───────────────────────────────
+  const handleSelectDeck = async (deck: FixationDeck) => {
+    setSelectedDeck(deck);
+    setLoading(true);
+    try {
+      const items = await fetchItemsByDeck(deck.id);
+      setGameItems(items);
+      setStep('game');
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Callbacks de Progresso ────────────────────────────────────────────────
   const handleUpdateCard = useCallback(async (cardId: string, performance: ChoiceType) => {
     if (!user || isNoCommitment) return;
     try {
@@ -153,201 +179,321 @@ export default function FixationDashboardView() {
     if (!user || isNoCommitment) return;
     try {
       await saveSessionProgress(user.id, sessionId, feedback);
-      await loadProgress();
     } catch (e) {
       console.error('Erro ao salvar sessão:', e);
     }
-  }, [user, isNoCommitment, sessionId, loadProgress]);
+  }, [user, isNoCommitment, sessionId]);
 
-  // ── Tela de jogo ──────────────────────────────────────────────────────────
-  if (screen === 'game' && activeDeck) {
+  // ── Tela de Jogo ──────────────────────────────────────────────────────────
+  if (step === 'game' && selectedDeck) {
     return (
       <div className="w-full h-[calc(100vh-140px)] min-h-[550px] bg-zinc-950 rounded-2xl overflow-hidden flex flex-col border border-white/[0.06]">
         <FixationGame
-          title={activeDeck.title}
-          items={activeItems}
+          title={selectedDeck.title}
+          items={gameItems}
           onUpdateCard={handleUpdateCard}
           isNoCommitment={isNoCommitment}
           onToggleNoCommitment={() => setIsNoCommitment(v => !v)}
           onFinish={handleFinish}
-          onBack={() => { setScreen('dashboard'); setActiveDeck(null); loadProgress(); }}
+          onBack={() => setStep('decks')}
         />
       </div>
     );
   }
 
-  // ── Dashboard ─────────────────────────────────────────────────────────────
   return (
     <div className="w-full space-y-6">
-      {/* Header local */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-[#0b0f19] border border-white/[0.06] rounded-2xl">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <Flame size={20} className="text-white" />
-          </div>
-          <div>
-            <h2 className="text-base font-black text-white uppercase tracking-tight">Fixação — Minigames</h2>
-            <p className="text-xs text-zinc-400">Separados por Matéria & Tópico</p>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
-          {([
-            { icon: Zap, label: 'Rápido → avança', color: 'text-blue-400' },
-            { icon: RefreshCw, label: 'Branco → recomeça', color: 'text-red-400' },
-            { icon: Trophy, label: 'Automático → remove', color: 'text-emerald-400' },
-          ] as const).map(({ icon: Icon, label, color }) => (
-            <span key={label} className={`flex items-center gap-1.5 text-[10px] font-bold ${color} bg-white/[0.02] px-2.5 py-1 rounded-lg border border-white/[0.04]`}>
-              <Icon size={12} /> {label}
+      {/* ── Breadcrumbs no Topo ── */}
+      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 overflow-x-auto custom-scrollbar pb-1">
+        <span
+          onClick={() => { setStep('collections'); setSelectedCollection(null); }}
+          className={`cursor-pointer transition-colors ${step === 'collections' ? 'text-indigo-400 font-black' : 'hover:text-white'}`}
+        >
+          COLEÇÕES
+        </span>
+
+        {selectedCollection && (
+          <>
+            <ChevronRight size={10} className="opacity-40 shrink-0" />
+            <span
+              onClick={() => { setStep('subjects'); setSelectedSubject(null); }}
+              className={`cursor-pointer transition-colors shrink-0 ${step === 'subjects' ? 'text-indigo-400 font-black' : 'hover:text-white'}`}
+            >
+              {selectedCollection.title}
             </span>
-          ))}
-        </div>
+          </>
+        )}
+
+        {selectedSubject && (
+          <>
+            <ChevronRight size={10} className="opacity-40 shrink-0" />
+            <span
+              onClick={() => { setStep('topics'); setSelectedTopic(null); }}
+              className={`cursor-pointer transition-colors shrink-0 ${step === 'topics' ? 'text-indigo-400 font-black' : 'hover:text-white'}`}
+            >
+              {selectedSubject.title}
+            </span>
+          </>
+        )}
+
+        {selectedTopic && (
+          <>
+            <ChevronRight size={10} className="opacity-40 shrink-0" />
+            <span className="text-indigo-400 font-black shrink-0">
+              {selectedTopic.title}
+            </span>
+          </>
+        )}
       </div>
 
-      {/* Filtro por Matéria */}
-      {materias.length > 0 && (
-        <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-1">
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1 shrink-0 mr-1">
-            <Filter size={11} /> Matéria:
-          </span>
-          <button
-            onClick={() => setSelectedMateria('TODAS')}
-            className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shrink-0 ${
-              selectedMateria === 'TODAS'
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                : 'bg-[#0b0f19] border border-white/[0.06] text-slate-400 hover:text-white'
-            }`}
-          >
-            Todas ({decks.length})
-          </button>
-          {materias.map(materia => {
-            const count = decks.filter(d => d.materia === materia).length;
-            return (
-              <button
-                key={materia}
-                onClick={() => setSelectedMateria(materia)}
-                className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shrink-0 ${
-                  selectedMateria === materia
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                    : 'bg-[#0b0f19] border border-white/[0.06] text-slate-400 hover:text-white'
-                }`}
-              >
-                {materia} ({count})
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Listagem agrupada por Matéria */}
-      {loadingDecks ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 size={28} className="animate-spin text-indigo-400" />
-        </div>
-      ) : Object.keys(groupedDecks).length === 0 ? (
-        <div className="text-center py-16 bg-[#0b0f19] rounded-2xl border border-white/[0.06]">
-          <p className="text-sm font-bold text-slate-400">Nenhum deck encontrado para esta matéria.</p>
+      {/* Loader Global */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-24 gap-4">
+          <Loader2 size={32} className="animate-spin text-indigo-500" />
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Carregando...</p>
         </div>
       ) : (
-        <div className="space-y-8">
-          {Object.entries(groupedDecks).map(([materiaName, deckList]) => (
-            <div key={materiaName} className="space-y-4">
-              {/* Header da Matéria */}
-              <div className="flex items-center gap-3 border-b border-white/[0.06] pb-2">
-                <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-                  <Layers size={14} className="text-indigo-400" />
-                </div>
-                <h3 className="text-sm font-black text-white uppercase tracking-wider">
-                  {materiaName}
-                </h3>
-                <span className="text-[9px] font-bold text-slate-500 bg-white/[0.04] px-2 py-0.5 rounded-md">
-                  {deckList.length} {deckList.length === 1 ? 'deck' : 'decks'}
+        <AnimatePresence mode="wait">
+
+          {/* ──────────────────────────────────────────────────────────────────
+              PASSO 1: SUAS COLEÇÕES
+             ────────────────────────────────────────────────────────────────── */}
+          {step === 'collections' && (
+            <motion.div
+              key="step-collections"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              <div className="space-y-1">
+                <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 mb-2">
+                  <Flame size={12} /> FIXAÇÃO MINIGAME
                 </span>
+                <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                  Suas <span className="text-indigo-400">Coleções</span>
+                </h1>
+                <p className="text-xs text-slate-400">Escolha uma coleção para começar o seu treinamento.</p>
               </div>
 
-              {/* Grid dos Decks da Matéria */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <AnimatePresence>
-                  {deckList.map((deck, i) => {
-                    const prog = deckProgress[deck.id];
-                    const pct = prog ? Math.round((prog.mastered / prog.total) * 100) : 0;
+              <div className="space-y-3">
+                {collections.map(col => (
+                  <motion.div
+                    key={col.id}
+                    whileHover={{ scale: 1.01, x: 4 }}
+                    onClick={() => handleSelectCollection(col)}
+                    className="group bg-[#0c101d] border border-white/[0.06] hover:border-indigo-500/40 rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all shadow-lg"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-indigo-600/15 border border-indigo-500/20 flex items-center justify-center shrink-0 group-hover:bg-indigo-600 transition-colors">
+                        <Database size={20} className="text-indigo-400 group-hover:text-white transition-colors" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-black text-white uppercase tracking-tight group-hover:text-indigo-300 transition-colors">
+                          {col.title}
+                        </h3>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mt-0.5">
+                          VER MATÉRIAS
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight size={18} className="text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
+          {/* ──────────────────────────────────────────────────────────────────
+              PASSO 2: QUAL É A MATÉRIA
+             ────────────────────────────────────────────────────────────────── */}
+          {step === 'subjects' && (
+            <motion.div
+              key="step-subjects"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              <div className="space-y-1">
+                <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 mb-2">
+                  <Flame size={12} /> FIXAÇÃO MINIGAME
+                </span>
+                <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                  Qual é a <span className="text-indigo-400">Matéria</span>
+                </h1>
+                <p className="text-xs text-slate-400">Matérias disponíveis em "{selectedCollection?.title}"</p>
+              </div>
+
+              <div className="space-y-3">
+                {subjects.map(sub => (
+                  <motion.div
+                    key={sub.id}
+                    whileHover={{ scale: 1.01, x: 4 }}
+                    onClick={() => handleSelectSubject(sub)}
+                    className="group bg-[#0c101d] border border-white/[0.06] hover:border-indigo-500/40 rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all shadow-lg"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0 group-hover:bg-emerald-600 transition-colors">
+                        <BookOpen size={20} className="text-emerald-400 group-hover:text-white transition-colors" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-black text-white uppercase tracking-tight group-hover:text-emerald-300 transition-colors">
+                          {sub.title}
+                        </h3>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mt-0.5">
+                          VER TÓPICOS
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight size={18} className="text-slate-600 group-hover:text-emerald-400 transition-colors" />
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* ──────────────────────────────────────────────────────────────────
+              PASSO 3: TÓPICOS DA MATÉRIA
+             ────────────────────────────────────────────────────────────────── */}
+          {step === 'topics' && (
+            <motion.div
+              key="step-topics"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-6"
+            >
+              <div className="space-y-1">
+                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 mb-2">
+                  <BookOpen size={12} /> {selectedSubject?.title}
+                </span>
+                <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                  Selecione o <span className="text-emerald-400">Tópico</span>
+                </h1>
+                <p className="text-xs text-slate-400">Tópicos disponíveis para treino em "{selectedSubject?.title}"</p>
+              </div>
+
+              <div className="space-y-3">
+                {topics.map(top => (
+                  <motion.div
+                    key={top.id}
+                    whileHover={{ scale: 1.01, x: 4 }}
+                    onClick={() => handleSelectTopic(top)}
+                    className="group bg-[#0c101d] border border-white/[0.06] hover:border-emerald-500/40 rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all shadow-lg"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-blue-600/15 border border-blue-500/20 flex items-center justify-center shrink-0 group-hover:bg-blue-600 transition-colors">
+                        <CheckCircle2 size={18} className="text-blue-400 group-hover:text-white transition-colors" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm sm:text-base font-black text-white uppercase tracking-tight group-hover:text-blue-300 transition-colors">
+                          {top.title}
+                        </h3>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mt-0.5">
+                          VER PACOTES DE PRÁTICA
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight size={18} className="text-slate-600 group-hover:text-blue-400 transition-colors" />
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* ──────────────────────────────────────────────────────────────────
+              PASSO 4: FILTRAR FEEDBACKS & ESCOLHER PACOTE (DECKS)
+             ────────────────────────────────────────────────────────────────── */}
+          {step === 'decks' && (
+            <motion.div
+              key="step-decks"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-8"
+            >
+              {/* Card de Filtro de Feedbacks */}
+              <div className="bg-[#0c101d] border border-white/[0.06] rounded-3xl p-6 space-y-4">
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-white">
+                    FILTRAR PARA JOGAR POR FEEDBACKS
+                  </h3>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Escolha os tipos de feedback que você deseja revisar na sessão:
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {[
+                    { key: 'forgot', label: 'ERREI', count: feedbackCounts.forgot, color: 'border-red-500/30 text-red-400 hover:bg-red-500/10' },
+                    { key: 'partial', label: 'QUASE', count: feedbackCounts.partial, color: 'border-orange-500/30 text-orange-400 hover:bg-orange-500/10' },
+                    { key: 'effortful', label: 'PENSEI', count: feedbackCounts.effortful, color: 'border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10' },
+                    { key: 'learning', label: 'RÁPIDO', count: feedbackCounts.learning, color: 'border-blue-500/30 text-blue-400 hover:bg-blue-500/10' },
+                    { key: 'mastered', label: 'AUTOMÁTICO', count: feedbackCounts.mastered, color: 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10' },
+                    { key: 'newCards', label: 'NOVO', count: feedbackCounts.newCards, color: 'border-slate-500/30 text-slate-400 hover:bg-slate-500/10' },
+                  ].map(fb => {
+                    const isSelected = selectedFeedbackFilter === fb.key;
                     return (
-                      <motion.div
-                        key={deck.id}
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.04 }}
-                        onClick={() => !loadingItems && handleOpenDeck(deck)}
-                        className="group relative bg-[#0b0f19] border border-white/[0.06] rounded-2xl p-5 flex flex-col gap-4 transition-all duration-300 cursor-pointer hover:border-indigo-500/40 hover:shadow-[0_8px_32px_rgba(99,102,241,0.12)]"
+                      <button
+                        key={fb.key}
+                        onClick={() => setSelectedFeedbackFilter(isSelected ? null : fb.key)}
+                        className={`p-3.5 rounded-2xl border flex items-center justify-between transition-all ${fb.color} ${
+                          isSelected ? 'ring-2 ring-indigo-500 bg-white/5' : 'bg-black/20'
+                        }`}
                       >
-                        {/* Tópico (Category) */}
-                        {deck.category && (
-                          <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-full w-fit max-w-full truncate">
-                            {deck.category}
-                          </span>
-                        )}
-
-                        {/* Título do Deck */}
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/20 flex items-center justify-center shrink-0">
-                              <BookOpen size={18} className="text-indigo-400" />
-                            </div>
-                            <h4 className="text-sm font-black text-white leading-snug group-hover:text-indigo-300 transition-colors">
-                              {deck.title}
-                            </h4>
-                          </div>
-                          <ChevronRight size={16} className="text-zinc-600 group-hover:text-indigo-400 transition-colors shrink-0 mt-0.5" />
-                        </div>
-
-                        {/* Barra de progresso */}
-                        {prog ? (
-                          <div className="space-y-1.5">
-                            <div className="flex justify-between items-center">
-                              <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
-                                {prog.mastered}/{prog.total} dominados
-                              </span>
-                              <span className={`text-[9px] font-black ${pct === 100 ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                                {pct}%
-                              </span>
-                            </div>
-                            <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                              <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${pct}%` }}
-                                transition={{ duration: 0.6, ease: 'easeOut' }}
-                                className={`h-full rounded-full ${pct === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`}
-                              />
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-[10px] text-zinc-500 font-bold">
-                            Clique para iniciar a trilha
-                          </div>
-                        )}
-
-                        {/* Loading overlay ao abrir */}
-                        {loadingItems && activeDeck?.id === deck.id && (
-                          <div className="absolute inset-0 rounded-2xl bg-black/60 flex items-center justify-center">
-                            <Loader2 size={20} className="animate-spin text-indigo-400" />
-                          </div>
-                        )}
-                      </motion.div>
+                        <span className="text-[10px] font-black uppercase tracking-wider">{fb.label}</span>
+                        <span className="text-xs font-black px-2 py-0.5 rounded-md bg-white/[0.06]">{fb.count}</span>
+                      </button>
                     );
                   })}
-                </AnimatePresence>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+
+              {/* Seção Escolha o Pacote para Praticar */}
+              <div className="space-y-4">
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">
+                  ESCOLHA O PACOTE PARA PRATICAR
+                </h3>
+
+                <div className="space-y-3">
+                  {decks.map(deck => (
+                    <motion.div
+                      key={deck.id}
+                      whileHover={{ scale: 1.01, x: 4 }}
+                      onClick={() => handleSelectDeck(deck)}
+                      className="group bg-[#0c101d] border border-white/[0.06] hover:border-indigo-500/40 rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all shadow-lg"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-indigo-600/15 border border-indigo-500/20 flex items-center justify-center shrink-0 group-hover:bg-indigo-600 transition-colors">
+                          <span className="text-lg">🐧</span>
+                        </div>
+                        <div>
+                          <h4 className="text-sm sm:text-base font-black text-white uppercase tracking-tight group-hover:text-indigo-300 transition-colors">
+                            {deck.title}
+                          </h4>
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mt-0.5">
+                            {deck.cardCount ?? 0} CARTÕES
+                          </span>
+                        </div>
+                      </div>
+                      <ChevronRight size={18} className="text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+        </AnimatePresence>
       )}
 
-      {/* Aviso de visitante */}
+      {/* Banner de aviso para visitante */}
       {!loadingUser && !user && (
         <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-between gap-4">
           <p className="text-xs text-indigo-300 font-medium">
-            💡 Você está no modo visitante. Para salvar seu progresso nos decks, faça login.
+            💡 Você está no modo visitante. Faça login para registrar seu progresso em cada pacote.
           </p>
         </div>
       )}

@@ -1,15 +1,145 @@
 import { supabase } from '@/lib/supabase';
-import { ChoiceType, FixationDeck, FixationItem, ItemStats } from '@/types/fixation';
+import {
+  ChoiceType,
+  FixationCollection,
+  FixationSubject,
+  FixationTopic,
+  FixationDeck,
+  FixationItem,
+  ItemStats,
+  FeedbackCounts,
+} from '@/types/fixation';
 
-// ─── Decks (deck_minigames + topics + subjects) ─────────────────────────────
+// ─── Coleções (`collections`) ────────────────────────────────────────────────
 
-/**
- * Busca todos os decks da tabela `deck_minigames`, correlacionando com `topics` e `subjects`
- * para identificar a Matéria (ex: "Informática", "Conhecimentos Bancários", "Português") e o Tópico.
- */
+export async function fetchCollections(): Promise<FixationCollection[]> {
+  const { data, error } = await supabase
+    .from('collections')
+    .select('id, title, description, created_at')
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error("Erro ao buscar collections:", error);
+    return [{ id: 22, title: 'Banco do Brasil', description: 'Simulados e Fixação para Banco do Brasil' }];
+  }
+
+  return (data ?? []).map(row => ({
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    created_at: row.created_at,
+  }));
+}
+
+// ─── Matérias (`subjects`) ───────────────────────────────────────────────────
+
+export async function fetchSubjectsByCollection(collectionId?: string | number): Promise<FixationSubject[]> {
+  let query = supabase.from('subjects').select('id, collection_id, title, created_at').order('id', { ascending: true });
+
+  if (collectionId) {
+    const colIdNum = typeof collectionId === 'number' ? collectionId : parseInt(String(collectionId), 10);
+    if (!isNaN(colIdNum)) {
+      query = query.eq('collection_id', colIdNum);
+    }
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Erro ao buscar subjects:", error);
+    return [];
+  }
+
+  return (data ?? []).map(row => ({
+    id: row.id,
+    collection_id: row.collection_id,
+    title: row.title,
+    created_at: row.created_at,
+  }));
+}
+
+// ─── Tópicos (`topics`) ──────────────────────────────────────────────────────
+
+export async function fetchTopicsBySubject(subjectId?: string | number): Promise<FixationTopic[]> {
+  let query = supabase.from('topics').select('id, subject_id, title, position, created_at').order('position', { ascending: true }).order('id', { ascending: true });
+
+  if (subjectId) {
+    const subIdNum = typeof subjectId === 'number' ? subjectId : parseInt(String(subjectId), 10);
+    if (!isNaN(subIdNum)) {
+      query = query.eq('subject_id', subIdNum);
+    }
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Erro ao buscar topics:", error);
+    return [];
+  }
+
+  return (data ?? []).map(row => ({
+    id: row.id,
+    subject_id: row.subject_id,
+    title: row.title,
+    position: row.position,
+    created_at: row.created_at,
+  }));
+}
+
+// ─── Decks (`deck_minigames`) ────────────────────────────────────────────────
+
+export async function fetchDecksByTopic(topicId?: string | number): Promise<FixationDeck[]> {
+  let query = supabase.from('deck_minigames').select('id, title, description, position, topic_id, created_at').order('position', { ascending: true }).order('created_at', { ascending: true });
+
+  if (topicId) {
+    const topIdNum = typeof topicId === 'number' ? topicId : parseInt(String(topicId), 10);
+    if (!isNaN(topIdNum)) {
+      query = query.eq('topic_id', topIdNum);
+    }
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Erro ao buscar decks pelo tópico:", error);
+    return [];
+  }
+
+  const rawDecks = data ?? [];
+
+  // Busca contagem de cartões de cada deck
+  const deckIds = rawDecks.map(d => d.id);
+  const cardCountsMap: Record<string, number> = {};
+
+  if (deckIds.length > 0) {
+    try {
+      const { data: cardsData } = await supabase
+        .from('cards_minigames')
+        .select('id, deck_minigame_id')
+        .in('deck_minigame_id', deckIds);
+
+      (cardsData ?? []).forEach(c => {
+        const k = String(c.deck_minigame_id);
+        cardCountsMap[k] = (cardCountsMap[k] || 0) + 1;
+      });
+    } catch { /* silencioso */ }
+  }
+
+  return rawDecks.map(row => ({
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    position: row.position,
+    topic_id: row.topic_id,
+    created_at: row.created_at,
+    cardCount: cardCountsMap[String(row.id)] || 0,
+  }));
+}
+
+// ─── Todos os Decks (Modo geral com fallback) ───────────────────────────────
+
 export async function fetchDecks(): Promise<FixationDeck[]> {
   try {
-    // Executa as consultas em paralelo para máxima velocidade e resiliência
     const [decksRes, topicsRes, subjectsRes] = await Promise.all([
       supabase.from('deck_minigames').select('id, title, description, position, topic_id, created_at').order('position', { ascending: true }).order('created_at', { ascending: true }),
       supabase.from('topics').select('id, title, subject_id'),
@@ -22,7 +152,6 @@ export async function fetchDecks(): Promise<FixationDeck[]> {
     const rawTopics = topicsRes.data ?? [];
     const rawSubjects = subjectsRes.data ?? [];
 
-    // Mapeamentos para associação rápida
     const subjectsMap: Record<number, string> = {};
     for (const sub of rawSubjects) {
       subjectsMap[sub.id] = sub.title;
@@ -55,11 +184,8 @@ export async function fetchDecks(): Promise<FixationDeck[]> {
   }
 }
 
-// ─── Itens (cards_minigames) ────────────────────────────────────────────────
+// ─── Cards (`cards_minigames`) ──────────────────────────────────────────────
 
-/**
- * Busca todos os cards de um deck da tabela `cards_minigames` (ou `cards_minigame`).
- */
 export async function fetchItemsByDeck(deckId: string | number): Promise<FixationItem[]> {
   let { data, error } = await supabase
     .from('cards_minigames')
@@ -88,7 +214,7 @@ export async function fetchItemsByDeck(deckId: string | number): Promise<Fixatio
   }));
 }
 
-// ─── Progresso (card_progress) ───────────────────────────────────────────────
+// ─── Progresso e Feedback Stats ─────────────────────────────────────────────
 
 const OPTION_MAP: Record<ChoiceType, number> = {
   forgot: 1,
@@ -173,6 +299,68 @@ export async function fetchUserProgress(
   }
 
   return statsMap;
+}
+
+/**
+ * Calcula a contagem de feedbacks (ERREI, QUASE, PENSEI, RÁPIDO, AUTOMÁTICO, NOVO)
+ * para todos os cartões dos decks de um tópico.
+ */
+export async function fetchTopicFeedbackStats(
+  deckIds: (string | number)[]
+): Promise<{ counts: FeedbackCounts; cardsByFeedback: Record<string, (string | number)[]> }> {
+  const counts: FeedbackCounts = { forgot: 0, partial: 0, effortful: 0, learning: 0, mastered: 0, newCards: 0 };
+  const cardsByFeedback: Record<string, (string | number)[]> = {
+    forgot: [],
+    partial: [],
+    effortful: [],
+    learning: [],
+    mastered: [],
+    newCards: [],
+  };
+
+  if (deckIds.length === 0) return { counts, cardsByFeedback };
+
+  // Busca todos os cards desses decks
+  const { data: cardsData } = await supabase
+    .from('cards_minigames')
+    .select('id')
+    .in('deck_minigame_id', deckIds);
+
+  const cardIds = (cardsData ?? []).map(c => c.id);
+  if (cardIds.length === 0) return { counts, cardsByFeedback };
+
+  // Busca o progresso desses cards
+  const { data: progressData } = await supabase
+    .from('card_progress')
+    .select('card_id, last_review_option_id')
+    .in('card_id', cardIds);
+
+  const progressMap: Record<string, number> = {};
+  (progressData ?? []).forEach(p => {
+    progressMap[String(p.card_id)] = p.last_review_option_id;
+  });
+
+  for (const cid of cardIds) {
+    const optId = progressMap[String(cid)];
+    if (!optId) {
+      counts.newCards += 1;
+      cardsByFeedback.newCards.push(cid);
+    } else if (optId === 1) {
+      counts.forgot += 1;
+      cardsByFeedback.forgot.push(cid);
+    } else if (optId === 2) {
+      counts.partial += 1;
+      cardsByFeedback.partial.push(cid);
+    } else if (optId === 3) {
+      counts.effortful += 1;
+      cardsByFeedback.effortful.push(cid);
+    } else if (optId === 4) {
+      counts.mastered += 1;
+      cardsByFeedback.mastered.push(cid);
+    }
+  }
+
+  return { counts, cardsByFeedback };
 }
 
 export function generateSessionId(): string {
