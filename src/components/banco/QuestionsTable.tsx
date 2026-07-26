@@ -22,7 +22,9 @@ import {
   Pencil,
   Calendar,
   ChevronDown,
+  Printer,
 } from 'lucide-react';
+import { PrintSimuladoModal } from './PrintSimuladoModal';
 
 export interface BancoQuestion {
   id: any;
@@ -127,6 +129,7 @@ export default function QuestionsTable({
   const [provaFilter, setProvaFilter] = useState('Todas');
   const [statusFilter, setStatusFilter] = useState('Todos');
   const [viewMode, setViewMode] = useState<'list' | 'category'>('list');
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
   const getStatus = (id: any) => {
     const answer = userAnswers[String(id)];
@@ -314,6 +317,15 @@ export default function QuestionsTable({
               options={sel.options}
             />
           ))}
+
+          {/* Botão de Imprimir Simulado */}
+          <button
+            onClick={() => setShowPrintModal(true)}
+            title="Imprimir simulado / gerar PDF organizado"
+            className="px-3.5 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 rounded-xl text-[11px] font-black text-blue-400 hover:text-blue-300 transition-all flex items-center gap-1.5 shrink-0 shadow-sm active:scale-95 uppercase tracking-wider"
+          >
+            <Printer size={13} /> Imprimir Simulado
+          </button>
         </div>
       </div>
 
@@ -401,6 +413,14 @@ export default function QuestionsTable({
           </div>
         )}
       </div>
+
+      <PrintSimuladoModal
+        isOpen={showPrintModal}
+        onClose={() => setShowPrintModal(false)}
+        questions={filteredQuestions}
+        title={provaFilter !== 'Todas' ? provaFilter.toUpperCase() : "SIMULADO BANCO DE QUESTÕES"}
+        subTitle={materiaFilter !== 'Todas' ? `Matéria: ${materiaFilter}` : "Questões Selecionadas para Treinamento"}
+      />
     </div>
   );
 }

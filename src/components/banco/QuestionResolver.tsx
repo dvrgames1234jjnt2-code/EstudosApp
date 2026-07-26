@@ -25,8 +25,10 @@ import {
   BarChart3,
   Flame,
   Volume2,
-  FileText
+  FileText,
+  Printer
 } from "lucide-react";
+import { PrintSimuladoModal } from "./PrintSimuladoModal";
 
 interface BancoQuestion {
   id: any;
@@ -283,6 +285,7 @@ export default function QuestionResolver({
   const [isShaking, setIsShaking] = useState<boolean>(false);
   const [strikethroughs, setStrikethroughs] = useState<Record<string, boolean>>({});
   const [showHistory, setShowHistory] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
   // Sync / Reset state when question changes
   useEffect(() => {
@@ -416,6 +419,15 @@ export default function QuestionResolver({
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
+                {/* Botão de Imprimir Simulado */}
+                <button
+                  onClick={() => setShowPrintModal(true)}
+                  title="Imprimir todo este simulado ou gerar PDF"
+                  className="px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 rounded-lg text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-all flex items-center gap-1.5 shadow-sm active:scale-95 tracking-wider"
+                >
+                  <Printer size={11} /> Imprimir Simulado
+                </button>
+
                 {/* Histórico com painel dropdown */}
                 <div className="relative">
                   <button
@@ -768,6 +780,13 @@ export default function QuestionResolver({
             </div>
           </div>
         </div>
-      </div>
+        <PrintSimuladoModal
+        isOpen={showPrintModal}
+        onClose={() => setShowPrintModal(false)}
+        questions={resolverQueue.length > 0 ? resolverQueue : [question]}
+        title={question.prova ? question.prova.toUpperCase() : "SIMULADO BANCO DE QUESTÕES"}
+        subTitle={`Matéria: ${question.materia || "Geral"}`}
+      />
+    </div>
   );
 }
