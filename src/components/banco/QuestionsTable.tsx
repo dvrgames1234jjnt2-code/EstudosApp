@@ -134,15 +134,19 @@ export default function QuestionsTable({
     return 'Pendente';
   };
 
-  const filteredQuestions = questions.filter(q => {
-    const matchesSearch =
-      (q.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (q.materia || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (q.tema || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      String(q.id || "").includes(searchTerm);
+  const norm = (s?: string) => (s || '').trim().toLowerCase();
 
-    const matchesMateria = materiaFilter === 'Todas' || q.materia === materiaFilter;
-    const matchesProva = provaFilter === 'Todas' || q.prova === provaFilter;
+  const filteredQuestions = questions.filter(q => {
+    const term = norm(searchTerm);
+    const matchesSearch =
+      !term ||
+      norm(q.title).includes(term) ||
+      norm(q.materia).includes(term) ||
+      norm(q.tema).includes(term) ||
+      String(q.id || "").includes(term);
+
+    const matchesMateria = materiaFilter === 'Todas' || norm(q.materia) === norm(materiaFilter);
+    const matchesProva = provaFilter === 'Todas' || norm(q.prova) === norm(provaFilter);
 
     const status = getStatus(q.id);
     const matchesStatus =
@@ -195,8 +199,24 @@ export default function QuestionsTable({
     }
   };
 
-  const materias = Array.from(new Set(questions.map(q => q.materia).filter(Boolean))).sort();
-  const provas = Array.from(new Set(questions.map(q => q.prova).filter(Boolean))).sort();
+  // Opções interdependentes: apenas exibe as opções válidas de acordo com os filtros ativos
+  const materias = Array.from(
+    new Set(
+      questions
+        .filter(q => provaFilter === 'Todas' || norm(q.prova) === norm(provaFilter))
+        .map(q => (q.materia || '').trim())
+        .filter(Boolean)
+    )
+  ).sort();
+
+  const provas = Array.from(
+    new Set(
+      questions
+        .filter(q => materiaFilter === 'Todas' || norm(q.materia) === norm(materiaFilter))
+        .map(q => (q.prova || '').trim())
+        .filter(Boolean)
+    )
+  ).sort();
 
   return (
     <div className="space-y-5">

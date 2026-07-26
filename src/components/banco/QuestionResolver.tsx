@@ -104,60 +104,134 @@ const playSuccessSound = () => {
   }
 };
 
-// ── Formatador de Enunciado ────────────────────────────────────────────────
-// Detecta itens romanos (I., II., III., ...) no meio do texto e os exibe
-// em linhas separadas com recuo e cor diferenciada.
+// ── Formatador de Matemática & Enunciado / Comentários ──────────────────────
+function cleanMathLatex(text: string): string {
+  if (!text) return "";
+
+  let str = text;
+
+  // Normaliza quebras de linha escapadas
+  str = str.replace(/\\n/g, '\n');
+
+  // Remove delimitadores $ ou $$ de LaTeX inline
+  str = str.replace(/\$\$([\s\S]*?)\$\$/g, '$1');
+  str = str.replace(/\$([\s\S]*?)\$/g, '$1');
+
+  // Fractions: \frac{a}{b} -> (a / b)
+  str = str.replace(/\\frac\s*\{([\s\S]*?)\}\s*\{([\s\S]*?)\}/g, '($1 / $2)');
+
+  // Square root: \sqrt[n]{x} -> ⁿ√(x), \sqrt{x} -> √(x)
+  str = str.replace(/\\sqrt\[(.*?)\]\s*\{([\s\S]*?)\}/g, '$1√($2)');
+  str = str.replace(/\\sqrt\s*\{([\s\S]*?)\}/g, '√($1)');
+
+  // Math operators & symbols
+  str = str.replace(/\\cdotp|\\cdot|\\times/g, '·');
+  str = str.replace(/\\div/g, '÷');
+  str = str.replace(/\\pm/g, '±');
+  str = str.replace(/\\approx/g, '≈');
+  str = str.replace(/\\neq/g, '≠');
+  str = str.replace(/\\leq|\\le/g, '≤');
+  str = str.replace(/\\geq|\\ge/g, '≥');
+  str = str.replace(/\\infty/g, '∞');
+  str = str.replace(/\\pi/g, 'π');
+  str = str.replace(/\\Delta/g, 'Δ');
+  str = str.replace(/\\theta/g, 'θ');
+  str = str.replace(/\\alpha/g, 'α');
+  str = str.replace(/\\beta/g, 'β');
+  str = str.replace(/\\rightarrow|\\Rightarrow/g, '→');
+  str = str.replace(/\\leftarrow|\\Leftarrow/g, '←');
+  str = str.replace(/\\in/g, '∈');
+  str = str.replace(/\\notin/g, '∉');
+  str = str.replace(/\\subset/g, '⊂');
+  str = str.replace(/\\cap|\\inter/g, '∩');
+  str = str.replace(/\\cup|\\union/g, '∪');
+  str = str.replace(/\\sim/g, '~');
+  str = str.replace(/\\overline\{([\s\S]*?)\}/g, '$1̄');
+
+  // Formatting environment commands
+  str = str.replace(/\\begin\{(?:equation|align|math|center)\*?\}/g, '');
+  str = str.replace(/\\end\{(?:equation|align|math|center)\*?\}/g, '');
+
+  // Exponents superscripts: ^2 -> ², ^3 -> ³, ^n -> ⁿ, etc.
+  str = str.replace(/\^2\b/g, '²');
+  str = str.replace(/\^3\b/g, '³');
+  str = str.replace(/\^1\b/g, '¹');
+  str = str.replace(/\^0\b/g, '⁰');
+  str = str.replace(/\^n\b/g, 'ⁿ');
+  str = str.replace(/\^x\b/g, 'ˣ');
+  str = str.replace(/\^\+([0-9]+)/g, '⁺$1');
+  str = str.replace(/\^-([0-9]+)/g, '⁻$1');
+  str = str.replace(/\^\{([\s\S]*?)\}/g, '⁽$1⁾');
+
+  // Subscripts: _0..9 -> ₀..₉
+  const subs: Record<string, string> = { '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉', 'n': 'ₙ', 'x': 'ₓ' };
+  str = str.replace(/_([0-9nx])/g, (_, match) => subs[match] || `_${match}`);
+  str = str.replace(/_\{([\s\S]*?)\}/g, '₍$1₎');
+
+  // Text commands cleanup
+  str = str.replace(/\\text\{([\s\S]*?)\}/g, '$1');
+  str = str.replace(/\\mathrm\{([\s\S]*?)\}/g, '$1');
+  str = str.replace(/\\mathbf\{([\s\S]*?)\}/g, '$1');
+
+  return str;
+}
+
 function formatQuestionText(text: string): React.ReactElement {
-  if (!text) return <></>
+  if (!text) return <></>;
 
-  // Regex que captura o padrão: um ou mais algarismos romanos seguidos de ponto e espaço
-  // Exemplos válidos: "I. ", "II. ", "III. ", "IV. ", "V. ", "VI. ", "VII. ", "VIII. ", "IX. ", "X. "
-  const romanPattern = /(?<=[\s\S])((?:X{0,3})(?:IX|IV|V?I{0,3}))\.\s/g
+  const cleaned = cleanMathLatex(text);
 
-  // Divide usando um split que mantém os delimitadores (lookahead)
-  // Estratégia: primeiro detectamos se o texto TEM itens romanos
-  const hasRoman = /\b(I{1,3}V?|IV|V|VI{0,3}|IX|X)\.\s/.test(text)
+  // Verifica se o texto possui marcação HTML (ex: <br>, <b>, <span>, <p>)
+  const hasHtml = /<[a-z][\s\S]*>/i.test(cleaned);
 
-  if (!hasRoman) {
-    // Texto simples: só exibe normalmente
-    return <span>{text}</span>
-  }
+  // Verifica se possui itens romanos (I., II., III., etc.)
+  const hasRoman = /\b(I{1,3}V?|IV|V|VI{0,3}|IX|X)\.\s/.test(cleaned);
 
-  // Divide o texto nos marcadores romanos
-  // Padrão: "XXXX I. item1 II. item2 III. item3"
-  // Separamos em: [introducao, "I", item1, "II", item2, ...]
-  const parts = text.split(/\b((?:X{0,3})(?:IX|IV|V?I{0,3}))\.\s/)
+  if (hasRoman) {
+    const parts = cleaned.split(/\b((?:X{0,3})(?:IX|IV|V?I{0,3}))\.\s/);
+    const elements: React.ReactElement[] = [];
 
-  const elements: React.ReactElement[] = []
-
-  // parts[0] = introdução (antes do primeiro numeral)
-  if (parts[0].trim()) {
-    elements.push(
-      <span key="intro" className="block mb-3 leading-relaxed">
-        {parts[0].trim()}
-      </span>
-    )
-  }
-
-  // Itens: parts[1]=numeral, parts[2]=texto, parts[3]=numeral, parts[4]=texto...
-  for (let i = 1; i + 1 < parts.length; i += 2) {
-    const numeral = parts[i]
-    const content = parts[i + 1]
-    if (!numeral || !content) continue
-    elements.push(
-      <span
-        key={`item-${i}`}
-        className="flex gap-2.5 py-1.5 border-l-2 border-indigo-500/20 pl-3 mb-1 leading-relaxed"
-      >
-        <span className="shrink-0 text-indigo-400 font-black text-[13px] min-w-[1.5rem]">
-          {numeral}.
+    if (parts[0].trim()) {
+      elements.push(
+        <span key="intro" className="block mb-3 leading-relaxed">
+          {parts[0].trim()}
         </span>
-        <span className="text-slate-300">{content.trimEnd()}</span>
-      </span>
-    )
+      );
+    }
+
+    for (let i = 1; i + 1 < parts.length; i += 2) {
+      const numeral = parts[i];
+      const content = parts[i + 1];
+      if (!numeral || !content) continue;
+      elements.push(
+        <span
+          key={`item-${i}`}
+          className="flex gap-2.5 py-1.5 border-l-2 border-indigo-500/20 pl-3 mb-1.5 leading-relaxed"
+        >
+          <span className="shrink-0 text-indigo-400 font-black text-[13px] min-w-[1.5rem]">
+            {numeral}.
+          </span>
+          <span className="text-slate-300">{content.trimEnd()}</span>
+        </span>
+      );
+    }
+
+    return <>{elements}</>;
   }
 
-  return <>{elements}</>
+  if (hasHtml) {
+    return (
+      <span
+        dangerouslySetInnerHTML={{ __html: cleaned.replace(/\n/g, '<br/>') }}
+      />
+    );
+  }
+
+  return (
+    <span className="whitespace-pre-line leading-relaxed">
+      {cleaned}
+    </span>
+  );
 }
 
 const playErrorSound = () => {
@@ -449,10 +523,11 @@ export default function QuestionResolver({
                         <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-400 mb-2">
                           <FileText size={13} /> Texto de Apoio
                         </div>
-                        <p
+                        <div
                           className="text-xs sm:text-sm text-slate-300 leading-relaxed font-medium"
-                          dangerouslySetInnerHTML={{ __html: textoApoio.replace(/\n/g, "<br/>") }}
-                        />
+                        >
+                          {formatQuestionText(textoApoio)}
+                        </div>
                       </div>
                     </motion.div>
                   )}
@@ -568,7 +643,7 @@ export default function QuestionResolver({
                       <span className={`text-[13px] leading-relaxed flex-1 font-normal ${
                         strikethroughs[letter] ? "line-through text-slate-600" : "text-slate-300"
                       }`}>
-                        {text}
+                        {formatQuestionText(text)}
                       </span>
 
                       {/* Ícone Indicador de Feedback */}
@@ -675,9 +750,9 @@ export default function QuestionResolver({
                         </div>
 
                         {comentarioTexto ? (
-                          <p className="text-[13px] text-slate-200 leading-relaxed font-medium whitespace-pre-line">
-                            {comentarioTexto}
-                          </p>
+                          <div className="text-[13px] text-slate-200 leading-relaxed font-medium">
+                            {formatQuestionText(comentarioTexto)}
+                          </div>
                         ) : (
                           <div className="py-3 text-center text-slate-400 text-xs font-medium flex items-center justify-center gap-2">
                             <AlertCircle size={14} className="text-amber-400" />
