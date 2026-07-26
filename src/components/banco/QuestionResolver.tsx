@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { useState, useEffect } from "react";
@@ -48,7 +48,7 @@ interface BancoQuestion {
   Gabarito?: string;
   explicacao?: string;
   comentario?: string;
-  "Comentário"?: string;
+  "ComentÃ¡rio"?: string;
 }
 
 interface QuestionResolverProps {
@@ -81,7 +81,7 @@ export interface QuestionStats {
 
 const LETTERS = ["A", "B", "C", "D", "E"] as const;
 
-// ── Web Audio Synthesizer Helpers ───────────────────
+// â”€â”€ Web Audio Synthesizer Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const playSuccessSound = () => {
   try {
     const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
@@ -106,7 +106,7 @@ const playSuccessSound = () => {
   }
 };
 
-// ── Formatador de Matemática & Enunciado / Comentários ──────────────────────
+// â”€â”€ Formatador de MatemÃ¡tica & Enunciado / ComentÃ¡rios â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function cleanMathLatex(text: string): string {
   if (!text) return "";
 
@@ -122,53 +122,53 @@ function cleanMathLatex(text: string): string {
   // Fractions: \frac{a}{b} -> (a / b)
   str = str.replace(/\\frac\s*\{([\s\S]*?)\}\s*\{([\s\S]*?)\}/g, '($1 / $2)');
 
-  // Square root: \sqrt[n]{x} -> ⁿ√(x), \sqrt{x} -> √(x)
-  str = str.replace(/\\sqrt\[(.*?)\]\s*\{([\s\S]*?)\}/g, '$1√($2)');
-  str = str.replace(/\\sqrt\s*\{([\s\S]*?)\}/g, '√($1)');
+  // Square root: \sqrt[n]{x} -> â¿âˆš(x), \sqrt{x} -> âˆš(x)
+  str = str.replace(/\\sqrt\[(.*?)\]\s*\{([\s\S]*?)\}/g, '$1âˆš($2)');
+  str = str.replace(/\\sqrt\s*\{([\s\S]*?)\}/g, 'âˆš($1)');
 
   // Math operators & symbols
-  str = str.replace(/\\cdotp|\\cdot|\\times/g, '·');
-  str = str.replace(/\\div/g, '÷');
-  str = str.replace(/\\pm/g, '±');
-  str = str.replace(/\\approx/g, '≈');
-  str = str.replace(/\\neq/g, '≠');
-  str = str.replace(/\\leq|\\le/g, '≤');
-  str = str.replace(/\\geq|\\ge/g, '≥');
-  str = str.replace(/\\infty/g, '∞');
-  str = str.replace(/\\pi/g, 'π');
-  str = str.replace(/\\Delta/g, 'Δ');
-  str = str.replace(/\\theta/g, 'θ');
-  str = str.replace(/\\alpha/g, 'α');
-  str = str.replace(/\\beta/g, 'β');
-  str = str.replace(/\\rightarrow|\\Rightarrow/g, '→');
-  str = str.replace(/\\leftarrow|\\Leftarrow/g, '←');
-  str = str.replace(/\\in/g, '∈');
-  str = str.replace(/\\notin/g, '∉');
-  str = str.replace(/\\subset/g, '⊂');
-  str = str.replace(/\\cap|\\inter/g, '∩');
-  str = str.replace(/\\cup|\\union/g, '∪');
+  str = str.replace(/\\cdotp|\\cdot|\\times/g, 'Â·');
+  str = str.replace(/\\div/g, 'Ã·');
+  str = str.replace(/\\pm/g, 'Â±');
+  str = str.replace(/\\approx/g, 'â‰ˆ');
+  str = str.replace(/\\neq/g, 'â‰ ');
+  str = str.replace(/\\leq|\\le/g, 'â‰¤');
+  str = str.replace(/\\geq|\\ge/g, 'â‰¥');
+  str = str.replace(/\\infty/g, 'âˆž');
+  str = str.replace(/\\pi/g, 'Ï€');
+  str = str.replace(/\\Delta/g, 'Î”');
+  str = str.replace(/\\theta/g, 'Î¸');
+  str = str.replace(/\\alpha/g, 'Î±');
+  str = str.replace(/\\beta/g, 'Î²');
+  str = str.replace(/\\rightarrow|\\Rightarrow/g, 'â†’');
+  str = str.replace(/\\leftarrow|\\Leftarrow/g, 'â†');
+  str = str.replace(/\\in/g, 'âˆˆ');
+  str = str.replace(/\\notin/g, 'âˆ‰');
+  str = str.replace(/\\subset/g, 'âŠ‚');
+  str = str.replace(/\\cap|\\inter/g, 'âˆ©');
+  str = str.replace(/\\cup|\\union/g, 'âˆª');
   str = str.replace(/\\sim/g, '~');
-  str = str.replace(/\\overline\{([\s\S]*?)\}/g, '$1̄');
+  str = str.replace(/\\overline\{([\s\S]*?)\}/g, '$1Ì„');
 
   // Formatting environment commands
   str = str.replace(/\\begin\{(?:equation|align|math|center)\*?\}/g, '');
   str = str.replace(/\\end\{(?:equation|align|math|center)\*?\}/g, '');
 
-  // Exponents superscripts: ^2 -> ², ^3 -> ³, ^n -> ⁿ, etc.
-  str = str.replace(/\^2\b/g, '²');
-  str = str.replace(/\^3\b/g, '³');
-  str = str.replace(/\^1\b/g, '¹');
-  str = str.replace(/\^0\b/g, '⁰');
-  str = str.replace(/\^n\b/g, 'ⁿ');
-  str = str.replace(/\^x\b/g, 'ˣ');
-  str = str.replace(/\^\+([0-9]+)/g, '⁺$1');
-  str = str.replace(/\^-([0-9]+)/g, '⁻$1');
-  str = str.replace(/\^\{([\s\S]*?)\}/g, '⁽$1⁾');
+  // Exponents superscripts: ^2 -> Â², ^3 -> Â³, ^n -> â¿, etc.
+  str = str.replace(/\^2\b/g, 'Â²');
+  str = str.replace(/\^3\b/g, 'Â³');
+  str = str.replace(/\^1\b/g, 'Â¹');
+  str = str.replace(/\^0\b/g, 'â°');
+  str = str.replace(/\^n\b/g, 'â¿');
+  str = str.replace(/\^x\b/g, 'Ë£');
+  str = str.replace(/\^\+([0-9]+)/g, 'âº$1');
+  str = str.replace(/\^-([0-9]+)/g, 'â»$1');
+  str = str.replace(/\^\{([\s\S]*?)\}/g, 'â½$1â¾');
 
-  // Subscripts: _0..9 -> ₀..₉
-  const subs: Record<string, string> = { '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉', 'n': 'ₙ', 'x': 'ₓ' };
+  // Subscripts: _0..9 -> â‚€..â‚‰
+  const subs: Record<string, string> = { '0': 'â‚€', '1': 'â‚', '2': 'â‚‚', '3': 'â‚ƒ', '4': 'â‚„', '5': 'â‚…', '6': 'â‚†', '7': 'â‚‡', '8': 'â‚ˆ', '9': 'â‚‰', 'n': 'â‚™', 'x': 'â‚“' };
   str = str.replace(/_([0-9nx])/g, (_, match) => subs[match] || `_${match}`);
-  str = str.replace(/_\{([\s\S]*?)\}/g, '₍$1₎');
+  str = str.replace(/_\{([\s\S]*?)\}/g, 'â‚$1â‚Ž');
 
   // Text commands cleanup
   str = str.replace(/\\text\{([\s\S]*?)\}/g, '$1');
@@ -183,7 +183,7 @@ function formatQuestionText(text: string): React.ReactElement {
 
   const cleaned = cleanMathLatex(text);
 
-  // Verifica se o texto possui marcação HTML (ex: <br>, <b>, <span>, <p>)
+  // Verifica se o texto possui marcaÃ§Ã£o HTML (ex: <br>, <b>, <span>, <p>)
   const hasHtml = /<[a-z][\s\S]*>/i.test(cleaned);
 
   // Verifica se possui itens romanos (I., II., III., etc.)
@@ -305,7 +305,7 @@ export default function QuestionResolver({
   const comentarioTexto =
     question.explicacao ||
     question.comentario ||
-    question["Comentário"] ||
+    question["ComentÃ¡rio"] ||
     (question as any).Comentario;
 
   const alternativas: Record<string, string> = {};
@@ -325,7 +325,7 @@ export default function QuestionResolver({
     const isCorrect = selectedOption === gabarito;
     await onAnswer(question.id, selectedOption, isCorrect);
     setShowFeedback(true);
-    setShowComment(true); // Exibe o comentário automaticamente ao responder
+    setShowComment(true); // Exibe o comentÃ¡rio automaticamente ao responder
 
     if (isCorrect) {
       playSuccessSound();
@@ -376,140 +376,148 @@ export default function QuestionResolver({
   const isWrong = showFeedback && selectedOption !== gabarito;
 
   return (
-    <div className="flex flex-col h-full min-h-0 w-full bg-[#0b0f19]/80 rounded-[2rem] border border-white/[0.04] p-6 sm:p-8 relative overflow-x-hidden">
-      
+    <div className="flex flex-col h-full min-h-0 w-full bg-[#0b0f19]/80 rounded-[2rem] border border-white/[0.04] p-5 sm:p-7 relative overflow-x-hidden">
+
       <div className="w-full flex flex-col flex-1 min-h-0">
-          
-          {/* Foco Bar */}
-          <div className="flex items-center justify-between px-5 py-3 bg-[#121626] border border-white/[0.04] rounded-[1.25rem] mb-4 shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-5 bg-blue-600 rounded-full flex items-center p-0.5 shadow-inner cursor-pointer">
-                <div className="w-4 h-4 bg-white rounded-full ml-auto shadow-sm" />
-              </div>
-              <span className="text-xs font-bold text-slate-300 flex items-center gap-2">
-                <Sparkles size={14} className="text-blue-400" /> Modo Foco
-              </span>
+
+        {/* â”€â”€ Foco Bar (compacta + barra de progresso) â”€â”€ */}
+        <div className="flex items-center justify-between px-4 py-2 bg-[#111623] border border-white/[0.05] rounded-2xl mb-3 shrink-0 gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 bg-blue-600 rounded-full flex items-center p-0.5 shadow-inner cursor-pointer shrink-0" style={{ height: '18px' }}>
+              <div className="w-3.5 h-3.5 bg-white rounded-full ml-auto shadow-sm" />
             </div>
-            <div className="text-[10px] font-bold text-slate-400 bg-[#1e2436] px-3 py-1.5 rounded-lg border border-white/[0.02]">
-              Questão {questionIndex + 1} de {totalQuestions}
+            <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
+              <Sparkles size={12} className="text-blue-400" /> Modo Foco
+            </span>
+          </div>
+          <div className="flex flex-1 items-center gap-3 max-w-xs ml-4">
+            <div className="flex-1 h-1 bg-white/[0.06] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500"
+                style={{ width: `${totalQuestions > 0 ? ((questionIndex + 1) / totalQuestions) * 100 : 0}%` }}
+              />
+            </div>
+            <span className="text-[10px] font-bold text-slate-500 shrink-0 tabular-nums">
+              {questionIndex + 1} / {totalQuestions}
+            </span>
+          </div>
+        </div>
+
+        {/* â”€â”€ Main Content â”€â”€ */}
+        <div className="flex-1 flex flex-col relative overflow-hidden min-h-0 mt-1">
+
+          {/* Header da QuestÃ£o */}
+          <div className="flex flex-row items-center justify-between gap-3 mb-4 shrink-0 relative z-20 pb-3 border-b border-white/[0.05]">
+            <div className="flex items-center gap-3">
+              <button onClick={onBackToBank} className="text-slate-600 hover:text-white transition-colors">
+                <ArrowLeft size={17} />
+              </button>
+              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-[0_0_16px_rgba(37,99,235,0.3)] text-xs font-black text-white shrink-0">
+                {questionIndex + 1}
+              </div>
+              <div>
+                <h2 className="text-[10px] sm:text-[11px] font-black text-blue-500 uppercase tracking-widest max-w-[160px] sm:max-w-xs truncate">
+                  {question.prova || "SIMULADO PADRÃƒO"}
+                </h2>
+                <div className="flex items-center gap-1.5 text-[9px] text-slate-600 font-bold mt-0.5">
+                  <Loader2 size={9} className="opacity-40" />
+                  ID: {question.id}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Imprimir */}
+              <button
+                onClick={() => setShowPrintModal(true)}
+                title="Imprimir este simulado ou gerar PDF"
+                className="px-2.5 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 rounded-lg text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-all flex items-center gap-1.5 active:scale-95"
+              >
+                <Printer size={10} /> Imprimir
+              </button>
+
+              {/* HistÃ³rico */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowHistory(!showHistory)}
+                  className={`px-2.5 py-1.5 rounded-lg border text-[9px] font-black uppercase transition-all flex items-center gap-1.5 ${
+                    showHistory
+                      ? "bg-blue-500/10 border-blue-500/20 text-blue-400"
+                      : "bg-[#121626] border-white/[0.04] text-slate-400 hover:text-white"
+                  }`}
+                >
+                  HistÃ³rico <ChevronDown size={10} className={`transition-transform ${showHistory ? "rotate-180" : ""}`} />
+                </button>
+                <AnimatePresence>
+                  {showHistory && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      className="absolute top-full right-0 mt-2 w-64 bg-[#1e2436] border border-white/[0.06] rounded-xl shadow-xl z-50 overflow-hidden"
+                    >
+                      <div className="p-3 border-b border-white/[0.04]">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">HistÃ³rico desta QuestÃ£o</p>
+                      </div>
+                      {stats ? (
+                        <div className="p-3 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-slate-400">Tentativas</span>
+                            <span className="text-[10px] font-black text-white">{stats.totalAttempts}x</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-slate-400">Acertos</span>
+                            <span className="text-[10px] font-black text-emerald-400">{stats.correctCount}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-slate-400">Erros</span>
+                            <span className="text-[10px] font-black text-rose-400">{stats.errorCount}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-slate-400">Ãšltima resposta</span>
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                              stats.isCorrect ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
+                            }`}>{stats.lastAnswer} â€” {stats.isCorrect ? "Certo" : "Errado"}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-4 text-center">
+                          <p className="text-[11px] text-slate-500">Nenhuma resposta registrada ainda.</p>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* NavegaÃ§Ã£o Prev/Next */}
+              <div className="flex items-center gap-1 bg-[#121626] border border-white/[0.04] p-1 rounded-lg">
+                <button onClick={handlePrev} disabled={questionIndex === 0} className="w-6 h-5 flex items-center justify-center text-slate-500 hover:text-white disabled:opacity-30">
+                  <ChevronLeft size={14} />
+                </button>
+                <div className="w-[1px] h-3 bg-white/[0.06]" />
+                <button onClick={handleNext} disabled={questionIndex === totalQuestions - 1} className="w-6 h-5 flex items-center justify-center text-slate-500 hover:text-white disabled:opacity-30">
+                  <ChevronRight size={14} />
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Main Question Content */}
-          <div className="flex-1 flex flex-col relative overflow-hidden min-h-0 mt-2">
-            
-            {/* Header da Questão */}
-            <div className="flex flex-row items-center justify-between gap-3 mb-5 shrink-0 relative z-20 pb-4 border-b border-white/[0.04]">
-              <div className="flex items-center gap-4">
-                <button onClick={onBackToBank} className="text-slate-500 hover:text-white transition-colors">
-                  <ArrowLeft size={18} />
-                </button>
-                <div className="w-11 h-11 rounded-xl bg-blue-600 flex items-center justify-center shadow-[0_0_20px_rgba(37,99,235,0.3)] text-sm font-black text-white shrink-0">
-                  {questionIndex + 1}
-                </div>
-                <div>
-                  <h2 className="text-[11px] sm:text-xs font-black text-blue-500 uppercase tracking-widest max-w-[200px] sm:max-w-xs truncate">
-                    {question.prova || "SIMULADO PADRÃO"}
-                  </h2>
-                  <div className="flex items-center gap-1.5 text-[9px] text-slate-500 font-bold mt-1">
-                    <Loader2 size={10} className="opacity-50" />
-                    ID da Questão: {question.id}
-                  </div>
-                </div>
-              </div>
+          {/* â”€â”€ Scroll Area â€“ coluna de leitura centrada max-w-3xl â”€â”€ */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 relative z-10">
+            <div className="max-w-3xl mx-auto">
 
-              <div className="flex flex-wrap items-center gap-2">
-                {/* Botão de Imprimir Simulado */}
-                <button
-                  onClick={() => setShowPrintModal(true)}
-                  title="Imprimir todo este simulado ou gerar PDF"
-                  className="px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 rounded-lg text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-all flex items-center gap-1.5 shadow-sm active:scale-95 tracking-wider"
-                >
-                  <Printer size={11} /> Imprimir Simulado
-                </button>
-
-                {/* Histórico com painel dropdown */}
-                <div className="relative">
-                  <button
-                    onClick={() => setShowHistory(!showHistory)}
-                    className={`px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase transition-all flex items-center gap-1.5 ${
-                      showHistory
-                        ? "bg-blue-500/10 border-blue-500/20 text-blue-400"
-                        : "bg-[#121626] border-white/[0.04] text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    Histórico <ChevronDown size={10} className={`transition-transform ${showHistory ? "rotate-180" : ""}`} />
-                  </button>
-                  <AnimatePresence>
-                    {showHistory && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -5 }}
-                        className="absolute top-full right-0 mt-2 w-64 bg-[#1e2436] border border-white/[0.06] rounded-xl shadow-xl z-50 overflow-hidden"
-                      >
-                        <div className="p-3 border-b border-white/[0.04]">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Histórico desta Questão</p>
-                        </div>
-                        {stats ? (
-                          <div className="p-3 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] text-slate-400">Tentativas</span>
-                              <span className="text-[10px] font-black text-white">{stats.totalAttempts}x</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] text-slate-400">Acertos</span>
-                              <span className="text-[10px] font-black text-emerald-400">{stats.correctCount}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] text-slate-400">Erros</span>
-                              <span className="text-[10px] font-black text-rose-400">{stats.errorCount}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] text-slate-400">Última resposta</span>
-                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
-                                stats.isCorrect ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
-                              }`}>{stats.lastAnswer} — {stats.isCorrect ? "Certo" : "Errado"}</span>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="p-4 text-center">
-                            <p className="text-[11px] text-slate-500">Nenhuma resposta registrada ainda.</p>
-                          </div>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                {/* Navegação */}
-                <div className="flex items-center gap-1 bg-[#121626] border border-white/[0.04] p-1 rounded-lg">
-                  <button onClick={handlePrev} disabled={questionIndex === 0} className="w-6 h-5 flex items-center justify-center text-slate-500 hover:text-white disabled:opacity-30">
-                    <ChevronLeft size={14} />
-                  </button>
-                  <div className="w-[1px] h-3 bg-white/[0.06]" />
-                  <button onClick={handleNext} disabled={questionIndex === totalQuestions - 1} className="w-6 h-5 flex items-center justify-center text-slate-500 hover:text-white disabled:opacity-30">
-                    <ChevronRight size={14} />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Area de Scroll (Enunciado + Alternativas) */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 relative z-10 space-y-6">
-              
-              {/* Tópico & Botão Texto de Apoio */}
-              <div className="flex flex-wrap items-center justify-between gap-3">
+              {/* TÃ³pico & Texto de Apoio toggle */}
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
                 <div className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500 bg-blue-500/10 px-3 py-1.5 rounded-lg w-fit">
                   {question.tema || question.materia || "GERAL"}
                 </div>
-
                 {textoApoio && (
                   <button
                     onClick={() => setShowTextoApoio(!showTextoApoio)}
                     className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border shadow-sm ${
                       showTextoApoio
-                        ? "bg-blue-600/20 border-blue-500/40 text-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.2)]"
+                        ? "bg-blue-600/20 border-blue-500/40 text-blue-300"
                         : "bg-[#121626] border-white/[0.06] text-slate-400 hover:text-white hover:border-white/10"
                     }`}
                   >
@@ -520,7 +528,7 @@ export default function QuestionResolver({
                 )}
               </div>
 
-              {/* Texto de Apoio Colapsável (Sempre inicia em oculto) */}
+              {/* Texto de Apoio colapsÃ¡vel */}
               {textoApoio && (
                 <AnimatePresence>
                   {showTextoApoio && (
@@ -528,16 +536,14 @@ export default function QuestionResolver({
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden"
+                      className="overflow-hidden mb-5"
                     >
-                      <div className="p-4 sm:p-5 rounded-2xl bg-[#121626] border border-blue-500/20 my-2 relative overflow-hidden shadow-lg">
+                      <div className="p-4 sm:p-5 rounded-2xl bg-[#121626] border border-blue-500/20 relative overflow-hidden shadow-lg">
                         <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
                         <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-400 mb-2">
                           <FileText size={13} /> Texto de Apoio
                         </div>
-                        <div
-                          className="text-xs sm:text-sm text-slate-300 leading-relaxed font-medium"
-                        >
+                        <div className="text-xs sm:text-sm text-slate-300 leading-relaxed font-medium">
                           {formatQuestionText(textoApoio)}
                         </div>
                       </div>
@@ -546,29 +552,32 @@ export default function QuestionResolver({
                 </AnimatePresence>
               )}
 
-              {/* Enunciado */}
-              <div className="text-sm sm:text-[15px] text-slate-400 leading-relaxed font-normal">
+              {/* â”€â”€ Enunciado â€” branco suave, 17px, semibold â”€â”€ */}
+              <div className="text-[15px] sm:text-[17px] font-semibold text-[#F0F0F0] leading-[1.75] tracking-[0.01em] mb-1">
                 {formatQuestionText(question.title ?? '')}
               </div>
 
-              {/* Pergunta problema */}
+              {/* Pergunta-Problema (se houver) */}
               {question.perguntaProblema && (
-                <div className="text-sm sm:text-[15px] text-slate-400 leading-relaxed font-normal mt-3">
+                <div className="text-[15px] sm:text-[16px] text-[#F0F0F0] font-semibold leading-relaxed mt-2">
                   {formatQuestionText(question.perguntaProblema)}
                 </div>
               )}
 
-              {/* Banner de Feedback Animado (Certo vs Errado) */}
+              {/* â”€â”€ Separador de 28px entre enunciado e alternativas â”€â”€ */}
+              <div className="h-7" />
+
+              {/* Banner de Feedback (Certo / Errado) */}
               <AnimatePresence>
                 {showFeedback && selectedOption && (
                   <motion.div
                     initial={{ opacity: 0, y: -10, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                    className={`p-4 rounded-2xl border flex items-center justify-between gap-4 shadow-xl ${
+                    className={`p-4 rounded-2xl border flex items-center justify-between gap-4 shadow-xl mb-4 ${
                       isCorrect
-                        ? "bg-gradient-to-r from-emerald-950/80 via-emerald-900/40 to-emerald-950/80 border-emerald-500/40 text-emerald-300 shadow-emerald-950/50"
-                        : "bg-gradient-to-r from-rose-950/80 via-rose-900/40 to-rose-950/80 border-rose-500/40 text-rose-300 shadow-rose-950/50"
+                        ? "bg-gradient-to-r from-emerald-950/80 via-emerald-900/40 to-emerald-950/80 border-emerald-500/40 shadow-emerald-950/50"
+                        : "bg-gradient-to-r from-rose-950/80 via-rose-900/40 to-rose-950/80 border-rose-500/40 shadow-rose-950/50"
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -578,64 +587,66 @@ export default function QuestionResolver({
                         {isCorrect ? <CheckCircle2 size={22} className="animate-bounce" /> : <XCircle size={22} className="animate-pulse" />}
                       </div>
                       <div>
-                        <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider flex items-center gap-2">
+                        <h4 className={`text-xs sm:text-sm font-black uppercase tracking-wider flex items-center gap-2 ${isCorrect ? "text-emerald-300" : "text-rose-300"}`}>
                           {isCorrect ? (
-                            <>
-                              <Flame size={14} className="text-emerald-400 animate-pulse" /> Sensacional! Resposta Correta!
-                            </>
+                            <><Flame size={14} className="text-emerald-400 animate-pulse" /> Sensacional! Resposta Correta!</>
                           ) : (
-                            <>
-                              Ops! Não foi desta vez.
-                            </>
+                            <>Ops! NÃ£o foi desta vez.</>
                           )}
                         </h4>
                         <p className="text-[11px] sm:text-xs text-slate-300 mt-0.5 font-medium">
                           {isCorrect
-                            ? "Você dominou essa questão. Parabéns!"
-                            : `O gabarito oficial é a alternativa ${gabarito}.`}
+                            ? "VocÃª dominou essa questÃ£o. ParabÃ©ns!"
+                            : `O gabarito oficial Ã© a alternativa ${gabarito}.`}
                         </p>
                       </div>
                     </div>
                     {comentarioTexto && !showComment && (
                       <button
                         onClick={() => setShowComment(true)}
-                        className="px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-[11px] font-bold text-white transition-all shrink-0 flex items-center gap-1.5 shadow-sm active:scale-95"
+                        className="px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-[11px] font-bold text-white transition-all shrink-0 flex items-center gap-1.5 active:scale-95"
                       >
-                        <MessageSquare size={13} /> Ver Comentário
+                        <MessageSquare size={13} /> Ver ComentÃ¡rio
                       </button>
                     )}
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              {/* Alternativas com Efeito de Tremor no Erro */}
+              {/* â”€â”€ Alternativas â€” cards full-width clicÃ¡veis â”€â”€ */}
               <motion.div
                 animate={isShaking ? { x: [0, -12, 12, -8, 8, -4, 4, 0] } : { x: 0 }}
                 transition={{ duration: 0.5 }}
-                className="space-y-3 mt-4"
+                className="space-y-2.5"
               >
                 {hasAlternativas ? LETTERS.filter(l => alternativas[l]).map(letter => {
                   const text = alternativas[letter];
                   const isSelected = selectedOption === letter;
                   const isCorrectAnswer = gabarito === letter;
 
-                  let boxStyle = "bg-transparent text-slate-300 hover:bg-white/[0.03] border-transparent";
-                  let letterStyle = "text-slate-500 font-black";
-                  
+                  /* Estilos do card */
+                  let cardStyle = "bg-[#0f1422] border-white/[0.06] hover:border-blue-500/40 hover:bg-[#131929]";
+                  let letterBg  = "bg-white/[0.05] text-slate-400";
+                  let textColor = "text-[#D6D6D6]";
+
                   if (showFeedback) {
                     if (isCorrectAnswer) {
-                      boxStyle = "bg-emerald-500/[0.12] border-2 border-emerald-500/50 text-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.15)]";
-                      letterStyle = "text-emerald-400 font-black";
+                      cardStyle = "bg-emerald-500/[0.12] border-2 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.15)]";
+                      letterBg  = "bg-emerald-500/20 text-emerald-300";
+                      textColor = "text-emerald-200";
                     } else if (isSelected && !isCorrectAnswer) {
-                      boxStyle = "bg-rose-500/[0.12] border-2 border-rose-500/50 text-rose-300 opacity-90 shadow-[0_0_20px_rgba(244,63,94,0.15)]";
-                      letterStyle = "text-rose-400 font-black";
+                      cardStyle = "bg-rose-500/[0.12] border-2 border-rose-500/50 opacity-90 shadow-[0_0_20px_rgba(244,63,94,0.15)]";
+                      letterBg  = "bg-rose-500/20 text-rose-300";
+                      textColor = "text-rose-200";
                     } else {
-                      boxStyle = "bg-transparent opacity-40 text-slate-500 border-transparent";
-                      letterStyle = "text-slate-600 font-black";
+                      cardStyle = "bg-transparent opacity-35 border-transparent";
+                      letterBg  = "bg-white/[0.03] text-slate-600";
+                      textColor = "text-slate-500";
                     }
                   } else if (isSelected) {
-                    boxStyle = "bg-blue-500/[0.08] border-2 border-blue-500/40 text-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.1)]";
-                    letterStyle = "text-blue-400 font-black";
+                    cardStyle = "bg-blue-500/[0.10] border-2 border-blue-500/50 shadow-[0_0_18px_rgba(59,130,246,0.12)]";
+                    letterBg  = "bg-blue-500/25 text-blue-200";
+                    textColor = "text-blue-100";
                   }
 
                   return (
@@ -643,35 +654,36 @@ export default function QuestionResolver({
                       key={letter}
                       onClick={() => handleSelect(letter)}
                       disabled={showFeedback}
-                      className={`w-full flex items-center p-3.5 rounded-2xl text-left transition-all border outline-none group ${
-                        strikethroughs[letter] ? "opacity-35" : ""
-                      } ${boxStyle}`}
+                      className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-left transition-all duration-150 border outline-none group ${
+                        strikethroughs[letter] ? "opacity-30" : ""
+                      } ${cardStyle}`}
                     >
-                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-[13px] mr-3 transition-all ${
-                        isSelected || (showFeedback && isCorrectAnswer) ? "bg-white/10" : "bg-white/[0.03]"
-                      } ${letterStyle}`}>
+                      {/* Badge circular da letra */}
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-[13px] font-black transition-all ${letterBg}`}>
                         {letter}
                       </div>
-                      <span className={`text-[13px] leading-relaxed flex-1 font-normal ${
-                        strikethroughs[letter] ? "line-through text-slate-600" : "text-slate-300"
+
+                      {/* Texto da alternativa */}
+                      <span className={`text-[13.5px] leading-relaxed flex-1 font-normal transition-colors ${
+                        strikethroughs[letter] ? "line-through text-slate-600" : textColor
                       }`}>
                         {formatQuestionText(text)}
                       </span>
 
-                      {/* Ícone Indicador de Feedback */}
+                      {/* Ãcones de feedback */}
                       {showFeedback && isCorrectAnswer && (
-                        <CheckCircle2 size={18} className="text-emerald-400 ml-2 shrink-0 animate-pulse" />
+                        <CheckCircle2 size={18} className="text-emerald-400 ml-1 shrink-0 animate-pulse" />
                       )}
                       {showFeedback && isSelected && !isCorrectAnswer && (
-                        <XCircle size={18} className="text-rose-400 ml-2 shrink-0" />
+                        <XCircle size={18} className="text-rose-400 ml-1 shrink-0" />
                       )}
 
-                      {/* Botão de cortar alternativa */}
+                      {/* BotÃ£o cortar alternativa */}
                       {!showFeedback && (
                         <button
                           onClick={(e) => { e.stopPropagation(); toggleStrikethrough(letter); }}
                           title={strikethroughs[letter] ? "Restaurar alternativa" : "Cortar alternativa"}
-                          className={`ml-2 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100 ${
+                          className={`ml-1 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100 ${
                             strikethroughs[letter]
                               ? "text-rose-400 opacity-100 bg-rose-500/10"
                               : "text-slate-600 hover:text-rose-400 hover:bg-rose-500/5"
@@ -685,13 +697,13 @@ export default function QuestionResolver({
                 }) : null}
               </motion.div>
 
-              {/* Botões de Ação */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 pb-2">
+              {/* â”€â”€ BotÃµes de AÃ§Ã£o â”€â”€ */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-7 pb-2">
                 <label className="flex items-center gap-2 cursor-pointer group">
                   <div className="w-4 h-4 rounded-md border border-white/[0.1] bg-white/[0.02] group-hover:bg-white/[0.05] transition-colors" />
-                  <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Fiquei em Dúvida</span>
+                  <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Fiquei em DÃºvida</span>
                 </label>
-                
+
                 <div className="flex flex-wrap items-center gap-2.5">
                   {!showFeedback && (
                     <button
@@ -723,7 +735,7 @@ export default function QuestionResolver({
                     }`}
                   >
                     <MessageSquare size={13} />
-                    {showComment ? "Esconder Comentário" : "Ver Comentário"}
+                    {showComment ? "Esconder ComentÃ¡rio" : "Ver ComentÃ¡rio"}
                     {comentarioTexto && (
                       <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
                     )}
@@ -731,7 +743,7 @@ export default function QuestionResolver({
                 </div>
               </div>
 
-              {/* Seção de Comentário / Resolução */}
+              {/* â”€â”€ SeÃ§Ã£o de ComentÃ¡rio â”€â”€ */}
               <AnimatePresence>
                 {(showFeedback || showComment) && (
                   <motion.div
@@ -740,7 +752,6 @@ export default function QuestionResolver({
                     exit={{ opacity: 0, height: 0 }}
                     className="space-y-4 pt-4 border-t border-white/[0.04]"
                   >
-                    {/* Bloco do Comentário */}
                     {showComment && (
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
@@ -748,11 +759,10 @@ export default function QuestionResolver({
                         className="p-5 rounded-2xl border border-purple-500/20 bg-gradient-to-b from-[#16192e] to-[#111425] relative overflow-hidden shadow-xl"
                       >
                         <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-purple-500 to-indigo-500" />
-                        
                         <div className="flex items-center justify-between mb-3 border-b border-white/[0.06] pb-2.5">
                           <div className="flex items-center gap-2 text-[11px] font-black text-purple-400 uppercase tracking-widest">
                             <BrainCircuit size={15} className="text-purple-400 animate-pulse" />
-                            Comentário da Questão
+                            ComentÃ¡rio da QuestÃ£o
                           </div>
                           {comentarioTexto && (
                             <span className="text-[9px] font-bold text-purple-300 bg-purple-500/10 px-2.5 py-1 rounded-full border border-purple-500/20">
@@ -760,7 +770,6 @@ export default function QuestionResolver({
                             </span>
                           )}
                         </div>
-
                         {comentarioTexto ? (
                           <div className="text-[13px] text-slate-200 leading-relaxed font-medium">
                             {formatQuestionText(comentarioTexto)}
@@ -768,7 +777,7 @@ export default function QuestionResolver({
                         ) : (
                           <div className="py-3 text-center text-slate-400 text-xs font-medium flex items-center justify-center gap-2">
                             <AlertCircle size={14} className="text-amber-400" />
-                            Esta questão ainda não possui comentário cadastrado no Supabase.
+                            Esta questÃ£o ainda nÃ£o possui comentÃ¡rio cadastrado no Supabase.
                           </div>
                         )}
                       </motion.div>
@@ -777,16 +786,22 @@ export default function QuestionResolver({
                 )}
               </AnimatePresence>
 
-            </div>
-          </div>
-        </div>
-        <PrintSimuladoModal
+              <div className="h-6" />
+
+            </div>{/* /max-w-3xl */}
+          </div>{/* /scroll */}
+
+        </div>{/* /main content */}
+      </div>{/* /flex col */}
+
+      <PrintSimuladoModal
         isOpen={showPrintModal}
         onClose={() => setShowPrintModal(false)}
         questions={resolverQueue.length > 0 ? resolverQueue : [question]}
-        title={question.prova ? question.prova.toUpperCase() : "SIMULADO BANCO DE QUESTÕES"}
-        subTitle={`Matéria: ${question.materia || "Geral"}`}
+        title={question.prova ? question.prova.toUpperCase() : "SIMULADO BANCO DE QUESTÃ•ES"}
+        subTitle={`MatÃ©ria: ${question.materia || "Geral"}`}
       />
     </div>
   );
 }
+
