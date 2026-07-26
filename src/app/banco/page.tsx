@@ -17,12 +17,14 @@ import {
   ChevronDown,
   RotateCcw,
   Flame,
+  Printer,
 } from "lucide-react";
 import { supabase, supabasePublic } from "../../lib/supabase";
 import { AuthModal } from "../../components/AuthModal";
 import QuestionsTable, { BancoQuestion } from "../../components/banco/QuestionsTable";
 import QuestionResolver from "../../components/banco/QuestionResolver";
 import FixationDashboardView from "../../components/fixacao/FixationDashboardView";
+import { PrintSimuladoModal } from "../../components/banco/PrintSimuladoModal";
 
 // ──────────────────────────────────────────────
 // Types
@@ -96,6 +98,7 @@ export default function BancoPage() {
   const [user, setUser]             = useState<any>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showGlobalPrintModal, setShowGlobalPrintModal] = useState(false);
 
   // Data
   const [questions, setQuestions]   = useState<BancoQuestion[]>([]);
@@ -337,6 +340,14 @@ export default function BancoPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Botão de Destaque Imprimir Simulado na Topbar */}
+          <button
+            onClick={() => setShowGlobalPrintModal(true)}
+            className="flex items-center gap-2 px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-[11px] font-black uppercase tracking-wider shadow-lg shadow-blue-600/20 transition-all active:scale-95 shrink-0"
+          >
+            <Printer size={13} /> Imprimir Simulado
+          </button>
+
           <button
             onClick={() => { fetchQuestions(); if (user) fetchUserAnswers(user.id); }}
             className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.06] text-slate-600 hover:text-blue-400 transition-all"
@@ -749,6 +760,14 @@ export default function BancoPage() {
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         onAuthSuccess={handleAuthSuccess}
+      />
+
+      <PrintSimuladoModal
+        isOpen={showGlobalPrintModal}
+        onClose={() => setShowGlobalPrintModal(false)}
+        questions={filteredQuestions.length > 0 ? filteredQuestions : questions}
+        title="SIMULADO BANCO DE QUESTÕES"
+        subTitle="Estação de Treinamento — Todas as Questões"
       />
     </div>
   );
