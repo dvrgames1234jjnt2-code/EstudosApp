@@ -497,7 +497,7 @@ export default function QuestionResolver({
 
             {/* Metadata chips */}
             <div className="flex flex-wrap items-center gap-2 mb-5">
-              <span className="text-[11px] font-medium text-slate-300 bg-white/[0.05] border border-white/[0.08] px-2.5 py-1 rounded-md">
+              <span className="text-[11px] font-normal text-slate-500 bg-white/[0.04] border border-white/[0.07] px-2.5 py-1 rounded-md">
                 {question.materia || "Geral"}
               </span>
               {question.tema && question.tema !== question.materia && (
@@ -549,13 +549,13 @@ export default function QuestionResolver({
             )}
 
             {/* ── Enunciado ── */}
-            <div className="text-[15px] sm:text-[17px] font-semibold text-[#F5F5F5] leading-[1.85] mb-7">
+            <div className="text-[15px] sm:text-[17px] font-normal text-[#A8B0BF] leading-[1.85] mb-7">
               {formatQuestionText(question.title ?? '')}
             </div>
 
             {/* Pergunta-Problema */}
             {question.perguntaProblema && (
-              <div className="text-[14px] sm:text-[15px] text-[#E0E0E0] font-normal leading-relaxed mb-7 pl-4 border-l-[3px] border-white/[0.1]">
+              <div className="text-[14px] sm:text-[15px] text-[#8E97A8] font-normal leading-relaxed mb-7 pl-4 border-l-[3px] border-white/[0.07]">
                 {formatQuestionText(question.perguntaProblema)}
               </div>
             )}
@@ -598,8 +598,8 @@ export default function QuestionResolver({
                 const isCorrectAnswer = gabarito === letter;
 
                 let cardCls = "border-white/[0.07] bg-transparent hover:bg-white/[0.03] hover:border-white/[0.14] cursor-pointer";
-                let badgeCls = "border-white/[0.14] text-slate-400 bg-transparent";
-                let textCls = "text-[#D6D6D6]";
+                let badgeCls = "border-white/[0.14] text-slate-500 bg-transparent";
+                let textCls = "text-[#8E97A8]";
 
                 if (showFeedback) {
                   if (isCorrectAnswer) {
@@ -631,14 +631,14 @@ export default function QuestionResolver({
                     } ${cardCls}`}
                   >
                     {/* Badge circular */}
-                    <div className={`w-8 h-8 rounded-full border flex items-center justify-center shrink-0 text-[12px] font-semibold transition-all mt-0.5 ${badgeCls}`}>
+                    <div className={`w-8 h-8 rounded-full border flex items-center justify-center shrink-0 text-[12px] font-normal transition-all mt-0.5 ${badgeCls}`}>
                       {letter}
                     </div>
 
                     {/* Texto */}
-                    <span className={`text-[13.5px] leading-relaxed flex-1 font-normal transition-colors pt-1 ${
-                      strikethroughs[letter] ? "line-through text-slate-600" : textCls
-                    }`}>
+                      <span className={`text-[13.5px] leading-relaxed flex-1 font-normal transition-colors pt-1 ${
+                        strikethroughs[letter] ? "line-through text-slate-700" : textCls
+                      }`}>
                       {formatQuestionText(text)}
                     </span>
 
