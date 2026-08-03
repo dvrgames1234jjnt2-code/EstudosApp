@@ -104,6 +104,7 @@ export default function BancoPage() {
   const [questions, setQuestions]   = useState<BancoQuestion[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
+  const [duvidas, setDuvidas] = useState<Set<string>>(new Set());
 
   // UI
   const [activeTab, setActiveTab]   = useState<ActiveTab>("banco");
@@ -183,14 +184,56 @@ export default function BancoPage() {
     }
   }, []);
 
+  // ── Fetch dúvidas do usuário ───────────────
+  const fetchDuvidas = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("duvidas")
+        .select("questao_id")
+        .eq("user_id", userId);
+      if (error) throw error;
+      setDuvidas(new Set((data || []).map((r: any) => String(r.questao_id))));
+    } catch (err: any) {
+      console.error("Erro ao carregar dúvidas:", err.message);
+    }
+  }, []);
+
+  // ── Toggle dúvida ─────────────────────────
+  const handleToggleDuvida = useCallback(async (questaoId: any) => {
+    if (!user) return;
+    const key = String(questaoId);
+    const isMarked = duvidas.has(key);
+    // Optimistic update
+    setDuvidas(prev => {
+      const next = new Set(prev);
+      if (isMarked) next.delete(key); else next.add(key);
+      return next;
+    });
+    try {
+      if (isMarked) {
+        await supabase.from("duvidas").delete().eq("user_id", user.id).eq("questao_id", key);
+      } else {
+        await supabase.from("duvidas").insert({ user_id: user.id, questao_id: key });
+      }
+    } catch (err: any) {
+      console.error("Erro ao salvar dúvida:", err.message);
+      // Revert on error
+      setDuvidas(prev => {
+        const next = new Set(prev);
+        if (isMarked) next.add(key); else next.delete(key);
+        return next;
+      });
+    }
+  }, [user, duvidas]);
+
   // Carrega questões no mount
   useEffect(() => { fetchQuestions(); }, [fetchQuestions]);
 
-  // Carrega histórico sempre que o usuário mudar
+  // Carrega histórico e dúvidas sempre que o usuário mudar
   useEffect(() => {
-    if (user) fetchUserAnswers(user.id);
-    else setUserAnswers({});
-  }, [user, fetchUserAnswers]);
+    if (user) { fetchUserAnswers(user.id); fetchDuvidas(user.id); }
+    else { setUserAnswers({}); setDuvidas(new Set()); }
+  }, [user, fetchUserAnswers, fetchDuvidas]);
 
   // ── Selecionar questão ────────────────────
   const handleFilteredQuestionsChange = useCallback((filtered: BancoQuestion[]) => {
@@ -485,16 +528,9 @@ export default function BancoPage() {
                   resolverQueue={resolverQueue}
                   userAnswers={userAnswers}
                   onSelectQuestion={(idx) => setResolverIndex(idx)}
-                  existingAnswer={
-                    userAnswers[String(resolverQueue[resolverIndex]?.id)]
-                      ? {
-                          isCorrect: userAnswers[String(resolverQueue[resolverIndex].id)].isCorrect,
-                          answer:    userAnswers[String(resolverQueue[resolverIndex].id)].lastAnswer,
-                          timestamp: userAnswers[String(resolverQueue[resolverIndex].id)].timestamp,
-                        }
-                      : undefined
-                  }
                   stats={userAnswers[String(resolverQueue[resolverIndex]?.id)]}
+                  isDuvida={duvidas.has(String(resolverQueue[resolverIndex]?.id))}
+                  onToggleDuvida={handleToggleDuvida}
                   onAnswer={handleAnswer}
                   onNext={handleNext}
                   onPrev={handlePrev}

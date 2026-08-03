@@ -55,12 +55,13 @@ interface QuestionResolverProps {
   question: BancoQuestion;
   questionIndex: number;
   totalQuestions: number;
-  existingAnswer?: { isCorrect: boolean; answer: string; timestamp: number };
   stats?: QuestionStats;
   resolverQueue: BancoQuestion[];
   userAnswers: Record<string, QuestionStats>;
+  isDuvida?: boolean;
   onSelectQuestion: (index: number) => void;
   onAnswer: (id: any, answer: string, isCorrect: boolean) => Promise<void>;
+  onToggleDuvida?: (id: any) => void;
   onNext: () => void;
   onPrev: () => void;
   onBackToBank: () => void;
@@ -262,7 +263,6 @@ export default function QuestionResolver({
   question,
   questionIndex,
   totalQuestions,
-  existingAnswer,
   onAnswer,
   onNext,
   onPrev,
@@ -273,13 +273,13 @@ export default function QuestionResolver({
   resolverQueue,
   userAnswers,
   onSelectQuestion,
+  isDuvida = false,
+  onToggleDuvida,
   provasDisponiveis,
   onSelectProva,
 }: QuestionResolverProps) {
-  const [selectedOption, setSelectedOption] = useState<string | null>(
-    existingAnswer?.answer ?? null
-  );
-  const [showFeedback, setShowFeedback] = useState<boolean>(!!existingAnswer);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [showFeedback, setShowFeedback] = useState<boolean>(false);
   const [showComment, setShowComment] = useState<boolean>(false);
   const [showTextoApoio, setShowTextoApoio] = useState<boolean>(false);
   const [isShaking, setIsShaking] = useState<boolean>(false);
@@ -287,15 +287,15 @@ export default function QuestionResolver({
   const [showHistory, setShowHistory] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
 
-  // Sync / Reset state when question changes
+  // Reset state when question changes — always start fresh visually
   useEffect(() => {
-    setSelectedOption(existingAnswer?.answer ?? null);
-    setShowFeedback(!!existingAnswer);
+    setSelectedOption(null);
+    setShowFeedback(false);
     setShowComment(false);
     setShowTextoApoio(false);
     setStrikethroughs({});
     setIsShaking(false);
-  }, [question.id, existingAnswer]);
+  }, [question.id]);
 
   const gabarito = question.respostaCorreta || question.Gabarito || "";
   const textoApoio =
@@ -671,9 +671,26 @@ export default function QuestionResolver({
 
             {/* ── Botões de Ação ── */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-5 pb-2 mt-4 border-t border-white/[0.05]">
-              <label className="flex items-center gap-2 cursor-pointer group select-none">
-                <div className="w-4 h-4 rounded border border-white/[0.12] bg-transparent group-hover:bg-white/[0.04] transition-colors" />
-                <span className="text-[12px] text-slate-500 group-hover:text-slate-400 transition-colors">Fiquei em dúvida</span>
+              <label
+                onClick={() => onToggleDuvida?.(question.id)}
+                className="flex items-center gap-2 cursor-pointer group select-none"
+              >
+                <div className={`w-4 h-4 rounded border transition-colors flex items-center justify-center ${
+                  isDuvida
+                    ? "border-amber-500/60 bg-amber-500/20"
+                    : "border-white/[0.12] bg-transparent group-hover:bg-white/[0.04]"
+                }`}>
+                  {isDuvida && (
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 5l2.5 2.5L8 2.5" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </div>
+                <span className={`text-[12px] transition-colors ${
+                  isDuvida ? "text-amber-400" : "text-slate-500 group-hover:text-slate-400"
+                }`}>
+                  Fiquei em dúvida
+                </span>
               </label>
 
               <div className="flex flex-wrap items-center gap-2">
