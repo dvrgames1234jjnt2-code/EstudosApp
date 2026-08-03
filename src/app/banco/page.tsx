@@ -631,134 +631,128 @@ export default function BancoPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {/* Botão para limpar filtro (ir para todas as questões) */}
-                      {isQueueFiltered && (
-                        <button
-                          onClick={() => {
-                            setResolverQueue(questions);
-                            setResolverIndex(0);
-                          }}
-                          className="px-3 py-1.5 rounded-xl bg-blue-600/10 border border-blue-500/20 text-[9px] font-black uppercase tracking-wider text-blue-400 hover:bg-blue-600/20 transition-all flex items-center gap-1.5"
-                        >
-                          <RefreshCw size={10} /> Ver Todas
-                        </button>
-                      )}
-                      <button onClick={() => {
-                        // Limpa respostas locais deste simulado para simular um reinicio
-                        const updatedAnswers = { ...userAnswers };
-                        resolverQueue.forEach(q => {
-                          delete updatedAnswers[String(q.id)];
-                        });
-                        setUserAnswers(updatedAnswers);
-                      }} className="px-3 py-1.5 rounded-xl bg-[#1e2436] border border-white/[0.04] text-[9px] font-black uppercase tracking-wider text-slate-400 hover:text-white transition-all flex items-center gap-1.5">
-                        <RotateCcw size={10} className="opacity-50" /> Reiniciar
+                      <div>
+                        <h2 className="text-sm font-semibold text-white">Desempenho & Resultados</h2>
+                        <span className="text-[10px] text-slate-500">{currentProvaName}</span>
+                      </div>
+                    </div>
+                    {isQueueFiltered && (
+                      <button
+                        onClick={() => { setResolverQueue(questions); setResolverIndex(0); }}
+                        className="px-3 py-1.5 rounded-lg bg-blue-600/10 border border-blue-500/20 text-[10px] font-medium text-blue-400 hover:bg-blue-600/20 transition-all flex items-center gap-1.5"
+                      >
+                        <RefreshCw size={10} /> Ver Todas
                       </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="p-4 bg-[#111623] rounded-xl border border-white/[0.06] flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Progresso Geral</div>
+                        <div className="text-xl font-normal text-slate-200 mt-1 tabular-nums">
+                          {answeredCount} <span className="text-xs text-slate-500">/ {resolverQueue.length} respondidas</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-lg font-semibold text-blue-400 tabular-nums">{progressPercent}%</span>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-[#111623] rounded-xl border border-white/[0.06] flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Taxa de Acerto</div>
+                        <div className="text-xl font-normal text-slate-200 mt-1 tabular-nums">
+                          {correctCount} <span className="text-xs text-slate-500">acertos</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-lg font-semibold tabular-nums ${successPercent >= 70 ? 'text-emerald-400' : successPercent >= 50 ? 'text-amber-400' : 'text-rose-400'}`}>
+                          {successPercent}%
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-[#111623] rounded-xl border border-white/[0.06] flex items-center justify-between gap-3">
+                      <div className="flex gap-2 flex-1">
+                        <div className="flex-1 py-1.5 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
+                          <div className="text-[9px] font-medium text-emerald-400 uppercase">Acertos</div>
+                          <div className="text-base font-semibold text-emerald-300 tabular-nums">{correctCount}</div>
+                        </div>
+                        <div className="flex-1 py-1.5 px-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-center">
+                          <div className="text-[9px] font-medium text-rose-400 uppercase">Erros</div>
+                          <div className="text-base font-semibold text-rose-300 tabular-nums">{errorCount}</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Cards Rápidos */}
-                  <div className="grid grid-cols-3 gap-3">
-                    {/* Progresso Geral */}
-                    <div className="p-3 bg-[#121626] rounded-2xl border border-white/[0.04] flex items-center gap-3">
-                      <div className="relative w-10 h-10 rounded-full border-[3px] border-[#1e2436] flex items-center justify-center shrink-0">
-                        <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
-                          <circle cx="50" cy="50" r="42" fill="transparent" stroke="currentColor" strokeWidth="12" className="text-white/[0.03]" />
-                          <circle cx="50" cy="50" r="42" fill="transparent" stroke="currentColor" strokeWidth="12" strokeDasharray={`${progressPercent * 2.64} 264`} className="text-blue-500" strokeLinecap="round" />
-                        </svg>
-                        <span className="text-[8px] font-black text-white">{progressPercent}%</span>
-                      </div>
-                      <div>
-                        <div className="text-[8px] font-black uppercase tracking-widest text-slate-500">Progresso</div>
-                        <div className="text-sm font-black text-white leading-tight">{answeredCount}/{resolverQueue.length}</div>
-                        <div className="text-[8px] text-slate-500 mt-0.5">respondidas</div>
-                      </div>
-                    </div>
-
-                    {/* Aproveitamento */}
-                    <div className="p-3 bg-[#121626] rounded-2xl border border-white/[0.04] flex items-center gap-3">
-                      <div className="relative w-10 h-10 rounded-full border-[3px] border-[#1e2436] flex items-center justify-center shrink-0">
-                        <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
-                          <circle cx="50" cy="50" r="42" fill="transparent" stroke="currentColor" strokeWidth="12" className="text-white/[0.03]" />
-                          <circle cx="50" cy="50" r="42" fill="transparent" stroke="currentColor" strokeWidth="12" strokeDasharray={`${successPercent * 2.64} 264`} className="text-emerald-500" strokeLinecap="round" />
-                        </svg>
-                        <span className="text-[8px] font-black text-white">{successPercent}%</span>
-                      </div>
-                      <div>
-                        <div className="text-[8px] font-black uppercase tracking-widest text-slate-500">Aproveit.</div>
-                        <div className="text-sm font-black text-white leading-tight">{correctCount} acertos</div>
-                        <div className="text-[8px] text-slate-500 mt-0.5">sobre as respondidas</div>
-                      </div>
-                    </div>
-
-                    {/* Acertos/Erros */}
-                    <div className="p-3 bg-[#121626] rounded-2xl border border-white/[0.04] flex gap-2">
-                      <div className="flex-1 rounded-xl bg-[#0b0f19] border border-emerald-500/10 flex flex-col items-center justify-center py-2">
-                        <div className="text-[8px] font-black uppercase tracking-widest text-emerald-500">Acertos</div>
-                        <div className="text-lg font-black text-emerald-400 leading-tight">{correctCount}</div>
-                      </div>
-                      <div className="flex-1 rounded-xl bg-[#0b0f19] border border-rose-500/10 flex flex-col items-center justify-center py-2">
-                        <div className="text-[8px] font-black uppercase tracking-widest text-rose-500">Erros</div>
-                        <div className="text-lg font-black text-rose-400 leading-tight">{errorCount}</div>
-                      </div>
-                    </div>
+                  <div className="flex flex-wrap items-center gap-2 p-3 bg-[#111623] rounded-xl border border-white/[0.06]">
+                    <span className="text-[11px] text-slate-400 font-medium mr-2 flex items-center gap-1.5">
+                      <Target size={13} className="text-blue-400" /> Ações Rápidas:
+                    </span>
+                    {errorCount > 0 && (
+                      <button
+                        onClick={() => {
+                          const errQueue = resolverQueue.filter(q => userAnswers[String(q.id)] && !userAnswers[String(q.id)]?.isCorrect);
+                          setResolverQueue(errQueue); setResolverIndex(0); setSelectedQuestion(errQueue[0]); setActiveTab("resolver");
+                        }}
+                        className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-lg text-[11px] font-medium text-rose-300 transition-all flex items-center gap-1.5"
+                      >
+                        Refazer Erros ({errorCount})
+                      </button>
+                    )}
+                    {resolverQueue.length - answeredCount > 0 && (
+                      <button
+                        onClick={() => {
+                          const unQueue = resolverQueue.filter(q => !userAnswers[String(q.id)]);
+                          setResolverQueue(unQueue); setResolverIndex(0); setSelectedQuestion(unQueue[0]); setActiveTab("resolver");
+                        }}
+                        className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 rounded-lg text-[11px] font-medium text-blue-300 transition-all flex items-center gap-1.5"
+                      >
+                        Resolver Pendentes ({resolverQueue.length - answeredCount})
+                      </button>
+                    )}
+                    {Array.from(duvidas).length > 0 && (
+                      <button
+                        onClick={() => {
+                          const duvQueue = resolverQueue.filter(q => duvidas.has(String(q.id)));
+                          setResolverQueue(duvQueue); setResolverIndex(0); setSelectedQuestion(duvQueue[0]); setActiveTab("resolver");
+                        }}
+                        className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-lg text-[11px] font-medium text-amber-300 transition-all flex items-center gap-1.5"
+                      >
+                        Praticar Dúvidas ({resolverQueue.filter(q => duvidas.has(String(q.id))).length})
+                      </button>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
-                    {/* Folha de Respostas */}
-                    <div className="bg-[#121626] rounded-2xl border border-white/[0.04] p-4 flex flex-col">
-                      <h3 className="text-[11px] font-black uppercase tracking-widest text-white mb-1">Folha de Respostas & Navegação</h3>
-                      <p className="text-[10px] text-slate-500 mb-4">Clique em qualquer número para ir diretamente à questão</p>
-                      
-                      <div className="flex flex-wrap gap-2">
+                    <div className="bg-[#111623] rounded-xl border border-white/[0.06] p-5 flex flex-col">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-xs font-semibold text-slate-200">Gabarito e Navegação</h3>
+                      </div>
+                      <div className="flex flex-wrap gap-2 overflow-y-auto custom-scrollbar max-h-72 pr-1 pt-1">
                         {resolverQueue?.map((q, idx) => {
                           const ans = userAnswers?.[String(q.id)];
                           const isCurrent = idx === resolverIndex;
-                          
-                          let boxStyle = "bg-[#1e2436] text-slate-400 hover:bg-white/[0.06] border border-white/[0.04]";
-
-                          if (ans) {
-                            if (ans.isCorrect) {
-                              boxStyle = "bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/15";
-                            } else {
-                              boxStyle = "bg-rose-500/10 text-rose-400 border border-rose-500/25 hover:bg-rose-500/15";
-                            }
-                          }
-                          
-                          if (isCurrent) {
-                            boxStyle += " ring-2 ring-blue-500 ring-offset-1 ring-offset-[#121626]";
-                          }
-
+                          const isMarkedDuvida = duvidas.has(String(q.id));
+                          let boxStyle = "bg-white/[0.03] text-slate-400 hover:bg-white/[0.07] border-white/[0.08]";
+                          if (ans) boxStyle = ans.isCorrect ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" : "bg-rose-500/10 text-rose-400 border-rose-500/30";
+                          if (isCurrent) boxStyle += " ring-2 ring-blue-500 border-transparent";
                           return (
-                            <button
-                              key={q.id}
-                              onClick={() => {
-                                setResolverIndex(idx);
-                                setSelectedQuestion(q);
-                                setActiveTab("resolver");
-                              }}
-                              className={`relative w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-black transition-all border shrink-0 ${boxStyle}`}
-                            >
+                            <button key={q.id} onClick={() => { setResolverIndex(idx); setSelectedQuestion(q); setActiveTab("resolver"); }} className={`relative w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-medium transition-all border shrink-0 ${boxStyle}`}>
                               {idx + 1}
-                              {ans && (
-                                <span className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full ${
-                                  ans.isCorrect ? "bg-emerald-400" : "bg-rose-400"
-                                }`} />
-                              )}
+                              {isMarkedDuvida && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-[#111623]" />}
                             </button>
                           );
                         })}
                       </div>
                     </div>
 
-                    {/* Desempenho por Tópico */}
-                    <div className="bg-[#121626] rounded-2xl border border-white/[0.04] p-4 overflow-hidden flex flex-col">
-                      <h3 className="text-[13px] font-black uppercase tracking-[0.1em] text-white mb-6">Desempenho por Tópico</h3>
-                      
-                      <div className="space-y-0 flex-1 overflow-y-auto custom-scrollbar pr-3">
+                    <div className="bg-[#111623] rounded-xl border border-white/[0.06] p-5 overflow-hidden flex flex-col">
+                      <h3 className="text-xs font-semibold text-slate-200 mb-4">Desempenho por Tópico</h3>
+                      <div className="space-y-3.5 flex-1 overflow-y-auto custom-scrollbar pr-2">
                         {Object.entries(topicsMap).map(([topic, data], idx) => {
-                          return (
-                            <div key={topic} className="flex items-center justify-between py-4 border-b border-white/[0.04] last:border-0 group">
-                              <div className="flex items-center gap-3 flex-1 min-w-0 pr-4">
                                 <span className="text-[11px] font-bold text-slate-500">{idx + 1}.</span>
                                 <span className="text-[12px] font-bold text-slate-300 truncate group-hover:text-white transition-colors">{topic}</span>
                               </div>

@@ -549,7 +549,7 @@ export default function QuestionResolver({
             )}
 
             {/* ── Enunciado ── */}
-            <div className="text-[15px] sm:text-[17px] font-normal text-[#A8B0BF] leading-[1.85] mb-7">
+            <div className="text-[14px] sm:text-[15px] font-normal text-[#8E97A8] leading-relaxed mb-5">
               {formatQuestionText(question.title ?? '')}
             </div>
 
