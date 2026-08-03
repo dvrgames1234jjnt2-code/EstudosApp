@@ -698,7 +698,7 @@ export default function BancoPage() {
                           const errQueue = resolverQueue.filter(q => userAnswers[String(q.id)] && !userAnswers[String(q.id)]?.isCorrect);
                           setResolverQueue(errQueue); setResolverIndex(0); setSelectedQuestion(errQueue[0]); setActiveTab("resolver");
                         }}
-                        className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-lg text-[11px] font-medium text-rose-300 transition-all flex items-center gap-1.5"
+                        className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg text-[11px] font-medium text-rose-300 transition-all flex items-center gap-1.5 outline-none"
                       >
                         Refazer Erros ({errorCount})
                       </button>
@@ -709,7 +709,7 @@ export default function BancoPage() {
                           const unQueue = resolverQueue.filter(q => !userAnswers[String(q.id)]);
                           setResolverQueue(unQueue); setResolverIndex(0); setSelectedQuestion(unQueue[0]); setActiveTab("resolver");
                         }}
-                        className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 rounded-lg text-[11px] font-medium text-blue-300 transition-all flex items-center gap-1.5"
+                        className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg text-[11px] font-medium text-blue-300 transition-all flex items-center gap-1.5 outline-none"
                       >
                         Resolver Pendentes ({resolverQueue.length - answeredCount})
                       </button>
@@ -720,7 +720,7 @@ export default function BancoPage() {
                           const duvQueue = resolverQueue.filter(q => duvidas.has(String(q.id)));
                           setResolverQueue(duvQueue); setResolverIndex(0); setSelectedQuestion(duvQueue[0]); setActiveTab("resolver");
                         }}
-                        className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-lg text-[11px] font-medium text-amber-300 transition-all flex items-center gap-1.5"
+                        className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-lg text-[11px] font-medium text-amber-300 transition-all flex items-center gap-1.5 outline-none"
                       >
                         Praticar Dúvidas ({resolverQueue.filter(q => duvidas.has(String(q.id))).length})
                       </button>
@@ -737,13 +737,31 @@ export default function BancoPage() {
                           const ans = userAnswers?.[String(q.id)];
                           const isCurrent = idx === resolverIndex;
                           const isMarkedDuvida = duvidas.has(String(q.id));
+                          
                           let boxStyle = "bg-white/[0.03] text-slate-400 hover:bg-white/[0.07] border-white/[0.08]";
-                          if (ans) boxStyle = ans.isCorrect ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" : "bg-rose-500/10 text-rose-400 border-rose-500/30";
-                          if (isCurrent) boxStyle += " ring-2 ring-blue-500 border-transparent";
+                          if (ans) {
+                            boxStyle = ans.isCorrect
+                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                              : "bg-rose-500/10 text-rose-400 border-rose-500/30";
+                          }
+                          if (isCurrent) {
+                            boxStyle = isCurrent
+                              ? ans
+                                ? ans.isCorrect
+                                  ? "bg-emerald-500/20 text-emerald-300 border-2 border-blue-500"
+                                  : "bg-rose-500/20 text-rose-300 border-2 border-blue-500"
+                                : "bg-blue-500/20 text-blue-300 border-2 border-blue-500"
+                              : boxStyle;
+                          }
+
                           return (
-                            <button key={q.id} onClick={() => { setResolverIndex(idx); setSelectedQuestion(q); setActiveTab("resolver"); }} className={`relative w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-medium transition-all border shrink-0 ${boxStyle}`}>
+                            <button
+                              key={q.id}
+                              onClick={() => { setResolverIndex(idx); setSelectedQuestion(q); setActiveTab("resolver"); }}
+                              className={`relative w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-medium transition-all border shrink-0 outline-none ${boxStyle}`}
+                            >
                               {idx + 1}
-                              {isMarkedDuvida && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-[#111623]" />}
+                              {isMarkedDuvida && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 border border-[#111623]" />}
                             </button>
                           );
                         })}
