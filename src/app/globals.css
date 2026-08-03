@@ -1,13 +1,25 @@
 @import "tailwindcss";
 @import "tldraw/tldraw.css";
 
+/* ── Geist Regular — fonte local ── */
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-Regular.woff2') format('woff2'),
+       url('/fonts/Geist-Regular.ttf')  format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 html, body {
   overflow-x: hidden;
   max-width: 100vw;
+  /* Cor base suavizada — cinza confortável, sem branco puro */
+  color: #B0B8C8;
 }
 
 @theme inline {
-  --font-sans: var(--font-inter);
+  --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer utilities {
