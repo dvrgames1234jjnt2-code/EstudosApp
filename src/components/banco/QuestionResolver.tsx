@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import { useState, useEffect } from "react";
@@ -81,7 +81,7 @@ export interface QuestionStats {
 
 const LETTERS = ["A", "B", "C", "D", "E"] as const;
 
-// â”€â”€ Web Audio Synthesizer Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Web Audio Synthesizer Helpers ───────────────────────────
 const playSuccessSound = () => {
   try {
     const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
@@ -106,7 +106,7 @@ const playSuccessSound = () => {
   }
 };
 
-// â”€â”€ Formatador de MatemÃ¡tica & Enunciado / ComentÃ¡rios â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Formatador de Matemática & Enunciado / Comentários ──────────────────────
 function cleanMathLatex(text: string): string {
   if (!text) return "";
 
@@ -122,53 +122,53 @@ function cleanMathLatex(text: string): string {
   // Fractions: \frac{a}{b} -> (a / b)
   str = str.replace(/\\frac\s*\{([\s\S]*?)\}\s*\{([\s\S]*?)\}/g, '($1 / $2)');
 
-  // Square root: \sqrt[n]{x} -> â¿âˆš(x), \sqrt{x} -> âˆš(x)
-  str = str.replace(/\\sqrt\[(.*?)\]\s*\{([\s\S]*?)\}/g, '$1âˆš($2)');
-  str = str.replace(/\\sqrt\s*\{([\s\S]*?)\}/g, 'âˆš($1)');
+  // Square root: \sqrt[n]{x} -> ⁿ√(x), \sqrt{x} -> √(x)
+  str = str.replace(/\\sqrt\[(.*?)\]\s*\{([\s\S]*?)\}/g, '$1√($2)');
+  str = str.replace(/\\sqrt\s*\{([\s\S]*?)\}/g, '√($1)');
 
   // Math operators & symbols
-  str = str.replace(/\\cdotp|\\cdot|\\times/g, 'Â·');
-  str = str.replace(/\\div/g, 'Ã·');
-  str = str.replace(/\\pm/g, 'Â±');
-  str = str.replace(/\\approx/g, 'â‰ˆ');
-  str = str.replace(/\\neq/g, 'â‰ ');
-  str = str.replace(/\\leq|\\le/g, 'â‰¤');
-  str = str.replace(/\\geq|\\ge/g, 'â‰¥');
-  str = str.replace(/\\infty/g, 'âˆž');
-  str = str.replace(/\\pi/g, 'Ï€');
-  str = str.replace(/\\Delta/g, 'Î”');
-  str = str.replace(/\\theta/g, 'Î¸');
-  str = str.replace(/\\alpha/g, 'Î±');
-  str = str.replace(/\\beta/g, 'Î²');
-  str = str.replace(/\\rightarrow|\\Rightarrow/g, 'â†’');
-  str = str.replace(/\\leftarrow|\\Leftarrow/g, 'â†');
-  str = str.replace(/\\in/g, 'âˆˆ');
-  str = str.replace(/\\notin/g, 'âˆ‰');
-  str = str.replace(/\\subset/g, 'âŠ‚');
-  str = str.replace(/\\cap|\\inter/g, 'âˆ©');
-  str = str.replace(/\\cup|\\union/g, 'âˆª');
+  str = str.replace(/\\cdotp|\\cdot|\\times/g, '·');
+  str = str.replace(/\\div/g, '÷');
+  str = str.replace(/\\pm/g, '±');
+  str = str.replace(/\\approx/g, '≈');
+  str = str.replace(/\\neq/g, '≠');
+  str = str.replace(/\\leq|\\le/g, '≤');
+  str = str.replace(/\\geq|\\ge/g, '≥');
+  str = str.replace(/\\infty/g, '∞');
+  str = str.replace(/\\pi/g, 'π');
+  str = str.replace(/\\Delta/g, 'Δ');
+  str = str.replace(/\\theta/g, 'θ');
+  str = str.replace(/\\alpha/g, 'α');
+  str = str.replace(/\\beta/g, 'β');
+  str = str.replace(/\\rightarrow|\\Rightarrow/g, '→');
+  str = str.replace(/\\leftarrow|\\Leftarrow/g, '←');
+  str = str.replace(/\\in/g, '∈');
+  str = str.replace(/\\notin/g, '∉');
+  str = str.replace(/\\subset/g, '⊂');
+  str = str.replace(/\\cap|\\inter/g, '∩');
+  str = str.replace(/\\cup|\\union/g, '∪');
   str = str.replace(/\\sim/g, '~');
-  str = str.replace(/\\overline\{([\s\S]*?)\}/g, '$1Ì„');
+  str = str.replace(/\\overline\{([\s\S]*?)\}/g, '$1̄');
 
   // Formatting environment commands
   str = str.replace(/\\begin\{(?:equation|align|math|center)\*?\}/g, '');
   str = str.replace(/\\end\{(?:equation|align|math|center)\*?\}/g, '');
 
-  // Exponents superscripts: ^2 -> Â², ^3 -> Â³, ^n -> â¿, etc.
-  str = str.replace(/\^2\b/g, 'Â²');
-  str = str.replace(/\^3\b/g, 'Â³');
-  str = str.replace(/\^1\b/g, 'Â¹');
-  str = str.replace(/\^0\b/g, 'â°');
-  str = str.replace(/\^n\b/g, 'â¿');
-  str = str.replace(/\^x\b/g, 'Ë£');
-  str = str.replace(/\^\+([0-9]+)/g, 'âº$1');
-  str = str.replace(/\^-([0-9]+)/g, 'â»$1');
-  str = str.replace(/\^\{([\s\S]*?)\}/g, 'â½$1â¾');
+  // Exponents superscripts: ^2 -> ², ^3 -> ³, ^n -> ⁿ, etc.
+  str = str.replace(/\^2\b/g, '²');
+  str = str.replace(/\^3\b/g, '³');
+  str = str.replace(/\^1\b/g, '¹');
+  str = str.replace(/\^0\b/g, '⁰');
+  str = str.replace(/\^n\b/g, 'ⁿ');
+  str = str.replace(/\^x\b/g, 'ˣ');
+  str = str.replace(/\^\+([0-9]+)/g, '⁺$1');
+  str = str.replace(/\^-([0-9]+)/g, '⁻$1');
+  str = str.replace(/\^\{([\s\S]*?)\}/g, '⁽$1⁾');
 
-  // Subscripts: _0..9 -> â‚€..â‚‰
-  const subs: Record<string, string> = { '0': 'â‚€', '1': 'â‚', '2': 'â‚‚', '3': 'â‚ƒ', '4': 'â‚„', '5': 'â‚…', '6': 'â‚†', '7': 'â‚‡', '8': 'â‚ˆ', '9': 'â‚‰', 'n': 'â‚™', 'x': 'â‚“' };
+  // Subscripts: _0..9 -> ₀..₉
+  const subs: Record<string, string> = { '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉', 'n': 'ₙ', 'x': 'ₓ' };
   str = str.replace(/_([0-9nx])/g, (_, match) => subs[match] || `_${match}`);
-  str = str.replace(/_\{([\s\S]*?)\}/g, 'â‚$1â‚Ž');
+  str = str.replace(/_\{([\s\S]*?)\}/g, '₍$1₎');
 
   // Text commands cleanup
   str = str.replace(/\\text\{([\s\S]*?)\}/g, '$1');
@@ -183,7 +183,7 @@ function formatQuestionText(text: string): React.ReactElement {
 
   const cleaned = cleanMathLatex(text);
 
-  // Verifica se o texto possui marcaÃ§Ã£o HTML (ex: <br>, <b>, <span>, <p>)
+  // Verifica se o texto possui marcação HTML (ex: <br>, <b>, <span>, <p>)
   const hasHtml = /<[a-z][\s\S]*>/i.test(cleaned);
 
   // Verifica se possui itens romanos (I., II., III., etc.)
@@ -325,7 +325,7 @@ export default function QuestionResolver({
     const isCorrect = selectedOption === gabarito;
     await onAnswer(question.id, selectedOption, isCorrect);
     setShowFeedback(true);
-    setShowComment(true); // Exibe o comentÃ¡rio automaticamente ao responder
+    setShowComment(true); // Exibe o comentário automaticamente ao responder
 
     if (isCorrect) {
       playSuccessSound();
@@ -380,428 +380,384 @@ export default function QuestionResolver({
 
       <div className="w-full flex flex-col flex-1 min-h-0">
 
-        {/* â”€â”€ Foco Bar (compacta + barra de progresso) â”€â”€ */}
-        <div className="flex items-center justify-between px-4 py-2 bg-[#111623] border border-white/[0.05] rounded-2xl mb-3 shrink-0 gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 bg-blue-600 rounded-full flex items-center p-0.5 shadow-inner cursor-pointer shrink-0" style={{ height: '18px' }}>
-              <div className="w-3.5 h-3.5 bg-white rounded-full ml-auto shadow-sm" />
-            </div>
-            <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
-              <Sparkles size={12} className="text-blue-400" /> Modo Foco
-            </span>
-          </div>
-          <div className="flex flex-1 items-center gap-3 max-w-xs ml-4">
-            <div className="flex-1 h-1 bg-white/[0.06] rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500"
-                style={{ width: `${totalQuestions > 0 ? ((questionIndex + 1) / totalQuestions) * 100 : 0}%` }}
-              />
-            </div>
-            <span className="text-[10px] font-bold text-slate-500 shrink-0 tabular-nums">
-              {questionIndex + 1} / {totalQuestions}
-            </span>
-          </div>
-        </div>
+        {/* ── Top bar: progresso + navegação ── */}
+        <div className="flex items-center justify-between gap-3 mb-4 shrink-0 pb-3 border-b border-white/[0.05]">
 
-        {/* â”€â”€ Main Content â”€â”€ */}
-        <div className="flex-1 flex flex-col relative overflow-hidden min-h-0 mt-1">
-
-          {/* Header da QuestÃ£o */}
-          <div className="flex flex-row items-center justify-between gap-3 mb-4 shrink-0 relative z-20 pb-3 border-b border-white/[0.05]">
-            <div className="flex items-center gap-3">
-              <button onClick={onBackToBank} className="text-slate-600 hover:text-white transition-colors">
-                <ArrowLeft size={17} />
-              </button>
-              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-[0_0_16px_rgba(37,99,235,0.3)] text-xs font-black text-white shrink-0">
-                {questionIndex + 1}
+          {/* Esquerda: voltar + número + prova */}
+          <div className="flex items-center gap-3">
+            <button onClick={onBackToBank} className="text-slate-600 hover:text-white transition-colors p-1">
+              <ArrowLeft size={17} />
+            </button>
+            <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-xs font-bold text-blue-300 shrink-0">
+              {questionIndex + 1}
+            </div>
+            <div>
+              <div className="text-[11px] font-semibold text-slate-300 max-w-[180px] sm:max-w-xs truncate">
+                {question.prova || "Simulado Padrão"}
               </div>
-              <div>
-                <h2 className="text-[10px] sm:text-[11px] font-black text-blue-500 uppercase tracking-widest max-w-[160px] sm:max-w-xs truncate">
-                  {question.prova || "SIMULADO PADRÃƒO"}
-                </h2>
-                <div className="flex items-center gap-1.5 text-[9px] text-slate-600 font-bold mt-0.5">
-                  <Loader2 size={9} className="opacity-40" />
-                  ID: {question.id}
-                </div>
+              <div className="text-[10px] text-slate-600 tabular-nums">
+                ID {question.id}
               </div>
             </div>
+          </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Imprimir */}
+          {/* Direita: ações */}
+          <div className="flex flex-wrap items-center gap-2">
+
+            {/* Imprimir */}
+            <button
+              onClick={() => setShowPrintModal(true)}
+              title="Imprimir / gerar PDF"
+              className="px-2.5 py-1.5 rounded-lg border border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200 text-[11px] font-medium transition-all flex items-center gap-1.5"
+            >
+              <Printer size={13} /> Imprimir
+            </button>
+
+            {/* Histórico */}
+            <div className="relative">
               <button
-                onClick={() => setShowPrintModal(true)}
-                title="Imprimir este simulado ou gerar PDF"
-                className="px-2.5 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 rounded-lg text-[9px] font-black uppercase text-blue-400 hover:text-blue-300 transition-all flex items-center gap-1.5 active:scale-95"
+                onClick={() => setShowHistory(!showHistory)}
+                className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-medium transition-all flex items-center gap-1.5 ${
+                  showHistory
+                    ? "border-blue-500/30 bg-blue-500/10 text-blue-300"
+                    : "border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200"
+                }`}
               >
-                <Printer size={10} /> Imprimir
+                Histórico <ChevronDown size={11} className={`transition-transform ${showHistory ? "rotate-180" : ""}`} />
               </button>
-
-              {/* HistÃ³rico */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowHistory(!showHistory)}
-                  className={`px-2.5 py-1.5 rounded-lg border text-[9px] font-black uppercase transition-all flex items-center gap-1.5 ${
-                    showHistory
-                      ? "bg-blue-500/10 border-blue-500/20 text-blue-400"
-                      : "bg-[#121626] border-white/[0.04] text-slate-400 hover:text-white"
-                  }`}
-                >
-                  HistÃ³rico <ChevronDown size={10} className={`transition-transform ${showHistory ? "rotate-180" : ""}`} />
-                </button>
-                <AnimatePresence>
-                  {showHistory && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -5 }}
-                      className="absolute top-full right-0 mt-2 w-64 bg-[#1e2436] border border-white/[0.06] rounded-xl shadow-xl z-50 overflow-hidden"
-                    >
-                      <div className="p-3 border-b border-white/[0.04]">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">HistÃ³rico desta QuestÃ£o</p>
-                      </div>
-                      {stats ? (
-                        <div className="p-3 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-slate-400">Tentativas</span>
-                            <span className="text-[10px] font-black text-white">{stats.totalAttempts}x</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-slate-400">Acertos</span>
-                            <span className="text-[10px] font-black text-emerald-400">{stats.correctCount}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-slate-400">Erros</span>
-                            <span className="text-[10px] font-black text-rose-400">{stats.errorCount}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-slate-400">Ãšltima resposta</span>
-                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
-                              stats.isCorrect ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
-                            }`}>{stats.lastAnswer} â€” {stats.isCorrect ? "Certo" : "Errado"}</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="p-4 text-center">
-                          <p className="text-[11px] text-slate-500">Nenhuma resposta registrada ainda.</p>
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* NavegaÃ§Ã£o Prev/Next */}
-              <div className="flex items-center gap-1 bg-[#121626] border border-white/[0.04] p-1 rounded-lg">
-                <button onClick={handlePrev} disabled={questionIndex === 0} className="w-6 h-5 flex items-center justify-center text-slate-500 hover:text-white disabled:opacity-30">
-                  <ChevronLeft size={14} />
-                </button>
-                <div className="w-[1px] h-3 bg-white/[0.06]" />
-                <button onClick={handleNext} disabled={questionIndex === totalQuestions - 1} className="w-6 h-5 flex items-center justify-center text-slate-500 hover:text-white disabled:opacity-30">
-                  <ChevronRight size={14} />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* â”€â”€ Scroll Area â€“ coluna de leitura centrada max-w-3xl â”€â”€ */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 relative z-10">
-            <div className="max-w-3xl mx-auto">
-
-              {/* TÃ³pico & Texto de Apoio toggle */}
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500 bg-blue-500/10 px-3 py-1.5 rounded-lg w-fit">
-                  {question.tema || question.materia || "GERAL"}
-                </div>
-                {textoApoio && (
-                  <button
-                    onClick={() => setShowTextoApoio(!showTextoApoio)}
-                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border shadow-sm ${
-                      showTextoApoio
-                        ? "bg-blue-600/20 border-blue-500/40 text-blue-300"
-                        : "bg-[#121626] border-white/[0.06] text-slate-400 hover:text-white hover:border-white/10"
-                    }`}
-                  >
-                    <FileText size={12} className="text-blue-400" />
-                    {showTextoApoio ? "Ocultar Texto de Apoio" : "Ver Texto de Apoio"}
-                    <ChevronDown size={12} className={`transition-transform duration-200 ${showTextoApoio ? "rotate-180" : ""}`} />
-                  </button>
-                )}
-              </div>
-
-              {/* Texto de Apoio colapsÃ¡vel */}
-              {textoApoio && (
-                <AnimatePresence>
-                  {showTextoApoio && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden mb-5"
-                    >
-                      <div className="p-4 sm:p-5 rounded-2xl bg-[#121626] border border-blue-500/20 relative overflow-hidden shadow-lg">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
-                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-400 mb-2">
-                          <FileText size={13} /> Texto de Apoio
-                        </div>
-                        <div className="text-xs sm:text-sm text-slate-300 leading-relaxed font-medium">
-                          {formatQuestionText(textoApoio)}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              )}
-
-              {/* â”€â”€ Enunciado â€” branco suave, 17px, semibold â”€â”€ */}
-              <div className="text-[15px] sm:text-[17px] font-semibold text-[#F0F0F0] leading-[1.75] tracking-[0.01em] mb-1">
-                {formatQuestionText(question.title ?? '')}
-              </div>
-
-              {/* Pergunta-Problema (se houver) */}
-              {question.perguntaProblema && (
-                <div className="text-[15px] sm:text-[16px] text-[#F0F0F0] font-semibold leading-relaxed mt-2">
-                  {formatQuestionText(question.perguntaProblema)}
-                </div>
-              )}
-
-              {/* â”€â”€ Separador de 28px entre enunciado e alternativas â”€â”€ */}
-              <div className="h-7" />
-
-              {/* Banner de Feedback (Certo / Errado) */}
               <AnimatePresence>
-                {showFeedback && selectedOption && (
+                {showHistory && (
                   <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                    className={`p-4 rounded-2xl border flex items-center justify-between gap-4 shadow-xl mb-4 ${
-                      isCorrect
-                        ? "bg-gradient-to-r from-emerald-950/80 via-emerald-900/40 to-emerald-950/80 border-emerald-500/40 shadow-emerald-950/50"
-                        : "bg-gradient-to-r from-rose-950/80 via-rose-900/40 to-rose-950/80 border-rose-500/40 shadow-rose-950/50"
-                    }`}
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    className="absolute top-full right-0 mt-2 w-60 bg-[#181f2e] border border-white/[0.08] rounded-xl shadow-xl z-50 overflow-hidden"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                        isCorrect ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                      }`}>
-                        {isCorrect ? <CheckCircle2 size={22} className="animate-bounce" /> : <XCircle size={22} className="animate-pulse" />}
-                      </div>
-                      <div>
-                        <h4 className={`text-xs sm:text-sm font-black uppercase tracking-wider flex items-center gap-2 ${isCorrect ? "text-emerald-300" : "text-rose-300"}`}>
-                          {isCorrect ? (
-                            <><Flame size={14} className="text-emerald-400 animate-pulse" /> Sensacional! Resposta Correta!</>
-                          ) : (
-                            <>Ops! NÃ£o foi desta vez.</>
-                          )}
-                        </h4>
-                        <p className="text-[11px] sm:text-xs text-slate-300 mt-0.5 font-medium">
-                          {isCorrect
-                            ? "VocÃª dominou essa questÃ£o. ParabÃ©ns!"
-                            : `O gabarito oficial Ã© a alternativa ${gabarito}.`}
-                        </p>
-                      </div>
+                    <div className="px-4 py-2.5 border-b border-white/[0.06]">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Histórico desta questão</p>
                     </div>
-                    {comentarioTexto && !showComment && (
-                      <button
-                        onClick={() => setShowComment(true)}
-                        className="px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-[11px] font-bold text-white transition-all shrink-0 flex items-center gap-1.5 active:scale-95"
-                      >
-                        <MessageSquare size={13} /> Ver ComentÃ¡rio
-                      </button>
+                    {stats ? (
+                      <div className="p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] text-slate-400">Tentativas</span>
+                          <span className="text-[11px] font-semibold text-white">{stats.totalAttempts}×</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] text-slate-400">Acertos</span>
+                          <span className="text-[11px] font-semibold text-emerald-400">{stats.correctCount}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] text-slate-400">Erros</span>
+                          <span className="text-[11px] font-semibold text-rose-400">{stats.errorCount}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] text-slate-400">Última resposta</span>
+                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
+                            stats.isCorrect ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
+                          }`}>{stats.lastAnswer} – {stats.isCorrect ? "Certo" : "Errado"}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-4 text-center">
+                        <p className="text-[12px] text-slate-500">Nenhuma resposta registrada ainda.</p>
+                      </div>
                     )}
                   </motion.div>
                 )}
               </AnimatePresence>
+            </div>
 
-              {/* â”€â”€ Alternativas â€” cards full-width clicÃ¡veis â”€â”€ */}
-              <motion.div
-                animate={isShaking ? { x: [0, -12, 12, -8, 8, -4, 4, 0] } : { x: 0 }}
-                transition={{ duration: 0.5 }}
-                className="space-y-2.5"
-              >
-                {hasAlternativas ? LETTERS.filter(l => alternativas[l]).map(letter => {
-                  const text = alternativas[letter];
-                  const isSelected = selectedOption === letter;
-                  const isCorrectAnswer = gabarito === letter;
+            {/* Progresso + Prev/Next */}
+            <div className="flex items-center gap-1.5 bg-white/[0.03] border border-white/[0.06] rounded-lg px-2 py-1">
+              <button onClick={handlePrev} disabled={questionIndex === 0} className="text-slate-500 hover:text-white disabled:opacity-25 transition-colors">
+                <ChevronLeft size={15} />
+              </button>
+              <span className="text-[11px] font-medium text-slate-500 tabular-nums min-w-[3rem] text-center">
+                {questionIndex + 1} / {totalQuestions}
+              </span>
+              <button onClick={handleNext} disabled={questionIndex === totalQuestions - 1} className="text-slate-500 hover:text-white disabled:opacity-25 transition-colors">
+                <ChevronRight size={15} />
+              </button>
+            </div>
 
-                  /* Estilos do card */
-                  let cardStyle = "bg-[#0f1422] border-white/[0.06] hover:border-blue-500/40 hover:bg-[#131929]";
-                  let letterBg  = "bg-white/[0.05] text-slate-400";
-                  let textColor = "text-[#D6D6D6]";
+          </div>
+        </div>
 
-                  if (showFeedback) {
-                    if (isCorrectAnswer) {
-                      cardStyle = "bg-emerald-500/[0.12] border-2 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.15)]";
-                      letterBg  = "bg-emerald-500/20 text-emerald-300";
-                      textColor = "text-emerald-200";
-                    } else if (isSelected && !isCorrectAnswer) {
-                      cardStyle = "bg-rose-500/[0.12] border-2 border-rose-500/50 opacity-90 shadow-[0_0_20px_rgba(244,63,94,0.15)]";
-                      letterBg  = "bg-rose-500/20 text-rose-300";
-                      textColor = "text-rose-200";
-                    } else {
-                      cardStyle = "bg-transparent opacity-35 border-transparent";
-                      letterBg  = "bg-white/[0.03] text-slate-600";
-                      textColor = "text-slate-500";
-                    }
-                  } else if (isSelected) {
-                    cardStyle = "bg-blue-500/[0.10] border-2 border-blue-500/50 shadow-[0_0_18px_rgba(59,130,246,0.12)]";
-                    letterBg  = "bg-blue-500/25 text-blue-200";
-                    textColor = "text-blue-100";
-                  }
+        {/* ── Scroll Area ── */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
+          <div className="max-w-3xl mx-auto">
 
-                  return (
-                    <button
-                      key={letter}
-                      onClick={() => handleSelect(letter)}
-                      disabled={showFeedback}
-                      className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-left transition-all duration-150 border outline-none group ${
-                        strikethroughs[letter] ? "opacity-30" : ""
-                      } ${cardStyle}`}
-                    >
-                      {/* Badge circular da letra */}
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-[13px] font-black transition-all ${letterBg}`}>
-                        {letter}
-                      </div>
+            {/* Barra de progresso fina */}
+            <div className="h-0.5 bg-white/[0.05] rounded-full mb-5 overflow-hidden">
+              <div
+                className="h-full bg-blue-500/60 rounded-full transition-all duration-500"
+                style={{ width: `${totalQuestions > 0 ? ((questionIndex + 1) / totalQuestions) * 100 : 0}%` }}
+              />
+            </div>
 
-                      {/* Texto da alternativa */}
-                      <span className={`text-[13.5px] leading-relaxed flex-1 font-normal transition-colors ${
-                        strikethroughs[letter] ? "line-through text-slate-600" : textColor
-                      }`}>
-                        {formatQuestionText(text)}
-                      </span>
+            {/* Metadata chips */}
+            <div className="flex flex-wrap items-center gap-2 mb-5">
+              <span className="text-[11px] font-medium text-slate-300 bg-white/[0.05] border border-white/[0.08] px-2.5 py-1 rounded-md">
+                {question.materia || "Geral"}
+              </span>
+              {question.tema && question.tema !== question.materia && (
+                <span className="text-[11px] text-slate-400 bg-white/[0.03] border border-white/[0.06] px-2.5 py-1 rounded-md">
+                  {question.tema}
+                </span>
+              )}
+              {question.dificuldade && (
+                <span className="text-[11px] text-slate-400 bg-white/[0.03] border border-white/[0.06] px-2.5 py-1 rounded-md">
+                  {question.dificuldade}
+                </span>
+              )}
+              {textoApoio && (
+                <button
+                  onClick={() => setShowTextoApoio(!showTextoApoio)}
+                  className={`text-[11px] font-medium px-2.5 py-1 rounded-md border transition-all flex items-center gap-1.5 ${
+                    showTextoApoio
+                      ? "bg-blue-600/20 border-blue-500/30 text-blue-300"
+                      : "bg-white/[0.03] border-white/[0.06] text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <FileText size={11} />
+                  {showTextoApoio ? "Ocultar texto de apoio" : "Texto de apoio"}
+                </button>
+              )}
+            </div>
 
-                      {/* Ãcones de feedback */}
-                      {showFeedback && isCorrectAnswer && (
-                        <CheckCircle2 size={18} className="text-emerald-400 ml-1 shrink-0 animate-pulse" />
-                      )}
-                      {showFeedback && isSelected && !isCorrectAnswer && (
-                        <XCircle size={18} className="text-rose-400 ml-1 shrink-0" />
-                      )}
-
-                      {/* BotÃ£o cortar alternativa */}
-                      {!showFeedback && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); toggleStrikethrough(letter); }}
-                          title={strikethroughs[letter] ? "Restaurar alternativa" : "Cortar alternativa"}
-                          className={`ml-1 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100 ${
-                            strikethroughs[letter]
-                              ? "text-rose-400 opacity-100 bg-rose-500/10"
-                              : "text-slate-600 hover:text-rose-400 hover:bg-rose-500/5"
-                          }`}
-                        >
-                          <Scissors size={12} />
-                        </button>
-                      )}
-                    </button>
-                  );
-                }) : null}
-              </motion.div>
-
-              {/* â”€â”€ BotÃµes de AÃ§Ã£o â”€â”€ */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-7 pb-2">
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <div className="w-4 h-4 rounded-md border border-white/[0.1] bg-white/[0.02] group-hover:bg-white/[0.05] transition-colors" />
-                  <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider">Fiquei em DÃºvida</span>
-                </label>
-
-                <div className="flex flex-wrap items-center gap-2.5">
-                  {!showFeedback && (
-                    <button
-                      onClick={handleConfirm}
-                      disabled={isSaving || !selectedOption}
-                      className={`px-8 py-3.5 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all shadow-md active:scale-95 ${
-                        selectedOption
-                          ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white border border-blue-400/30 shadow-blue-600/20"
-                          : "bg-[#121626] text-slate-600 border border-white/[0.02] cursor-not-allowed"
-                      }`}
-                    >
-                      {isSaving ? "Processando..." : "Responder"}
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => setShowFeedback(!showFeedback)}
-                    className="px-5 py-3.5 rounded-xl border border-[#1e2638] hover:bg-[#1e2638]/60 text-blue-400 font-black text-[11px] uppercase tracking-widest transition-all"
-                  >
-                    {showFeedback ? "Esconder Gabarito" : "Ver Gabarito"}
-                  </button>
-
-                  <button
-                    onClick={() => setShowComment(!showComment)}
-                    className={`px-5 py-3.5 rounded-xl border transition-all font-black text-[11px] uppercase tracking-widest flex items-center gap-2 ${
-                      showComment
-                        ? "bg-purple-600/20 border-purple-500/40 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
-                        : "border-[#1e2638] hover:bg-[#1e2638]/60 text-purple-400"
-                    }`}
-                  >
-                    <MessageSquare size={13} />
-                    {showComment ? "Esconder ComentÃ¡rio" : "Ver ComentÃ¡rio"}
-                    {comentarioTexto && (
-                      <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* â”€â”€ SeÃ§Ã£o de ComentÃ¡rio â”€â”€ */}
+            {/* Texto de Apoio colapsável */}
+            {textoApoio && (
               <AnimatePresence>
-                {(showFeedback || showComment) && (
+                {showTextoApoio && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="space-y-4 pt-4 border-t border-white/[0.04]"
+                    className="overflow-hidden mb-6"
                   >
-                    {showComment && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="p-5 rounded-2xl border border-purple-500/20 bg-gradient-to-b from-[#16192e] to-[#111425] relative overflow-hidden shadow-xl"
-                      >
-                        <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-purple-500 to-indigo-500" />
-                        <div className="flex items-center justify-between mb-3 border-b border-white/[0.06] pb-2.5">
-                          <div className="flex items-center gap-2 text-[11px] font-black text-purple-400 uppercase tracking-widest">
-                            <BrainCircuit size={15} className="text-purple-400 animate-pulse" />
-                            ComentÃ¡rio da QuestÃ£o
-                          </div>
-                          {comentarioTexto && (
-                            <span className="text-[9px] font-bold text-purple-300 bg-purple-500/10 px-2.5 py-1 rounded-full border border-purple-500/20">
-                              Supabase Sync
-                            </span>
-                          )}
-                        </div>
-                        {comentarioTexto ? (
-                          <div className="text-[13px] text-slate-200 leading-relaxed font-medium">
-                            {formatQuestionText(comentarioTexto)}
-                          </div>
-                        ) : (
-                          <div className="py-3 text-center text-slate-400 text-xs font-medium flex items-center justify-center gap-2">
-                            <AlertCircle size={14} className="text-amber-400" />
-                            Esta questÃ£o ainda nÃ£o possui comentÃ¡rio cadastrado no Supabase.
-                          </div>
-                        )}
-                      </motion.div>
-                    )}
+                    <div className="p-4 sm:p-5 rounded-xl bg-[#111623] border-l-[3px] border-blue-500 border border-white/[0.06]">
+                      <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-blue-400 mb-2.5">
+                        <FileText size={12} /> Texto de Apoio
+                      </div>
+                      <div className="text-[13.5px] text-slate-300 leading-relaxed">
+                        {formatQuestionText(textoApoio)}
+                      </div>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
+            )}
 
-              <div className="h-6" />
+            {/* ── Enunciado ── */}
+            <div className="text-[15px] sm:text-[17px] font-semibold text-[#F5F5F5] leading-[1.85] mb-7">
+              {formatQuestionText(question.title ?? '')}
+            </div>
 
-            </div>{/* /max-w-3xl */}
-          </div>{/* /scroll */}
+            {/* Pergunta-Problema */}
+            {question.perguntaProblema && (
+              <div className="text-[14px] sm:text-[15px] text-[#E0E0E0] font-normal leading-relaxed mb-7 pl-4 border-l-[3px] border-white/[0.1]">
+                {formatQuestionText(question.perguntaProblema)}
+              </div>
+            )}
 
-        </div>{/* /main content */}
+            {/* Banner de Feedback */}
+            <AnimatePresence>
+              {showFeedback && selectedOption && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border mb-5 text-[13px] font-medium ${
+                    isCorrect
+                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+                      : "bg-rose-500/10 border-rose-500/30 text-rose-300"
+                  }`}
+                >
+                  {isCorrect
+                    ? <CheckCircle2 size={17} className="shrink-0" />
+                    : <XCircle size={17} className="shrink-0" />
+                  }
+                  <span>
+                    {isCorrect
+                      ? "Resposta correta!"
+                      : `Incorreto. O gabarito é a alternativa ${gabarito}.`}
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* ── Alternativas ── */}
+            <motion.div
+              animate={isShaking ? { x: [0, -10, 10, -6, 6, -2, 2, 0] } : { x: 0 }}
+              transition={{ duration: 0.45 }}
+              className="space-y-2"
+            >
+              {hasAlternativas ? LETTERS.filter(l => alternativas[l]).map(letter => {
+                const text = alternativas[letter];
+                const isSelected = selectedOption === letter;
+                const isCorrectAnswer = gabarito === letter;
+
+                let cardCls = "border-white/[0.07] bg-transparent hover:bg-white/[0.03] hover:border-white/[0.14] cursor-pointer";
+                let badgeCls = "border-white/[0.14] text-slate-400 bg-transparent";
+                let textCls = "text-[#D6D6D6]";
+
+                if (showFeedback) {
+                  if (isCorrectAnswer) {
+                    cardCls = "border-emerald-500/40 bg-emerald-500/[0.07] cursor-default";
+                    badgeCls = "border-emerald-400/60 text-emerald-300 bg-emerald-500/10";
+                    textCls = "text-emerald-200";
+                  } else if (isSelected && !isCorrectAnswer) {
+                    cardCls = "border-rose-500/40 bg-rose-500/[0.07] opacity-90 cursor-default";
+                    badgeCls = "border-rose-400/60 text-rose-300 bg-rose-500/10";
+                    textCls = "text-rose-200";
+                  } else {
+                    cardCls = "border-transparent opacity-30 cursor-default";
+                    badgeCls = "border-white/[0.08] text-slate-600 bg-transparent";
+                    textCls = "text-slate-500";
+                  }
+                } else if (isSelected) {
+                  cardCls = "border-blue-500/50 bg-blue-500/[0.08] cursor-pointer";
+                  badgeCls = "border-blue-400/60 text-blue-300 bg-blue-500/10";
+                  textCls = "text-[#E8F0FE]";
+                }
+
+                return (
+                  <button
+                    key={letter}
+                    onClick={() => handleSelect(letter)}
+                    disabled={showFeedback}
+                    className={`w-full flex items-start gap-3.5 px-4 py-3.5 rounded-xl text-left transition-all duration-150 border outline-none group ${
+                      strikethroughs[letter] ? "opacity-30" : ""
+                    } ${cardCls}`}
+                  >
+                    {/* Badge circular */}
+                    <div className={`w-8 h-8 rounded-full border flex items-center justify-center shrink-0 text-[12px] font-semibold transition-all mt-0.5 ${badgeCls}`}>
+                      {letter}
+                    </div>
+
+                    {/* Texto */}
+                    <span className={`text-[13.5px] leading-relaxed flex-1 font-normal transition-colors pt-1 ${
+                      strikethroughs[letter] ? "line-through text-slate-600" : textCls
+                    }`}>
+                      {formatQuestionText(text)}
+                    </span>
+
+                    {/* Ícones feedback */}
+                    {showFeedback && isCorrectAnswer && (
+                      <CheckCircle2 size={16} className="text-emerald-400 mt-1.5 shrink-0" />
+                    )}
+                    {showFeedback && isSelected && !isCorrectAnswer && (
+                      <XCircle size={16} className="text-rose-400 mt-1.5 shrink-0" />
+                    )}
+
+                    {/* Cortar alternativa */}
+                    {!showFeedback && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleStrikethrough(letter); }}
+                        title={strikethroughs[letter] ? "Restaurar alternativa" : "Eliminar alternativa"}
+                        className={`mt-1.5 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100 ${
+                          strikethroughs[letter]
+                            ? "text-rose-400 opacity-100 bg-rose-500/10"
+                            : "text-slate-600 hover:text-rose-400 hover:bg-rose-500/5"
+                        }`}
+                      >
+                        <Scissors size={11} />
+                      </button>
+                    )}
+                  </button>
+                );
+              }) : null}
+            </motion.div>
+
+            {/* ── Botões de Ação ── */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-5 pb-2 mt-4 border-t border-white/[0.05]">
+              <label className="flex items-center gap-2 cursor-pointer group select-none">
+                <div className="w-4 h-4 rounded border border-white/[0.12] bg-transparent group-hover:bg-white/[0.04] transition-colors" />
+                <span className="text-[12px] text-slate-500 group-hover:text-slate-400 transition-colors">Fiquei em dúvida</span>
+              </label>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {!showFeedback && (
+                  <button
+                    onClick={handleConfirm}
+                    disabled={isSaving || !selectedOption}
+                    className={`px-6 py-2.5 rounded-lg text-[13px] font-semibold transition-all ${
+                      selectedOption
+                        ? "bg-blue-600 hover:bg-blue-500 text-white active:scale-95"
+                        : "bg-white/[0.04] text-slate-600 border border-white/[0.05] cursor-not-allowed"
+                    }`}
+                  >
+                    {isSaving ? "Salvando..." : "Responder"}
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setShowFeedback(!showFeedback)}
+                  className="px-4 py-2.5 rounded-lg border border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200 text-[13px] font-medium transition-all"
+                >
+                  {showFeedback ? "Ocultar gabarito" : "Ver gabarito"}
+                </button>
+
+                <button
+                  onClick={() => setShowComment(!showComment)}
+                  className={`px-4 py-2.5 rounded-lg border text-[13px] font-medium transition-all flex items-center gap-2 ${
+                    showComment
+                      ? "border-purple-500/30 bg-purple-500/10 text-purple-300"
+                      : "border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <MessageSquare size={13} />
+                  {showComment ? "Ocultar comentário" : "Ver comentário"}
+                  {comentarioTexto && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* ── Comentário ── */}
+            <AnimatePresence>
+              {showComment && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-4 p-5 rounded-xl bg-[#111623] border-l-[3px] border-purple-500 border border-white/[0.06]">
+                    <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-purple-400 mb-3">
+                      <BrainCircuit size={13} />
+                      Comentário da questão
+                    </div>
+                    {comentarioTexto ? (
+                      <div className="text-[13.5px] text-[#D6D6D6] leading-relaxed">
+                        {formatQuestionText(comentarioTexto)}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-[12px] text-slate-500">
+                        <AlertCircle size={13} className="text-amber-400" />
+                        Esta questão ainda não possui comentário cadastrado.
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="h-6" />
+
+          </div>{/* /max-w-3xl */}
+        </div>{/* /scroll */}
+
       </div>{/* /flex col */}
 
       <PrintSimuladoModal
         isOpen={showPrintModal}
         onClose={() => setShowPrintModal(false)}
         questions={resolverQueue.length > 0 ? resolverQueue : [question]}
-        title={question.prova ? question.prova.toUpperCase() : "SIMULADO BANCO DE QUESTÃ•ES"}
-        subTitle={`MatÃ©ria: ${question.materia || "Geral"}`}
+        title={question.prova ? question.prova.toUpperCase() : "SIMULADO BANCO DE QUESTÕES"}
+        subTitle={`Matéria: ${question.materia || "Geral"}`}
       />
     </div>
   );
 }
-
