@@ -18,6 +18,7 @@ import {
   RotateCcw,
   Flame,
   Printer,
+  Target,
 } from "lucide-react";
 import { supabase, supabasePublic } from "../../lib/supabase";
 import { AuthModal } from "../../components/AuthModal";
@@ -753,11 +754,22 @@ export default function BancoPage() {
                       <h3 className="text-xs font-semibold text-slate-200 mb-4">Desempenho por Tópico</h3>
                       <div className="space-y-3.5 flex-1 overflow-y-auto custom-scrollbar pr-2">
                         {Object.entries(topicsMap).map(([topic, data], idx) => {
-                                <span className="text-[11px] font-bold text-slate-500">{idx + 1}.</span>
-                                <span className="text-[12px] font-bold text-slate-300 truncate group-hover:text-white transition-colors">{topic}</span>
+                          const topicAcc = data.total > 0 ? Math.round((data.correct / data.total) * 100) : 0;
+                          return (
+                            <div key={topic} className="space-y-1.5">
+                              <div className="flex items-center justify-between text-[12px]">
+                                <span className="text-slate-300 font-normal truncate max-w-[70%]">{idx + 1}. {topic}</span>
+                                <span className="text-[11px] text-slate-400 tabular-nums">
+                                  {data.correct}/{data.total} <span className="text-slate-500">({topicAcc}%)</span>
+                                </span>
                               </div>
-                              <div className="text-[10px] font-black text-slate-500 shrink-0 bg-[#1e2436] px-2.5 py-1.5 rounded-lg">
-                                {data.correct}/{data.total} acertos
+                              <div className="h-1.5 w-full bg-white/[0.05] rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-300 ${
+                                    topicAcc >= 70 ? "bg-emerald-500" : topicAcc >= 50 ? "bg-amber-500" : "bg-rose-500"
+                                  }`}
+                                  style={{ width: `${topicAcc}%` }}
+                                />
                               </div>
                             </div>
                           );
