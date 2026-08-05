@@ -740,40 +740,71 @@ export default function BancoPage() {
                     <div className="bg-[#111623] rounded-xl border border-white/[0.06] p-5 flex flex-col">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-xs font-semibold text-slate-200">Gabarito e Navegação</h3>
+                        <span className="text-[10px] text-slate-500 font-medium">Agrupado por Matéria</span>
                       </div>
-                      <div className="flex flex-wrap gap-2 overflow-y-auto custom-scrollbar max-h-72 pr-1 pt-1">
-                        {resolverQueue?.map((q, idx) => {
-                          const ans = userAnswers?.[String(q.id)];
-                          const isCurrent = idx === resolverIndex;
-                          const isMarkedDuvida = duvidas.has(String(q.id));
-                          
-                          let boxStyle = "bg-white/[0.03] text-slate-400 hover:bg-white/[0.07] border-white/[0.08]";
-                          if (ans) {
-                            boxStyle = ans.isCorrect
-                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                              : "bg-rose-500/10 text-rose-400 border-rose-500/30";
-                          }
-                          if (isCurrent) {
-                            boxStyle = isCurrent
-                              ? ans
-                                ? ans.isCorrect
-                                  ? "bg-emerald-500/20 text-emerald-300 border-2 border-blue-500"
-                                  : "bg-rose-500/20 text-rose-300 border-2 border-blue-500"
-                                : "bg-blue-500/20 text-blue-300 border-2 border-blue-500"
-                              : boxStyle;
-                          }
+                      <div className="space-y-4 overflow-y-auto custom-scrollbar max-h-96 pr-1 pt-1">
+                        {(() => {
+                          const gabaritoPorMateria: Record<string, { q: BancoQuestion; idx: number }[]> = {};
+                          resolverQueue?.forEach((q, idx) => {
+                            const mat = q.materia || "Geral";
+                            if (!gabaritoPorMateria[mat]) gabaritoPorMateria[mat] = [];
+                            gabaritoPorMateria[mat].push({ q, idx });
+                          });
 
-                          return (
-                            <button
-                              key={q.id}
-                              onClick={() => { setResolverIndex(idx); setSelectedQuestion(q); setActiveTab("resolver"); }}
-                              className={`relative w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-medium transition-all border shrink-0 outline-none ${boxStyle}`}
-                            >
-                              {idx + 1}
-                              {isMarkedDuvida && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 border border-[#111623]" />}
-                            </button>
-                          );
-                        })}
+                          return Object.entries(gabaritoPorMateria).map(([mat, items]) => {
+                            const feitasMat = items.filter(i => userAnswers?.[String(i.q.id)]).length;
+                            const acertosMat = items.filter(i => userAnswers?.[String(i.q.id)]?.isCorrect).length;
+
+                            return (
+                              <div key={mat} className="space-y-2 border-b border-white/[0.04] pb-3 last:border-0 last:pb-0">
+                                <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300">
+                                  <span className="truncate flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                                    {mat}
+                                  </span>
+                                  <span className="text-[10px] text-slate-500 font-mono font-normal">
+                                    {feitasMat}/{items.length} feitas {feitasMat > 0 && `(${acertosMat} acertos)`}
+                                  </span>
+                                </div>
+
+                                <div className="flex flex-wrap gap-1.5">
+                                  {items.map(({ q, idx }) => {
+                                    const ans = userAnswers?.[String(q.id)];
+                                    const isCurrent = idx === resolverIndex;
+                                    const isMarkedDuvida = duvidas.has(String(q.id));
+                                    
+                                    let boxStyle = "bg-white/[0.03] text-slate-400 hover:bg-white/[0.07] border-white/[0.08]";
+                                    if (ans) {
+                                      boxStyle = ans.isCorrect
+                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                                        : "bg-rose-500/10 text-rose-400 border-rose-500/30";
+                                    }
+                                    if (isCurrent) {
+                                      boxStyle = isCurrent
+                                        ? ans
+                                          ? ans.isCorrect
+                                            ? "bg-emerald-500/20 text-emerald-300 border-2 border-blue-500"
+                                            : "bg-rose-500/20 text-rose-300 border-2 border-blue-500"
+                                          : "bg-blue-500/20 text-blue-300 border-2 border-blue-500"
+                                        : boxStyle;
+                                    }
+
+                                    return (
+                                      <button
+                                        key={q.id}
+                                        onClick={() => { setResolverIndex(idx); setSelectedQuestion(q); setActiveTab("resolver"); }}
+                                        className={`relative w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-medium transition-all border shrink-0 outline-none ${boxStyle}`}
+                                      >
+                                        {idx + 1}
+                                        {isMarkedDuvida && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 border border-[#111623]" />}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
                       </div>
                     </div>
 
