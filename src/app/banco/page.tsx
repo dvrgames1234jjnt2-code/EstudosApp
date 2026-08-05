@@ -119,6 +119,7 @@ export default function BancoPage() {
   // Última lista filtrada pela tabela do Banco — usada como fila quando o usuário entra no resolver via filtro
   const [filteredQuestions, setFilteredQuestions] = useState<BancoQuestion[]>([]);
   const [isSaving, setIsSaving]     = useState(false);
+  const [selectedSimulado, setSelectedSimulado] = useState<string | null>(null);
 
   // ── Auth ──────────────────────────────────
   useEffect(() => {
@@ -804,243 +805,246 @@ export default function BancoPage() {
 
           {/* ── SIMULADOS ── */}
           {activeTab === "simulados" && (() => {
-            // ─── 1. Agrupar questões por prova ─────────────────────────────
+            // 1. Agrupar por prova
             const simuladosMap: Record<string, { questions: typeof questions; correct: number; answered: number }> = {};
             for (const q of questions) {
               const prova = q.prova ?? "Sem Prova";
               if (!simuladosMap[prova]) simuladosMap[prova] = { questions: [], correct: 0, answered: 0 };
               simuladosMap[prova].questions.push(q);
               const ans = userAnswers[String(q.id)];
-              if (ans) {
-                simuladosMap[prova].answered++;
-                if (ans.isCorrect) simuladosMap[prova].correct++;
-              }
+              if (ans) { simuladosMap[prova].answered++; if (ans.isCorrect) simuladosMap[prova].correct++; }
             }
 
-            // ─── 2. Detecção inteligente de família (grupo) ─────────────────
-            // Padrões testados em ordem de prioridade:
-            //   "VD - Simulado 1"          → "VD"
-            //   "BB 2025 - Fase 1"         → "BB 2025"
-            //   "Simulado CEBRASPE 2024"   → "CEBRASPE 2024"
-            //   "Prova FCC 3"              → "FCC"
-            //   Qualquer outro             → primeiras 2 palavras significativas
+            // 2. Agrupamento inteligente por família
             function detectFamily(name: string): string {
-              // Padrão: "PREFIXO - resto" (dash separador)
-              const dashMatch = name.match(/^(.+?)\s*[-–]\s*.+$/);
-              if (dashMatch) {
-                const prefix = dashMatch[1].trim();
-                // Se o prefixo tem número de ano, inclui; se é curto (sigla), inclui direto
-                return prefix;
-              }
-              // Padrão: começa com número de simulado no final "Simulado XPTO 3"
-              const wordNumMatch = name.match(/^(.+?)\s+\d+\s*$/);
-              if (wordNumMatch) return wordNumMatch[1].trim();
-              // Fallback: até 2 primeiras palavras
-              const words = name.trim().split(/\s+/);
-              return words.slice(0, Math.min(2, words.length)).join(" ");
+              const dash = name.match(/^(.+?)\s*[-–]\s*.+$/);
+              if (dash) return dash[1].trim();
+              const endNum = name.match(/^(.+?)\s+\d+\s*$/);
+              if (endNum) return endNum[1].trim();
+              return name.trim().split(/\s+/).slice(0, 2).join(" ");
             }
-
-            // ─── 3. Montar grupos ──────────────────────────────────────────
-            const groups: Record<string, string[]> = {}; // família → [nomes de prova]
+            const groups: Record<string, string[]> = {};
             for (const prova of Object.keys(simuladosMap)) {
-              const family = detectFamily(prova);
-              if (!groups[family]) groups[family] = [];
-              groups[family].push(prova);
+              const fam = detectFamily(prova);
+              if (!groups[fam]) groups[fam] = [];
+              groups[fam].push(prova);
             }
-            // Ordenar provas dentro de cada grupo
-            for (const g of Object.values(groups)) {
-              g.sort((a, b) => a.localeCompare(b, "pt-BR", { numeric: true }));
-            }
+            for (const g of Object.values(groups)) g.sort((a, b) => a.localeCompare(b, "pt-BR", { numeric: true }));
 
-            const totalSimulados = Object.keys(simuladosMap).length;
+            // 3. Modo detalhe: simulado selecionado
+            if (selectedSimulado && simuladosMap[selectedSimulado]) {
+              const d = simuladosMap[selectedSimulado];
+              const total     = d.questions.length;
+              const answered  = d.answered;
+              const correct   = d.correct;
+              const errors    = answered - correct;
+              const remaining = total - answered;
+              const accuracy  = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+              const progress  = total > 0 ? Math.round((answered / total) * 100) : 0;
+              const status    = answered === 0 ? "nao_iniciado" : answered === total ? "concluido" : "em_andamento";
 
-            return (
-              <motion.div
-                key="simulados"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-10"
-              >
-                {/* Header da aba */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-sm font-semibold text-slate-200">Simulados</h2>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      {totalSimulados} simulados · {Object.keys(groups).length} grupos detectados
-                    </p>
+              return (
+                <motion.div key="simulado-detail" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+                  {/* Header do detalhe */}
+                  <div className="flex items-center gap-3 mb-6">
+                    <button
+                      onClick={() => setSelectedSimulado(null)}
+                      className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center text-slate-400 hover:text-slate-200 transition-all"
+                    >
+                      <ArrowLeft size={14} />
+                    </button>
+                    <div>
+                      <h2 className="text-sm font-semibold text-slate-200">{selectedSimulado}</h2>
+                      <p className="text-[11px] text-slate-500">{total} questões · {answered} respondidas</p>
+                    </div>
+                    <div className="ml-auto flex gap-2">
+                      <button
+                        onClick={() => {
+                          if (!user) { setShowAuthModal(true); return; }
+                          // Continuar de onde parou (primeira não respondida) ou do início
+                          const qi = status === "concluido" ? 0 : d.questions.findIndex(q => !userAnswers[String(q.id)]);
+                          const startIdx = qi >= 0 ? qi : 0;
+                          setResolverQueue(d.questions);
+                          setResolverIndex(startIdx);
+                          setSelectedQuestion(d.questions[startIdx]);
+                          setActiveTab("resolver");
+                        }}
+                        className={`px-4 py-2 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 transition-all ${
+                          status === "nao_iniciado" ? "bg-blue-600 hover:bg-blue-500 text-white"
+                          : status === "concluido" ? "bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.1] text-slate-300"
+                          : "bg-amber-500/20 border border-amber-500/20 hover:bg-amber-500/30 text-amber-300"
+                        }`}
+                      >
+                        {status === "nao_iniciado" && <><PlayCircle size={13} /> Iniciar</>}
+                        {status === "em_andamento" && <><Clock3 size={13} /> Continuar ({remaining} restantes)</>}
+                        {status === "concluido"    && <><CheckCircle2 size={13} /> Rever</>}
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Métricas */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                    {[
+                      { label: "Total",    value: total,    color: "text-slate-200",   bg: "bg-white/[0.03]" },
+                      { label: "Feitas",   value: answered, color: "text-slate-200",   bg: "bg-white/[0.03]" },
+                      { label: "Acertos",  value: correct,  color: "text-emerald-300", bg: "bg-emerald-500/10 border border-emerald-500/10" },
+                      { label: "Erros",    value: errors,   color: "text-rose-300",    bg: "bg-rose-500/10 border border-rose-500/10" },
+                    ].map(m => (
+                      <div key={m.label} className={`rounded-xl p-4 text-center ${m.bg}`}>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">{m.label}</div>
+                        <div className={`text-2xl font-semibold tabular-nums ${m.color}`}>{m.value}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Progresso */}
+                  <div className="mb-6 space-y-1.5">
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-slate-500">{progress}% concluído</span>
+                      <span className={`tabular-nums ${accuracy >= 70 ? "text-emerald-400" : accuracy >= 50 ? "text-amber-400" : answered === 0 ? "text-slate-500" : "text-rose-400"}`}>
+                        {answered > 0 ? `${accuracy}% de acerto` : "—"}
+                      </span>
+                    </div>
+                    <div className="h-2 w-full bg-white/[0.05] rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${accuracy >= 70 ? "bg-emerald-500" : accuracy >= 50 ? "bg-amber-500" : answered === 0 ? "bg-slate-700" : "bg-rose-500"}`}
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Grade de questões */}
+                  <div className="bg-[#0b0f1c] border border-white/[0.06] rounded-2xl p-5">
+                    <p className="text-[11px] text-slate-500 mb-4">Clique em uma questão para ir direto a ela</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {d.questions.map((q, qi) => {
+                        const ans = userAnswers[String(q.id)];
+                        let cls = "bg-white/[0.04] text-slate-500 border-white/[0.05] hover:bg-white/[0.08]";
+                        if (ans) cls = ans.isCorrect
+                          ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30"
+                          : "bg-rose-500/20 text-rose-400 border-rose-500/30 hover:bg-rose-500/30";
+                        return (
+                          <button
+                            key={q.id}
+                            title={`Q${qi + 1} — ${ans ? (ans.isCorrect ? "Correta" : "Errada") : "Não respondida"}`}
+                            onClick={() => {
+                              if (!user) { setShowAuthModal(true); return; }
+                              setResolverQueue(d.questions);
+                              setResolverIndex(qi);
+                              setSelectedQuestion(q);
+                              setActiveTab("resolver");
+                            }}
+                            className={`w-8 h-8 rounded-lg border text-[10px] font-medium transition-all hover:scale-110 ${cls}`}
+                          >
+                            {qi + 1}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            }
+
+            // 4. Lista de simulados (cards compactos agrupados)
+            return (
+              <motion.div key="simulados-list" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }} className="space-y-10">
+                <div>
+                  <h2 className="text-sm font-semibold text-slate-200">Simulados</h2>
+                  <p className="text-[11px] text-slate-500 mt-0.5">{Object.keys(simuladosMap).length} simulados · {Object.keys(groups).length} grupos · clique para ver as questões</p>
                 </div>
 
-                {/* ─── Grupos ─────────────────────────────────────────────── */}
                 {Object.entries(groups).map(([family, provas]) => {
-                  // Totais do grupo
                   const grpTotal    = provas.reduce((s, p) => s + simuladosMap[p].questions.length, 0);
                   const grpAnswered = provas.reduce((s, p) => s + simuladosMap[p].answered, 0);
                   const grpCorrect  = provas.reduce((s, p) => s + simuladosMap[p].correct, 0);
-                  const grpAcc      = grpAnswered > 0 ? Math.round((grpCorrect / grpAnswered) * 100) : 0;
-                  const grpProg     = grpTotal > 0 ? Math.round((grpAnswered / grpTotal) * 100) : 0;
+                  const grpAcc  = grpAnswered > 0 ? Math.round((grpCorrect / grpAnswered) * 100) : 0;
+                  const grpProg = grpTotal > 0 ? Math.round((grpAnswered / grpTotal) * 100) : 0;
 
                   return (
                     <div key={family}>
                       {/* Cabeçalho do grupo */}
                       <div className="flex items-center gap-3 mb-3">
-                        <div className="flex items-center gap-2 flex-1">
-                          <span className="text-[12px] font-semibold text-slate-200">{family}</span>
-                          <span className="text-[10px] text-slate-500 bg-white/[0.04] border border-white/[0.06] px-2 py-0.5 rounded-md">
-                            {provas.length} simulado{provas.length !== 1 ? "s" : ""} · {grpTotal} questões
-                          </span>
-                        </div>
-                        {/* Mini barra do grupo */}
-                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                          <span className="tabular-nums">{grpProg}% feito</span>
-                          <div className="w-20 h-1 bg-white/[0.05] rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${grpAcc >= 70 ? "bg-emerald-500" : grpAcc >= 50 ? "bg-amber-500" : grpAnswered === 0 ? "bg-slate-600" : "bg-rose-500"}`}
-                              style={{ width: `${grpProg}%` }}
-                            />
+                        <span className="text-[12px] font-semibold text-slate-200">{family}</span>
+                        <span className="text-[10px] text-slate-500 bg-white/[0.04] border border-white/[0.06] px-2 py-0.5 rounded-md">
+                          {provas.length} simulado{provas.length !== 1 ? "s" : ""} · {grpTotal} questões
+                        </span>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500 ml-auto">
+                          <span>{grpProg}%</span>
+                          <div className="w-16 h-1 bg-white/[0.05] rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${grpAcc >= 70 ? "bg-emerald-500" : grpAcc >= 50 ? "bg-amber-500" : grpAnswered === 0 ? "bg-slate-600" : "bg-rose-500"}`} style={{ width: `${grpProg}%` }} />
                           </div>
-                          <span className={`tabular-nums font-medium ${grpAcc >= 70 ? "text-emerald-400" : grpAcc >= 50 ? "text-amber-400" : grpAnswered === 0 ? "text-slate-500" : "text-rose-400"}`}>
-                            {grpAcc}% acerto
-                          </span>
+                          <span className={grpAcc >= 70 ? "text-emerald-400" : grpAcc >= 50 ? "text-amber-400" : grpAnswered === 0 ? "text-slate-500" : "text-rose-400"}>{grpAcc}%</span>
                         </div>
-                        <div className="flex-1 h-px bg-white/[0.05]" />
+                        <div className="w-16 h-px bg-white/[0.05]" />
                       </div>
 
-                      {/* Grid de cards — 1 card = 1 simulado */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-4">
+                      {/* Grid de cards compactos — 1 por simulado, sem grade de questões */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                         {provas.map(prova => {
                           const d = simuladosMap[prova];
                           const total    = d.questions.length;
                           const answered = d.answered;
                           const correct  = d.correct;
-                          const errors   = answered - correct;
-                          const remaining = total - answered;
-                          const accuracy  = answered > 0 ? Math.round((correct / answered) * 100) : 0;
-                          const progress  = total > 0 ? Math.round((answered / total) * 100) : 0;
+                          const accuracy = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+                          const progress = total > 0 ? Math.round((answered / total) * 100) : 0;
+                          const status   = answered === 0 ? "nao_iniciado" : answered === total ? "concluido" : "em_andamento";
 
-                          const status =
-                            answered === 0 ? "nao_iniciado"
-                            : answered === total ? "concluido"
-                            : "em_andamento";
+                          const shortId = (() => { const m = prova.match(/(\d+)\s*$/); return m ? m[1] : prova.slice(0, 2).toUpperCase(); })();
 
-                          const statusCfg = {
-                            nao_iniciado: { label: "Não iniciado",  dot: "bg-slate-500",  text: "text-slate-400" },
-                            em_andamento: { label: "Em andamento",  dot: "bg-amber-400",  text: "text-amber-400" },
-                            concluido:    { label: "Concluído",     dot: "bg-emerald-400", text: "text-emerald-400" },
-                          }[status];
-
-                          // Extrai identificador curto para o badge (ex: "Simulado 1" → "S1", "VD - Simulado 3" → "3", etc.)
-                          const shortId = (() => {
-                            const numMatch = prova.match(/(\d+)\s*$/);
-                            if (numMatch) return numMatch[1];
-                            return prova.slice(0, 2).toUpperCase();
-                          })();
-
-                          const launch = (qi = 0) => {
-                            if (!user) { setShowAuthModal(true); return; }
-                            setResolverQueue(d.questions);
-                            setResolverIndex(qi);
-                            setSelectedQuestion(d.questions[qi]);
-                            setActiveTab("resolver");
-                          };
+                          const dotColor = { nao_iniciado: "bg-slate-500", em_andamento: "bg-amber-400", concluido: "bg-emerald-400" }[status];
+                          const cardBorder = { nao_iniciado: "border-white/[0.06] hover:border-white/[0.14]", em_andamento: "border-amber-500/20 hover:border-amber-500/40", concluido: "border-emerald-500/20 hover:border-emerald-500/40" }[status];
 
                           return (
-                            <div
+                            <button
                               key={prova}
-                              className="bg-[#0b0f1c] border border-white/[0.06] rounded-2xl p-4 flex flex-col gap-3 hover:border-white/[0.12] transition-all"
+                              onClick={() => setSelectedSimulado(prova)}
+                              className={`bg-[#0b0f1c] border rounded-2xl p-4 flex flex-col gap-3 transition-all text-left group ${cardBorder}`}
                             >
-                              {/* ── Header do card ── */}
-                              <div className="flex items-center gap-3">
-                                {/* Badge ID */}
-                                <div className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center shrink-0">
-                                  <span className="text-[11px] font-semibold text-slate-300 tabular-nums">{shortId}</span>
+                              {/* Topo: badge + nome + status */}
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center shrink-0">
+                                  <span className="text-[10px] font-semibold text-slate-300 tabular-nums">{shortId}</span>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-[12px] font-semibold text-slate-200 truncate leading-tight" title={prova}>{prova}</p>
-                                  <p className="text-[10px] text-slate-500 mt-0.5">{total} questões</p>
+                                  <p className="text-[11px] font-semibold text-slate-200 truncate group-hover:text-white transition-colors" title={prova}>{prova}</p>
+                                  <p className="text-[9px] text-slate-500">{total} questões</p>
                                 </div>
-                                {/* Status dot */}
-                                <div className={`flex items-center gap-1.5 text-[10px] ${statusCfg.text}`}>
-                                  <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot} ${status === "em_andamento" ? "animate-pulse" : ""}`} />
-                                  {statusCfg.label}
+                                <span className={`w-2 h-2 rounded-full shrink-0 ${dotColor} ${status === "em_andamento" ? "animate-pulse" : ""}`} />
+                              </div>
+
+                              {/* Stats em linha */}
+                              <div className="flex gap-1.5 text-center">
+                                <div className="flex-1 bg-white/[0.03] rounded-lg py-1.5">
+                                  <div className="text-[8px] text-slate-500 uppercase tracking-wide">Feitas</div>
+                                  <div className="text-[12px] font-semibold text-slate-200 tabular-nums">{answered}</div>
+                                </div>
+                                <div className="flex-1 bg-emerald-500/10 rounded-lg py-1.5">
+                                  <div className="text-[8px] text-emerald-500">✔</div>
+                                  <div className="text-[12px] font-semibold text-emerald-300 tabular-nums">{correct}</div>
+                                </div>
+                                <div className="flex-1 bg-rose-500/10 rounded-lg py-1.5">
+                                  <div className="text-[8px] text-rose-500 uppercase">✘</div>
+                                  <div className="text-[12px] font-semibold text-rose-300 tabular-nums">{answered - correct}</div>
                                 </div>
                               </div>
 
-                              {/* ── Métricas rápidas (estilo referência) ── */}
-                              <div className="grid grid-cols-4 gap-1.5 text-center">
-                                <div className="rounded-lg bg-white/[0.03] py-1.5">
-                                  <div className="text-[9px] text-slate-500 uppercase tracking-wide">Total</div>
-                                  <div className="text-[13px] font-semibold text-slate-200 tabular-nums">{total}</div>
-                                </div>
-                                <div className="rounded-lg bg-white/[0.03] py-1.5">
-                                  <div className="text-[9px] text-slate-500 uppercase tracking-wide">Feitas</div>
-                                  <div className="text-[13px] font-semibold text-slate-200 tabular-nums">{answered}</div>
-                                </div>
-                                <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/10 py-1.5">
-                                  <div className="text-[9px] text-emerald-500 uppercase tracking-wide">Acertos</div>
-                                  <div className="text-[13px] font-semibold text-emerald-300 tabular-nums">{correct}</div>
-                                </div>
-                                <div className="rounded-lg bg-rose-500/10 border border-rose-500/10 py-1.5">
-                                  <div className="text-[9px] text-rose-500 uppercase tracking-wide">Erros</div>
-                                  <div className="text-[13px] font-semibold text-rose-300 tabular-nums">{errors}</div>
-                                </div>
-                              </div>
-
-                              {/* ── Barra progresso + taxa ── */}
+                              {/* Barra + taxa */}
                               <div className="space-y-1">
-                                <div className="flex justify-between text-[10px]">
-                                  <span className="text-slate-500">{progress}% concluído · {remaining} restantes</span>
-                                  <span className={`tabular-nums font-medium ${accuracy >= 70 ? "text-emerald-400" : accuracy >= 50 ? "text-amber-400" : answered === 0 ? "text-slate-500" : "text-rose-400"}`}>
-                                    {answered > 0 ? `${accuracy}% de acerto` : "—"}
+                                <div className="flex justify-between text-[9px]">
+                                  <span className="text-slate-500">{progress}%</span>
+                                  <span className={answered > 0 ? (accuracy >= 70 ? "text-emerald-400" : accuracy >= 50 ? "text-amber-400" : "text-rose-400") : "text-slate-600"}>
+                                    {answered > 0 ? `${accuracy}% acerto` : "não iniciado"}
                                   </span>
                                 </div>
-                                <div className="h-1.5 w-full bg-white/[0.05] rounded-full overflow-hidden">
+                                <div className="h-1 w-full bg-white/[0.05] rounded-full overflow-hidden">
                                   <div
-                                    className={`h-full rounded-full transition-all duration-500 ${accuracy >= 70 ? "bg-emerald-500" : accuracy >= 50 ? "bg-amber-500" : answered === 0 ? "bg-slate-700" : "bg-rose-500"}`}
+                                    className={`h-full rounded-full transition-all ${accuracy >= 70 ? "bg-emerald-500" : accuracy >= 50 ? "bg-amber-500" : answered === 0 ? "bg-slate-700" : "bg-rose-500"}`}
                                     style={{ width: `${progress}%` }}
                                   />
                                 </div>
                               </div>
-
-                              {/* ── Grade Visual de Questões ── */}
-                              <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto custom-scrollbar pr-0.5">
-                                {d.questions.map((q, qi) => {
-                                  const ans = userAnswers[String(q.id)];
-                                  let cls = "bg-white/[0.04] text-slate-600 border-white/[0.05]";
-                                  if (ans) cls = ans.isCorrect
-                                    ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                                    : "bg-rose-500/20 text-rose-400 border-rose-500/30";
-                                  return (
-                                    <button
-                                      key={q.id}
-                                      title={`Q${qi + 1} — ${ans ? (ans.isCorrect ? "Correta" : "Errada") : "Não respondida"}`}
-                                      onClick={() => launch(qi)}
-                                      className={`w-6 h-6 rounded border text-[8px] font-medium transition-all hover:scale-110 hover:z-10 ${cls}`}
-                                    >
-                                      {qi + 1}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-
-                              {/* ── Botão de ação ── */}
-                              <button
-                                onClick={() => launch(0)}
-                                className={`w-full py-2 rounded-lg text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5 ${
-                                  status === "nao_iniciado"
-                                    ? "bg-blue-600/80 hover:bg-blue-600 text-white"
-                                    : status === "concluido"
-                                    ? "bg-white/[0.04] hover:bg-white/[0.07] text-slate-300 border border-white/[0.08]"
-                                    : "bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/20"
-                                }`}
-                              >
-                                {status === "nao_iniciado" && <><PlayCircle size={13} /> Iniciar</>}
-                                {status === "em_andamento" && <><Clock3 size={13} /> Continuar ({remaining} restantes)</>}
-                                {status === "concluido"    && <><CheckCircle2 size={13} /> Rever</>}
-                              </button>
-                            </div>
+                            </button>
                           );
                         })}
                       </div>
