@@ -1279,6 +1279,20 @@ export default function BancoPage() {
                           const tipoAnsweredQ = provasDoTipo.reduce((s, p) => s + p.answered, 0);
                           const tipoPendingQ = tipoTotalQ - tipoAnsweredQ;
 
+                          // Agrupar provas pela matéria dominante
+                          const porMateria: Record<string, ProvaData[]> = {};
+                          for (const prova of provasDoTipo) {
+                            const freq: Record<string, number> = {};
+                            prova.questions.forEach(q => {
+                              const m = q.materia || "Geral";
+                              freq[m] = (freq[m] || 0) + 1;
+                            });
+                            const matDom = Object.entries(freq).sort((a, b) => b[1] - a[1])[0]?.[0] || "Geral";
+                            if (!porMateria[matDom]) porMateria[matDom] = [];
+                            porMateria[matDom].push(prova);
+                          }
+                          const materias = Object.keys(porMateria).sort();
+
                           return (
                             <div key={tipoNome} className="space-y-2 bg-[#080c18] border border-white/[0.04] rounded-xl p-3.5">
                               {/* Cabeçalho do Tipo */}
@@ -1294,34 +1308,52 @@ export default function BancoPage() {
                                 </div>
                               </div>
 
-                              {/* GRID DE PROVAS (QUADRADINHOS MAIS COMPACTOS IGUAIS A IMAGEM) */}
-                              <div className="flex flex-wrap gap-2 pt-1">
-                                {provasDoTipo.map(prova => {
-                                  const qTot = prova.questions.length;
-                                  const isConcluida = prova.answered === qTot && qTot > 0;
-                                  const isEmAndamento = prova.answered > 0 && !isConcluida;
-
-                                  let tileStyle = "bg-[#0f1422] border-white/[0.08] text-slate-500 hover:border-slate-500 hover:text-slate-300";
-                                  if (isConcluida) {
-                                    tileStyle = "bg-[#0a2318] border-emerald-500/50 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.2)]";
-                                  } else if (isEmAndamento) {
-                                    tileStyle = "bg-[#271018] border-rose-500/50 text-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.2)]";
-                                  }
-
+                              {/* GRID DE PROVAS agrupadas por Matéria dominante */}
+                              <div className="space-y-2 pt-0.5">
+                                {materias.map(mat => {
+                                  const provasMat = porMateria[mat];
+                                  const matAnswered = provasMat.reduce((s, p) => s + p.answered, 0);
+                                  const matTotal   = provasMat.reduce((s, p) => s + p.questions.length, 0);
                                   return (
-                                    <button
-                                      key={prova.rawName}
-                                      onClick={() => {
-                                        setResolverQueue(prova.questions);
-                                        setResolverIndex(0);
-                                        setSelectedQuestion(prova.questions[0]);
-                                        setActiveTab("desempenho");
-                                      }}
-                                      title={`${prova.rawName} — ${prova.answered}/${qTot} feitas · clique para ver o desempenho`}
-                                      className={`w-11 h-9 rounded-lg border-2 font-mono font-black text-[11px] transition-all hover:scale-105 active:scale-95 flex items-center justify-center ${tileStyle}`}
-                                    >
-                                      {prova.numero}
-                                    </button>
+                                    <div key={mat}>
+                                      {/* Sub-header da Matéria — só aparece se há mais de 1 matéria */}
+                                      {materias.length > 1 && (
+                                        <div className="flex items-center justify-between mb-1">
+                                          <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 truncate max-w-[65%]">{mat}</span>
+                                          <span className="text-[9px] font-mono text-slate-600 tabular-nums">{matAnswered}/{matTotal}</span>
+                                        </div>
+                                      )}
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {provasMat.map(prova => {
+                                          const qTot = prova.questions.length;
+                                          const isConcluida = prova.answered === qTot && qTot > 0;
+                                          const isEmAndamento = prova.answered > 0 && !isConcluida;
+
+                                          let tileStyle = "bg-[#0f1422] border-white/[0.08] text-slate-500 hover:border-slate-500 hover:text-slate-300";
+                                          if (isConcluida) {
+                                            tileStyle = "bg-[#0a2318] border-emerald-500/50 text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.15)]";
+                                          } else if (isEmAndamento) {
+                                            tileStyle = "bg-[#271018] border-rose-500/50 text-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.15)]";
+                                          }
+
+                                          return (
+                                            <button
+                                              key={prova.rawName}
+                                              onClick={() => {
+                                                setResolverQueue(prova.questions);
+                                                setResolverIndex(0);
+                                                setSelectedQuestion(prova.questions[0]);
+                                                setActiveTab("desempenho");
+                                              }}
+                                              title={`${prova.rawName} — ${prova.answered}/${qTot} feitas · clique para ver o desempenho`}
+                                              className={`w-10 h-8 rounded-lg border-2 font-mono font-black text-[10px] transition-all hover:scale-105 active:scale-95 flex items-center justify-center ${tileStyle}`}
+                                            >
+                                              {prova.numero}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
                                   );
                                 })}
                               </div>
