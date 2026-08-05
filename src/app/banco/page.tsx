@@ -805,47 +805,124 @@ export default function BancoPage() {
 
           {/* ── SIMULADOS ── */}
           {activeTab === "simulados" && (() => {
-            // 1. Agrupar por prova
-            const simuladosMap: Record<string, { questions: typeof questions; correct: number; answered: number }> = {};
+            // ─── 1. Estruturação e Parser das Provas ──────────────────────────
+            interface ProvaData {
+              rawName: string;
+              familia: string;
+              numero: string;
+              tipo: string;
+              concurso: string;
+              questions: typeof questions;
+              answered: number;
+              correct: number;
+            }
+
+            function parseProvaDetails(rawName: string): { familia: string; numero: string; tipo: string; concurso: string } {
+              const parts = rawName.split(/\s*[-–]\s*/).map(s => s.trim()).filter(Boolean);
+
+              let familia = "Geral";
+              let numero = "01";
+              let tipo = "SIMULADO";
+              let concurso = "GERAL";
+
+              if (parts.length >= 4) {
+                if (/^\d+$/.test(parts[1])) {
+                  familia = parts[0];
+                  numero = parts[1].padStart(2, '0');
+                  tipo = parts[2].toUpperCase();
+                  concurso = parts[3];
+                } else if (/^\d+$/.test(parts[2])) {
+                  familia = parts[0];
+                  tipo = parts[1].toUpperCase();
+                  numero = parts[2].padStart(2, '0');
+                  concurso = parts[3];
+                } else {
+                  familia = parts[0];
+                  tipo = (parts[2] || parts[1]).toUpperCase();
+                  concurso = parts[3];
+                  const num = rawName.match(/\b\d+\b/);
+                  if (num) numero = num[0].padStart(2, '0');
+                }
+              } else if (parts.length === 3) {
+                familia = parts[0];
+                concurso = parts[2];
+                const num = parts[1].match(/\d+/);
+                if (num) {
+                  numero = num[0].padStart(2, '0');
+                  tipo = parts[1].replace(/\d+/, '').trim().toUpperCase() || "SIMULADO";
+                } else {
+                  tipo = parts[1].toUpperCase();
+                }
+              } else if (parts.length === 2) {
+                familia = parts[0];
+                const num = parts[1].match(/\d+/);
+                if (num) {
+                  numero = num[0].padStart(2, '0');
+                  tipo = parts[1].replace(/\d+/, '').trim().toUpperCase() || "SIMULADO";
+                } else {
+                  tipo = parts[1].toUpperCase();
+                }
+              } else {
+                const num = rawName.match(/\d+/);
+                if (num) numero = num[0].padStart(2, '0');
+                familia = rawName.replace(/\d+/, '').trim() || "Geral";
+              }
+
+              return { familia, numero, tipo, concurso };
+            }
+
+            const mapaProvas: Record<string, ProvaData> = {};
             for (const q of questions) {
-              const prova = q.prova ?? "Sem Prova";
-              if (!simuladosMap[prova]) simuladosMap[prova] = { questions: [], correct: 0, answered: 0 };
-              simuladosMap[prova].questions.push(q);
+              const provaName = q.prova ?? "Sem Prova";
+              if (!mapaProvas[provaName]) {
+                const meta = parseProvaDetails(provaName);
+                mapaProvas[provaName] = {
+                  rawName: provaName,
+                  ...meta,
+                  questions: [],
+                  answered: 0,
+                  correct: 0,
+                };
+              }
+              mapaProvas[provaName].questions.push(q);
               const ans = userAnswers[String(q.id)];
-              if (ans) { simuladosMap[prova].answered++; if (ans.isCorrect) simuladosMap[prova].correct++; }
+              if (ans) {
+                mapaProvas[provaName].answered++;
+                if (ans.isCorrect) mapaProvas[provaName].correct++;
+              }
             }
 
-            // 2. Agrupamento inteligente por família
-            function detectFamily(name: string): string {
-              const dash = name.match(/^(.+?)\s*[-–]\s*.+$/);
-              if (dash) return dash[1].trim();
-              const endNum = name.match(/^(.+?)\s+\d+\s*$/);
-              if (endNum) return endNum[1].trim();
-              return name.trim().split(/\s+/).slice(0, 2).join(" ");
+            const blocos: Record<string, { familia: string; concurso: string; tipos: Record<string, ProvaData[]> }> = {};
+            for (const p of Object.values(mapaProvas)) {
+              const blocoKey = `${p.familia} · ${p.concurso}`;
+              if (!blocos[blocoKey]) {
+                blocos[blocoKey] = { familia: p.familia, concurso: p.concurso, tipos: {} };
+              }
+              if (!blocos[blocoKey].tipos[p.tipo]) {
+                blocos[blocoKey].tipos[p.tipo] = [];
+              }
+              blocos[blocoKey].tipos[p.tipo].push(p);
             }
-            const groups: Record<string, string[]> = {};
-            for (const prova of Object.keys(simuladosMap)) {
-              const fam = detectFamily(prova);
-              if (!groups[fam]) groups[fam] = [];
-              groups[fam].push(prova);
-            }
-            for (const g of Object.values(groups)) g.sort((a, b) => a.localeCompare(b, "pt-BR", { numeric: true }));
 
-            // 3. Modo detalhe: simulado selecionado
-            if (selectedSimulado && simuladosMap[selectedSimulado]) {
-              const d = simuladosMap[selectedSimulado];
-              const total     = d.questions.length;
-              const answered  = d.answered;
-              const correct   = d.correct;
-              const errors    = answered - correct;
+            for (const b of Object.values(blocos)) {
+              for (const t of Object.keys(b.tipos)) {
+                b.tipos[t].sort((a, b) => a.numero.localeCompare(b.numero, undefined, { numeric: true }));
+              }
+            }
+
+            if (selectedSimulado && mapaProvas[selectedSimulado]) {
+              const d = mapaProvas[selectedSimulado];
+              const total = d.questions.length;
+              const answered = d.answered;
+              const correct = d.correct;
+              const errors = answered - correct;
               const remaining = total - answered;
-              const accuracy  = answered > 0 ? Math.round((correct / answered) * 100) : 0;
-              const progress  = total > 0 ? Math.round((answered / total) * 100) : 0;
-              const status    = answered === 0 ? "nao_iniciado" : answered === total ? "concluido" : "em_andamento";
+              const accuracy = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+              const progress = total > 0 ? Math.round((answered / total) * 100) : 0;
+              const status = answered === 0 ? "nao_iniciado" : answered === total ? "concluido" : "em_andamento";
 
               return (
                 <motion.div key="simulado-detail" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-                  {/* Header do detalhe */}
                   <div className="flex items-center gap-3 mb-6">
                     <button
                       onClick={() => setSelectedSimulado(null)}
@@ -855,13 +932,11 @@ export default function BancoPage() {
                     </button>
                     <div>
                       <h2 className="text-sm font-semibold text-slate-200">{selectedSimulado}</h2>
-                      <p className="text-[11px] text-slate-500">{total} questões · {answered} respondidas</p>
                     </div>
                     <div className="ml-auto flex gap-2">
                       <button
                         onClick={() => {
                           if (!user) { setShowAuthModal(true); return; }
-                          // Continuar de onde parou (primeira não respondida) ou do início
                           const qi = status === "concluido" ? 0 : d.questions.findIndex(q => !userAnswers[String(q.id)]);
                           const startIdx = qi >= 0 ? qi : 0;
                           setResolverQueue(d.questions);
@@ -875,20 +950,19 @@ export default function BancoPage() {
                           : "bg-amber-500/20 border border-amber-500/20 hover:bg-amber-500/30 text-amber-300"
                         }`}
                       >
-                        {status === "nao_iniciado" && <><PlayCircle size={13} /> Iniciar</>}
+                        {status === "nao_iniciado" && <><PlayCircle size={13} /> Iniciar Prova</>}
                         {status === "em_andamento" && <><Clock3 size={13} /> Continuar ({remaining} restantes)</>}
-                        {status === "concluido"    && <><CheckCircle2 size={13} /> Rever</>}
+                        {status === "concluido" && <><CheckCircle2 size={13} /> Rever Respostas</>}
                       </button>
                     </div>
                   </div>
 
-                  {/* Métricas */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                     {[
-                      { label: "Total",    value: total,    color: "text-slate-200",   bg: "bg-white/[0.03]" },
-                      { label: "Feitas",   value: answered, color: "text-slate-200",   bg: "bg-white/[0.03]" },
-                      { label: "Acertos",  value: correct,  color: "text-emerald-300", bg: "bg-emerald-500/10 border border-emerald-500/10" },
-                      { label: "Erros",    value: errors,   color: "text-rose-300",    bg: "bg-rose-500/10 border border-rose-500/10" },
+                      { label: "Total Questões", value: total, color: "text-slate-200", bg: "bg-white/[0.03]" },
+                      { label: "Respondidas", value: answered, color: "text-slate-200", bg: "bg-white/[0.03]" },
+                      { label: "Acertos", value: correct, color: "text-emerald-300", bg: "bg-emerald-500/10 border border-emerald-500/10" },
+                      { label: "Erros", value: errors, color: "text-rose-300", bg: "bg-rose-500/10 border border-rose-500/10" },
                     ].map(m => (
                       <div key={m.label} className={`rounded-xl p-4 text-center ${m.bg}`}>
                         <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">{m.label}</div>
@@ -897,7 +971,6 @@ export default function BancoPage() {
                     ))}
                   </div>
 
-                  {/* Progresso */}
                   <div className="mb-6 space-y-1.5">
                     <div className="flex justify-between text-[11px]">
                       <span className="text-slate-500">{progress}% concluído</span>
@@ -913,10 +986,9 @@ export default function BancoPage() {
                     </div>
                   </div>
 
-                  {/* Grade de questões */}
-                  <div className="bg-[#0b0f1c] border border-white/[0.06] rounded-2xl p-5">
-                    <p className="text-[11px] text-slate-500 mb-4">Clique em uma questão para ir direto a ela</p>
-                    <div className="flex flex-wrap gap-1.5">
+                  <div className="bg-[#0c1120] border border-white/[0.08] rounded-2xl p-5">
+                    <p className="text-[11px] text-slate-500 mb-4">Clique em uma questão para responder ou visualizar</p>
+                    <div className="flex flex-wrap gap-2">
                       {d.questions.map((q, qi) => {
                         const ans = userAnswers[String(q.id)];
                         let cls = "bg-white/[0.04] text-slate-500 border-white/[0.05] hover:bg-white/[0.08]";
@@ -926,7 +998,6 @@ export default function BancoPage() {
                         return (
                           <button
                             key={q.id}
-                            title={`Q${qi + 1} — ${ans ? (ans.isCorrect ? "Correta" : "Errada") : "Não respondida"}`}
                             onClick={() => {
                               if (!user) { setShowAuthModal(true); return; }
                               setResolverQueue(d.questions);
@@ -934,7 +1005,7 @@ export default function BancoPage() {
                               setSelectedQuestion(q);
                               setActiveTab("resolver");
                             }}
-                            className={`w-8 h-8 rounded-lg border text-[10px] font-medium transition-all hover:scale-110 ${cls}`}
+                            className={`w-9 h-9 rounded-xl border text-[11px] font-bold transition-all hover:scale-110 ${cls}`}
                           >
                             {qi + 1}
                           </button>
@@ -946,105 +1017,170 @@ export default function BancoPage() {
               );
             }
 
-            // 4. Lista de simulados (cards compactos agrupados)
             return (
-              <motion.div key="simulados-list" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }} className="space-y-10">
-                <div>
-                  <h2 className="text-sm font-semibold text-slate-200">Simulados</h2>
-                  <p className="text-[11px] text-slate-500 mt-0.5">{Object.keys(simuladosMap).length} simulados · {Object.keys(groups).length} grupos · clique para ver as questões</p>
-                </div>
+              <motion.div key="simulados-dashboard" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }} className="space-y-8">
+                {Object.entries(blocos).map(([blocoKey, bloco]) => {
+                  const todasProvas = Object.values(bloco.tipos).flat();
+                  let concluidasCount = 0;
+                  let emAndamentoCount = 0;
+                  let naoIniciadasCount = 0;
+                  let totalQuestõesBloco = 0;
+                  let respondidasQuestõesBloco = 0;
+                  let acertosQuestõesBloco = 0;
 
-                {Object.entries(groups).map(([family, provas]) => {
-                  const grpTotal    = provas.reduce((s, p) => s + simuladosMap[p].questions.length, 0);
-                  const grpAnswered = provas.reduce((s, p) => s + simuladosMap[p].answered, 0);
-                  const grpCorrect  = provas.reduce((s, p) => s + simuladosMap[p].correct, 0);
-                  const grpAcc  = grpAnswered > 0 ? Math.round((grpCorrect / grpAnswered) * 100) : 0;
-                  const grpProg = grpTotal > 0 ? Math.round((grpAnswered / grpTotal) * 100) : 0;
+                  todasProvas.forEach(p => {
+                    const qTot = p.questions.length;
+                    totalQuestõesBloco += qTot;
+                    respondidasQuestõesBloco += p.answered;
+                    acertosQuestõesBloco += p.correct;
+                    if (p.answered === 0) naoIniciadasCount++;
+                    else if (p.answered === qTot) concluidasCount++;
+                    else emAndamentoCount++;
+                  });
+
+                  const pendentesQuestõesBloco = totalQuestõesBloco - respondidasQuestõesBloco;
+                  const aproveitamentoGeral = respondidasQuestõesBloco > 0 
+                    ? Math.round((acertosQuestõesBloco / respondidasQuestõesBloco) * 100) 
+                    : 0;
 
                   return (
-                    <div key={family}>
-                      {/* Cabeçalho do grupo */}
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="text-[12px] font-semibold text-slate-200">{family}</span>
-                        <span className="text-[10px] text-slate-500 bg-white/[0.04] border border-white/[0.06] px-2 py-0.5 rounded-md">
-                          {provas.length} simulado{provas.length !== 1 ? "s" : ""} · {grpTotal} questões
-                        </span>
-                        <div className="flex items-center gap-2 text-[10px] text-slate-500 ml-auto">
-                          <span>{grpProg}%</span>
-                          <div className="w-16 h-1 bg-white/[0.05] rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full ${grpAcc >= 70 ? "bg-emerald-500" : grpAcc >= 50 ? "bg-amber-500" : grpAnswered === 0 ? "bg-slate-600" : "bg-rose-500"}`} style={{ width: `${grpProg}%` }} />
-                          </div>
-                          <span className={grpAcc >= 70 ? "text-emerald-400" : grpAcc >= 50 ? "text-amber-400" : grpAnswered === 0 ? "text-slate-500" : "text-rose-400"}>{grpAcc}%</span>
+                    <div
+                      key={blocoKey}
+                      className="bg-[#0b0f1d] border border-white/[0.08] rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl backdrop-blur-xl"
+                    >
+                      {/* 1. TOPO SUPERIOR (Familiaridade / Concurso | Status Globais) */}
+                      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-2">
+                        {/* Seletor Pill (2G | BLOCO) */}
+                        <div className="flex items-center bg-[#151b2d] border border-white/10 rounded-2xl p-1.5 shadow-inner">
+                          <span className="bg-blue-600 text-white font-black text-xs px-3.5 py-1.5 rounded-xl uppercase tracking-wider shadow-sm">
+                            {bloco.familia}
+                          </span>
+                          <span className="text-slate-400 font-bold text-xs px-3.5 py-1.5 uppercase tracking-wider">
+                            {bloco.concurso}
+                          </span>
                         </div>
-                        <div className="w-16 h-px bg-white/[0.05]" />
+
+                        {/* Indicadores no canto superior direito (LOTADOS / DISPONÍVEIS / VAZIOS / OCUPAÇÃO) */}
+                        <div className="flex items-center gap-6 sm:gap-8 ml-auto">
+                          <div className="flex items-center gap-2 text-right">
+                            <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+                            <div>
+                              <div className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">CONCLUÍDOS</div>
+                              <div className="text-lg font-black text-slate-100 tabular-nums leading-tight">{concluidasCount}</div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-right">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                            <div>
+                              <div className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">EM ANDAMENTO</div>
+                              <div className="text-lg font-black text-slate-100 tabular-nums leading-tight">{emAndamentoCount}</div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-right">
+                            <span className="w-2 h-2 rounded-full bg-slate-500 shrink-0" />
+                            <div>
+                              <div className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">NÃO INICIADOS</div>
+                              <div className="text-lg font-black text-slate-100 tabular-nums leading-tight">{naoIniciadasCount}</div>
+                            </div>
+                          </div>
+
+                          <div className="pl-4 border-l border-white/10 text-right">
+                            <div className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">APROVEITAMENTO</div>
+                            <div className="text-2xl font-black text-white tabular-nums leading-none tracking-tight">
+                              {aproveitamentoGeral}<span className="text-sm font-bold text-slate-400">%</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Grid de cards compactos — 1 por simulado, sem grade de questões */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                        {provas.map(prova => {
-                          const d = simuladosMap[prova];
-                          const total    = d.questions.length;
-                          const answered = d.answered;
-                          const correct  = d.correct;
-                          const accuracy = answered > 0 ? Math.round((correct / answered) * 100) : 0;
-                          const progress = total > 0 ? Math.round((answered / total) * 100) : 0;
-                          const status   = answered === 0 ? "nao_iniciado" : answered === total ? "concluido" : "em_andamento";
+                      {/* 2. LINHA DE CAPACIDADES GERAIS (CAPACIDADE TOTAL / EM USO / ESPAÇO LIVRE) */}
+                      <div className="bg-[#070a14] border border-white/[0.05] rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-8 w-full md:w-auto">
+                          <div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">CAPACIDADE TOTAL</div>
+                            <div className="text-xl sm:text-2xl font-black text-white tabular-nums">
+                              {totalQuestõesBloco} <span className="text-xs font-bold text-slate-500">QUESTÕES</span>
+                            </div>
+                          </div>
 
-                          const shortId = (() => { const m = prova.match(/(\d+)\s*$/); return m ? m[1] : prova.slice(0, 2).toUpperCase(); })();
+                          <div className="h-8 w-px bg-white/10" />
 
-                          const dotColor = { nao_iniciado: "bg-slate-500", em_andamento: "bg-amber-400", concluido: "bg-emerald-400" }[status];
-                          const cardBorder = { nao_iniciado: "border-white/[0.06] hover:border-white/[0.14]", em_andamento: "border-amber-500/20 hover:border-amber-500/40", concluido: "border-emerald-500/20 hover:border-emerald-500/40" }[status];
+                          <div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">RESPONDIDAS</div>
+                            <div className="text-xl sm:text-2xl font-black text-emerald-400 tabular-nums">
+                              {respondidasQuestõesBloco} <span className="text-xs font-bold text-emerald-500/70">RES</span>
+                            </div>
+                          </div>
+
+                          <div className="h-8 w-px bg-white/10" />
+
+                          <div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">PENDENTES</div>
+                            <div className="text-xl sm:text-2xl font-black text-blue-400 tabular-nums">
+                              {pendentesQuestõesBloco} <span className="text-xs font-bold text-blue-500/70">PEND</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* STATUS GLOBAL BADGE */}
+                        <div className="self-end md:self-center">
+                          <span className="px-4 py-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-400 text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(245,158,11,0.15)]">
+                            STATUS GLOBAL: {aproveitamentoGeral >= 70 ? "ALTO DESEMPENHO" : "EM ANDAMENTO"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 3. SEÇÕES DE TIPOS (Substituindo LADO PAR / LADO ÍMPAR pelo TIPO: SIMULADO, PROVAS, etc.) */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
+                        {Object.entries(bloco.tipos).map(([tipoNome, provasDoTipo]) => {
+                          const tipoTotalQ = provasDoTipo.reduce((s, p) => s + p.questions.length, 0);
+                          const tipoAnsweredQ = provasDoTipo.reduce((s, p) => s + p.answered, 0);
+                          const tipoPendingQ = tipoTotalQ - tipoAnsweredQ;
 
                           return (
-                            <button
-                              key={prova}
-                              onClick={() => setSelectedSimulado(prova)}
-                              className={`bg-[#0b0f1c] border rounded-2xl p-4 flex flex-col gap-3 transition-all text-left group ${cardBorder}`}
-                            >
-                              {/* Topo: badge + nome + status */}
-                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center shrink-0">
-                                  <span className="text-[10px] font-semibold text-slate-300 tabular-nums">{shortId}</span>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-[11px] font-semibold text-slate-200 truncate group-hover:text-white transition-colors" title={prova}>{prova}</p>
-                                  <p className="text-[9px] text-slate-500">{total} questões</p>
-                                </div>
-                                <span className={`w-2 h-2 rounded-full shrink-0 ${dotColor} ${status === "em_andamento" ? "animate-pulse" : ""}`} />
-                              </div>
-
-                              {/* Stats em linha */}
-                              <div className="flex gap-1.5 text-center">
-                                <div className="flex-1 bg-white/[0.03] rounded-lg py-1.5">
-                                  <div className="text-[8px] text-slate-500 uppercase tracking-wide">Feitas</div>
-                                  <div className="text-[12px] font-semibold text-slate-200 tabular-nums">{answered}</div>
-                                </div>
-                                <div className="flex-1 bg-emerald-500/10 rounded-lg py-1.5">
-                                  <div className="text-[8px] text-emerald-500">✔</div>
-                                  <div className="text-[12px] font-semibold text-emerald-300 tabular-nums">{correct}</div>
-                                </div>
-                                <div className="flex-1 bg-rose-500/10 rounded-lg py-1.5">
-                                  <div className="text-[8px] text-rose-500 uppercase">✘</div>
-                                  <div className="text-[12px] font-semibold text-rose-300 tabular-nums">{answered - correct}</div>
+                            <div key={tipoNome} className="space-y-3 bg-[#080c18] border border-white/[0.04] rounded-2xl p-5">
+                              {/* Cabeçalho do Tipo (ex: SIMULADO | CAP: 225 USO: 183 LIVRE: 42) */}
+                              <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+                                <h4 className="text-xs font-black text-slate-200 uppercase tracking-widest flex items-center gap-2">
+                                  <span className="w-1.5 h-3 bg-blue-500 rounded-full" />
+                                  {tipoNome}
+                                </h4>
+                                <div className="flex items-center gap-3 text-[11px] font-mono">
+                                  <span className="text-slate-400">TOT: <strong className="text-slate-200 font-bold">{tipoTotalQ}</strong></span>
+                                  <span className="text-slate-400">FEITOS: <strong className="text-emerald-400 font-bold">{tipoAnsweredQ}</strong></span>
+                                  <span className="text-slate-400">PEND: <strong className="text-blue-400 font-bold">{tipoPendingQ}</strong></span>
                                 </div>
                               </div>
 
-                              {/* Barra + taxa */}
-                              <div className="space-y-1">
-                                <div className="flex justify-between text-[9px]">
-                                  <span className="text-slate-500">{progress}%</span>
-                                  <span className={answered > 0 ? (accuracy >= 70 ? "text-emerald-400" : accuracy >= 50 ? "text-amber-400" : "text-rose-400") : "text-slate-600"}>
-                                    {answered > 0 ? `${accuracy}% acerto` : "não iniciado"}
-                                  </span>
-                                </div>
-                                <div className="h-1 w-full bg-white/[0.05] rounded-full overflow-hidden">
-                                  <div
-                                    className={`h-full rounded-full transition-all ${accuracy >= 70 ? "bg-emerald-500" : accuracy >= 50 ? "bg-amber-500" : answered === 0 ? "bg-slate-700" : "bg-rose-500"}`}
-                                    style={{ width: `${progress}%` }}
-                                  />
-                                </div>
+                              {/* GRID DE PROVAS (QUADRADINHOS IGUAIS A IMAGEM) */}
+                              <div className="flex flex-wrap gap-2.5 pt-2">
+                                {provasDoTipo.map(prova => {
+                                  const qTot = prova.questions.length;
+                                  const isConcluida = prova.answered === qTot && qTot > 0;
+                                  const isEmAndamento = prova.answered > 0 && !isConcluida;
+
+                                  let tileStyle = "bg-[#0f1422] border-white/[0.08] text-slate-500 hover:border-slate-500 hover:text-slate-300";
+                                  if (isConcluida) {
+                                    tileStyle = "bg-[#0a2318] border-emerald-500/50 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]";
+                                  } else if (isEmAndamento) {
+                                    tileStyle = "bg-[#271018] border-rose-500/50 text-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.2)]";
+                                  }
+
+                                  return (
+                                    <button
+                                      key={prova.rawName}
+                                      onClick={() => setSelectedSimulado(prova.rawName)}
+                                      title={`${prova.rawName} — ${prova.answered}/${qTot} feitas`}
+                                      className={`w-14 h-11 rounded-xl border-2 font-mono font-black text-xs transition-all hover:scale-105 active:scale-95 flex items-center justify-center ${tileStyle}`}
+                                    >
+                                      {prova.numero}
+                                    </button>
+                                  );
+                                })}
                               </div>
-                            </button>
+                            </div>
                           );
                         })}
                       </div>
