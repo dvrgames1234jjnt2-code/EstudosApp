@@ -23,6 +23,9 @@ import {
   PlayCircle,
   CheckCircle2,
   Clock3,
+  Search,
+  Filter,
+  X,
 } from "lucide-react";
 import { supabase, supabasePublic } from "../../lib/supabase";
 import { AuthModal } from "../../components/AuthModal";
@@ -120,6 +123,9 @@ export default function BancoPage() {
   const [filteredQuestions, setFilteredQuestions] = useState<BancoQuestion[]>([]);
   const [isSaving, setIsSaving]     = useState(false);
   const [selectedSimulado, setSelectedSimulado] = useState<string | null>(null);
+  const [simuladoSearch, setSimuladoSearch]     = useState("");
+  const [simuladoStatusFilter, setSimuladoStatusFilter] = useState<"todos" | "concluidos" | "em_andamento" | "nao_iniciados">("todos");
+  const [simuladoFamiliaFilter, setSimuladoFamiliaFilter] = useState<string>("todas");
 
   // ── Auth ──────────────────────────────────
   useEffect(() => {
@@ -1017,10 +1023,113 @@ export default function BancoPage() {
               );
             }
 
+            // ─── Lista de Famílias Únicas para o Filtro ───────────────────────
+            const todasFamilias = Array.from(new Set(Object.values(mapaProvas).map(p => p.familia))).sort();
+
+            // ─── Renderização Principal: Réplica idêntica do Dashboard da Imagem (Versão Compacta + Filtros) ─────
             return (
-              <motion.div key="simulados-dashboard" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }} className="space-y-8">
+              <motion.div key="simulados-dashboard" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }} className="space-y-5">
+                {/* BARRA DE FILTROS SUPERIOR COMPACTA */}
+                <div className="bg-[#0b0f1d] border border-white/[0.08] rounded-2xl p-3 flex flex-col md:flex-row items-center justify-between gap-3 shadow-lg">
+                  {/* Busca por texto */}
+                  <div className="relative flex-1 w-full">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                    <input
+                      type="text"
+                      placeholder="Buscar por prova, nº, concurso, família..."
+                      value={simuladoSearch}
+                      onChange={(e) => setSimuladoSearch(e.target.value)}
+                      className="w-full bg-[#151b2d] border border-white/10 rounded-xl pl-9 pr-8 py-1.5 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/50 transition-all"
+                    />
+                    {simuladoSearch && (
+                      <button
+                        onClick={() => setSimuladoSearch("")}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Filtro de Família */}
+                  <div className="flex items-center gap-2 w-full md:w-auto">
+                    <select
+                      value={simuladoFamiliaFilter}
+                      onChange={(e) => setSimuladoFamiliaFilter(e.target.value)}
+                      className="bg-[#151b2d] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/50 transition-all"
+                    >
+                      <option value="todas">Todas as Famílias</option>
+                      {todasFamilias.map(f => (
+                        <option key={f} value={f}>{f}</option>
+                      ))}
+                    </select>
+
+                    {/* Filtro de Status (Pills) */}
+                    <div className="flex items-center bg-[#151b2d] border border-white/10 rounded-xl p-1 gap-1">
+                      {[
+                        { id: "todos", label: "Todos" },
+                        { id: "concluidos", label: "🟢 Feitos" },
+                        { id: "em_andamento", label: "🔴 Andamento" },
+                        { id: "nao_iniciados", label: "⚪ Virgens" },
+                      ].map(st => (
+                        <button
+                          key={st.id}
+                          onClick={() => setSimuladoStatusFilter(st.id as any)}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                            simuladoStatusFilter === st.id
+                              ? "bg-blue-600 text-white shadow-sm"
+                              : "text-slate-400 hover:text-slate-200"
+                          }`}
+                        >
+                          {st.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* LISTAGEM DE BLOCOS */}
                 {Object.entries(blocos).map(([blocoKey, bloco]) => {
-                  const todasProvas = Object.values(bloco.tipos).flat();
+                  // Filtrar provas pela busca, família e status
+                  if (simuladoFamiliaFilter !== "todas" && bloco.familia !== simuladoFamiliaFilter) {
+                    return null;
+                  }
+
+                  const tiposFiltrados: Record<string, ProvaData[]> = {};
+
+                  for (const [tipoNome, provasDoTipo] of Object.entries(bloco.tipos)) {
+                    const provasMatching = provasDoTipo.filter(p => {
+                      // Busca por texto
+                      if (simuladoSearch.trim()) {
+                        const term = simuladoSearch.toLowerCase();
+                        const matchName = p.rawName.toLowerCase().includes(term);
+                        const matchNum = p.numero.includes(term);
+                        const matchFam = p.familia.toLowerCase().includes(term);
+                        const matchConc = p.concurso.toLowerCase().includes(term);
+                        if (!matchName && !matchNum && !matchFam && !matchConc) return false;
+                      }
+
+                      // Filtro de Status
+                      const qTot = p.questions.length;
+                      const isConcluida = p.answered === qTot && qTot > 0;
+                      const isEmAndamento = p.answered > 0 && !isConcluida;
+                      const isNaoIniciada = p.answered === 0;
+
+                      if (simuladoStatusFilter === "concluidos" && !isConcluida) return false;
+                      if (simuladoStatusFilter === "em_andamento" && !isEmAndamento) return false;
+                      if (simuladoStatusFilter === "nao_iniciados" && !isNaoIniciada) return false;
+
+                      return true;
+                    });
+
+                    if (provasMatching.length > 0) {
+                      tiposFiltrados[tipoNome] = provasMatching;
+                    }
+                  }
+
+                  if (Object.keys(tiposFiltrados).length === 0) return null;
+
+                  const todasProvas = Object.values(tiposFiltrados).flat();
                   let concluidasCount = 0;
                   let emAndamentoCount = 0;
                   let naoIniciadasCount = 0;
@@ -1046,116 +1155,116 @@ export default function BancoPage() {
                   return (
                     <div
                       key={blocoKey}
-                      className="bg-[#0b0f1d] border border-white/[0.08] rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl backdrop-blur-xl"
+                      className="bg-[#0b0f1d] border border-white/[0.08] rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl backdrop-blur-xl"
                     >
                       {/* 1. TOPO SUPERIOR (Familiaridade / Concurso | Status Globais) */}
-                      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-2">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-1">
                         {/* Seletor Pill (2G | BLOCO) */}
-                        <div className="flex items-center bg-[#151b2d] border border-white/10 rounded-2xl p-1.5 shadow-inner">
-                          <span className="bg-blue-600 text-white font-black text-xs px-3.5 py-1.5 rounded-xl uppercase tracking-wider shadow-sm">
+                        <div className="flex items-center bg-[#151b2d] border border-white/10 rounded-xl p-1 shadow-inner">
+                          <span className="bg-blue-600 text-white font-black text-[10px] px-2.5 py-1 rounded-lg uppercase tracking-wider shadow-sm">
                             {bloco.familia}
                           </span>
-                          <span className="text-slate-400 font-bold text-xs px-3.5 py-1.5 uppercase tracking-wider">
+                          <span className="text-slate-400 font-bold text-[10px] px-2.5 py-1 uppercase tracking-wider">
                             {bloco.concurso}
                           </span>
                         </div>
 
                         {/* Indicadores no canto superior direito (LOTADOS / DISPONÍVEIS / VAZIOS / OCUPAÇÃO) */}
-                        <div className="flex items-center gap-6 sm:gap-8 ml-auto">
-                          <div className="flex items-center gap-2 text-right">
-                            <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+                        <div className="flex items-center gap-4 sm:gap-6 ml-auto">
+                          <div className="flex items-center gap-1.5 text-right">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
                             <div>
-                              <div className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">CONCLUÍDOS</div>
-                              <div className="text-lg font-black text-slate-100 tabular-nums leading-tight">{concluidasCount}</div>
+                              <div className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest">CONCLUÍDOS</div>
+                              <div className="text-sm font-black text-slate-100 tabular-nums leading-tight">{concluidasCount}</div>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 text-right">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                          <div className="flex items-center gap-1.5 text-right">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                             <div>
-                              <div className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">EM ANDAMENTO</div>
-                              <div className="text-lg font-black text-slate-100 tabular-nums leading-tight">{emAndamentoCount}</div>
+                              <div className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest">EM ANDAMENTO</div>
+                              <div className="text-sm font-black text-slate-100 tabular-nums leading-tight">{emAndamentoCount}</div>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 text-right">
-                            <span className="w-2 h-2 rounded-full bg-slate-500 shrink-0" />
+                          <div className="flex items-center gap-1.5 text-right">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" />
                             <div>
-                              <div className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">NÃO INICIADOS</div>
-                              <div className="text-lg font-black text-slate-100 tabular-nums leading-tight">{naoIniciadasCount}</div>
+                              <div className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest">NÃO INICIADOS</div>
+                              <div className="text-sm font-black text-slate-100 tabular-nums leading-tight">{naoIniciadasCount}</div>
                             </div>
                           </div>
 
-                          <div className="pl-4 border-l border-white/10 text-right">
-                            <div className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">APROVEITAMENTO</div>
-                            <div className="text-2xl font-black text-white tabular-nums leading-none tracking-tight">
-                              {aproveitamentoGeral}<span className="text-sm font-bold text-slate-400">%</span>
+                          <div className="pl-3 border-l border-white/10 text-right">
+                            <div className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest">APROVEITAMENTO</div>
+                            <div className="text-lg font-black text-white tabular-nums leading-none tracking-tight">
+                              {aproveitamentoGeral}<span className="text-xs font-bold text-slate-400">%</span>
                             </div>
                           </div>
                         </div>
                       </div>
 
                       {/* 2. LINHA DE CAPACIDADES GERAIS (CAPACIDADE TOTAL / EM USO / ESPAÇO LIVRE) */}
-                      <div className="bg-[#070a14] border border-white/[0.05] rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-center justify-between gap-4">
-                        <div className="flex items-center gap-8 w-full md:w-auto">
+                      <div className="bg-[#070a14] border border-white/[0.05] rounded-xl p-3 sm:p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div className="flex items-center gap-6 w-full sm:w-auto justify-around sm:justify-start">
                           <div>
-                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">CAPACIDADE TOTAL</div>
-                            <div className="text-xl sm:text-2xl font-black text-white tabular-nums">
-                              {totalQuestõesBloco} <span className="text-xs font-bold text-slate-500">QUESTÕES</span>
+                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">CAPACIDADE TOTAL</div>
+                            <div className="text-base sm:text-lg font-black text-white tabular-nums">
+                              {totalQuestõesBloco} <span className="text-[10px] font-bold text-slate-500">QUESTÕES</span>
                             </div>
                           </div>
 
-                          <div className="h-8 w-px bg-white/10" />
+                          <div className="h-6 w-px bg-white/10" />
 
                           <div>
-                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">RESPONDIDAS</div>
-                            <div className="text-xl sm:text-2xl font-black text-emerald-400 tabular-nums">
-                              {respondidasQuestõesBloco} <span className="text-xs font-bold text-emerald-500/70">RES</span>
+                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">RESPONDIDAS</div>
+                            <div className="text-base sm:text-lg font-black text-emerald-400 tabular-nums">
+                              {respondidasQuestõesBloco} <span className="text-[10px] font-bold text-emerald-500/70">RES</span>
                             </div>
                           </div>
 
-                          <div className="h-8 w-px bg-white/10" />
+                          <div className="h-6 w-px bg-white/10" />
 
                           <div>
-                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">PENDENTES</div>
-                            <div className="text-xl sm:text-2xl font-black text-blue-400 tabular-nums">
-                              {pendentesQuestõesBloco} <span className="text-xs font-bold text-blue-500/70">PEND</span>
+                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">PENDENTES</div>
+                            <div className="text-base sm:text-lg font-black text-blue-400 tabular-nums">
+                              {pendentesQuestõesBloco} <span className="text-[10px] font-bold text-blue-500/70">PEND</span>
                             </div>
                           </div>
                         </div>
 
                         {/* STATUS GLOBAL BADGE */}
-                        <div className="self-end md:self-center">
-                          <span className="px-4 py-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-400 text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(245,158,11,0.15)]">
-                            STATUS GLOBAL: {aproveitamentoGeral >= 70 ? "ALTO DESEMPENHO" : "EM ANDAMENTO"}
+                        <div className="self-end sm:self-center">
+                          <span className="px-3 py-1 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-400 text-[9px] font-black uppercase tracking-widest shadow-[0_0_12px_rgba(245,158,11,0.15)]">
+                            STATUS GLOBAL: {aproveitamentoGeral >= 70 ? "ALTO RENDIMENTO" : "EM ANDAMENTO"}
                           </span>
                         </div>
                       </div>
 
-                      {/* 3. SEÇÕES DE TIPOS (Substituindo LADO PAR / LADO ÍMPAR pelo TIPO: SIMULADO, PROVAS, etc.) */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
-                        {Object.entries(bloco.tipos).map(([tipoNome, provasDoTipo]) => {
+                      {/* 3. SEÇÕES DE TIPOS (SIMULADO, PROVAS, etc.) */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-1">
+                        {Object.entries(tiposFiltrados).map(([tipoNome, provasDoTipo]) => {
                           const tipoTotalQ = provasDoTipo.reduce((s, p) => s + p.questions.length, 0);
                           const tipoAnsweredQ = provasDoTipo.reduce((s, p) => s + p.answered, 0);
                           const tipoPendingQ = tipoTotalQ - tipoAnsweredQ;
 
                           return (
-                            <div key={tipoNome} className="space-y-3 bg-[#080c18] border border-white/[0.04] rounded-2xl p-5">
-                              {/* Cabeçalho do Tipo (ex: SIMULADO | CAP: 225 USO: 183 LIVRE: 42) */}
-                              <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
-                                <h4 className="text-xs font-black text-slate-200 uppercase tracking-widest flex items-center gap-2">
-                                  <span className="w-1.5 h-3 bg-blue-500 rounded-full" />
+                            <div key={tipoNome} className="space-y-2 bg-[#080c18] border border-white/[0.04] rounded-xl p-3.5">
+                              {/* Cabeçalho do Tipo */}
+                              <div className="flex items-center justify-between pb-1.5 border-b border-white/[0.06]">
+                                <h4 className="text-[11px] font-black text-slate-200 uppercase tracking-widest flex items-center gap-1.5">
+                                  <span className="w-1 h-2.5 bg-blue-500 rounded-full" />
                                   {tipoNome}
                                 </h4>
-                                <div className="flex items-center gap-3 text-[11px] font-mono">
+                                <div className="flex items-center gap-2.5 text-[10px] font-mono">
                                   <span className="text-slate-400">TOT: <strong className="text-slate-200 font-bold">{tipoTotalQ}</strong></span>
                                   <span className="text-slate-400">FEITOS: <strong className="text-emerald-400 font-bold">{tipoAnsweredQ}</strong></span>
                                   <span className="text-slate-400">PEND: <strong className="text-blue-400 font-bold">{tipoPendingQ}</strong></span>
                                 </div>
                               </div>
 
-                              {/* GRID DE PROVAS (QUADRADINHOS IGUAIS A IMAGEM) */}
-                              <div className="flex flex-wrap gap-2.5 pt-2">
+                              {/* GRID DE PROVAS (QUADRADINHOS MAIS COMPACTOS IGUAIS A IMAGEM) */}
+                              <div className="flex flex-wrap gap-2 pt-1">
                                 {provasDoTipo.map(prova => {
                                   const qTot = prova.questions.length;
                                   const isConcluida = prova.answered === qTot && qTot > 0;
@@ -1163,17 +1272,22 @@ export default function BancoPage() {
 
                                   let tileStyle = "bg-[#0f1422] border-white/[0.08] text-slate-500 hover:border-slate-500 hover:text-slate-300";
                                   if (isConcluida) {
-                                    tileStyle = "bg-[#0a2318] border-emerald-500/50 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]";
+                                    tileStyle = "bg-[#0a2318] border-emerald-500/50 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.2)]";
                                   } else if (isEmAndamento) {
-                                    tileStyle = "bg-[#271018] border-rose-500/50 text-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.2)]";
+                                    tileStyle = "bg-[#271018] border-rose-500/50 text-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.2)]";
                                   }
 
                                   return (
                                     <button
                                       key={prova.rawName}
-                                      onClick={() => setSelectedSimulado(prova.rawName)}
-                                      title={`${prova.rawName} — ${prova.answered}/${qTot} feitas`}
-                                      className={`w-14 h-11 rounded-xl border-2 font-mono font-black text-xs transition-all hover:scale-105 active:scale-95 flex items-center justify-center ${tileStyle}`}
+                                      onClick={() => {
+                                        setResolverQueue(prova.questions);
+                                        setResolverIndex(0);
+                                        setSelectedQuestion(prova.questions[0]);
+                                        setActiveTab("desempenho");
+                                      }}
+                                      title={`${prova.rawName} — ${prova.answered}/${qTot} feitas · clique para ver o desempenho`}
+                                      className={`w-11 h-9 rounded-lg border-2 font-mono font-black text-[11px] transition-all hover:scale-105 active:scale-95 flex items-center justify-center ${tileStyle}`}
                                     >
                                       {prova.numero}
                                     </button>
