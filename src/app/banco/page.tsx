@@ -19,6 +19,10 @@ import {
   Flame,
   Printer,
   Target,
+  ClipboardList,
+  PlayCircle,
+  CheckCircle2,
+  Clock3,
 } from "lucide-react";
 import { supabase, supabasePublic } from "../../lib/supabase";
 import { AuthModal } from "../../components/AuthModal";
@@ -44,7 +48,7 @@ export interface QuestionStats {
 /** Mapa questao_id → stats (derivado do histórico completo) */
 type UserAnswers = Record<string, QuestionStats>;
 
-type ActiveTab = "banco" | "resolver" | "desempenho" | "fixacao";
+type ActiveTab = "banco" | "resolver" | "simulados" | "desempenho" | "fixacao";
 
 // ──────────────────────────────────────────────
 // Helpers
@@ -423,10 +427,10 @@ export default function BancoPage() {
       <div className="sticky top-16 z-40 border-b border-white/[0.05] bg-[#020617]/90 backdrop-blur-md px-4 sm:px-8">
         <div className="flex items-center gap-1 max-w-7xl mx-auto">
           {[
-            { id: "banco",      icon: <BookOpen size={13} />,  label: "Banco de Questões", count: questions.length },
-            { id: "resolver",   icon: <Layers size={13} />,    label: "Questão Ativa", badge: selectedQuestion ? "●" : null },
-            { id: "desempenho", icon: <BarChart3 size={13} />, label: "Desempenho", badge: resolverQueue.length > 0 ? "●" : null },
-            { id: "fixacao",    icon: <Flame size={13} />,     label: "Fixação (Minigame)" },
+            { id: "banco",      icon: <BookOpen size={13} />,       label: "Banco de Questões", count: questions.length },
+            { id: "resolver",   icon: <Layers size={13} />,         label: "Questão Ativa", badge: selectedQuestion ? "●" : null },
+            { id: "simulados",  icon: <ClipboardList size={13} />,  label: "Simulados", count: provasDisponiveis.length },
+            { id: "desempenho", icon: <BarChart3 size={13} />,      label: "Desempenho", badge: resolverQueue.length > 0 ? "●" : null },
           ].map(tab => (
             <button
               key={tab.id}
@@ -435,9 +439,7 @@ export default function BancoPage() {
                 if (tab.id === "desempenho" && resolverQueue.length === 0) return;
                 setActiveTab(tab.id as ActiveTab);
               }}
-              disabled={
-                (tab.id === "resolver" && !selectedQuestion)
-              }
+              disabled={(tab.id === "resolver" && !selectedQuestion)}
               className={`relative px-4 py-3 text-[11px] font-bold border-b-2 flex items-center gap-2 -mb-px transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
                 activeTab === tab.id
                   ? "border-blue-500 text-blue-400"
@@ -800,15 +802,172 @@ export default function BancoPage() {
             );
           })()}
 
-          {/* ── FIXAÇÃO ── */}
+          {/* ── SIMULADOS ── */}
+          {activeTab === "simulados" && (() => {
+            // Agrupar questões por prova
+            const simuladosGrouped: Record<string, { questions: typeof questions; correct: number; answered: number }> = {};
+            for (const q of questions) {
+              const prova = q.prova ?? "Sem Prova";
+              if (!simuladosGrouped[prova]) simuladosGrouped[prova] = { questions: [], correct: 0, answered: 0 };
+              simuladosGrouped[prova].questions.push(q);
+              const ans = userAnswers[String(q.id)];
+              if (ans) {
+                simuladosGrouped[prova].answered += 1;
+                if (ans.isCorrect) simuladosGrouped[prova].correct += 1;
+              }
+            }
+
+            return (
+              <motion.div
+                key="simulados"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="mb-6">
+                  <h2 className="text-sm font-semibold text-slate-200">Simulados Disponíveis</h2>
+                  <p className="text-[11px] text-slate-500 mt-0.5">{Object.keys(simuladosGrouped).length} provas · clique em um card para iniciar</p>
+                </div>
+
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                  {Object.entries(simuladosGrouped).map(([prova, data]) => {
+                    const total = data.questions.length;
+                    const answered = data.answered;
+                    const correct = data.correct;
+                    const errors = answered - correct;
+                    const remaining = total - answered;
+                    const accuracy = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+                    const progress = total > 0 ? Math.round((answered / total) * 100) : 0;
+
+                    const status: "nao_iniciado" | "em_andamento" | "concluido" =
+                      answered === 0 ? "nao_iniciado"
+                      : answered === total ? "concluido"
+                      : "em_andamento";
+
+                    const statusConfig = {
+                      nao_iniciado: { label: "Não iniciado", color: "text-slate-400", bg: "bg-slate-500/10 border-slate-500/20", dot: "bg-slate-500" },
+                      em_andamento: { label: "Em andamento", color: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/20", dot: "bg-amber-400" },
+                      concluido:    { label: "Concluído",    color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20", dot: "bg-emerald-400" },
+                    }[status];
+
+                    const handleLaunch = () => {
+                      if (!user) { setShowAuthModal(true); return; }
+                      const q0 = data.questions[0];
+                      setResolverQueue(data.questions);
+                      setResolverIndex(0);
+                      setSelectedQuestion(q0);
+                      setActiveTab("resolver");
+                    };
+
+                    return (
+                      <div
+                        key={prova}
+                        className="bg-[#0c1120] border border-white/[0.06] rounded-2xl p-5 flex flex-col gap-4 hover:border-white/[0.12] transition-all"
+                      >
+                        {/* Cabeçalho */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-[13px] font-semibold text-slate-200 truncate" title={prova}>{prova}</h3>
+                            <p className="text-[11px] text-slate-500 mt-0.5">{total} questões</p>
+                          </div>
+                          <span className={`shrink-0 flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1 rounded-lg border ${statusConfig.bg} ${statusConfig.color}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot} ${status === "em_andamento" ? "animate-pulse" : ""}`} />
+                            {statusConfig.label}
+                          </span>
+                        </div>
+
+                        {/* Métricas */}
+                        <div className="grid grid-cols-4 gap-2">
+                          <div className="bg-white/[0.03] rounded-lg p-2 text-center">
+                            <div className="text-[10px] text-slate-500">Total</div>
+                            <div className="text-sm font-semibold text-slate-200 tabular-nums">{total}</div>
+                          </div>
+                          <div className="bg-white/[0.03] rounded-lg p-2 text-center">
+                            <div className="text-[10px] text-slate-500">Feitas</div>
+                            <div className="text-sm font-semibold text-slate-200 tabular-nums">{answered}</div>
+                          </div>
+                          <div className="bg-emerald-500/[0.08] border border-emerald-500/10 rounded-lg p-2 text-center">
+                            <div className="text-[10px] text-emerald-500">Acertos</div>
+                            <div className="text-sm font-semibold text-emerald-300 tabular-nums">{correct}</div>
+                          </div>
+                          <div className="bg-rose-500/[0.08] border border-rose-500/10 rounded-lg p-2 text-center">
+                            <div className="text-[10px] text-rose-500">Erros</div>
+                            <div className="text-sm font-semibold text-rose-300 tabular-nums">{errors}</div>
+                          </div>
+                        </div>
+
+                        {/* Barra de progresso */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span className="text-slate-500">Progresso</span>
+                            <span className="text-slate-400 tabular-nums">
+                              {progress}% · {remaining} restantes · {accuracy}% de acerto
+                            </span>
+                          </div>
+                          <div className="h-1.5 w-full bg-white/[0.05] rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${
+                                accuracy >= 70 ? "bg-emerald-500" : accuracy >= 50 ? "bg-amber-500" : answered === 0 ? "bg-slate-600" : "bg-rose-500"
+                              }`}
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Grade Visual das questões */}
+                        <div className="flex flex-wrap gap-1">
+                          {data.questions.map((q, qi) => {
+                            const ans = userAnswers[String(q.id)];
+                            let cls = "bg-white/[0.05] text-slate-600 border-white/[0.06]";
+                            if (ans) cls = ans.isCorrect
+                              ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                              : "bg-rose-500/20 text-rose-400 border-rose-500/30";
+                            return (
+                              <button
+                                key={q.id}
+                                title={`Q${qi + 1}${ ans ? ` — ${ ans.isCorrect ? "Correta" : "Errada"}` : " — Não respondida"}`}
+                                onClick={() => {
+                                  if (!user) { setShowAuthModal(true); return; }
+                                  setResolverQueue(data.questions);
+                                  setResolverIndex(qi);
+                                  setSelectedQuestion(q);
+                                  setActiveTab("resolver");
+                                }}
+                                className={`w-7 h-7 rounded-md border text-[9px] font-medium transition-all hover:scale-110 ${cls}`}
+                              >
+                                {qi + 1}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Botão de ação */}
+                        <button
+                          onClick={handleLaunch}
+                          className={`w-full py-2.5 rounded-xl text-[12px] font-semibold transition-all flex items-center justify-center gap-2 ${
+                            status === "nao_iniciado"
+                              ? "bg-blue-600/90 hover:bg-blue-600 text-white"
+                              : status === "concluido"
+                              ? "bg-white/[0.05] hover:bg-white/[0.08] text-slate-300 border border-white/[0.08]"
+                              : "bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/20"
+                          }`}
+                        >
+                          {status === "nao_iniciado" && <><PlayCircle size={14} /> Iniciar Simulado</>}
+                          {status === "em_andamento" && <><Clock3 size={14} /> Continuar ({remaining} restantes)</>}
+                          {status === "concluido"    && <><CheckCircle2 size={14} /> Rever Simulado</>}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            );
+          })()}
+
+          {/* ── FIXAÇÃO (oculta) ── */}
           {activeTab === "fixacao" && (
-            <motion.div
-              key="fixacao"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-            >
+            <motion.div key="fixacao" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <FixationDashboardView />
             </motion.div>
           )}
