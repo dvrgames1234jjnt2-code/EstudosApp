@@ -742,7 +742,7 @@ export default function BancoPage() {
                         <h3 className="text-xs font-semibold text-slate-200">Gabarito e Navegação</h3>
                         <span className="text-[10px] text-slate-500 font-medium">Agrupado por Matéria</span>
                       </div>
-                      <div className="space-y-4 overflow-y-auto custom-scrollbar max-h-96 pr-1 pt-1">
+                      <div className="space-y-3 pt-1">
                         {(() => {
                           const gabaritoPorMateria: Record<string, { q: BancoQuestion; idx: number }[]> = {};
                           resolverQueue?.forEach((q, idx) => {
@@ -756,18 +756,18 @@ export default function BancoPage() {
                             const acertosMat = items.filter(i => userAnswers?.[String(i.q.id)]?.isCorrect).length;
 
                             return (
-                              <div key={mat} className="space-y-2 border-b border-white/[0.04] pb-3 last:border-0 last:pb-0">
-                                <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300">
-                                  <span className="truncate flex items-center gap-1.5">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                              <div key={mat} className="space-y-1.5 border-b border-white/[0.04] pb-2.5 last:border-0 last:pb-0">
+                                <div className="flex items-center justify-between text-[10px] font-semibold text-slate-300">
+                                  <span className="truncate flex items-center gap-1">
+                                    <span className="w-1 h-1 rounded-full bg-blue-400" />
                                     {mat}
                                   </span>
-                                  <span className="text-[10px] text-slate-500 font-mono font-normal">
+                                  <span className="text-[9px] text-slate-500 font-mono font-normal">
                                     {feitasMat}/{items.length} feitas {feitasMat > 0 && `(${acertosMat} acertos)`}
                                   </span>
                                 </div>
 
-                                <div className="flex flex-wrap gap-1.5">
+                                <div className="flex flex-wrap gap-1">
                                   {items.map(({ q, idx }) => {
                                     const ans = userAnswers?.[String(q.id)];
                                     const isCurrent = idx === resolverIndex;
@@ -793,7 +793,7 @@ export default function BancoPage() {
                                       <button
                                         key={q.id}
                                         onClick={() => { setResolverIndex(idx); setSelectedQuestion(q); setActiveTab("resolver"); }}
-                                        className={`relative w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-medium transition-all border shrink-0 outline-none ${boxStyle}`}
+                                        className={`relative w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-medium transition-all border shrink-0 outline-none ${boxStyle}`}
                                       >
                                         {idx + 1}
                                         {isMarkedDuvida && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 border border-[#111623]" />}
