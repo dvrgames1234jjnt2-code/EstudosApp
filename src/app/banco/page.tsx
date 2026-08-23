@@ -26,6 +26,7 @@ import {
   Search,
   Filter,
   X,
+  BookMarked,
 } from "lucide-react";
 import { supabase, supabasePublic } from "../../lib/supabase";
 import { AuthModal } from "../../components/AuthModal";
@@ -33,6 +34,7 @@ import QuestionsTable, { BancoQuestion } from "../../components/banco/QuestionsT
 import QuestionResolver from "../../components/banco/QuestionResolver";
 import FixationDashboardView from "../../components/fixacao/FixationDashboardView";
 import { PrintSimuladoModal } from "../../components/banco/PrintSimuladoModal";
+import NotionQuestionTab from "../../components/banco/NotionQuestionTab";
 
 // ──────────────────────────────────────────────
 // Types
@@ -51,7 +53,7 @@ export interface QuestionStats {
 /** Mapa questao_id → stats (derivado do histórico completo) */
 type UserAnswers = Record<string, QuestionStats>;
 
-type ActiveTab = "banco" | "resolver" | "simulados" | "desempenho" | "fixacao";
+type ActiveTab = "banco" | "resolver" | "simulados" | "desempenho" | "fixacao" | "notion";
 
 // ──────────────────────────────────────────────
 // Helpers
@@ -438,6 +440,7 @@ export default function BancoPage() {
             { id: "resolver",   icon: <Layers size={13} />,         label: "Questão Ativa", badge: selectedQuestion ? "●" : null },
             { id: "simulados",  icon: <ClipboardList size={13} />,  label: "Simulados", count: provasDisponiveis.length },
             { id: "desempenho", icon: <BarChart3 size={13} />,      label: "Desempenho", badge: resolverQueue.length > 0 ? "●" : null },
+            { id: "notion",     icon: <BookMarked size={13} />,     label: "Notion Question", count: undefined, badge: null },
           ].map(tab => (
             <button
               key={tab.id}
@@ -1372,6 +1375,19 @@ export default function BancoPage() {
           {activeTab === "fixacao" && (
             <motion.div key="fixacao" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <FixationDashboardView />
+            </motion.div>
+          )}
+
+          {/* ── NOTION QUESTION ── */}
+          {activeTab === "notion" && (
+            <motion.div
+              key="notion"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+            >
+              <NotionQuestionTab user={user} />
             </motion.div>
           )}
 
