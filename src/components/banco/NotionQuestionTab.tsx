@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Plus, Trash2, ChevronDown, ChevronRight, Loader2,
   BookMarked, RefreshCw, X, Check, Play, Eye, EyeOff,
-  Triangle,
+  Triangle, Flag
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
@@ -120,7 +120,17 @@ async function fetchChildren(blockId: string): Promise<NotionAPIBlock[]> {
   return req;
 }
 
-function QuestaoRow({ questao, user }: { questao: Questao; user: any }) {
+function QuestaoRow({ 
+  questao, 
+  user,
+  isDuvida,
+  onToggleDuvida
+}: { 
+  questao: Questao; 
+  user: any;
+  isDuvida: boolean;
+  onToggleDuvida: (questaoId: string, marcar: boolean) => Promise<void>;
+}) {
   const [open, setOpen] = useState(false);
   const [showResp, setShowResp] = useState(false);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -130,6 +140,7 @@ function QuestaoRow({ questao, user }: { questao: Questao; user: any }) {
 
   const [recording, setRecording] = useState(false);
   const [recorded, setRecorded] = useState<'acerto' | 'erro' | null>(null);
+  const [recordingDuvida, setRecordingDuvida] = useState(false);
 
   const handleRecordAnswer = async (isCorrect: boolean) => {
     if (!user) return;
@@ -140,14 +151,14 @@ function QuestaoRow({ questao, user }: { questao: Questao; user: any }) {
     const time = now.toTimeString().slice(0, 8);
 
     try {
-      const { error } = await supabase.from("historico_respostas").insert({
+      const { error } = await supabase.from("notion_respostas").insert({
         questao_id: questao.id,
         resposta_usuario: isCorrect ? "Acerto" : "Erro",
         correto: isCorrect ? "Sim" : "Não",
         data: date,
         horario: time,
         status: isCorrect ? "Acertei" : "Errei",
-        User: user.id,
+        user_id: user.id,
       });
       if (error) throw error;
       setRecorded(isCorrect ? 'acerto' : 'erro');
@@ -157,6 +168,16 @@ function QuestaoRow({ questao, user }: { questao: Questao; user: any }) {
       alert("Erro ao salvar resposta: " + e.message);
     } finally {
       setRecording(false);
+    }
+  };
+
+  const handleToggleDuvidaLocal = async () => {
+    if (!user) return;
+    setRecordingDuvida(true);
+    try {
+      await onToggleDuvida(questao.id, !isDuvida);
+    } finally {
+      setRecordingDuvida(false);
     }
   };
 
@@ -264,6 +285,10 @@ function QuestaoRow({ questao, user }: { questao: Questao; user: any }) {
             — {questao.topic}
           </span>
         )}
+
+        {isDuvida && (
+          <Flag size={11} className="fill-red-500 text-red-500 shrink-0 ml-1" />
+        )}
       </div>
 
       {open && (
@@ -305,6 +330,19 @@ function QuestaoRow({ questao, user }: { questao: Questao; user: any }) {
                   {user && (
                     <div className="flex items-center gap-2 mt-2 pt-2 border-t border-emerald-500/10 shrink-0">
                       <span className="text-[10px] text-slate-500 font-bold mr-auto">Registrar tentativa:</span>
+                      
+                      <button
+                        onClick={handleToggleDuvidaLocal}
+                        disabled={recordingDuvida}
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50 active:scale-95 ${
+                          isDuvida 
+                            ? 'bg-red-600/30 border border-red-500/50 text-red-300' 
+                            : 'bg-slate-700/20 hover:bg-slate-700/40 text-slate-400'
+                        }`}
+                      >
+                        <Flag size={11} className={isDuvida ? "fill-red-500 text-red-500" : ""} /> Em dúvida
+                      </button>
+
                       <button
                         onClick={() => handleRecordAnswer(true)}
                         disabled={recording}
@@ -336,7 +374,19 @@ function QuestaoRow({ questao, user }: { questao: Questao; user: any }) {
   );
 }
 
-function CasoCard({ caso, depth = 0, user }: { caso: Caso; depth?: number; user: any }) {
+function CasoCard({ 
+  caso, 
+  depth = 0, 
+  user,
+  duvidasIds,
+  onToggleDuvida
+}: { 
+  caso: Caso; 
+  depth?: number; 
+  user: any;
+  duvidasIds: Set<string>;
+  onToggleDuvida: (questaoId: string, marcar: boolean) => Promise<void>;
+}) {
   const [open, setOpen] = useState(false);
   const [questoes, setQuestoes] = useState<Questao[]>([]);
   const [subcasos, setSubcasos] = useState<Caso[]>([]);
@@ -453,13 +503,25 @@ function CasoCard({ caso, depth = 0, user }: { caso: Caso; depth?: number; user:
             <>
               {/* Sub-casos recursivos */}
               {subcasos.map(sub => (
-                <CasoCard key={sub.id} caso={sub} depth={depth + 1} user={user} />
+                <CasoCard 
+                  key={sub.id} 
+                  caso={sub} 
+                  depth={depth + 1} 
+                  user={user} 
+                  duvidasIds={duvidasIds}
+                  onToggleDuvida={onToggleDuvida}
+                />
               ))}
 
               {/* Questões deste nível */}
               {questoes.map((q, idx) => (
                 <div key={q.id} className={idx < questoes.length - 1 ? "border-b border-white/[0.06] pb-1 mb-1" : ""}>
-                  <QuestaoRow questao={q} user={user} />
+                  <QuestaoRow 
+                    questao={q} 
+                    user={user} 
+                    isDuvida={duvidasIds.has(q.id)}
+                    onToggleDuvida={onToggleDuvida}
+                  />
                 </div>
               ))}
             </>
@@ -470,7 +532,17 @@ function CasoCard({ caso, depth = 0, user }: { caso: Caso; depth?: number; user:
   );
 }
 
-function BlockViewer({ block, user }: { block: NotionBlockRow; user: any }) {
+function BlockViewer({ 
+  block, 
+  user,
+  duvidasIds,
+  onToggleDuvida
+}: { 
+  block: NotionBlockRow; 
+  user: any;
+  duvidasIds: Set<string>;
+  onToggleDuvida: (questaoId: string, marcar: boolean) => Promise<void>;
+}) {
   const [casos, setCasos] = useState<Caso[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -529,7 +601,15 @@ function BlockViewer({ block, user }: { block: NotionBlockRow; user: any }) {
 
   return (
     <div className="flex flex-col gap-2 pl-4 border-l border-white/[0.03] ml-4 mt-1">
-      {casos.map(caso => <CasoCard key={caso.id} caso={caso} user={user} />)}
+      {casos.map(caso => (
+        <CasoCard 
+          key={caso.id} 
+          caso={caso} 
+          user={user} 
+          duvidasIds={duvidasIds}
+          onToggleDuvida={onToggleDuvida}
+        />
+      ))}
     </div>
   );
 }
@@ -537,11 +617,15 @@ function BlockViewer({ block, user }: { block: NotionBlockRow; user: any }) {
 function NotionBlockRowItem({
   block,
   user,
-  onDelete
+  onDelete,
+  duvidasIds,
+  onToggleDuvida
 }: {
   block: NotionBlockRow;
   user: any;
   onDelete: (id: string) => void;
+  duvidasIds: Set<string>;
+  onToggleDuvida: (questaoId: string, marcar: boolean) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
   const [blockIcon, setBlockIcon] = useState<string>("📝");
@@ -596,7 +680,12 @@ function NotionBlockRowItem({
 
       {open && (
         <div className="pl-6 border-l border-white/[0.03] ml-5 mt-1 mb-2">
-          <BlockViewer block={block} user={user} />
+          <BlockViewer 
+            block={block} 
+            user={user} 
+            duvidasIds={duvidasIds}
+            onToggleDuvida={onToggleDuvida}
+          />
         </div>
       )}
     </div>
@@ -606,6 +695,7 @@ function NotionBlockRowItem({
 export default function NotionQuestionTab({ user }: { user: any }) {
   const [blocks, setBlocks] = useState<NotionBlockRow[]>([]);
   const [loadingBlocks, setLoadingBlocks] = useState(true);
+  const [duvidasIds, setDuvidasIds] = useState<Set<string>>(new Set());
 
   const [showForm, setShowForm] = useState(false);
   const [formId, setFormId] = useState(""); const [formNome, setFormNome] = useState(""); const [formDesc, setFormDesc] = useState("");
@@ -621,7 +711,58 @@ export default function NotionQuestionTab({ user }: { user: any }) {
     finally { setLoadingBlocks(false); }
   }, []);
 
-  useEffect(() => { fetchBlocks(); }, []);
+  const fetchDuvidas = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from("notion_duvidas")
+        .select("questao_id")
+        .eq("user_id", user.id);
+      
+      if (error) throw error;
+      setDuvidasIds(new Set((data ?? []).map((item: any) => item.questao_id)));
+    } catch (e) {
+      console.error("Erro ao buscar duvidas do Notion:", e);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchBlocks();
+    fetchDuvidas();
+  }, [fetchBlocks, fetchDuvidas]);
+
+  const handleToggleDuvida = async (questaoId: string, marcar: boolean) => {
+    if (!user) return;
+    try {
+      if (marcar) {
+        const { error } = await supabase.from("notion_duvidas").insert({
+          questao_id: questaoId,
+          user_id: user.id
+        });
+        if (error) throw error;
+        setDuvidasIds(prev => {
+          const next = new Set(prev);
+          next.add(questaoId);
+          return next;
+        });
+      } else {
+        const { error } = await supabase
+          .from("notion_duvidas")
+          .delete()
+          .eq("questao_id", questaoId)
+          .eq("user_id", user.id);
+        if (error) throw error;
+        setDuvidasIds(prev => {
+          const next = new Set(prev);
+          next.delete(questaoId);
+          return next;
+        });
+      }
+    } catch (e) {
+      console.error("Erro ao alterar estado de dúvida:", e);
+      alert("Erro ao salvar dúvida no banco.");
+    }
+  };
 
   const handleSave = async () => {
     if (!formId.trim() || !formNome.trim()) { setSaveErr("Preencha o ID e o nome."); return; }
@@ -715,6 +856,8 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               block={block}
               user={user}
               onDelete={handleDelete}
+              duvidasIds={duvidasIds}
+              onToggleDuvida={handleToggleDuvida}
             />
           ))}
         </div>
