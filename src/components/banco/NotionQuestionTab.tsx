@@ -94,20 +94,31 @@ function detectCategory(emojis: string[]): CategoryKey | null {
   return null;
 }
 
-// Cache de respostas e in-flight deduplication — cada bloco é buscado só uma vez
-const childrenCache = new Map<string, NotionAPIBlock[]>();
+// Cache de respostas com expiração de 45 minutos (S3 do Notion expira em 1h) e deduplicação de requests simultâneos
+const childrenCache = new Map<string, { data: NotionAPIBlock[]; timestamp: number }>();
 const childrenInFlight = new Map<string, Promise<NotionAPIBlock[]>>();
 
 async function fetchChildren(blockId: string): Promise<NotionAPIBlock[]> {
   const clean = blockId.replace(/-/g, "");
-  if (childrenCache.has(clean)) return childrenCache.get(clean)!;
+  const now = Date.now();
+
+  if (childrenCache.has(clean)) {
+    const cached = childrenCache.get(clean)!;
+    // Se o cache tem menos de 45 minutos, retorna. Caso contrário, expira e força refetch
+    if (now - cached.timestamp < 45 * 60 * 1000) {
+      return cached.data;
+    } else {
+      childrenCache.delete(clean);
+    }
+  }
+
   if (childrenInFlight.has(clean)) return childrenInFlight.get(clean)!;
 
   const req = fetch(`/api/notion/blocks/${clean}/children?page_size=100`)
     .then(async res => {
       if (!res.ok) throw new Error(`Notion ${res.status}`);
       const data: NotionAPIBlock[] = (await res.json()).results ?? [];
-      childrenCache.set(clean, data);
+      childrenCache.set(clean, { data, timestamp: Date.now() });
       childrenInFlight.delete(clean);
       return data;
     })
@@ -712,7 +723,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   }, []);
 
   const fetchDuvidas = useCallback(async () => {
-    if (!user) return;
+    if (!user?.id) return;
     try {
       const { data, error } = await supabase
         .from("notion_duvidas")
@@ -724,12 +735,19 @@ export default function NotionQuestionTab({ user }: { user: any }) {
     } catch (e) {
       console.error("Erro ao buscar duvidas do Notion:", e);
     }
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
     fetchBlocks();
-    fetchDuvidas();
-  }, [fetchBlocks, fetchDuvidas]);
+  }, [fetchBlocks]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchDuvidas();
+    } else {
+      setDuvidasIds(new Set());
+    }
+  }, [user?.id, fetchDuvidas]);
 
   const handleToggleDuvida = async (questaoId: string, marcar: boolean) => {
     if (!user) return;
