@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
 import {
   Plus, Trash2, ChevronDown, ChevronRight, Loader2,
   BookMarked, RefreshCw, X, Check, Play, Eye, EyeOff,
@@ -45,6 +45,7 @@ interface NotionAPIBlock {
   toggle?: { rich_text: RichText[] };
   paragraph?: { rich_text: RichText[] };
   image?: { type: "external" | "file"; external?: { url: string }; file?: { url: string } };
+  parent?: { type: "block_id" | "page_id" | "database_id" | "workspace"; block_id?: string; page_id?: string };
   [key: string]: any;
 }
 
@@ -131,16 +132,142 @@ async function fetchChildren(blockId: string): Promise<NotionAPIBlock[]> {
   return req;
 }
 
+// Cache de informações resolvidas individualmente (usado pelo painel de desempenho,
+// que recebe apenas IDs de questão vindos do Supabase, sem a árvore carregada)
+interface QuestaoInfo { title: string; emoji?: string; blocoNome?: string }
+const questaoInfoCache = new Map<string, QuestaoInfo>();
+
+async function fetchNotionBlock(id: string): Promise<NotionAPIBlock> {
+  const res = await fetch(`/api/notion/blocks/${id}`);
+  if (!res.ok) throw new Error(`Notion ${res.status}`);
+  return res.json();
+}
+
+// Sobe a cadeia de "parent" do bloco até encontrar um bloco cadastrado em `notion_blocks`
+// (o "caderno"), ou até esgotar o limite de saltos / chegar na página raiz.
+async function resolveBlocoNome(
+  startParent: NotionAPIBlock["parent"],
+  blocksMap: Map<string, string>
+): Promise<string | undefined> {
+  let parent = startParent;
+  const visited = new Set<string>();
+  let hops = 0;
+
+  while (parent?.type === "block_id" && parent.block_id && hops < 15) {
+    const parentClean = parent.block_id.replace(/-/g, "");
+    if (visited.has(parentClean)) break;
+    visited.add(parentClean);
+
+    if (blocksMap.has(parentClean)) return blocksMap.get(parentClean);
+
+    try {
+      const pData = await fetchNotionBlock(parentClean);
+      parent = pData.parent;
+    } catch {
+      break;
+    }
+    hops++;
+  }
+  return undefined;
+}
+
+async function resolveQuestaoInfo(questaoId: string, blocksMap: Map<string, string>): Promise<QuestaoInfo> {
+  const clean = questaoId.replace(/-/g, "");
+  if (questaoInfoCache.has(clean)) return questaoInfoCache.get(clean)!;
+
+  const data = await fetchNotionBlock(clean);
+
+  const rawTitle =
+    richText(data.toggle?.rich_text) ||
+    richText(data.paragraph?.rich_text) ||
+    "Questão sem título";
+  const { emojis, numero, topic } = parseQuestaoTitle(rawTitle);
+  const emoji = (data.icon?.type === "emoji" ? data.icon.emoji : undefined) ?? emojis[0];
+  const title = numero ? `Questão ${numero}${topic ? ` — ${topic}` : ""}` : rawTitle;
+
+  const blocoNome = await resolveBlocoNome(data.parent, blocksMap);
+
+  const info: QuestaoInfo = { title, emoji, blocoNome };
+  questaoInfoCache.set(clean, info);
+  return info;
+}
+
+// Varredura recursiva de um caderno (bloco) inteiro para coletar todos os IDs de
+// questões (toggles com emoji de categoria reconhecido), reutilizando o cache de
+// fetchChildren. Usada para calcular o resumo (total/acertos/erros/dúvidas) sem
+// precisar abrir o caderno na tela.
+const questoesDoBlocoCache = new Map<string, string[]>();
+
+async function collectQuestaoIds(rootBlockId: string): Promise<string[]> {
+  const clean = rootBlockId.replace(/-/g, "");
+  if (questoesDoBlocoCache.has(clean)) return questoesDoBlocoCache.get(clean)!;
+
+  const ids: string[] = [];
+
+  async function walk(blockId: string) {
+    const children = await fetchChildren(blockId);
+    for (const child of children) {
+      if (child.type !== "toggle") continue;
+      const rawTitle = richText(child.toggle?.rich_text ?? []);
+      const { emojis: textEmojis } = parseQuestaoTitle(rawTitle);
+      const iconEmoji = child.icon?.type === "emoji" && child.icon.emoji ? [child.icon.emoji] : [];
+      const categoryKey = detectCategory([...iconEmoji, ...textEmojis]);
+      if (categoryKey) {
+        ids.push(child.id);
+      } else if (child.has_children) {
+        await walk(child.id);
+      }
+    }
+  }
+
+  await walk(clean);
+  questoesDoBlocoCache.set(clean, ids);
+  return ids;
+}
+
+function QuestaoTitleLabel({ questaoId, blocksMap }: { questaoId: string; blocksMap: Map<string, string> }) {
+  const [info, setInfo] = useState<QuestaoInfo | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    resolveQuestaoInfo(questaoId, blocksMap)
+      .then(res => { if (active) setInfo(res); })
+      .catch(() => { if (active) setFailed(true); });
+    return () => { active = false; };
+  }, [questaoId, blocksMap]);
+
+  return (
+    <div className="flex items-center gap-2 py-1.5 px-2 text-[11px] rounded-md hover:bg-white/[0.03] transition-all">
+      <span className="shrink-0">{info?.emoji ?? "📄"}</span>
+      {failed ? (
+        <span className="text-slate-600 italic truncate">Questão indisponível ({questaoId.slice(0, 8)}…)</span>
+      ) : (
+        <div className="flex flex-col min-w-0">
+          <span className="text-slate-400 truncate">{info?.title ?? "Carregando…"}</span>
+          {info?.blocoNome && (
+            <span className="text-[9px] text-indigo-400/70 font-bold uppercase tracking-wide truncate">
+              {info.blocoNome}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function QuestaoRow({ 
   questao, 
   user,
   isDuvida,
-  onToggleDuvida
+  onToggleDuvida,
+  onAnswered
 }: { 
   questao: Questao; 
   user: any;
   isDuvida: boolean;
   onToggleDuvida: (questaoId: string, marcar: boolean) => Promise<void>;
+  onAnswered: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [showResp, setShowResp] = useState(false);
@@ -174,6 +301,7 @@ function QuestaoRow({
       if (error) throw error;
       setRecorded(isCorrect ? 'acerto' : 'erro');
       setTimeout(() => setRecorded(null), 3000);
+      onAnswered();
     } catch (e: any) {
       console.error(e);
       alert("Erro ao salvar resposta: " + e.message);
@@ -390,13 +518,15 @@ function CasoCard({
   depth = 0, 
   user,
   duvidasIds,
-  onToggleDuvida
+  onToggleDuvida,
+  onAnswered
 }: { 
   caso: Caso; 
   depth?: number; 
   user: any;
   duvidasIds: Set<string>;
   onToggleDuvida: (questaoId: string, marcar: boolean) => Promise<void>;
+  onAnswered: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [questoes, setQuestoes] = useState<Questao[]>([]);
@@ -521,6 +651,7 @@ function CasoCard({
                   user={user} 
                   duvidasIds={duvidasIds}
                   onToggleDuvida={onToggleDuvida}
+                  onAnswered={onAnswered}
                 />
               ))}
 
@@ -532,6 +663,7 @@ function CasoCard({
                     user={user} 
                     isDuvida={duvidasIds.has(q.id)}
                     onToggleDuvida={onToggleDuvida}
+                    onAnswered={onAnswered}
                   />
                 </div>
               ))}
@@ -547,12 +679,14 @@ function BlockViewer({
   block, 
   user,
   duvidasIds,
-  onToggleDuvida
+  onToggleDuvida,
+  onAnswered
 }: { 
   block: NotionBlockRow; 
   user: any;
   duvidasIds: Set<string>;
   onToggleDuvida: (questaoId: string, marcar: boolean) => Promise<void>;
+  onAnswered: () => void;
 }) {
   const [casos, setCasos] = useState<Caso[]>([]);
   const [loading, setLoading] = useState(true);
@@ -619,8 +753,66 @@ function BlockViewer({
           user={user} 
           duvidasIds={duvidasIds}
           onToggleDuvida={onToggleDuvida}
+          onAnswered={onAnswered}
         />
       ))}
+    </div>
+  );
+}
+
+function BlocoStatsBadge({
+  block,
+  resultadosMap,
+  duvidasIds,
+}: {
+  block: NotionBlockRow;
+  resultadosMap: Map<string, "acerto" | "erro">;
+  duvidasIds: Set<string>;
+}) {
+  const [ids, setIds] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setIds(null);
+    collectQuestaoIds(block.block_id)
+      .then(res => { if (active) setIds(res); })
+      .catch(() => { if (active) setIds([]); });
+    return () => { active = false; };
+  }, [block.block_id]);
+
+  if (ids === null) {
+    return <Loader2 size={11} className="animate-spin text-slate-700 shrink-0" />;
+  }
+  if (ids.length === 0) return null;
+
+  let acertos = 0, erros = 0, duvidas = 0;
+  for (const id of ids) {
+    const status = resultadosMap.get(id);
+    if (status === "acerto") acertos++;
+    else if (status === "erro") erros++;
+    if (duvidasIds.has(id)) duvidas++;
+  }
+  const respondidas = acertos + erros;
+  const aproveitamento = respondidas > 0 ? Math.round((acertos / respondidas) * 100) : null;
+
+  const aproveitamentoClasses =
+    aproveitamento === null
+      ? "border-white/[0.06] text-slate-600 bg-white/[0.02]"
+      : aproveitamento >= 70
+      ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
+      : aproveitamento >= 40
+      ? "border-amber-500/30 text-amber-400 bg-amber-500/10"
+      : "border-red-500/30 text-red-400 bg-red-500/10";
+
+  return (
+    <div className="flex items-center gap-2 text-[10px] font-bold shrink-0 mr-2">
+      <span className="text-slate-600">{ids.length} quest.</span>
+      <span className="text-emerald-400 flex items-center gap-0.5"><Check size={10} />{acertos}</span>
+      <span className="text-red-400 flex items-center gap-0.5"><X size={10} />{erros}</span>
+      <span className="text-amber-400 flex items-center gap-0.5"><Flag size={10} />{duvidas}</span>
+      <span className={`px-1.5 py-0.5 rounded-md border tabular-nums ${aproveitamentoClasses}`}>
+        {aproveitamento === null ? "—" : `${aproveitamento}%`}
+      </span>
     </div>
   );
 }
@@ -630,13 +822,17 @@ function NotionBlockRowItem({
   user,
   onDelete,
   duvidasIds,
-  onToggleDuvida
+  onToggleDuvida,
+  onAnswered,
+  resultadosMap
 }: {
   block: NotionBlockRow;
   user: any;
   onDelete: (id: string) => void;
   duvidasIds: Set<string>;
   onToggleDuvida: (questaoId: string, marcar: boolean) => Promise<void>;
+  onAnswered: () => void;
+  resultadosMap: Map<string, "acerto" | "erro">;
 }) {
   const [open, setOpen] = useState(false);
   const [blockIcon, setBlockIcon] = useState<string>("📝");
@@ -665,19 +861,21 @@ function NotionBlockRowItem({
       <div className="flex items-center justify-between group">
         <button
           onClick={() => setOpen(v => !v)}
-          className="flex items-center gap-3 text-left py-1.5 px-2 hover:bg-white/[0.02] rounded-lg transition-all flex-1"
+          className="flex items-center gap-3 text-left py-1.5 px-2 hover:bg-white/[0.02] rounded-lg transition-all flex-1 min-w-0"
         >
           <span className="text-[10px] text-slate-500 w-4 h-4 flex items-center justify-center shrink-0 select-none">
             {open ? "▼" : "▶"}
           </span>
           <span className="text-base shrink-0 select-none">{blockIcon}</span>
-          <span className="text-[14px] font-bold text-slate-200 group-hover:text-white transition-colors">
+          <span className="text-[14px] font-bold text-slate-200 group-hover:text-white transition-colors shrink-0">
             {block.nome}
           </span>
           {block.descricao && (
             <span className="text-[11px] text-slate-500 truncate">— {block.descricao}</span>
           )}
         </button>
+
+        <BlocoStatsBadge block={block} resultadosMap={resultadosMap} duvidasIds={duvidasIds} />
 
         {user && (
           <button
@@ -696,9 +894,111 @@ function NotionBlockRowItem({
             user={user} 
             duvidasIds={duvidasIds}
             onToggleDuvida={onToggleDuvida}
+            onAnswered={onAnswered}
           />
         </div>
       )}
+    </div>
+  );
+}
+
+function PainelDesempenho({
+  user,
+  duvidasIds,
+  resultadosMap,
+  onRefresh,
+  blocks,
+}: {
+  user: any;
+  duvidasIds: Set<string>;
+  resultadosMap: Map<string, "acerto" | "erro">;
+  onRefresh: () => void;
+  blocks: NotionBlockRow[];
+}) {
+  // Múltiplos cartões podem ficar abertos ao mesmo tempo (não é mais exclusivo)
+  const [openSections, setOpenSections] = useState<Set<"acertos" | "erros" | "duvidas">>(new Set());
+
+  const blocksMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const b of blocks) map.set(b.block_id.replace(/-/g, ""), b.nome);
+    return map;
+  }, [blocks]);
+
+  const { acertadas, erradas } = useMemo(() => {
+    const a: string[] = [], e: string[] = [];
+    for (const [id, status] of resultadosMap.entries()) {
+      (status === "acerto" ? a : e).push(id);
+    }
+    return { acertadas: a, erradas: e };
+  }, [resultadosMap]);
+
+  const toggleSection = (key: "acertos" | "erros" | "duvidas") => {
+    setOpenSections(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
+
+  if (!user) return null;
+
+  const duvidasArr = [...duvidasIds];
+
+  const cards: {
+    key: "acertos" | "erros" | "duvidas";
+    label: string;
+    ids: string[];
+    color: "emerald" | "red" | "amber";
+    icon: ReactNode;
+  }[] = [
+    { key: "acertos", label: "Acertadas", ids: acertadas, color: "emerald", icon: <Check size={13} /> },
+    { key: "erros", label: "Erradas", ids: erradas, color: "red", icon: <X size={13} /> },
+    { key: "duvidas", label: "Em dúvida", ids: duvidasArr, color: "amber", icon: <Flag size={13} /> },
+  ];
+
+  const colorClasses: Record<string, { border: string; bg: string; text: string }> = {
+    emerald: { border: "border-emerald-500/20", bg: "bg-emerald-500/[0.04]", text: "text-emerald-400" },
+    red: { border: "border-red-500/20", bg: "bg-red-500/[0.04]", text: "text-red-400" },
+    amber: { border: "border-amber-500/20", bg: "bg-amber-500/[0.04]", text: "text-amber-400" },
+  };
+
+  return (
+    <div className="flex flex-col gap-3 border border-white/[0.06] rounded-2xl bg-white/[0.01] p-4">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Desempenho</p>
+        <button onClick={onRefresh} className="text-slate-600 hover:text-blue-400 transition-all">
+          <RefreshCw size={12} />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {cards.map(card => {
+          const c = colorClasses[card.color];
+          const isOpen = openSections.has(card.key);
+          return (
+            <div key={card.key} className={`rounded-xl border ${c.border} ${c.bg} overflow-hidden`}>
+              <button
+                onClick={() => toggleSection(card.key)}
+                className="w-full flex items-center justify-between px-3 py-2.5"
+              >
+                <span className={`flex items-center gap-2 text-[11px] font-black uppercase tracking-wider ${c.text}`}>
+                  {card.icon} {card.label}
+                </span>
+                <span className={`text-sm font-black tabular-nums ${c.text}`}>{card.ids.length}</span>
+              </button>
+              {isOpen && (
+                <div className="border-t border-white/[0.06] max-h-52 overflow-y-auto custom-scrollbar px-1 py-1">
+                  {card.ids.length === 0 ? (
+                    <p className="text-[10px] text-slate-600 italic px-2 py-2">Nenhuma questão aqui ainda.</p>
+                  ) : (
+                    card.ids.map(id => <QuestaoTitleLabel key={id} questaoId={id} blocksMap={blocksMap} />)
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -707,6 +1007,9 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   const [blocks, setBlocks] = useState<NotionBlockRow[]>([]);
   const [loadingBlocks, setLoadingBlocks] = useState(true);
   const [duvidasIds, setDuvidasIds] = useState<Set<string>>(new Set());
+  const [resultadosMap, setResultadosMap] = useState<Map<string, "acerto" | "erro">>(new Map());
+  const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
+  const handleAnswered = useCallback(() => setStatsRefreshTrigger(v => v + 1), []);
 
   const [showForm, setShowForm] = useState(false);
   const [formId, setFormId] = useState(""); const [formNome, setFormNome] = useState(""); const [formDesc, setFormDesc] = useState("");
@@ -737,6 +1040,31 @@ export default function NotionQuestionTab({ user }: { user: any }) {
     }
   }, [user?.id]);
 
+  // Resultados (acerto/erro mais recente por questão) — buscado uma única vez aqui
+  // e compartilhado entre o Painel de Desempenho e o resumo por caderno.
+  const fetchResultados = useCallback(async () => {
+    if (!user?.id) { setResultadosMap(new Map()); return; }
+    try {
+      const { data, error } = await supabase
+        .from("notion_respostas")
+        .select("questao_id, correto, data, horario")
+        .eq("user_id", user.id)
+        .order("data", { ascending: false })
+        .order("horario", { ascending: false });
+      if (error) throw error;
+
+      const latest = new Map<string, "acerto" | "erro">();
+      for (const row of data ?? []) {
+        if (!latest.has(row.questao_id)) {
+          latest.set(row.questao_id, row.correto === "Sim" ? "acerto" : "erro");
+        }
+      }
+      setResultadosMap(latest);
+    } catch (e) {
+      console.error("Erro ao buscar resultados do Notion:", e);
+    }
+  }, [user?.id]);
+
   useEffect(() => {
     fetchBlocks();
   }, [fetchBlocks]);
@@ -744,10 +1072,12 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   useEffect(() => {
     if (user?.id) {
       fetchDuvidas();
+      fetchResultados();
     } else {
       setDuvidasIds(new Set());
+      setResultadosMap(new Map());
     }
-  }, [user?.id, fetchDuvidas]);
+  }, [user?.id, fetchDuvidas, fetchResultados, statsRefreshTrigger]);
 
   const handleToggleDuvida = async (questaoId: string, marcar: boolean) => {
     if (!user) return;
@@ -828,6 +1158,8 @@ export default function NotionQuestionTab({ user }: { user: any }) {
         </div>
       </div>
 
+      <PainelDesempenho user={user} duvidasIds={duvidasIds} resultadosMap={resultadosMap} onRefresh={fetchResultados} blocks={blocks} />
+
       {showForm && (
         <div className="border border-indigo-500/20 rounded-2xl bg-indigo-500/[0.03] p-5 flex flex-col gap-4">
           <div className="flex items-center justify-between">
@@ -876,6 +1208,8 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               onDelete={handleDelete}
               duvidasIds={duvidasIds}
               onToggleDuvida={handleToggleDuvida}
+              onAnswered={handleAnswered}
+              resultadosMap={resultadosMap}
             />
           ))}
         </div>
