@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react
 import {
   Plus, Trash2, ChevronDown, ChevronRight, Loader2,
   BookMarked, RefreshCw, X, Check, Play, Eye, EyeOff,
-  Triangle, Flag
+  Triangle, Flag, History
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
@@ -31,7 +31,7 @@ const CATEGORY_ORDER: Record<CategoryKey, number> = {
 };
 
 interface NotionBlockRow {
-  id: string; block_id: string; nome: string; descricao?: string; created_at: string;
+  id: string; block_id: string; nome: string; descricao?: string; materia?: string; created_at: string;
 }
 
 interface RichText {
@@ -66,6 +66,10 @@ interface Caso {
 }
 
 function richText(rt: RichText[] = []) { return rt.map(r => r.plain_text).join(""); }
+function formatDataBR(iso: string) {
+  const [y, m, d] = iso.split("-");
+  return y && m && d ? `${d}/${m}/${y}` : iso;
+}
 function imgUrl(b: NotionAPIBlock) {
   const img = b.image;
   if (!img) return undefined;
@@ -280,6 +284,38 @@ function QuestaoRow({
   const [recorded, setRecorded] = useState<'acerto' | 'erro' | null>(null);
   const [recordingDuvida, setRecordingDuvida] = useState(false);
 
+  const [showHistorico, setShowHistorico] = useState(false);
+  const [historico, setHistorico] = useState<{ data: string; horario: string; correto: string }[] | null>(null);
+  const [loadingHistorico, setLoadingHistorico] = useState(false);
+
+  const fetchHistorico = useCallback(async () => {
+    if (!user?.id) return;
+    setLoadingHistorico(true);
+    try {
+      const { data, error } = await supabase
+        .from("notion_respostas")
+        .select("data, horario, correto")
+        .eq("questao_id", questao.id)
+        .eq("user_id", user.id)
+        .order("data", { ascending: false })
+        .order("horario", { ascending: false });
+      if (error) throw error;
+      setHistorico(data ?? []);
+    } catch (e) {
+      console.error("Erro ao buscar histórico de respostas:", e);
+    } finally {
+      setLoadingHistorico(false);
+    }
+  }, [user?.id, questao.id]);
+
+  const toggleHistorico = () => {
+    setShowHistorico(v => {
+      const next = !v;
+      if (next && historico === null) fetchHistorico();
+      return next;
+    });
+  };
+
   const handleRecordAnswer = async (isCorrect: boolean) => {
     if (!user) return;
     setRecording(true);
@@ -302,6 +338,7 @@ function QuestaoRow({
       setRecorded(isCorrect ? 'acerto' : 'erro');
       setTimeout(() => setRecorded(null), 3000);
       onAnswered();
+      if (historico !== null) fetchHistorico();
     } catch (e: any) {
       console.error(e);
       alert("Erro ao salvar resposta: " + e.message);
@@ -431,7 +468,7 @@ function QuestaoRow({
       </div>
 
       {open && (
-        <div className="ml-6 pl-4 border-l border-white/[0.05] my-2 flex flex-col gap-3">
+        <div className="ml-6 pl-4 border-l border-indigo-500/[0.15] my-2 flex flex-col gap-3">
           {loading ? (
             <div className="flex items-center gap-2 text-[11px] text-slate-500 italic py-2">
               <Loader2 size={12} className="animate-spin" />
@@ -454,6 +491,57 @@ function QuestaoRow({
                 {showResp ? <EyeOff size={10} /> : <Eye size={10} />}
                 {showResp ? "Ocultar Resposta" : "Ver Resposta"}
               </button>
+
+              {user && (
+                <button
+                  onClick={toggleHistorico}
+                  className="flex items-center gap-2 self-start px-2.5 py-1 rounded-md border border-white/[0.07] bg-white/[0.03] text-slate-500 hover:text-indigo-400 hover:border-indigo-500/30 text-[10px] font-bold transition-all"
+                >
+                  <History size={10} />
+                  {showHistorico ? "Ocultar Histórico" : "Ver Histórico"}
+                  {historico && historico.length > 0 && (
+                    <span className="text-[9px] text-slate-600">({historico.length})</span>
+                  )}
+                </button>
+              )}
+
+              {showHistorico && (
+                <div className="border border-indigo-500/20 rounded-xl p-3 bg-indigo-500/[0.03] flex flex-col gap-2">
+                  {loadingHistorico ? (
+                    <div className="flex items-center gap-2 text-[11px] text-slate-500 italic py-1">
+                      <Loader2 size={11} className="animate-spin" /> Carregando histórico...
+                    </div>
+                  ) : !historico || historico.length === 0 ? (
+                    <p className="text-[11px] text-slate-600 italic">Nenhuma tentativa registrada ainda.</p>
+                  ) : (
+                    <>
+                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-wider">
+                        {historico.length} tentativa{historico.length > 1 ? "s" : ""}
+                      </p>
+                      <div className="flex flex-col gap-1 max-h-40 overflow-y-auto custom-scrollbar pr-1">
+                        {historico.map((h, i) => (
+                          <div
+                            key={i}
+                            className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded-md bg-white/[0.02] border border-white/[0.04]"
+                          >
+                            <span className="text-slate-500 tabular-nums">
+                              {formatDataBR(h.data)} às {h.horario?.slice(0, 5)}
+                            </span>
+                            <span
+                              className={`flex items-center gap-1 font-black uppercase tracking-wide ${
+                                h.correto === "Sim" ? "text-emerald-400" : "text-red-400"
+                              }`}
+                            >
+                              {h.correto === "Sim" ? <Check size={10} /> : <X size={10} />}
+                              {h.correto === "Sim" ? "Acerto" : "Erro"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
 
               {showResp && (
                 <div className="border border-emerald-500/20 rounded-xl p-4 bg-emerald-500/[0.03] flex flex-col gap-3">
@@ -604,7 +692,7 @@ function CasoCard({
   const total = loaded ? (questoes.length + subcasos.length) || undefined : undefined;
 
   // Indentação progressiva por nível
-  const indent = depth > 0 ? "pl-4 border-l border-white/[0.04] ml-3" : "";
+  const indent = depth > 0 ? "pl-4 border-l border-indigo-500/[0.15] ml-3" : "";
 
   return (
     <div className={`flex flex-col gap-0.5 ${indent}`}>
@@ -632,7 +720,7 @@ function CasoCard({
       </div>
 
       {open && (
-        <div className="flex flex-col gap-0.5 pl-4 border-l border-white/[0.05] ml-4 my-0.5">
+        <div className="flex flex-col gap-0.5 pl-4 border-l border-indigo-500/[0.15] ml-4 my-0.5">
           {loading && !loaded ? (
             <div className="flex items-center gap-2 text-[11px] text-slate-500 italic py-2">
               <Loader2 size={12} className="animate-spin" />
@@ -745,7 +833,7 @@ function BlockViewer({
   if (casos.length === 0) return <p className="text-[11px] text-slate-600 italic text-center py-10">Nenhum caso encontrado.</p>;
 
   return (
-    <div className="flex flex-col gap-2 pl-4 border-l border-white/[0.03] ml-4 mt-1">
+    <div className="flex flex-col gap-2 pl-4 border-l border-indigo-500/[0.15] ml-4 mt-1">
       {casos.map(caso => (
         <CasoCard 
           key={caso.id} 
@@ -858,10 +946,10 @@ function NotionBlockRowItem({
 
   return (
     <div className="py-1">
-      <div className="flex items-center justify-between group">
+      <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap group px-1 rounded-xl hover:bg-white/[0.02] transition-all">
         <button
           onClick={() => setOpen(v => !v)}
-          className="flex items-center gap-3 text-left py-1.5 px-2 hover:bg-white/[0.02] rounded-lg transition-all flex-1 min-w-0"
+          className="flex items-center gap-3 text-left py-2 px-2 rounded-lg transition-all flex-1 min-w-0"
         >
           <span className="text-[10px] text-slate-500 w-4 h-4 flex items-center justify-center shrink-0 select-none">
             {open ? "▼" : "▶"}
@@ -870,25 +958,32 @@ function NotionBlockRowItem({
           <span className="text-[14px] font-bold text-slate-200 group-hover:text-white transition-colors shrink-0">
             {block.nome}
           </span>
+          {block.materia && (
+            <span className="text-[9px] font-black text-blue-400 bg-blue-500/10 border border-blue-500/20 uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0">
+              {block.materia}
+            </span>
+          )}
           {block.descricao && (
-            <span className="text-[11px] text-slate-500 truncate">— {block.descricao}</span>
+            <span className="text-[11px] text-slate-500 truncate hidden md:inline">— {block.descricao}</span>
           )}
         </button>
 
-        <BlocoStatsBadge block={block} resultadosMap={resultadosMap} duvidasIds={duvidasIds} />
+        <div className="flex items-center gap-2 shrink-0 pr-1">
+          <BlocoStatsBadge block={block} resultadosMap={resultadosMap} duvidasIds={duvidasIds} />
 
-        {user && (
-          <button
-            onClick={() => onDelete(block.id)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-700 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100 mr-2 shrink-0"
-          >
-            <Trash2 size={12} />
-          </button>
-        )}
+          {user && (
+            <button
+              onClick={() => onDelete(block.id)}
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-700 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100 shrink-0"
+            >
+              <Trash2 size={12} />
+            </button>
+          )}
+        </div>
       </div>
 
       {open && (
-        <div className="pl-6 border-l border-white/[0.03] ml-5 mt-1 mb-2">
+        <div className="pl-6 border-l border-indigo-500/[0.15] ml-5 mt-1 mb-2">
           <BlockViewer 
             block={block} 
             user={user} 
@@ -956,14 +1051,14 @@ function PainelDesempenho({
     { key: "duvidas", label: "Em dúvida", ids: duvidasArr, color: "amber", icon: <Flag size={13} /> },
   ];
 
-  const colorClasses: Record<string, { border: string; bg: string; text: string }> = {
-    emerald: { border: "border-emerald-500/20", bg: "bg-emerald-500/[0.04]", text: "text-emerald-400" },
-    red: { border: "border-red-500/20", bg: "bg-red-500/[0.04]", text: "text-red-400" },
-    amber: { border: "border-amber-500/20", bg: "bg-amber-500/[0.04]", text: "text-amber-400" },
+  const colorClasses: Record<string, { border: string; text: string; iconBg: string }> = {
+    emerald: { border: "border-emerald-500/20", text: "text-emerald-400", iconBg: "bg-emerald-500/10" },
+    red: { border: "border-red-500/20", text: "text-red-400", iconBg: "bg-red-500/10" },
+    amber: { border: "border-amber-500/20", text: "text-amber-400", iconBg: "bg-amber-500/10" },
   };
 
   return (
-    <div className="flex flex-col gap-3 border border-white/[0.06] rounded-2xl bg-white/[0.01] p-4">
+    <div className="flex flex-col gap-3 border border-white/[0.06] rounded-2xl bg-[#111623] p-4">
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Desempenho</p>
         <button onClick={onRefresh} className="text-slate-600 hover:text-blue-400 transition-all">
@@ -976,13 +1071,14 @@ function PainelDesempenho({
           const c = colorClasses[card.color];
           const isOpen = openSections.has(card.key);
           return (
-            <div key={card.key} className={`rounded-xl border ${c.border} ${c.bg} overflow-hidden`}>
+            <div key={card.key} className={`rounded-xl border ${c.border} bg-[#0d1220] overflow-hidden`}>
               <button
                 onClick={() => toggleSection(card.key)}
                 className="w-full flex items-center justify-between px-3 py-2.5"
               >
-                <span className={`flex items-center gap-2 text-[11px] font-black uppercase tracking-wider ${c.text}`}>
-                  {card.icon} {card.label}
+                <span className="flex items-center gap-2 text-[11px] font-black uppercase tracking-wider text-slate-300">
+                  <span className={`w-5 h-5 rounded-md flex items-center justify-center ${c.iconBg} ${c.text}`}>{card.icon}</span>
+                  {card.label}
                 </span>
                 <span className={`text-sm font-black tabular-nums ${c.text}`}>{card.ids.length}</span>
               </button>
@@ -1010,9 +1106,11 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   const [resultadosMap, setResultadosMap] = useState<Map<string, "acerto" | "erro">>(new Map());
   const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
   const handleAnswered = useCallback(() => setStatsRefreshTrigger(v => v + 1), []);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const [showForm, setShowForm] = useState(false);
-  const [formId, setFormId] = useState(""); const [formNome, setFormNome] = useState(""); const [formDesc, setFormDesc] = useState("");
+  const [formId, setFormId] = useState(""); const [formNome, setFormNome] = useState(""); const [formDesc, setFormDesc] = useState(""); const [formMateria, setFormMateria] = useState("");
+  const [materiaFiltro, setMateriaFiltro] = useState("Todas");
   const [saving, setSaving] = useState(false); const [saveErr, setSaveErr] = useState("");
 
   const fetchBlocks = useCallback(async () => {
@@ -1065,9 +1163,30 @@ export default function NotionQuestionTab({ user }: { user: any }) {
     }
   }, [user?.id]);
 
+  // Verifica se o e-mail do usuário logado está liberado para criar blocos
+  const fetchIsAdmin = useCallback(async () => {
+    if (!user?.email) { setIsAdmin(false); return; }
+    try {
+      const { data, error } = await supabase
+        .from("notion_blocks_admins")
+        .select("email")
+        .ilike("email", user.email)
+        .maybeSingle();
+      if (error) throw error;
+      setIsAdmin(!!data);
+    } catch (e) {
+      console.error("Erro ao verificar permissão de admin:", e);
+      setIsAdmin(false);
+    }
+  }, [user?.email]);
+
   useEffect(() => {
     fetchBlocks();
   }, [fetchBlocks]);
+
+  useEffect(() => {
+    fetchIsAdmin();
+  }, [fetchIsAdmin]);
 
   useEffect(() => {
     if (user?.id) {
@@ -1113,6 +1232,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   };
 
   const handleSave = async () => {
+    if (!isAdmin) { setSaveErr("Seu e-mail não tem permissão para cadastrar blocos."); return; }
     if (!formId.trim() || !formNome.trim()) { setSaveErr("Preencha o ID e o nome."); return; }
     setSaving(true); setSaveErr("");
     try {
@@ -1120,9 +1240,14 @@ export default function NotionQuestionTab({ user }: { user: any }) {
       const notionId = raw.length === 32
         ? `${raw.slice(0,8)}-${raw.slice(8,12)}-${raw.slice(12,16)}-${raw.slice(16,20)}-${raw.slice(20)}`
         : formId.trim();
-      const { error } = await supabase.from("notion_blocks").insert({ block_id: notionId, nome: formNome.trim(), descricao: formDesc.trim() || null });
+      const { error } = await supabase.from("notion_blocks").insert({
+        block_id: notionId,
+        nome: formNome.trim(),
+        descricao: formDesc.trim() || null,
+        materia: formMateria.trim() || null,
+      });
       if (error) throw error;
-      setFormId(""); setFormNome(""); setFormDesc(""); setShowForm(false);
+      setFormId(""); setFormNome(""); setFormDesc(""); setFormMateria(""); setShowForm(false);
       await fetchBlocks();
     } catch (e: any) { setSaveErr(e.message); }
     finally { setSaving(false); }
@@ -1134,24 +1259,39 @@ export default function NotionQuestionTab({ user }: { user: any }) {
     await fetchBlocks();
   };
 
+  // Lista de matérias já cadastradas (usada no autocomplete do form e no filtro da lista)
+  const materiasDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    for (const b of blocks) {
+      if (b.materia?.trim()) set.add(b.materia.trim());
+    }
+    return [...set].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [blocks]);
+
+  const blocksFiltrados = useMemo(() => {
+    if (materiaFiltro === "Todas") return blocks;
+    if (materiaFiltro === "Sem matéria") return blocks.filter(b => !b.materia?.trim());
+    return blocks.filter(b => b.materia?.trim() === materiaFiltro);
+  }, [blocks, materiaFiltro]);
+
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-6 bg-[#0b0f19]/80 rounded-[2rem] border border-white/[0.04] p-5 sm:p-7">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
-            <BookMarked size={15} className="text-indigo-400" />
+          <div className="w-9 h-9 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
+            <BookMarked size={16} className="text-indigo-400" />
           </div>
           <div>
-            <h2 className="text-sm font-black text-white">Notion Question</h2>
-            <p className="text-[10px] text-slate-600 font-bold">Questões agrupadas por emoji</p>
+            <h2 className="text-sm font-black text-white leading-none">Notion Question</h2>
+            <p className="text-[10px] text-slate-600 font-bold mt-1">Questões agrupadas por emoji</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={fetchBlocks} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.06] text-slate-600 hover:text-blue-400 transition-all">
+          <button onClick={fetchBlocks} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/[0.04] border border-white/[0.07] text-slate-500 hover:text-blue-400 hover:border-blue-500/30 transition-all">
             <RefreshCw size={13} className={loadingBlocks ? "animate-spin" : ""} />
           </button>
-          {user && (
-            <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-2 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95">
+          {isAdmin && (
+            <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-2 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-indigo-600/10">
               <Plus size={12} /> Novo Bloco
             </button>
           )}
@@ -1161,23 +1301,36 @@ export default function NotionQuestionTab({ user }: { user: any }) {
       <PainelDesempenho user={user} duvidasIds={duvidasIds} resultadosMap={resultadosMap} onRefresh={fetchResultados} blocks={blocks} />
 
       {showForm && (
-        <div className="border border-indigo-500/20 rounded-2xl bg-indigo-500/[0.03] p-5 flex flex-col gap-4">
+        <div className="border border-indigo-500/20 rounded-2xl bg-[#111623] p-5 flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-black text-indigo-300 uppercase tracking-widest">Cadastrar Bloco Notion</p>
             <button onClick={() => setShowForm(false)} className="text-slate-600 hover:text-slate-400"><X size={14} /></button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">ID do Bloco *</label>
-              <input value={formId} onChange={e => setFormId(e.target.value)} placeholder="abc12345-..." className="px-3 py-2 bg-white/[0.04] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40 transition-all font-mono" />
+              <input value={formId} onChange={e => setFormId(e.target.value)} placeholder="abc12345-..." className="px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40 transition-all font-mono" />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Nome *</label>
-              <input value={formNome} onChange={e => setFormNome(e.target.value)} placeholder="Ex: Caderno Azul" className="px-3 py-2 bg-white/[0.04] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40 transition-all" />
+              <input value={formNome} onChange={e => setFormNome(e.target.value)} placeholder="Ex: Caderno Azul" className="px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40 transition-all" />
             </div>
-            <div className="flex flex-col gap-1.5 sm:col-span-2">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Matéria</label>
+              <input
+                value={formMateria}
+                onChange={e => setFormMateria(e.target.value)}
+                placeholder="Ex: Matemática Financeira"
+                list="materias-cadastradas"
+                className="px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40 transition-all"
+              />
+              <datalist id="materias-cadastradas">
+                {materiasDisponiveis.map(m => <option key={m} value={m} />)}
+              </datalist>
+            </div>
+            <div className="flex flex-col gap-1.5 sm:col-span-3">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Descrição (opcional)</label>
-              <input value={formDesc} onChange={e => setFormDesc(e.target.value)} placeholder="Ex: Matemática — BB 2024" className="px-3 py-2 bg-white/[0.04] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40 transition-all" />
+              <input value={formDesc} onChange={e => setFormDesc(e.target.value)} placeholder="Ex: BB 2024 — Edital completo" className="px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40 transition-all" />
             </div>
           </div>
           {saveErr && <p className="text-[11px] text-red-400 font-bold">{saveErr}</p>}
@@ -1190,17 +1343,40 @@ export default function NotionQuestionTab({ user }: { user: any }) {
         </div>
       )}
 
+      {!loadingBlocks && blocks.length > 0 && materiasDisponiveis.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {["Todas", ...materiasDisponiveis, "Sem matéria"].map(m => (
+            <button
+              key={m}
+              onClick={() => setMateriaFiltro(m)}
+              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all ${
+                materiaFiltro === m
+                  ? "bg-indigo-600 border-indigo-500 text-white"
+                  : "bg-[#111623] border-white/[0.07] text-slate-500 hover:text-slate-300 hover:border-white/[0.15]"
+              }`}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+      )}
+
       {loadingBlocks ? (
         <div className="flex items-center justify-center py-16"><Loader2 className="w-7 h-7 text-indigo-500 animate-spin" /></div>
       ) : blocks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
+        <div className="flex flex-col items-center justify-center py-20 gap-3 text-center bg-[#111623] border border-white/[0.06] rounded-2xl">
           <BookMarked size={32} className="text-slate-800" />
           <p className="text-[12px] font-black text-slate-600 uppercase tracking-widest">Nenhum bloco cadastrado</p>
           <p className="text-[11px] text-slate-700 max-w-xs">Clique em "Novo Bloco" para cadastrar o ID de um bloco do Notion.</p>
         </div>
+      ) : blocksFiltrados.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-2 text-center bg-[#111623] border border-white/[0.06] rounded-2xl">
+          <p className="text-[12px] font-black text-slate-600 uppercase tracking-widest">Nenhum caderno em "{materiaFiltro}"</p>
+          <button onClick={() => setMateriaFiltro("Todas")} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold">Limpar filtro</button>
+        </div>
       ) : (
-        <div className="flex flex-col border border-white/[0.06] rounded-xl bg-white/[0.01] p-2 divide-y divide-white/[0.05]">
-          {blocks.map(block => (
+        <div className="flex flex-col bg-[#111623] border border-white/[0.06] rounded-2xl p-2 divide-y divide-white/[0.05]">
+          {blocksFiltrados.map(block => (
             <NotionBlockRowItem
               key={block.id}
               block={block}
