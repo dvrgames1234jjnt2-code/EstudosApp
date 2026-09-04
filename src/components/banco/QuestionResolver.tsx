@@ -652,17 +652,20 @@ export default function QuestionResolver({
 
                     {/* Cortar alternativa */}
                     {!showFeedback && (
-                      <button
+                      <span
+                        role="button"
+                        tabIndex={0}
                         onClick={(e) => { e.stopPropagation(); toggleStrikethrough(letter); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); toggleStrikethrough(letter); } }}
                         title={strikethroughs[letter] ? "Restaurar alternativa" : "Eliminar alternativa"}
-                        className={`mt-1.5 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100 ${
+                        className={`mt-1.5 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100 cursor-pointer ${
                           strikethroughs[letter]
                             ? "text-rose-400 opacity-100 bg-rose-500/10"
                             : "text-slate-600 hover:text-rose-400 hover:bg-rose-500/5"
                         }`}
                       >
                         <Scissors size={11} />
-                      </button>
+                      </span>
                     )}
                   </button>
                 );

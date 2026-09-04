@@ -58,6 +58,10 @@ type ActiveTab = "banco" | "resolver" | "simulados" | "desempenho" | "fixacao" |
 // ──────────────────────────────────────────────
 // Helpers
 // ──────────────────────────────────────────────
+
+// ──────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────
 /** Agrupa as linhas brutas do historico_respostas em stats por questão */
 function buildStatsMap(rows: any[]): UserAnswers {
   const map: Record<string, {
@@ -434,7 +438,7 @@ export default function BancoPage() {
 
       {/* Tab bar */}
       <div className="sticky top-16 z-40 border-b border-white/[0.05] bg-[#020617]/90 backdrop-blur-md px-4 sm:px-8">
-        <div className="flex items-center gap-1 max-w-7xl mx-auto">
+        <div className="flex items-center gap-1 w-full max-w-[1920px] mx-auto overflow-x-auto">
           {[
             { id: "banco",      icon: <BookOpen size={13} />,       label: "Banco de Questões", count: questions.length },
             { id: "resolver",   icon: <Layers size={13} />,         label: "Questão Ativa", badge: selectedQuestion ? "●" : null },
@@ -470,7 +474,7 @@ export default function BancoPage() {
       </div>
 
       {/* Main */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-8 py-6">
+      <main className="w-full max-w-[1920px] mx-auto px-4 sm:px-8 py-6">
         <AnimatePresence mode="wait">
 
           {/* ── BANCO ── */}

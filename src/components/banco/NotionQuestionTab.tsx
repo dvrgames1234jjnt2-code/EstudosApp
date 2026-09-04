@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react
 import {
   Plus, Trash2, ChevronDown, ChevronRight, Loader2,
   BookMarked, RefreshCw, X, Check, Play, Eye, EyeOff,
-  Triangle, Flag, History
+  Triangle, Flag, History, LayoutGrid
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
@@ -64,6 +64,9 @@ interface Caso {
   nome: string;
   questoes: Questao[];
 }
+
+// Estatísticas agregadas de todas as tentativas de uma questão (não só a última)
+interface QuestaoStats { total: number; corretas: number; ultimo: "acerto" | "erro" }
 
 function richText(rt: RichText[] = []) { return rt.map(r => r.plain_text).join(""); }
 function formatDataBR(iso: string) {
@@ -229,6 +232,55 @@ async function collectQuestaoIds(rootBlockId: string): Promise<string[]> {
   return ids;
 }
 
+// Igual à varredura acima, mas coleta os dados necessários para desenhar o
+// "Gabarito e Navegação" por caso: número, tópico, categoria e o nome do
+// toggle-pai imediato (o "caso"/"subcaso" que agrupa aquele conjunto de questões).
+interface QuestaoResumo {
+  id: string;
+  numero: string;
+  topic: string;
+  categoryKey: CategoryKey;
+  caseLabel: string;
+}
+interface QuestaoDetalhesResult {
+  itens: QuestaoResumo[];
+  caseIcons: Record<string, string>;
+}
+const questoesDetalhesCache = new Map<string, QuestaoDetalhesResult>();
+
+async function collectQuestaoDetails(rootBlockId: string): Promise<QuestaoDetalhesResult> {
+  const clean = rootBlockId.replace(/-/g, "");
+  if (questoesDetalhesCache.has(clean)) return questoesDetalhesCache.get(clean)!;
+
+  const itens: QuestaoResumo[] = [];
+  const caseIcons: Record<string, string> = {};
+
+  async function walk(blockId: string, parentLabel: string) {
+    const children = await fetchChildren(blockId);
+    for (const child of children) {
+      if (child.type !== "toggle") continue;
+      const rawTitle = richText(child.toggle?.rich_text ?? []);
+      const { emojis: textEmojis, numero, topic } = parseQuestaoTitle(rawTitle);
+      const iconEmoji = child.icon?.type === "emoji" && child.icon.emoji ? [child.icon.emoji] : [];
+      const categoryKey = detectCategory([...iconEmoji, ...textEmojis]);
+      if (categoryKey) {
+        itens.push({ id: child.id, numero, topic, categoryKey, caseLabel: parentLabel });
+      } else {
+        const label = rawTitle || "Sem nome";
+        if (!(label in caseIcons) && child.icon?.type === "emoji" && child.icon.emoji) {
+          caseIcons[label] = child.icon.emoji;
+        }
+        if (child.has_children) await walk(child.id, label);
+      }
+    }
+  }
+
+  await walk(clean, "Geral");
+  const result: QuestaoDetalhesResult = { itens, caseIcons };
+  questoesDetalhesCache.set(clean, result);
+  return result;
+}
+
 function QuestaoTitleLabel({ questaoId, blocksMap }: { questaoId: string; blocksMap: Map<string, string> }) {
   const [info, setInfo] = useState<QuestaoInfo | null>(null);
   const [failed, setFailed] = useState(false);
@@ -248,7 +300,7 @@ function QuestaoTitleLabel({ questaoId, blocksMap }: { questaoId: string; blocks
         <span className="text-slate-600 italic truncate">Questão indisponível ({questaoId.slice(0, 8)}…)</span>
       ) : (
         <div className="flex flex-col min-w-0">
-          <span className="text-slate-400 truncate">{info?.title ?? "Carregando…"}</span>
+          <span className="text-[13.5px] font-normal text-[#8E97A8] truncate">{info?.title ?? "Carregando…"}</span>
           {info?.blocoNome && (
             <span className="text-[9px] text-indigo-400/70 font-bold uppercase tracking-wide truncate">
               {info.blocoNome}
@@ -265,15 +317,17 @@ function QuestaoRow({
   user,
   isDuvida,
   onToggleDuvida,
-  onAnswered
+  onAnswered,
+  startOpen = false
 }: { 
   questao: Questao; 
   user: any;
   isDuvida: boolean;
   onToggleDuvida: (questaoId: string, marcar: boolean) => Promise<void>;
   onAnswered: () => void;
+  startOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(startOpen);
   const [showResp, setShowResp] = useState(false);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [respostaImageUrls, setRespostaImageUrls] = useState<string[]>([]);
@@ -445,19 +499,21 @@ function QuestaoRow({
           )}
         </button>
 
-        <span className="text-[12px] font-black text-slate-300 w-10 shrink-0 tabular-nums">{questao.numero}</span>
+        <span className="text-[11px] font-normal text-slate-400 bg-white/[0.04] border border-white/[0.07] px-2 py-0.5 rounded-md shrink-0 tabular-nums">
+          #{questao.numero}
+        </span>
 
         <span className="text-sm shrink-0 select-none">{catEmoji}</span>
 
         <span
-          className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] shrink-0"
+          className="text-[11px] font-normal px-2.5 py-0.5 rounded-md bg-white/[0.03] border border-white/[0.06] shrink-0"
           style={{ color: catColor }}
         >
           {catLabel}
         </span>
 
         {questao.topic && (
-          <span className="text-[12px] text-slate-500 truncate ml-1">
+          <span className="text-[14px] sm:text-[15px] font-normal text-[#8E97A8] leading-relaxed truncate ml-1">
             — {questao.topic}
           </span>
         )}
@@ -549,7 +605,7 @@ function QuestaoRow({
                     <img key={i} src={url} alt={`Resposta img${i + 1}`} className="w-full max-w-2xl rounded-xl border border-white/[0.06] object-contain bg-white" />
                   ))}
                   {respostaText ? (
-                    <p className="text-[12px] text-slate-300 whitespace-pre-wrap leading-relaxed">{respostaText}</p>
+                    <p className="text-[14px] sm:text-[15px] font-normal text-[#8E97A8] whitespace-pre-wrap leading-relaxed">{respostaText}</p>
                   ) : respostaImageUrls.length === 0 ? (
                     <p className="text-[11px] text-slate-600 italic">Sem resposta registrada.</p>
                   ) : null}
@@ -708,7 +764,7 @@ function CasoCard({
               open ? "▼" : "▶"
             )}
           </span>
-          <span className={`font-bold text-slate-300 group-hover:text-white transition-colors ${depth === 0 ? "text-[13px]" : "text-[12px]"}`}>
+          <span className={`font-medium text-[#8E97A8] group-hover:text-white transition-colors ${depth === 0 ? "text-[14px]" : "text-[13px]"}`}>
             {caso.nome}
           </span>
         </button>
@@ -854,7 +910,7 @@ function BlocoStatsBadge({
   duvidasIds,
 }: {
   block: NotionBlockRow;
-  resultadosMap: Map<string, "acerto" | "erro">;
+  resultadosMap: Map<string, QuestaoStats>;
   duvidasIds: Set<string>;
 }) {
   const [ids, setIds] = useState<string[] | null>(null);
@@ -875,7 +931,7 @@ function BlocoStatsBadge({
 
   let acertos = 0, erros = 0, duvidas = 0;
   for (const id of ids) {
-    const status = resultadosMap.get(id);
+    const status = resultadosMap.get(id)?.ultimo;
     if (status === "acerto") acertos++;
     else if (status === "erro") erros++;
     if (duvidasIds.has(id)) duvidas++;
@@ -905,6 +961,207 @@ function BlocoStatsBadge({
   );
 }
 
+// Face/ícone e cor de cada nível de dificuldade, usado no badge do bloquinho
+const FACE_EMOJI: Record<CategoryKey, string> = {
+  bonus: "🎉", faceis: "😊", atencao: "🔵", lacuna: "🌱", media: "😐", dificil: "😞", ultrahard: "🟣",
+};
+
+function QuestaoBloquinho({
+  q,
+  stats,
+  isDuvida,
+  isSelected,
+  onClick,
+}: {
+  q: QuestaoResumo;
+  stats?: QuestaoStats;
+  isDuvida: boolean;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  const catInfo = CATEGORIES.find(c => c.key === q.categoryKey);
+  const pct = stats && stats.total > 0 ? Math.round((stats.corretas / stats.total) * 100) : null;
+  const tier: "green" | "amber" | "red" | "neutral" = pct === null ? "neutral" : pct >= 70 ? "green" : pct >= 40 ? "amber" : "red";
+  const tierClasses = {
+    green: "border-emerald-500/25 bg-emerald-500/[0.05] hover:bg-emerald-500/[0.09]",
+    amber: "border-amber-500/25 bg-amber-500/[0.05] hover:bg-amber-500/[0.09]",
+    red: "border-red-500/25 bg-red-500/[0.05] hover:bg-red-500/[0.09]",
+    neutral: "border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05]",
+  }[tier];
+  const pctColor = { green: "#4ade80", amber: "#fbbf24", red: "#f87171", neutral: "#64748b" }[tier];
+  const barColor = { green: "#22c55e", amber: "#f59e0b", red: "#ef4444", neutral: "#475569" }[tier];
+
+  return (
+    <button
+      onClick={onClick}
+      title={q.topic || `Questão ${q.numero}`}
+      className={`relative flex flex-col gap-1 p-2 rounded-lg border text-left transition-all shrink-0 w-[92px] ${tierClasses} ${
+        isSelected ? "ring-2 ring-blue-500" : ""
+      }`}
+    >
+      <div className="flex items-center justify-between gap-1">
+        <span className="text-[13px] font-black text-white leading-none">{q.numero || "?"}</span>
+        {catInfo && (
+          <span
+            className="text-[8px] leading-none shrink-0"
+            title={catInfo.label}
+          >
+            {FACE_EMOJI[q.categoryKey]}
+          </span>
+        )}
+      </div>
+      {q.topic && (
+        <span className="text-[8px] text-slate-500 truncate leading-tight">— {q.topic}</span>
+      )}
+      {pct !== null ? (
+        <div className="flex flex-col gap-0.5 mt-0.5">
+          <span className="text-[8px] font-black tabular-nums" style={{ color: pctColor }}>{pct}%</span>
+          <div className="h-0.5 bg-white/[0.08] rounded-full overflow-hidden">
+            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: barColor }} />
+          </div>
+        </div>
+      ) : (
+        <span className="text-[8px] text-slate-700 italic mt-0.5">sem tentativa</span>
+      )}
+      {isDuvida && (
+        <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 border border-[#111623]" />
+      )}
+    </button>
+  );
+}
+
+function GabaritoBloco({
+  block,
+  user,
+  resultadosMap,
+  duvidasIds,
+  onToggleDuvida,
+  onAnswered,
+}: {
+  block: NotionBlockRow;
+  user: any;
+  resultadosMap: Map<string, QuestaoStats>;
+  duvidasIds: Set<string>;
+  onToggleDuvida: (questaoId: string, marcar: boolean) => Promise<void>;
+  onAnswered: () => void;
+}) {
+  const [detalhes, setDetalhes] = useState<QuestaoDetalhesResult | null>(null);
+  const [selecionada, setSelecionada] = useState<QuestaoResumo | null>(null);
+  const [expandido, setExpandido] = useState<Set<string>>(new Set());
+
+  const toggleExpandido = (caseLabel: string) => {
+    setExpandido(prev => {
+      const next = new Set(prev);
+      if (next.has(caseLabel)) next.delete(caseLabel); else next.add(caseLabel);
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    let active = true;
+    setDetalhes(null);
+    setSelecionada(null);
+    setExpandido(new Set());
+    collectQuestaoDetails(block.block_id)
+      .then(res => { if (active) setDetalhes(res); })
+      .catch(() => { if (active) setDetalhes({ itens: [], caseIcons: {} }); });
+    return () => { active = false; };
+  }, [block.block_id]);
+
+  if (detalhes === null) {
+    return (
+      <div className="flex items-center gap-2 text-[11px] text-slate-500 italic py-4 px-2">
+        <Loader2 size={12} className="animate-spin" /> Carregando gabarito...
+      </div>
+    );
+  }
+  if (detalhes.itens.length === 0) {
+    return <p className="text-[11px] text-slate-600 italic py-4 px-2">Nenhuma questão encontrada neste caderno.</p>;
+  }
+
+  const { itens, caseIcons } = detalhes;
+
+  // Agrupa por caso, preservando a ordem de aparição na árvore
+  const grupos = new Map<string, QuestaoResumo[]>();
+  for (const it of itens) {
+    if (!grupos.has(it.caseLabel)) grupos.set(it.caseLabel, []);
+    grupos.get(it.caseLabel)!.push(it);
+  }
+
+  return (
+    <div className="flex flex-col gap-2 p-3 bg-[#0d1220] rounded-xl border border-white/[0.06]">
+      <h4 className="text-[11px] font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+        <LayoutGrid size={12} className="text-indigo-400" /> Desempenho por Caso
+      </h4>
+
+      <div className="relative flex flex-col gap-2 pl-1">
+        {/* Linha do tempo vertical conectando os casos */}
+        <div className="absolute left-[15px] top-4 bottom-4 w-px bg-white/[0.07]" />
+
+        {[...grupos.entries()].map(([caseLabel, qs], idx) => {
+          const isOpen = expandido.has(caseLabel);
+          const icon = caseIcons[caseLabel] ?? "📁";
+          return (
+            <div key={caseLabel} className="relative flex flex-col gap-2">
+              <button
+                onClick={() => toggleExpandido(caseLabel)}
+                className="relative z-10 w-full flex items-center gap-3 px-2.5 py-2 rounded-xl border border-white/[0.06] bg-[#111623] hover:border-white/[0.14] transition-all text-left"
+              >
+                <span className="w-7 h-7 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-sm shrink-0">
+                  {icon}
+                </span>
+                <span className="flex-1 text-[11px] font-bold text-slate-200 truncate">
+                  {idx + 1}. {caseLabel}
+                </span>
+                <span className="text-[9px] text-slate-500 bg-white/[0.04] px-2 py-1 rounded-md font-bold shrink-0 tabular-nums">
+                  {qs.length} questõe{qs.length !== 1 ? "s" : ""}
+                </span>
+                <ChevronDown size={13} className={`text-slate-500 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {isOpen && (
+                <div className="flex flex-wrap gap-1.5 pl-9 pb-1">
+                  {qs.map(q => (
+                    <QuestaoBloquinho
+                      key={q.id}
+                      q={q}
+                      stats={resultadosMap.get(q.id)}
+                      isDuvida={duvidasIds.has(q.id)}
+                      isSelected={selecionada?.id === q.id}
+                      onClick={() => setSelecionada(selecionada?.id === q.id ? null : q)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {selecionada && (
+        <div className="border border-indigo-500/20 rounded-xl bg-[#111623] p-2 mt-1">
+          <QuestaoRow
+            key={selecionada.id}
+            questao={{
+              id: selecionada.id,
+              numero: selecionada.numero,
+              topic: selecionada.topic,
+              categoryKey: selecionada.categoryKey,
+              imageUrls: [],
+              respostaImageUrls: [],
+            }}
+            user={user}
+            isDuvida={duvidasIds.has(selecionada.id)}
+            onToggleDuvida={onToggleDuvida}
+            onAnswered={onAnswered}
+            startOpen
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NotionBlockRowItem({
   block,
   user,
@@ -920,9 +1177,10 @@ function NotionBlockRowItem({
   duvidasIds: Set<string>;
   onToggleDuvida: (questaoId: string, marcar: boolean) => Promise<void>;
   onAnswered: () => void;
-  resultadosMap: Map<string, "acerto" | "erro">;
+  resultadosMap: Map<string, QuestaoStats>;
 }) {
   const [open, setOpen] = useState(false);
+  const [showGabarito, setShowGabarito] = useState(false);
   const [blockIcon, setBlockIcon] = useState<string>("📝");
 
   useEffect(() => {
@@ -955,21 +1213,33 @@ function NotionBlockRowItem({
             {open ? "▼" : "▶"}
           </span>
           <span className="text-base shrink-0 select-none">{blockIcon}</span>
-          <span className="text-[14px] font-bold text-slate-200 group-hover:text-white transition-colors shrink-0">
+          <span className="text-[14px] sm:text-[15px] font-medium text-slate-200 group-hover:text-white transition-colors shrink-0">
             {block.nome}
           </span>
           {block.materia && (
-            <span className="text-[9px] font-black text-blue-400 bg-blue-500/10 border border-blue-500/20 uppercase tracking-wider px-1.5 py-0.5 rounded-md shrink-0">
+            <span className="text-[11px] font-normal text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 rounded-md shrink-0">
               {block.materia}
             </span>
           )}
           {block.descricao && (
-            <span className="text-[11px] text-slate-500 truncate hidden md:inline">— {block.descricao}</span>
+            <span className="text-[12px] font-normal text-[#8E97A8] truncate hidden md:inline">— {block.descricao}</span>
           )}
         </button>
 
         <div className="flex items-center gap-2 shrink-0 pr-1">
           <BlocoStatsBadge block={block} resultadosMap={resultadosMap} duvidasIds={duvidasIds} />
+
+          <button
+            onClick={() => setShowGabarito(v => !v)}
+            title="Ver gabarito e navegação"
+            className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all shrink-0 border ${
+              showGabarito
+                ? "bg-indigo-600/20 border-indigo-500/40 text-indigo-300"
+                : "bg-white/[0.03] border-white/[0.07] text-slate-500 hover:text-indigo-400 hover:border-indigo-500/30"
+            }`}
+          >
+            <LayoutGrid size={12} />
+          </button>
 
           {user && (
             <button
@@ -981,6 +1251,19 @@ function NotionBlockRowItem({
           )}
         </div>
       </div>
+
+      {showGabarito && (
+        <div className="ml-1 mt-1 mb-2">
+          <GabaritoBloco
+            block={block}
+            user={user}
+            resultadosMap={resultadosMap}
+            duvidasIds={duvidasIds}
+            onToggleDuvida={onToggleDuvida}
+            onAnswered={onAnswered}
+          />
+        </div>
+      )}
 
       {open && (
         <div className="pl-6 border-l border-indigo-500/[0.15] ml-5 mt-1 mb-2">
@@ -1006,7 +1289,7 @@ function PainelDesempenho({
 }: {
   user: any;
   duvidasIds: Set<string>;
-  resultadosMap: Map<string, "acerto" | "erro">;
+  resultadosMap: Map<string, QuestaoStats>;
   onRefresh: () => void;
   blocks: NotionBlockRow[];
 }) {
@@ -1021,8 +1304,8 @@ function PainelDesempenho({
 
   const { acertadas, erradas } = useMemo(() => {
     const a: string[] = [], e: string[] = [];
-    for (const [id, status] of resultadosMap.entries()) {
-      (status === "acerto" ? a : e).push(id);
+    for (const [id, stats] of resultadosMap.entries()) {
+      (stats.ultimo === "acerto" ? a : e).push(id);
     }
     return { acertadas: a, erradas: e };
   }, [resultadosMap]);
@@ -1103,7 +1386,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   const [blocks, setBlocks] = useState<NotionBlockRow[]>([]);
   const [loadingBlocks, setLoadingBlocks] = useState(true);
   const [duvidasIds, setDuvidasIds] = useState<Set<string>>(new Set());
-  const [resultadosMap, setResultadosMap] = useState<Map<string, "acerto" | "erro">>(new Map());
+  const [resultadosMap, setResultadosMap] = useState<Map<string, QuestaoStats>>(new Map());
   const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
   const handleAnswered = useCallback(() => setStatsRefreshTrigger(v => v + 1), []);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -1151,13 +1434,20 @@ export default function NotionQuestionTab({ user }: { user: any }) {
         .order("horario", { ascending: false });
       if (error) throw error;
 
-      const latest = new Map<string, "acerto" | "erro">();
+      // Agrega TODAS as tentativas de cada questão: total, corretas e o resultado
+      // mais recente (o primeiro que aparece, já que a busca vem ordenada desc).
+      const stats = new Map<string, QuestaoStats>();
       for (const row of data ?? []) {
-        if (!latest.has(row.questao_id)) {
-          latest.set(row.questao_id, row.correto === "Sim" ? "acerto" : "erro");
+        const isCorrect = row.correto === "Sim";
+        const existing = stats.get(row.questao_id);
+        if (!existing) {
+          stats.set(row.questao_id, { total: 1, corretas: isCorrect ? 1 : 0, ultimo: isCorrect ? "acerto" : "erro" });
+        } else {
+          existing.total += 1;
+          if (isCorrect) existing.corretas += 1;
         }
       }
-      setResultadosMap(latest);
+      setResultadosMap(stats);
     } catch (e) {
       console.error("Erro ao buscar resultados do Notion:", e);
     }
