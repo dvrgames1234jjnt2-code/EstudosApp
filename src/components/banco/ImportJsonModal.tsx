@@ -149,51 +149,60 @@ Cada objeto deve conter a seguinte estrutura:
         currentMaxId = Number(maxData[0].id);
       }
 
-      // 2. Preparar objetos a inserir com IDs sequenciais
-      const rowsToInsert = parsedQuestions.map((q, idx) => {
-        const nextId = currentMaxId + idx + 1;
-        const row = {
-          id: nextId,
-          PROVA: overrideProva.trim() || q.PROVA,
-          Ordem: q.Ordem,
-          Banca: q.Banca,
-          Disciplina: q.Disciplina,
-          Materia: q.Materia,
-          Tópico: q.Tópico,
-          Assunto: q.Assunto,
-          Dificuldade: q.Dificuldade,
-          Status: q.Status,
-          "Texto de apoio": q["Texto de apoio"],
-          Enunciado: q.Enunciado,
-          "Pergunta problema": q["Pergunta problema"],
-          Imagem_Enunciado: q.Imagem_Enunciado,
-          "Alternativa A": q["Alternativa A"],
-          "Alternativa B": q["Alternativa B"],
-          "Alternativa C": q["Alternativa C"],
-          "Alternativa D": q["Alternativa D"],
-          "Alternativa E": q["Alternativa E"],
-          Gabarito: q.Gabarito,
-          Comentário: q.Comentário,
-        };
-        return row;
-      });
+      // 2. Preparar objetos a inserir
+      const rowsWithoutId = parsedQuestions.map((q) => ({
+        PROVA: overrideProva.trim() || q.PROVA,
+        Ordem: q.Ordem,
+        Banca: q.Banca,
+        Disciplina: q.Disciplina,
+        Materia: q.Materia,
+        Tópico: q.Tópico,
+        Assunto: q.Assunto,
+        Dificuldade: q.Dificuldade,
+        Status: q.Status,
+        "Texto de apoio": q["Texto de apoio"],
+        Enunciado: q.Enunciado,
+        "Pergunta problema": q["Pergunta problema"],
+        Imagem_Enunciado: q.Imagem_Enunciado,
+        "Alternativa A": q["Alternativa A"],
+        "Alternativa B": q["Alternativa B"],
+        "Alternativa C": q["Alternativa C"],
+        "Alternativa D": q["Alternativa D"],
+        "Alternativa E": q["Alternativa E"],
+        Gabarito: q.Gabarito,
+        Comentário: q.Comentário,
+      }));
 
       // 3. Inserção em lotes (chunks) de 20 para evitar estouro de payload
       const chunkSize = 20;
       let insertedTotal = 0;
 
-      for (let i = 0; i < rowsToInsert.length; i += chunkSize) {
-        const chunk = rowsToInsert.slice(i, i + chunkSize);
-        const { error: insertError } = await supabasePublic
+      for (let i = 0; i < rowsWithoutId.length; i += chunkSize) {
+        const chunk = rowsWithoutId.slice(i, i + chunkSize);
+        
+        // Tenta primeiro sem o 'id' para a sequência IDENTITY do Postgres/Supabase gerar automaticamente
+        let { error: insertError } = await supabasePublic
           .from("questoes")
           .insert(chunk);
+
+        // Se a coluna 'id' não for IDENTITY/SERIAL e exigir ID manual (not-null sem default), tenta com ID manual
+        if (insertError && (insertError.message.includes("null value") || insertError.code === "23502")) {
+          const chunkWithId = chunk.map((row, idx) => ({
+            id: currentMaxId + i + idx + 1,
+            ...row,
+          }));
+          const resWithId = await supabasePublic
+            .from("questoes")
+            .insert(chunkWithId);
+          insertError = resWithId.error;
+        }
 
         if (insertError) {
           throw new Error(`Erro ao inserir lote (${i + 1}-${i + chunk.length}): ${insertError.message}`);
         }
 
         insertedTotal += chunk.length;
-        setProgress({ current: insertedTotal, total: rowsToInsert.length });
+        setProgress({ current: insertedTotal, total: rowsWithoutId.length });
       }
 
       setSuccessCount(insertedTotal);
