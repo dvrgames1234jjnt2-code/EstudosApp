@@ -57,6 +57,7 @@ interface Questao {
   imageUrls: string[];
   resposta?: string;
   respostaImageUrls: string[];
+  caseLabel?: string;
 }
 
 interface Caso {
@@ -318,6 +319,7 @@ function QuestaoRow({
   isDuvida,
   onToggleDuvida,
   onAnswered,
+  stats,
   startOpen = false
 }: { 
   questao: Questao; 
@@ -325,6 +327,7 @@ function QuestaoRow({
   isDuvida: boolean;
   onToggleDuvida: (questaoId: string, marcar: boolean) => Promise<void>;
   onAnswered: () => void;
+  stats?: QuestaoStats;
   startOpen?: boolean;
 }) {
   const [open, setOpen] = useState(startOpen);
@@ -485,9 +488,14 @@ function QuestaoRow({
     }
   }, [open, questao.id, loaded]);
 
+  const isErro = stats?.ultimo === "erro";
+  const isAcerto = stats?.ultimo === "acerto";
+
   return (
     <div className="flex flex-col py-1">
-      <div className="flex items-center gap-3 py-1 px-2 hover:bg-white/[0.03] transition-all rounded-md">
+      <div className={`flex items-center gap-3 py-1 px-2 transition-all rounded-md ${
+        isErro ? "bg-red-500/[0.04] border border-red-500/25" : "hover:bg-white/[0.03]"
+      }`}>
         <button
           onClick={() => { setOpen(v => !v); setShowResp(false); }}
           className="text-slate-500 hover:text-slate-300 transition-all w-4 h-4 flex items-center justify-center shrink-0"
@@ -500,7 +508,7 @@ function QuestaoRow({
         </button>
 
         <span className="text-[11px] font-normal text-slate-400 bg-white/[0.04] border border-white/[0.07] px-2 py-0.5 rounded-md shrink-0 tabular-nums">
-          #{questao.numero}
+          {questao.numero}
         </span>
 
         <span className="text-sm shrink-0 select-none">{catEmoji}</span>
@@ -518,8 +526,25 @@ function QuestaoRow({
           </span>
         )}
 
+        {questao.caseLabel && (
+          <span className="text-[10px] font-medium text-slate-400 bg-white/[0.04] border border-white/[0.07] px-2 py-0.5 rounded-md truncate shrink-0 ml-1">
+            {questao.caseLabel}
+          </span>
+        )}
+
         {isDuvida && (
           <Flag size={11} className="fill-red-500 text-red-500 shrink-0 ml-1" />
+        )}
+
+        {isErro && (
+          <span className="text-[10px] font-bold text-red-400 bg-red-500/15 border border-red-500/30 px-1.5 py-0.5 rounded-md shrink-0 flex items-center gap-1 ml-auto">
+            <X size={10} /> Errou
+          </span>
+        )}
+        {isAcerto && (
+          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-md shrink-0 flex items-center gap-1 ml-auto">
+            <Check size={10} /> Acertou
+          </span>
         )}
       </div>
 
@@ -663,7 +688,8 @@ function CasoCard({
   user,
   duvidasIds,
   onToggleDuvida,
-  onAnswered
+  onAnswered,
+  resultadosMap
 }: { 
   caso: Caso; 
   depth?: number; 
@@ -671,6 +697,7 @@ function CasoCard({
   duvidasIds: Set<string>;
   onToggleDuvida: (questaoId: string, marcar: boolean) => Promise<void>;
   onAnswered: () => void;
+  resultadosMap?: Map<string, QuestaoStats>;
 }) {
   const [open, setOpen] = useState(false);
   const [questoes, setQuestoes] = useState<Questao[]>([]);
@@ -698,17 +725,13 @@ function CasoCard({
             const categoryKey = detectCategory(emojis);
 
             if (categoryKey) {
-              // É uma questão com emoji de categoria
               tempQuestoes.push({ id: child.id, numero, topic, categoryKey, imageUrls: [], respostaImageUrls: [] });
             } else {
-              // É um sub-caso (toggle sem emoji de categoria)
               tempSubcasos.push({ id: child.id, nome: rawTitle || "Sem nome", questoes: [] });
             }
           }
 
           if (active) {
-            // Ordena as questões por nível de dificuldade (crescente)
-            // Se empatar, ordena pelo número da questão
             tempQuestoes.sort((a, b) => {
               const valA = CATEGORY_ORDER[a.categoryKey] ?? 99;
               const valB = CATEGORY_ORDER[b.categoryKey] ?? 99;
@@ -720,7 +743,6 @@ function CasoCard({
             setSubcasos(tempSubcasos);
             setLoaded(true);
 
-            // Prefetch em background para cada questão
             for (const q of tempQuestoes) {
               fetchChildren(q.id).then(children => {
                 for (const child of children) {
@@ -747,12 +769,17 @@ function CasoCard({
   const hasContent = questoes.length > 0 || subcasos.length > 0;
   const total = loaded ? (questoes.length + subcasos.length) || undefined : undefined;
 
-  // Indentação progressiva por nível
+  const errosInCaso = loaded && resultadosMap
+    ? questoes.filter(q => resultadosMap.get(q.id)?.ultimo === "erro").length
+    : 0;
+
   const indent = depth > 0 ? "pl-4 border-l border-indigo-500/[0.15] ml-3" : "";
 
   return (
     <div className={`flex flex-col gap-0.5 ${indent}`}>
-      <div className="flex items-center justify-between py-1 px-2 hover:bg-white/[0.02] rounded-lg group">
+      <div className={`flex items-center justify-between py-1 px-2 transition-all rounded-lg group ${
+        errosInCaso > 0 ? "bg-red-500/[0.03] border border-red-500/20" : "hover:bg-white/[0.02]"
+      }`}>
         <button
           onClick={() => setOpen(v => !v)}
           className="flex items-center gap-2 text-left flex-1"
@@ -764,9 +791,15 @@ function CasoCard({
               open ? "▼" : "▶"
             )}
           </span>
-          <span className={`font-medium text-[#8E97A8] group-hover:text-white transition-colors ${depth === 0 ? "text-[14px]" : "text-[13px]"}`}>
+          <span className={`font-medium transition-colors ${errosInCaso > 0 ? "text-red-300 font-bold" : "text-[#8E97A8] group-hover:text-white"} ${depth === 0 ? "text-[14px]" : "text-[13px]"}`}>
             {caso.nome}
           </span>
+
+          {errosInCaso > 0 && (
+            <span className="text-[10px] font-bold text-red-400 bg-red-500/15 border border-red-500/30 px-1.5 py-0.5 rounded-md flex items-center gap-1 shrink-0 ml-1">
+              <X size={10} /> {errosInCaso} {errosInCaso === 1 ? "erro" : "erros"}
+            </span>
+          )}
         </button>
         {total !== undefined && (
           <span className="text-[10px] font-bold text-slate-500 bg-white/[0.04] px-2 py-0.5 rounded-md tabular-nums shrink-0">
@@ -786,7 +819,6 @@ function CasoCard({
             <div className="text-[11px] text-slate-600 italic py-1 px-2">Sem questões com emoji reconhecido.</div>
           ) : (
             <>
-              {/* Sub-casos recursivos */}
               {subcasos.map(sub => (
                 <CasoCard 
                   key={sub.id} 
@@ -796,10 +828,10 @@ function CasoCard({
                   duvidasIds={duvidasIds}
                   onToggleDuvida={onToggleDuvida}
                   onAnswered={onAnswered}
+                  resultadosMap={resultadosMap}
                 />
               ))}
 
-              {/* Questões deste nível */}
               {questoes.map((q, idx) => (
                 <div key={q.id} className={idx < questoes.length - 1 ? "border-b border-white/[0.06] pb-1 mb-1" : ""}>
                   <QuestaoRow 
@@ -808,6 +840,7 @@ function CasoCard({
                     isDuvida={duvidasIds.has(q.id)}
                     onToggleDuvida={onToggleDuvida}
                     onAnswered={onAnswered}
+                    stats={resultadosMap?.get(q.id)}
                   />
                 </div>
               ))}
@@ -824,15 +857,20 @@ function BlockViewer({
   user,
   duvidasIds,
   onToggleDuvida,
-  onAnswered
+  onAnswered,
+  resultadosMap,
+  apenasComErros
 }: { 
   block: NotionBlockRow; 
   user: any;
   duvidasIds: Set<string>;
   onToggleDuvida: (questaoId: string, marcar: boolean) => Promise<void>;
   onAnswered: () => void;
+  resultadosMap?: Map<string, QuestaoStats>;
+  apenasComErros?: boolean;
 }) {
   const [casos, setCasos] = useState<Caso[]>([]);
+  const [erroItens, setErroItens] = useState<QuestaoResumo[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -841,6 +879,16 @@ function BlockViewer({
     (async () => {
       setLoading(true); setError("");
       try {
+        if (apenasComErros) {
+          const details = await collectQuestaoDetails(block.block_id);
+          const errs = details.itens.filter(i => resultadosMap?.get(i.id)?.ultimo === "erro");
+          if (!cancelled) {
+            setErroItens(errs);
+            setLoading(false);
+          }
+          return;
+        }
+
         const rootChildren = await fetchChildren(block.block_id);
         const built: Caso[] = [];
 
@@ -858,10 +906,8 @@ function BlockViewer({
 
         if (!cancelled) setCasos(built);
 
-        // Prefetch em background: busca os filhos de cada caso sem bloquear a UI
-        // O cache garante que quando o usuário clicar já estará pronto
         for (const c of built) {
-          fetchChildren(c.id).catch(() => {}); // fire-and-forget, erros ignorados
+          fetchChildren(c.id).catch(() => {});
         }
       } catch (e: any) {
         if (!cancelled) setError(e.message);
@@ -870,12 +916,12 @@ function BlockViewer({
       }
     })();
     return () => { cancelled = true; };
-  }, [block.block_id]);
+  }, [block.block_id, apenasComErros, resultadosMap]);
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center py-16 gap-3">
-      <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
-      <p className="text-[10px] text-slate-700 font-black uppercase tracking-widest animate-pulse">Carregando casos...</p>
+    <div className="flex flex-col items-center justify-center py-12 gap-3">
+      <Loader2 className="w-7 h-7 text-indigo-500 animate-spin" />
+      <p className="text-[10px] text-slate-700 font-black uppercase tracking-widest animate-pulse">Carregando questões...</p>
     </div>
   );
 
@@ -885,6 +931,37 @@ function BlockViewer({
       <p className="text-[10px] text-slate-600">Verifique se a integração Notion tem acesso a este bloco.</p>
     </div>
   );
+
+  if (apenasComErros) {
+    if (!erroItens || erroItens.length === 0) {
+      return <p className="text-[11px] text-slate-600 italic text-center py-6">Nenhuma questão errada neste caderno.</p>;
+    }
+
+    return (
+      <div className="flex flex-col gap-1 pl-4 border-l border-red-500/20 ml-4 my-1">
+        {erroItens.map((item, idx) => (
+          <div key={item.id} className={idx < erroItens.length - 1 ? "border-b border-white/[0.05] pb-1 mb-1" : ""}>
+            <QuestaoRow
+              questao={{
+                id: item.id,
+                numero: item.numero,
+                topic: item.topic,
+                categoryKey: item.categoryKey,
+                imageUrls: [],
+                respostaImageUrls: [],
+                caseLabel: item.caseLabel,
+              }}
+              user={user}
+              isDuvida={duvidasIds.has(item.id)}
+              onToggleDuvida={onToggleDuvida}
+              onAnswered={onAnswered}
+              stats={resultadosMap?.get(item.id)}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   if (casos.length === 0) return <p className="text-[11px] text-slate-600 italic text-center py-10">Nenhum caso encontrado.</p>;
 
@@ -898,6 +975,7 @@ function BlockViewer({
           duvidasIds={duvidasIds}
           onToggleDuvida={onToggleDuvida}
           onAnswered={onAnswered}
+          resultadosMap={resultadosMap}
         />
       ))}
     </div>
@@ -908,10 +986,12 @@ function BlocoStatsBadge({
   block,
   resultadosMap,
   duvidasIds,
+  onStatsLoaded,
 }: {
   block: NotionBlockRow;
   resultadosMap: Map<string, QuestaoStats>;
   duvidasIds: Set<string>;
+  onStatsLoaded?: (stats: { acertos: number; erros: number; duvidas: number; total: number }) => void;
 }) {
   const [ids, setIds] = useState<string[] | null>(null);
 
@@ -924,18 +1004,27 @@ function BlocoStatsBadge({
     return () => { active = false; };
   }, [block.block_id]);
 
+  let acertos = 0, erros = 0, duvidas = 0;
+  if (ids) {
+    for (const id of ids) {
+      const status = resultadosMap.get(id)?.ultimo;
+      if (status === "acerto") acertos++;
+      else if (status === "erro") erros++;
+      if (duvidasIds.has(id)) duvidas++;
+    }
+  }
+
+  useEffect(() => {
+    if (ids && onStatsLoaded) {
+      onStatsLoaded({ acertos, erros, duvidas, total: ids.length });
+    }
+  }, [ids, acertos, erros, duvidas, onStatsLoaded]);
+
   if (ids === null) {
     return <Loader2 size={11} className="animate-spin text-slate-700 shrink-0" />;
   }
   if (ids.length === 0) return null;
 
-  let acertos = 0, erros = 0, duvidas = 0;
-  for (const id of ids) {
-    const status = resultadosMap.get(id)?.ultimo;
-    if (status === "acerto") acertos++;
-    else if (status === "erro") erros++;
-    if (duvidasIds.has(id)) duvidas++;
-  }
   const respondidas = acertos + erros;
   const aproveitamento = respondidas > 0 ? Math.round((acertos / respondidas) * 100) : null;
 
@@ -952,7 +1041,13 @@ function BlocoStatsBadge({
     <div className="flex items-center gap-2 text-[10px] font-bold shrink-0 mr-2">
       <span className="text-slate-600">{ids.length} quest.</span>
       <span className="text-emerald-400 flex items-center gap-0.5"><Check size={10} />{acertos}</span>
-      <span className="text-red-400 flex items-center gap-0.5"><X size={10} />{erros}</span>
+      <span className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border text-[10px] font-bold tabular-nums transition-all ${
+        erros > 0 
+          ? "bg-red-500/15 border-red-500/35 text-red-400 shadow-[0_0_8px_rgba(239,68,68,0.15)]" 
+          : "border-transparent text-slate-600"
+      }`}>
+        <X size={10} />{erros}
+      </span>
       <span className="text-amber-400 flex items-center gap-0.5"><Flag size={10} />{duvidas}</span>
       <span className={`px-1.5 py-0.5 rounded-md border tabular-nums ${aproveitamentoClasses}`}>
         {aproveitamento === null ? "—" : `${aproveitamento}%`}
@@ -1169,7 +1264,8 @@ function NotionBlockRowItem({
   duvidasIds,
   onToggleDuvida,
   onAnswered,
-  resultadosMap
+  resultadosMap,
+  apenasComErros
 }: {
   block: NotionBlockRow;
   user: any;
@@ -1178,10 +1274,12 @@ function NotionBlockRowItem({
   onToggleDuvida: (questaoId: string, marcar: boolean) => Promise<void>;
   onAnswered: () => void;
   resultadosMap: Map<string, QuestaoStats>;
+  apenasComErros?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [showGabarito, setShowGabarito] = useState(false);
   const [blockIcon, setBlockIcon] = useState<string>("📝");
+  const [blockStats, setBlockStats] = useState<{ acertos: number; erros: number; duvidas: number; total: number } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -1202,9 +1300,17 @@ function NotionBlockRowItem({
     return () => { active = false; };
   }, [block.block_id]);
 
+  if (apenasComErros && blockStats !== null && blockStats.erros === 0) {
+    return null;
+  }
+
+  const hasErros = blockStats !== null && blockStats.erros > 0;
+
   return (
     <div className="py-1">
-      <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap group px-1 rounded-xl hover:bg-white/[0.02] transition-all">
+      <div className={`flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap group px-1 rounded-xl transition-all ${
+        hasErros ? "bg-red-500/[0.03] border border-red-500/25" : "hover:bg-white/[0.02]"
+      }`}>
         <button
           onClick={() => setOpen(v => !v)}
           className="flex items-center gap-3 text-left py-2 px-2 rounded-lg transition-all flex-1 min-w-0"
@@ -1213,12 +1319,19 @@ function NotionBlockRowItem({
             {open ? "▼" : "▶"}
           </span>
           <span className="text-base shrink-0 select-none">{blockIcon}</span>
-          <span className="text-[14px] sm:text-[15px] font-medium text-slate-200 group-hover:text-white transition-colors shrink-0">
+          <span className={`text-[14px] sm:text-[15px] font-medium transition-colors shrink-0 ${
+            hasErros ? "text-red-300 font-bold" : "text-[#8E97A8] group-hover:text-white"
+          }`}>
             {block.nome}
           </span>
           {block.materia && (
-            <span className="text-[11px] font-normal text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 rounded-md shrink-0">
+            <span className="text-[11px] font-normal text-blue-400 bg-white/[0.03] border border-white/[0.06] px-2.5 py-0.5 rounded-md shrink-0">
               {block.materia}
+            </span>
+          )}
+          {hasErros && (
+            <span className="px-2 py-0.5 rounded-md text-[10px] font-black text-red-400 bg-red-500/15 border border-red-500/30 shrink-0 flex items-center gap-1 shadow-sm">
+              <X size={10} /> {blockStats.erros} {blockStats.erros === 1 ? "erro" : "erros"}
             </span>
           )}
           {block.descricao && (
@@ -1227,7 +1340,12 @@ function NotionBlockRowItem({
         </button>
 
         <div className="flex items-center gap-2 shrink-0 pr-1">
-          <BlocoStatsBadge block={block} resultadosMap={resultadosMap} duvidasIds={duvidasIds} />
+          <BlocoStatsBadge 
+            block={block} 
+            resultadosMap={resultadosMap} 
+            duvidasIds={duvidasIds}
+            onStatsLoaded={setBlockStats}
+          />
 
           <button
             onClick={() => setShowGabarito(v => !v)}
@@ -1273,6 +1391,7 @@ function NotionBlockRowItem({
             duvidasIds={duvidasIds}
             onToggleDuvida={onToggleDuvida}
             onAnswered={onAnswered}
+            resultadosMap={resultadosMap}
           />
         </div>
       )}
@@ -1394,6 +1513,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   const [showForm, setShowForm] = useState(false);
   const [formId, setFormId] = useState(""); const [formNome, setFormNome] = useState(""); const [formDesc, setFormDesc] = useState(""); const [formMateria, setFormMateria] = useState("");
   const [materiaFiltro, setMateriaFiltro] = useState("Todas");
+  const [apenasComErros, setApenasComErros] = useState(false);
   const [saving, setSaving] = useState(false); const [saveErr, setSaveErr] = useState("");
 
   const fetchBlocks = useCallback(async () => {
@@ -1633,21 +1753,35 @@ export default function NotionQuestionTab({ user }: { user: any }) {
         </div>
       )}
 
-      {!loadingBlocks && blocks.length > 0 && materiasDisponiveis.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap">
-          {["Todas", ...materiasDisponiveis, "Sem matéria"].map(m => (
-            <button
-              key={m}
-              onClick={() => setMateriaFiltro(m)}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all ${
-                materiaFiltro === m
-                  ? "bg-indigo-600 border-indigo-500 text-white"
-                  : "bg-[#111623] border-white/[0.07] text-slate-500 hover:text-slate-300 hover:border-white/[0.15]"
-              }`}
-            >
-              {m}
-            </button>
-          ))}
+      {!loadingBlocks && blocks.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap justify-between">
+          <div className="flex items-center gap-2 flex-wrap">
+            {["Todas", ...materiasDisponiveis, "Sem matéria"].map(m => (
+              <button
+                key={m}
+                onClick={() => setMateriaFiltro(m)}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all ${
+                  materiaFiltro === m
+                    ? "bg-indigo-600 border-indigo-500 text-white"
+                    : "bg-[#111623] border-white/[0.07] text-slate-500 hover:text-slate-300 hover:border-white/[0.15]"
+                }`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => setApenasComErros(prev => !prev)}
+            className={`px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all flex items-center gap-1.5 ${
+              apenasComErros
+                ? "bg-red-500/20 border-red-500/50 text-red-300 shadow-lg shadow-red-500/10"
+                : "bg-[#111623] border-white/[0.07] text-slate-500 hover:text-red-400 hover:border-red-500/30"
+            }`}
+          >
+            <X size={12} className={apenasComErros ? "text-red-400" : "text-slate-500"} />
+            Apenas com Erros
+          </button>
         </div>
       )}
 
@@ -1676,6 +1810,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               onToggleDuvida={handleToggleDuvida}
               onAnswered={handleAnswered}
               resultadosMap={resultadosMap}
+              apenasComErros={apenasComErros}
             />
           ))}
         </div>

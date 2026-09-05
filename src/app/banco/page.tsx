@@ -1353,7 +1353,7 @@ export default function BancoPage() {
                                                 setActiveTab("desempenho");
                                               }}
                                               title={`${prova.rawName} — ${prova.answered}/${qTot} feitas · clique para ver o desempenho`}
-                                              className={`w-10 h-8 rounded-lg border-2 font-mono font-black text-[10px] transition-all hover:scale-105 active:scale-95 flex items-center justify-center ${tileStyle}`}
+                                              className={`w-8 h-8 rounded-md border font-mono font-bold text-[10px] transition-all hover:scale-105 active:scale-95 flex items-center justify-center ${tileStyle}`}
                                             >
                                               {prova.numero}
                                             </button>
