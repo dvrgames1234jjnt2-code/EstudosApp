@@ -320,6 +320,7 @@ function QuestaoRow({
   onToggleDuvida,
   onAnswered,
   stats,
+  apenasComErros,
   startOpen = false
 }: { 
   questao: Questao; 
@@ -328,6 +329,7 @@ function QuestaoRow({
   onToggleDuvida: (questaoId: string, marcar: boolean) => Promise<void>;
   onAnswered: () => void;
   stats?: QuestaoStats;
+  apenasComErros?: boolean;
   startOpen?: boolean;
 }) {
   const [open, setOpen] = useState(startOpen);
@@ -491,10 +493,16 @@ function QuestaoRow({
   const isErro = stats?.ultimo === "erro";
   const isAcerto = stats?.ultimo === "acerto";
 
+  if (apenasComErros && !isErro) {
+    return null;
+  }
+
+  const showErroStyle = apenasComErros && isErro;
+
   return (
     <div className="flex flex-col py-1">
       <div className={`flex items-center gap-3 py-1.5 px-2.5 transition-all rounded-lg ${
-        isErro ? "bg-rose-500/[0.03] border border-rose-500/15" : "hover:bg-white/[0.03]"
+        showErroStyle ? "bg-rose-500/[0.03] border border-rose-500/15" : "hover:bg-white/[0.03]"
       }`}>
         <button
           onClick={() => { setOpen(v => !v); setShowResp(false); }}
@@ -691,7 +699,8 @@ function CasoCard({
   duvidasIds,
   onToggleDuvida,
   onAnswered,
-  resultadosMap
+  resultadosMap,
+  apenasComErros
 }: { 
   caso: Caso; 
   depth?: number; 
@@ -700,6 +709,7 @@ function CasoCard({
   onToggleDuvida: (questaoId: string, marcar: boolean) => Promise<void>;
   onAnswered: () => void;
   resultadosMap?: Map<string, QuestaoStats>;
+  apenasComErros?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [questoes, setQuestoes] = useState<Questao[]>([]);
@@ -775,12 +785,17 @@ function CasoCard({
     ? questoes.filter(q => resultadosMap.get(q.id)?.ultimo === "erro").length
     : 0;
 
+  if (apenasComErros && loaded && errosInCaso === 0) {
+    return null;
+  }
+
+  const hasErrosInCaso = apenasComErros && errosInCaso > 0;
   const indent = depth > 0 ? "pl-4 border-l border-indigo-500/[0.15] ml-3" : "";
 
   return (
     <div className={`flex flex-col gap-0.5 ${indent}`}>
       <div className={`flex items-center justify-between py-1 px-2 transition-all rounded-lg group ${
-        errosInCaso > 0 ? "bg-red-500/[0.03] border border-red-500/20" : "hover:bg-white/[0.02]"
+        hasErrosInCaso ? "bg-rose-500/[0.03] border border-rose-500/20" : "hover:bg-white/[0.02]"
       }`}>
         <button
           onClick={() => setOpen(v => !v)}
@@ -793,11 +808,11 @@ function CasoCard({
               open ? "▼" : "▶"
             )}
           </span>
-          <span className={`font-medium transition-colors ${errosInCaso > 0 ? "text-rose-300" : "text-[#8E97A8] group-hover:text-white"} ${depth === 0 ? "text-[14px]" : "text-[13px]"}`}>
+          <span className={`font-medium transition-colors ${hasErrosInCaso ? "text-rose-300 font-bold" : "text-[#8E97A8] group-hover:text-white"} ${depth === 0 ? "text-[14px]" : "text-[13px]"}`}>
             {caso.nome}
           </span>
 
-          {errosInCaso > 0 && (
+          {hasErrosInCaso && (
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium text-rose-300 bg-rose-950/30 border border-rose-500/20 shrink-0 ml-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
               {errosInCaso} {errosInCaso === 1 ? "erro" : "erros"}
@@ -832,6 +847,7 @@ function CasoCard({
                   onToggleDuvida={onToggleDuvida}
                   onAnswered={onAnswered}
                   resultadosMap={resultadosMap}
+                  apenasComErros={apenasComErros}
                 />
               ))}
 
@@ -844,6 +860,7 @@ function CasoCard({
                     onToggleDuvida={onToggleDuvida}
                     onAnswered={onAnswered}
                     stats={resultadosMap?.get(q.id)}
+                    apenasComErros={apenasComErros}
                   />
                 </div>
               ))}
@@ -959,6 +976,7 @@ function BlockViewer({
               onToggleDuvida={onToggleDuvida}
               onAnswered={onAnswered}
               stats={resultadosMap?.get(item.id)}
+              apenasComErros={apenasComErros}
             />
           </div>
         ))}
@@ -979,6 +997,7 @@ function BlockViewer({
           onToggleDuvida={onToggleDuvida}
           onAnswered={onAnswered}
           resultadosMap={resultadosMap}
+          apenasComErros={apenasComErros}
         />
       ))}
     </div>
