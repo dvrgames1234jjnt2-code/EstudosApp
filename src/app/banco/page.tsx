@@ -540,6 +540,8 @@ export default function BancoPage() {
                     onSelect={handleSelectQuestion}
                     onGenerateTest={handleGenerateTest}
                     onFilteredQuestionsChange={handleFilteredQuestionsChange}
+                    isAdmin={isAdmin}
+                    onRefresh={fetchQuestions}
                   />
                 </>
               )}

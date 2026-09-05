@@ -23,8 +23,10 @@ import {
   Calendar,
   ChevronDown,
   Printer,
+  FileJson,
 } from 'lucide-react';
 import { PrintSimuladoModal } from './PrintSimuladoModal';
+import { ImportJsonModal } from './ImportJsonModal';
 
 export interface BancoQuestion {
   id: any;
@@ -66,6 +68,8 @@ interface QuestionsTableProps {
   onSelect: (q: BancoQuestion, filtered?: BancoQuestion[]) => void;
   onGenerateTest: (questions: BancoQuestion[]) => void;
   onFilteredQuestionsChange?: (filtered: BancoQuestion[]) => void;
+  isAdmin?: boolean;
+  onRefresh?: () => void;
 }
 
 const CustomDropdown = ({ value, onChange, options }: any) => {
@@ -123,6 +127,8 @@ export default function QuestionsTable({
   onSelect,
   onGenerateTest,
   onFilteredQuestionsChange,
+  isAdmin,
+  onRefresh,
 }: QuestionsTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [materiaFilter, setMateriaFilter] = useState('Todas');
@@ -130,6 +136,7 @@ export default function QuestionsTable({
   const [statusFilter, setStatusFilter] = useState('Todos');
   const [viewMode, setViewMode] = useState<'list' | 'category'>('list');
   const [showPrintModal, setShowPrintModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   const getStatus = (id: any) => {
     const answer = userAnswers[String(id)];
@@ -275,12 +282,23 @@ export default function QuestionsTable({
           ))}
         </div>
 
-        <button
-          onClick={() => setShowPrintModal(true)}
-          className="px-4 py-1.5 mb-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-600/20 transition-all active:scale-95 flex items-center gap-2"
-        >
-          <Printer size={14} /> Imprimir Simulado ({filteredQuestions.length})
-        </button>
+        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+          {isAdmin && (
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="px-4 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-95 flex items-center gap-2"
+            >
+              <FileJson size={14} /> Importar JSON
+            </button>
+          )}
+
+          <button
+            onClick={() => setShowPrintModal(true)}
+            className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-600/20 transition-all active:scale-95 flex items-center gap-2"
+          >
+            <Printer size={14} /> Imprimir Simulado ({filteredQuestions.length})
+          </button>
+        </div>
       </div>
 
       {/* Controls */}
@@ -429,6 +447,14 @@ export default function QuestionsTable({
         questions={filteredQuestions}
         title={provaFilter !== 'Todas' ? provaFilter.toUpperCase() : "SIMULADO BANCO DE QUESTÕES"}
         subTitle={materiaFilter !== 'Todas' ? `Matéria: ${materiaFilter}` : "Questões Selecionadas para Treinamento"}
+      />
+
+      <ImportJsonModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onSuccess={() => {
+          onRefresh?.();
+        }}
       />
     </div>
   );
