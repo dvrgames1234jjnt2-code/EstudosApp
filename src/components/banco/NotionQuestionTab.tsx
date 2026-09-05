@@ -1415,6 +1415,7 @@ function NotionBlockRowItem({
             onToggleDuvida={onToggleDuvida}
             onAnswered={onAnswered}
             resultadosMap={resultadosMap}
+            apenasComErros={apenasComErros}
           />
         </div>
       )}
