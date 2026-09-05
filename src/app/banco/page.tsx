@@ -27,6 +27,7 @@ import {
   Filter,
   X,
   BookMarked,
+  Timer,
 } from "lucide-react";
 import { supabase, supabasePublic } from "../../lib/supabase";
 import { AuthModal } from "../../components/AuthModal";
@@ -35,6 +36,7 @@ import QuestionResolver from "../../components/banco/QuestionResolver";
 import FixationDashboardView from "../../components/fixacao/FixationDashboardView";
 import { PrintSimuladoModal } from "../../components/banco/PrintSimuladoModal";
 import NotionQuestionTab from "../../components/banco/NotionQuestionTab";
+import CronometroTab from "../../components/banco/CronometroTab";
 
 // ──────────────────────────────────────────────
 // Types
@@ -53,7 +55,7 @@ export interface QuestionStats {
 /** Mapa questao_id → stats (derivado do histórico completo) */
 type UserAnswers = Record<string, QuestionStats>;
 
-type ActiveTab = "banco" | "resolver" | "simulados" | "desempenho" | "fixacao" | "notion";
+type ActiveTab = "banco" | "resolver" | "simulados" | "desempenho" | "fixacao" | "notion" | "cronometro";
 
 // ──────────────────────────────────────────────
 // Helpers
@@ -132,6 +134,22 @@ export default function BancoPage() {
   const [simuladoSearch, setSimuladoSearch]     = useState("");
   const [simuladoStatusFilter, setSimuladoStatusFilter] = useState<"todos" | "concluidos" | "em_andamento" | "nao_iniciados">("todos");
   const [simuladoFamiliaFilter, setSimuladoFamiliaFilter] = useState<string>("todas");
+  const [isAdmin, setIsAdmin]       = useState(false);
+
+  useEffect(() => {
+    if (!user?.email) { setIsAdmin(false); return; }
+    (async () => {
+      try {
+        const { data } = await supabase.from("notion_blocks_admins")
+          .select("email")
+          .ilike("email", user.email)
+          .maybeSingle();
+        setIsAdmin(!!data);
+      } catch (e) {
+        setIsAdmin(false);
+      }
+    })();
+  }, [user?.email]);
 
   // ── Auth ──────────────────────────────────
   useEffect(() => {
@@ -445,6 +463,7 @@ export default function BancoPage() {
             { id: "simulados",  icon: <ClipboardList size={13} />,  label: "Simulados", count: provasDisponiveis.length },
             { id: "desempenho", icon: <BarChart3 size={13} />,      label: "Desempenho", badge: resolverQueue.length > 0 ? "●" : null },
             { id: "notion",     icon: <BookMarked size={13} />,     label: "Notion Question", count: undefined, badge: null },
+            ...(isAdmin ? [{ id: "cronometro", icon: <Timer size={13} />, label: "Cronômetro", count: undefined, badge: null }] : []),
           ].map(tab => (
             <button
               key={tab.id}
@@ -1392,6 +1411,22 @@ export default function BancoPage() {
               transition={{ duration: 0.2 }}
             >
               <NotionQuestionTab user={user} />
+            </motion.div>
+          )}
+
+          {/* ── CRONÔMETRO (ADMIN APENAS) ── */}
+          {activeTab === "cronometro" && isAdmin && (
+            <motion.div
+              key="cronometro"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+            >
+              <CronometroTab 
+                user={user} 
+                materiasDisponiveis={[...new Set(questions.map(q => q.materia).filter(Boolean))]} 
+              />
             </motion.div>
           )}
 
