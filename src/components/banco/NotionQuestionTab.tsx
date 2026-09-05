@@ -493,8 +493,8 @@ function QuestaoRow({
 
   return (
     <div className="flex flex-col py-1">
-      <div className={`flex items-center gap-3 py-1 px-2 transition-all rounded-md ${
-        isErro ? "bg-red-500/[0.04] border border-red-500/25" : "hover:bg-white/[0.03]"
+      <div className={`flex items-center gap-3 py-1.5 px-2.5 transition-all rounded-lg ${
+        isErro ? "bg-rose-500/[0.03] border border-rose-500/15" : "hover:bg-white/[0.03]"
       }`}>
         <button
           onClick={() => { setOpen(v => !v); setShowResp(false); }}
@@ -521,14 +521,14 @@ function QuestaoRow({
         </span>
 
         {questao.topic && (
-          <span className="text-[14px] sm:text-[15px] font-normal text-[#8E97A8] leading-relaxed truncate ml-1">
+          <span className="text-[14px] sm:text-[15px] font-normal text-[#8E97A8] leading-relaxed truncate ml-0.5">
             — {questao.topic}
           </span>
         )}
 
         {questao.caseLabel && (
-          <span className="text-[10px] font-medium text-slate-400 bg-white/[0.04] border border-white/[0.07] px-2 py-0.5 rounded-md truncate shrink-0 ml-1">
-            {questao.caseLabel}
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-800/40 border border-slate-700/50 text-[10px] font-medium text-slate-400 truncate shrink-0 ml-1">
+            <span className="text-slate-600 font-normal">in</span> {questao.caseLabel}
           </span>
         )}
 
@@ -537,13 +537,15 @@ function QuestaoRow({
         )}
 
         {isErro && (
-          <span className="text-[10px] font-bold text-red-400 bg-red-500/15 border border-red-500/30 px-1.5 py-0.5 rounded-md shrink-0 flex items-center gap-1 ml-auto">
-            <X size={10} /> Errou
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-rose-300 bg-rose-950/30 border border-rose-500/20 shrink-0 ml-auto shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
+            Errou
           </span>
         )}
         {isAcerto && (
-          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-md shrink-0 flex items-center gap-1 ml-auto">
-            <Check size={10} /> Acertou
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-emerald-300 bg-emerald-950/30 border border-emerald-500/20 shrink-0 ml-auto shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+            Acertou
           </span>
         )}
       </div>
@@ -791,13 +793,14 @@ function CasoCard({
               open ? "▼" : "▶"
             )}
           </span>
-          <span className={`font-medium transition-colors ${errosInCaso > 0 ? "text-red-300 font-bold" : "text-[#8E97A8] group-hover:text-white"} ${depth === 0 ? "text-[14px]" : "text-[13px]"}`}>
+          <span className={`font-medium transition-colors ${errosInCaso > 0 ? "text-rose-300" : "text-[#8E97A8] group-hover:text-white"} ${depth === 0 ? "text-[14px]" : "text-[13px]"}`}>
             {caso.nome}
           </span>
 
           {errosInCaso > 0 && (
-            <span className="text-[10px] font-bold text-red-400 bg-red-500/15 border border-red-500/30 px-1.5 py-0.5 rounded-md flex items-center gap-1 shrink-0 ml-1">
-              <X size={10} /> {errosInCaso} {errosInCaso === 1 ? "erro" : "erros"}
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium text-rose-300 bg-rose-950/30 border border-rose-500/20 shrink-0 ml-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
+              {errosInCaso} {errosInCaso === 1 ? "erro" : "erros"}
             </span>
           )}
         </button>
@@ -1309,7 +1312,7 @@ function NotionBlockRowItem({
   return (
     <div className="py-1">
       <div className={`flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap group px-1 rounded-xl transition-all ${
-        hasErros ? "bg-red-500/[0.03] border border-red-500/25" : "hover:bg-white/[0.02]"
+        hasErros ? "bg-rose-500/[0.02] border border-rose-500/15" : "hover:bg-white/[0.02]"
       }`}>
         <button
           onClick={() => setOpen(v => !v)}
@@ -1320,7 +1323,7 @@ function NotionBlockRowItem({
           </span>
           <span className="text-base shrink-0 select-none">{blockIcon}</span>
           <span className={`text-[14px] sm:text-[15px] font-medium transition-colors shrink-0 ${
-            hasErros ? "text-red-300 font-bold" : "text-[#8E97A8] group-hover:text-white"
+            hasErros ? "text-rose-300" : "text-[#8E97A8] group-hover:text-white"
           }`}>
             {block.nome}
           </span>
@@ -1330,8 +1333,9 @@ function NotionBlockRowItem({
             </span>
           )}
           {hasErros && (
-            <span className="px-2 py-0.5 rounded-md text-[10px] font-black text-red-400 bg-red-500/15 border border-red-500/30 shrink-0 flex items-center gap-1 shadow-sm">
-              <X size={10} /> {blockStats.erros} {blockStats.erros === 1 ? "erro" : "erros"}
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-rose-300 bg-rose-950/30 border border-rose-500/20 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
+              {blockStats.erros} {blockStats.erros === 1 ? "erro" : "erros"}
             </span>
           )}
           {block.descricao && (
@@ -1773,13 +1777,13 @@ export default function NotionQuestionTab({ user }: { user: any }) {
 
           <button
             onClick={() => setApenasComErros(prev => !prev)}
-            className={`px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-xl text-[11px] font-medium tracking-wide border transition-all inline-flex items-center gap-2 ${
               apenasComErros
-                ? "bg-red-500/20 border-red-500/50 text-red-300 shadow-lg shadow-red-500/10"
-                : "bg-[#111623] border-white/[0.07] text-slate-500 hover:text-red-400 hover:border-red-500/30"
+                ? "bg-rose-950/40 border-rose-500/30 text-rose-300 shadow-sm"
+                : "bg-[#111623] border-white/[0.07] text-slate-400 hover:text-slate-200 hover:border-white/[0.15]"
             }`}
           >
-            <X size={12} className={apenasComErros ? "text-red-400" : "text-slate-500"} />
+            <span className={`w-1.5 h-1.5 rounded-full ${apenasComErros ? "bg-rose-400" : "bg-slate-500"}`} />
             Apenas com Erros
           </button>
         </div>
