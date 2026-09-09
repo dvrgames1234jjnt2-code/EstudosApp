@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import {
   Plus, Trash2, ChevronDown, ChevronRight, Loader2,
   BookMarked, RefreshCw, X, Check, Play, Eye, EyeOff,
-  Triangle, Flag, History, LayoutGrid
+  Triangle, Flag, History, LayoutGrid, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
@@ -313,6 +314,168 @@ function QuestaoTitleLabel({ questaoId, blocksMap }: { questaoId: string; blocks
   );
 }
 
+function ImagemLightbox({ url, onClose }: { url: string; onClose: () => void }) {
+  const [scale, setScale] = useState(1);
+  const [isFullWidth, setIsFullWidth] = useState(true);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  const handleZoomIn = () => setScale(prev => Math.min(prev + 0.25, 4));
+  const handleZoomOut = () => setScale(prev => Math.max(prev - 0.25, 0.5));
+  const handleReset = () => { setScale(1); setPosition({ x: 0, y: 0 }); setIsFullWidth(true); };
+
+  const toggleFullWidth = () => {
+    setIsFullWidth(prev => !prev);
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "+" || e.key === "=") handleZoomIn();
+      if (e.key === "-") handleZoomOut();
+      if (e.key === "0") handleReset();
+      if (e.key.toLowerCase() === "f") toggleFullWidth();
+    };
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (e.deltaY < 0) {
+      setScale(prev => Math.min(prev + 0.15, 4));
+    } else {
+      setScale(prev => Math.max(prev - 0.15, 0.5));
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (scale > 1 || isFullWidth) {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging) {
+      setPosition({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+    }
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
+
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-between select-none animate-in fade-in duration-200"
+      onWheel={handleWheel}
+      onMouseUp={handleMouseUp}
+    >
+      {/* Top Bar Controls */}
+      <div className="w-full px-4 sm:px-6 py-3 flex items-center justify-between bg-black/80 backdrop-blur-md border-b border-white/10 z-20">
+        <div className="flex items-center gap-2 text-white font-bold text-xs">
+          <Maximize2 size={16} className="text-indigo-400" />
+          <span className="hidden sm:inline">Visualizador de Imagem — 100% Tela Cheia</span>
+          <span className="sm:hidden">Imagem 100%</span>
+        </div>
+
+        {/* Toolbar Center */}
+        <div className="flex items-center gap-1.5 sm:gap-2 bg-white/10 p-1 rounded-xl backdrop-blur-md border border-white/10">
+          <button
+            onClick={handleZoomOut}
+            title="Diminuir zoom (-)"
+            className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg hover:bg-white/20 text-white transition-all"
+          >
+            <ZoomOut size={15} />
+          </button>
+
+          <span className="text-[11px] sm:text-xs font-mono font-bold text-slate-200 px-1 sm:px-2 min-w-[45px] text-center">
+            {Math.round(scale * 100)}%
+          </span>
+
+          <button
+            onClick={handleZoomIn}
+            title="Aumentar zoom (+)"
+            className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg hover:bg-white/20 text-white transition-all"
+          >
+            <ZoomIn size={15} />
+          </button>
+
+          <div className="w-px h-5 bg-white/20 my-auto mx-0.5 sm:mx-1" />
+
+          <button
+            onClick={toggleFullWidth}
+            title="Alternar Modo 100% Ocupar Tela Inteira (F)"
+            className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold flex items-center gap-1.5 transition-all ${
+              isFullWidth
+                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+                : "hover:bg-white/20 text-slate-200"
+            }`}
+          >
+            {isFullWidth ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+            <span>{isFullWidth ? "Modo Ajustado" : "100% Tela Cheia"}</span>
+          </button>
+
+          <button
+            onClick={handleReset}
+            title="Resetar Zoom (0)"
+            className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg hover:bg-white/20 text-slate-400 hover:text-white transition-all"
+          >
+            <RotateCcw size={13} />
+          </button>
+        </div>
+
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          title="Fechar (Esc)"
+          className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-300 border border-red-500/30 transition-all"
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      {/* Main Image View Container */}
+      <div
+        className="relative flex-1 w-full h-full overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing p-1 sm:p-4"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <img
+          src={url}
+          alt="Imagem em tela cheia"
+          draggable={false}
+          style={{
+            transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+            transition: isDragging ? "none" : "transform 0.15s ease-out",
+          }}
+          className={`bg-white rounded-xl shadow-2xl object-contain ${
+            isFullWidth
+              ? "w-full h-full max-w-none max-h-none"
+              : "max-w-[95vw] max-h-[85vh]"
+          }`}
+        />
+      </div>
+
+      {/* Footer hint */}
+      <div className="w-full px-4 py-2 bg-black/80 backdrop-blur-md text-[11px] text-slate-400 font-medium z-20 flex items-center justify-center gap-4 text-center">
+        <span>💡 Dica: Use o scroll do mouse para Zoom • Arraste para Mover • Aperte <kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-slate-200">ESC</kbd> para fechar</span>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 function QuestaoRow({ 
   questao, 
   user,
@@ -335,6 +498,7 @@ function QuestaoRow({
   const [open, setOpen] = useState(startOpen);
   const [showResp, setShowResp] = useState(false);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [respostaImageUrls, setRespostaImageUrls] = useState<string[]>([]);
   const [respostaText, setRespostaText] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
@@ -569,7 +733,21 @@ function QuestaoRow({
             <>
               {imageUrls.length > 0 ? (
                 imageUrls.map((url, i) => (
-                  <img key={i} src={url} alt={`Q${questao.numero} img${i + 1}`} className="w-full max-w-2xl rounded-xl border border-white/[0.06] object-contain bg-white" />
+                  <div key={i} className="relative group max-w-2xl">
+                    <img
+                      src={url}
+                      alt={`Q${questao.numero} img${i + 1}`}
+                      onClick={() => setZoomedImage(url)}
+                      className="w-full rounded-xl border border-white/[0.06] object-contain bg-white cursor-zoom-in hover:brightness-95 transition-all shadow-md"
+                    />
+                    <button
+                      onClick={() => setZoomedImage(url)}
+                      className="absolute top-2 right-2 opacity-90 group-hover:opacity-100 transition-all px-2.5 py-1 rounded-lg bg-black/75 hover:bg-black/95 text-white text-[10px] font-bold flex items-center gap-1.5 backdrop-blur-md border border-white/20 shadow-xl active:scale-95"
+                    >
+                      <Maximize2 size={12} className="text-indigo-400" />
+                      Expandir 100%
+                    </button>
+                  </div>
                 ))
               ) : (
                 <p className="text-[11px] text-slate-700 italic">Sem imagem</p>
@@ -637,7 +815,21 @@ function QuestaoRow({
               {showResp && (
                 <div className="border border-emerald-500/20 rounded-xl p-4 bg-emerald-500/[0.03] flex flex-col gap-3">
                   {respostaImageUrls.map((url, i) => (
-                    <img key={i} src={url} alt={`Resposta img${i + 1}`} className="w-full max-w-2xl rounded-xl border border-white/[0.06] object-contain bg-white" />
+                    <div key={i} className="relative group max-w-2xl">
+                      <img
+                        src={url}
+                        alt={`Resposta img${i + 1}`}
+                        onClick={() => setZoomedImage(url)}
+                        className="w-full rounded-xl border border-white/[0.06] object-contain bg-white cursor-zoom-in hover:brightness-95 transition-all shadow-md"
+                      />
+                      <button
+                        onClick={() => setZoomedImage(url)}
+                        className="absolute top-2 right-2 opacity-90 group-hover:opacity-100 transition-all px-2.5 py-1 rounded-lg bg-black/75 hover:bg-black/95 text-white text-[10px] font-bold flex items-center gap-1.5 backdrop-blur-md border border-white/20 shadow-xl active:scale-95"
+                      >
+                        <Maximize2 size={12} className="text-emerald-400" />
+                        Expandir 100%
+                      </button>
+                    </div>
                   ))}
                   {respostaText ? (
                     <p className="text-[14px] sm:text-[15px] font-normal text-[#8E97A8] whitespace-pre-wrap leading-relaxed">{respostaText}</p>
@@ -688,6 +880,7 @@ function QuestaoRow({
           )}
         </div>
       )}
+      {zoomedImage && <ImagemLightbox url={zoomedImage} onClose={() => setZoomedImage(null)} />}
     </div>
   );
 }
