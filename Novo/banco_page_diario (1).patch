@@ -1,0 +1,57 @@
+diff --git a/src/app/banco/page.tsx b/src/app/banco/page.tsx
+index a82166b..4990479 100644
+--- a/src/app/banco/page.tsx
++++ b/src/app/banco/page.tsx
+@@ -27,6 +27,7 @@ import {
+   Filter,
+   X,
+   BookMarked,
++  CalendarClock,
+ } from "lucide-react";
+ import { supabase, supabasePublic } from "../../lib/supabase";
+ import { AuthModal } from "../../components/AuthModal";
+@@ -35,6 +36,7 @@ import QuestionResolver from "../../components/banco/QuestionResolver";
+ import FixationDashboardView from "../../components/fixacao/FixationDashboardView";
+ import { PrintSimuladoModal } from "../../components/banco/PrintSimuladoModal";
+ import NotionQuestionTab from "../../components/banco/NotionQuestionTab";
++import EstudoLogTab from "../../components/banco/EstudoLogTab";
+ 
+ // ──────────────────────────────────────────────
+ // Types
+@@ -53,7 +55,7 @@ export interface QuestionStats {
+ /** Mapa questao_id → stats (derivado do histórico completo) */
+ type UserAnswers = Record<string, QuestionStats>;
+ 
+-type ActiveTab = "banco" | "resolver" | "simulados" | "desempenho" | "fixacao" | "notion";
++type ActiveTab = "banco" | "resolver" | "simulados" | "desempenho" | "fixacao" | "notion" | "diario";
+ 
+ // ──────────────────────────────────────────────
+ // Helpers
+@@ -441,6 +443,7 @@ export default function BancoPage() {
+             { id: "simulados",  icon: <ClipboardList size={13} />,  label: "Simulados", count: provasDisponiveis.length },
+             { id: "desempenho", icon: <BarChart3 size={13} />,      label: "Desempenho", badge: resolverQueue.length > 0 ? "●" : null },
+             { id: "notion",     icon: <BookMarked size={13} />,     label: "Notion Question", count: undefined, badge: null },
++            { id: "diario",     icon: <CalendarClock size={13} />,  label: "Diário de Estudos", count: undefined, badge: null },
+           ].map(tab => (
+             <button
+               key={tab.id}
+@@ -1391,6 +1394,19 @@ export default function BancoPage() {
+             </motion.div>
+           )}
+ 
++          {/* ── DIÁRIO DE ESTUDOS ── */}
++          {activeTab === "diario" && (
++            <motion.div
++              key="diario"
++              initial={{ opacity: 0, y: 8 }}
++              animate={{ opacity: 1, y: 0 }}
++              exit={{ opacity: 0, y: -8 }}
++              transition={{ duration: 0.2 }}
++            >
++              <EstudoLogTab user={user} />
++            </motion.div>
++          )}
++
+         </AnimatePresence>
+       </main>
+ 

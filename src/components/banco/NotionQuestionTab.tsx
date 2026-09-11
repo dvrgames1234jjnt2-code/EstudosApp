@@ -484,7 +484,8 @@ function QuestaoRow({
   onAnswered,
   stats,
   apenasComErros,
-  startOpen = false
+  startOpen = false,
+  isAdmin = false,
 }: { 
   questao: Questao; 
   user: any;
@@ -494,6 +495,7 @@ function QuestaoRow({
   stats?: QuestaoStats;
   apenasComErros?: boolean;
   startOpen?: boolean;
+  isAdmin?: boolean;
 }) {
   const [open, setOpen] = useState(startOpen);
   const [showResp, setShowResp] = useState(false);
@@ -510,6 +512,14 @@ function QuestaoRow({
   const [showHistorico, setShowHistorico] = useState(false);
   const [historico, setHistorico] = useState<{ data: string; horario: string; correto: string }[] | null>(null);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
+
+  // Admin edit panel states
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [adminText, setAdminText] = useState('');
+  const [adminImageUrl, setAdminImageUrl] = useState('');
+  const [adminGabarito, setAdminGabarito] = useState('');
+  const [adminSaving, setAdminSaving] = useState(false);
+  const [adminSaved, setAdminSaved] = useState(false);
 
   const fetchHistorico = useCallback(async () => {
     if (!user?.id) return;
@@ -537,6 +547,26 @@ function QuestaoRow({
       if (next && historico === null) fetchHistorico();
       return next;
     });
+  };
+
+  const handleAdminSave = async () => {
+    setAdminSaving(true);
+    setAdminSaved(false);
+    try {
+      const { error } = await supabase.from('notion_gabaritos').upsert({
+        questao_id: questao.id,
+        texto: adminText || null,
+        imagem_url: adminImageUrl || null,
+        gabarito: adminGabarito || null,
+      }, { onConflict: 'questao_id' });
+      if (error) throw error;
+      setAdminSaved(true);
+      setTimeout(() => setAdminSaved(false), 3000);
+    } catch (e: any) {
+      alert('Erro ao salvar: ' + e.message);
+    } finally {
+      setAdminSaving(false);
+    }
   };
 
   const handleRecordAnswer = async (isCorrect: boolean) => {
@@ -874,6 +904,88 @@ function QuestaoRow({
                       )}
                     </div>
                   )}
+
+                  {/* Admin edit panel */}
+                  {isAdmin && (
+                    <div className="mt-2 pt-2 border-t border-amber-500/20">
+                      <button
+                        onClick={() => setShowAdminPanel(v => !v)}
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border ${
+                          showAdminPanel
+                            ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+                            : 'bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/20'
+                        }`}
+                      >
+                        <span className="text-[12px]">🛠️</span> Editar Resposta (Admin)
+                      </button>
+
+                      {showAdminPanel && (
+                        <div className="mt-2 flex flex-col gap-3 p-3 bg-amber-500/[0.04] border border-amber-500/20 rounded-xl">
+                          <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest">Painel Administrativo — Questão {questao.numero || questao.id.slice(0, 8)}</p>
+
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Gabarito (letra)</label>
+                            <div className="flex items-center gap-1.5">
+                              {['A','B','C','D','E'].map(l => (
+                                <button
+                                  key={l}
+                                  onClick={() => setAdminGabarito(adminGabarito === l ? '' : l)}
+                                  className={`w-8 h-8 rounded-lg text-[12px] font-black border transition-all active:scale-95 ${
+                                    adminGabarito === l
+                                      ? 'bg-amber-500/30 border-amber-400/60 text-amber-200'
+                                      : 'bg-white/[0.03] border-white/[0.08] text-slate-400 hover:border-amber-500/30 hover:text-amber-300'
+                                  }`}
+                                >
+                                  {l}
+                                </button>
+                              ))}
+                              {adminGabarito && (
+                                <span className="text-[11px] text-amber-300 font-bold ml-1">✓ {adminGabarito}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Texto / Comentário</label>
+                            <textarea
+                              value={adminText}
+                              onChange={e => setAdminText(e.target.value)}
+                              placeholder="Digite a explicação ou comentário da resposta..."
+                              rows={3}
+                              className="w-full px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500/40 transition-all resize-none"
+                            />
+                          </div>
+
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">URL da Imagem (opcional)</label>
+                            <input
+                              type="url"
+                              value={adminImageUrl}
+                              onChange={e => setAdminImageUrl(e.target.value)}
+                              placeholder="https://..."
+                              className="w-full px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500/40 transition-all font-mono"
+                            />
+                            {adminImageUrl && (
+                              <img src={adminImageUrl} alt="preview" className="mt-1 max-h-32 rounded-lg border border-white/10 object-contain bg-white/5" />
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 justify-end">
+                            {adminSaved && (
+                              <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider animate-pulse">✓ Salvo!</span>
+                            )}
+                            <button
+                              onClick={handleAdminSave}
+                              disabled={adminSaving}
+                              className="flex items-center gap-1.5 px-4 py-1.5 bg-amber-600/80 hover:bg-amber-600 disabled:opacity-50 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95"
+                            >
+                              {adminSaving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} Salvar
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </>
@@ -893,7 +1005,8 @@ function CasoCard({
   onToggleDuvida,
   onAnswered,
   resultadosMap,
-  apenasComErros
+  apenasComErros,
+  isAdmin = false,
 }: { 
   caso: Caso; 
   depth?: number; 
@@ -903,6 +1016,7 @@ function CasoCard({
   onAnswered: () => void;
   resultadosMap?: Map<string, QuestaoStats>;
   apenasComErros?: boolean;
+  isAdmin?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [questoes, setQuestoes] = useState<Questao[]>([]);
@@ -1041,6 +1155,7 @@ function CasoCard({
                   onAnswered={onAnswered}
                   resultadosMap={resultadosMap}
                   apenasComErros={apenasComErros}
+                  isAdmin={isAdmin}
                 />
               ))}
 
@@ -1054,6 +1169,7 @@ function CasoCard({
                     onAnswered={onAnswered}
                     stats={resultadosMap?.get(q.id)}
                     apenasComErros={apenasComErros}
+                    isAdmin={isAdmin}
                   />
                 </div>
               ))}
@@ -1072,7 +1188,8 @@ function BlockViewer({
   onToggleDuvida,
   onAnswered,
   resultadosMap,
-  apenasComErros
+  apenasComErros,
+  isAdmin = false,
 }: { 
   block: NotionBlockRow; 
   user: any;
@@ -1081,6 +1198,7 @@ function BlockViewer({
   onAnswered: () => void;
   resultadosMap?: Map<string, QuestaoStats>;
   apenasComErros?: boolean;
+  isAdmin?: boolean;
 }) {
   const [casos, setCasos] = useState<Caso[]>([]);
   const [erroItens, setErroItens] = useState<QuestaoResumo[] | null>(null);
@@ -1170,6 +1288,7 @@ function BlockViewer({
               onAnswered={onAnswered}
               stats={resultadosMap?.get(item.id)}
               apenasComErros={apenasComErros}
+              isAdmin={isAdmin}
             />
           </div>
         ))}
@@ -1191,6 +1310,7 @@ function BlockViewer({
           onAnswered={onAnswered}
           resultadosMap={resultadosMap}
           apenasComErros={apenasComErros}
+          isAdmin={isAdmin}
         />
       ))}
     </div>
@@ -1347,6 +1467,7 @@ function GabaritoBloco({
   duvidasIds,
   onToggleDuvida,
   onAnswered,
+  isAdmin = false,
 }: {
   block: NotionBlockRow;
   user: any;
@@ -1354,6 +1475,7 @@ function GabaritoBloco({
   duvidasIds: Set<string>;
   onToggleDuvida: (questaoId: string, marcar: boolean) => Promise<void>;
   onAnswered: () => void;
+  isAdmin?: boolean;
 }) {
   const [detalhes, setDetalhes] = useState<QuestaoDetalhesResult | null>(null);
   const [selecionada, setSelecionada] = useState<QuestaoResumo | null>(null);
@@ -1465,6 +1587,7 @@ function GabaritoBloco({
             onToggleDuvida={onToggleDuvida}
             onAnswered={onAnswered}
             startOpen
+            isAdmin={isAdmin}
           />
         </div>
       )}
@@ -1480,7 +1603,8 @@ function NotionBlockRowItem({
   onToggleDuvida,
   onAnswered,
   resultadosMap,
-  apenasComErros
+  apenasComErros,
+  isAdmin = false,
 }: {
   block: NotionBlockRow;
   user: any;
@@ -1490,6 +1614,7 @@ function NotionBlockRowItem({
   onAnswered: () => void;
   resultadosMap: Map<string, QuestaoStats>;
   apenasComErros?: boolean;
+  isAdmin?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [showGabarito, setShowGabarito] = useState(false);
@@ -1595,6 +1720,7 @@ function NotionBlockRowItem({
             duvidasIds={duvidasIds}
             onToggleDuvida={onToggleDuvida}
             onAnswered={onAnswered}
+            isAdmin={isAdmin}
           />
         </div>
       )}
@@ -1609,6 +1735,7 @@ function NotionBlockRowItem({
             onAnswered={onAnswered}
             resultadosMap={resultadosMap}
             apenasComErros={apenasComErros}
+            isAdmin={isAdmin}
           />
         </div>
       )}
@@ -2028,6 +2155,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               onAnswered={handleAnswered}
               resultadosMap={resultadosMap}
               apenasComErros={apenasComErros}
+              isAdmin={isAdmin}
             />
           ))}
         </div>
