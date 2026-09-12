@@ -503,6 +503,7 @@ function QuestaoRow({
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [respostaImageUrls, setRespostaImageUrls] = useState<string[]>([]);
   const [respostaText, setRespostaText] = useState<string | undefined>();
+  const [respostaToggleId, setRespostaToggleId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const [recording, setRecording] = useState(false);
@@ -550,20 +551,111 @@ function QuestaoRow({
   };
 
   const handleAdminSave = async () => {
+    if (!adminGabarito && !adminText.trim() && !adminImageUrl.trim()) {
+      alert("Preencha ao menos um campo (Gabarito, Texto ou Imagem) para salvar no Notion.");
+      return;
+    }
+
     setAdminSaving(true);
     setAdminSaved(false);
+
     try {
-      const { error } = await supabase.from('notion_gabaritos').upsert({
-        questao_id: questao.id,
-        texto: adminText || null,
-        imagem_url: adminImageUrl || null,
-        gabarito: adminGabarito || null,
-      }, { onConflict: 'questao_id' });
-      if (error) throw error;
+      const newBlocks: any[] = [];
+
+      if (adminGabarito) {
+        newBlocks.push({
+          object: "block",
+          type: "callout",
+          callout: {
+            rich_text: [
+              {
+                type: "text",
+                text: { content: `Gabarito: ${adminGabarito}` },
+                annotations: { bold: true }
+              }
+            ],
+            icon: { type: "emoji", emoji: "✅" }
+          }
+        });
+      }
+
+      if (adminText.trim()) {
+        newBlocks.push({
+          object: "block",
+          type: "paragraph",
+          paragraph: {
+            rich_text: [
+              {
+                type: "text",
+                text: { content: adminText.trim() }
+              }
+            ]
+          }
+        });
+      }
+
+      if (adminImageUrl.trim()) {
+        newBlocks.push({
+          object: "block",
+          type: "image",
+          image: {
+            type: "external",
+            external: { url: adminImageUrl.trim() }
+          }
+        });
+      }
+
+      const questaoClean = questao.id.replace(/-/g, "");
+      const targetToggleId = respostaToggleId ? respostaToggleId.replace(/-/g, "") : null;
+
+      if (targetToggleId) {
+        const res = await fetch(`/api/notion/blocks/${targetToggleId}/children`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ children: newBlocks })
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || errData.message || `Notion HTTP ${res.status}`);
+        }
+        childrenCache.delete(targetToggleId);
+      } else {
+        const res = await fetch(`/api/notion/blocks/${questaoClean}/children`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            children: [
+              {
+                object: "block",
+                type: "toggle",
+                toggle: {
+                  rich_text: [{ type: "text", text: { content: "Resposta 💡" } }],
+                  children: newBlocks
+                }
+              }
+            ]
+          })
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || errData.message || `Notion HTTP ${res.status}`);
+        }
+      }
+
+      childrenCache.delete(questaoClean);
+
       setAdminSaved(true);
-      setTimeout(() => setAdminSaved(false), 3000);
+      setAdminText("");
+      setAdminImageUrl("");
+      setAdminGabarito("");
+
+      setLoaded(false);
+      setShowResp(true);
+
+      setTimeout(() => setAdminSaved(false), 4000);
     } catch (e: any) {
-      alert('Erro ao salvar: ' + e.message);
+      console.error("Erro ao salvar resposta no Notion:", e);
+      alert("Erro ao salvar no Notion: " + (e.message || e));
     } finally {
       setAdminSaving(false);
     }
@@ -640,6 +732,7 @@ function QuestaoRow({
           const imgs: string[] = [];
           const rImgs: string[] = [];
           let textResp: string | undefined;
+          let foundToggleId: string | null = null;
 
           for (const child of children) {
             if (child.type === "image") {
@@ -648,22 +741,36 @@ function QuestaoRow({
               if (url) imgs.push(url);
             } else if (child.type === "toggle") {
               const tText = richText(child.toggle?.rich_text ?? []).toLowerCase();
-              if (tText.includes("resposta") && child.has_children) {
-                console.log(`[QuestaoRow DEBUG] Toggle de resposta encontrado na questao ${questao.numero} (ID: ${child.id})`);
-                const rChildren = await fetchChildren(child.id);
-                console.log(`[QuestaoRow DEBUG] Filhos do toggle de resposta da questao ${questao.numero}:`, rChildren);
-                const texts: string[] = [];
-                for (const rc of rChildren) {
-                  if (rc.type === "image") {
-                    const url = imgUrl(rc);
-                    console.log(`[QuestaoRow DEBUG] Bloco de imagem na resposta da questao ${questao.numero}:`, rc, "URL:", url);
-                    if (url) rImgs.push(url);
-                  } else {
-                    const t = richText(rc.paragraph?.rich_text ?? rc.bulleted_list_item?.rich_text ?? rc.numbered_list_item?.rich_text ?? []);
-                    if (t) texts.push(t);
+              if (tText.includes("resposta")) {
+                foundToggleId = child.id;
+                if (child.has_children) {
+                  console.log(`[QuestaoRow DEBUG] Toggle de resposta encontrado na questao ${questao.numero} (ID: ${child.id})`);
+                  const rChildren = await fetchChildren(child.id);
+                  console.log(`[QuestaoRow DEBUG] Filhos do toggle de resposta da questao ${questao.numero}:`, rChildren);
+                  const texts: string[] = [];
+                  for (const rc of rChildren) {
+                    if (rc.type === "image") {
+                      const url = imgUrl(rc);
+                      console.log(`[QuestaoRow DEBUG] Bloco de imagem na resposta da questao ${questao.numero}:`, rc, "URL:", url);
+                      if (url) rImgs.push(url);
+                    } else {
+                      const icon = rc.callout?.icon?.type === "emoji" ? `${rc.callout.icon.emoji} ` : "";
+                      const t = richText(
+                        rc.paragraph?.rich_text ??
+                        rc.bulleted_list_item?.rich_text ??
+                        rc.numbered_list_item?.rich_text ??
+                        rc.callout?.rich_text ??
+                        rc.quote?.rich_text ??
+                        rc.heading_1?.rich_text ??
+                        rc.heading_2?.rich_text ??
+                        rc.heading_3?.rich_text ??
+                        []
+                      );
+                      if (t) texts.push(icon + t);
+                    }
                   }
+                  textResp = texts.join("\n") || undefined;
                 }
-                textResp = texts.join("\n") || undefined;
               }
             }
           }
@@ -672,6 +779,7 @@ function QuestaoRow({
             setImageUrls(imgs);
             setRespostaImageUrls(rImgs);
             setRespostaText(textResp);
+            setRespostaToggleId(foundToggleId);
             setLoaded(true);
           }
         } catch (e) {
