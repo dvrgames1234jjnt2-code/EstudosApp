@@ -5,7 +5,8 @@ import { createPortal } from "react-dom";
 import {
   Plus, Trash2, ChevronDown, ChevronRight, Loader2,
   BookMarked, RefreshCw, X, Check, Play, Eye, EyeOff,
-  Triangle, Flag, History, LayoutGrid, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw
+  Triangle, Flag, History, LayoutGrid, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw,
+  Clock, HelpCircle, Filter, Flame, Calendar, BarChart3, Target, AlertTriangle
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
@@ -68,7 +69,7 @@ interface Caso {
 }
 
 // Estatísticas agregadas de todas as tentativas de uma questão (não só a última)
-interface QuestaoStats { total: number; corretas: number; ultimo: "acerto" | "erro" }
+interface QuestaoStats { total: number; corretas: number; ultimo: "acerto" | "erro"; ultimaData?: string }
 
 function richText(rt: RichText[] = []) { return rt.map(r => r.plain_text).join(""); }
 function formatDataBR(iso: string) {
@@ -484,6 +485,8 @@ function QuestaoRow({
   onAnswered,
   stats,
   apenasComErros,
+  statusFiltro = "todas",
+  feitasHojeIds = [],
   startOpen = false,
   isAdmin = false,
 }: { 
@@ -494,6 +497,8 @@ function QuestaoRow({
   onAnswered: () => void;
   stats?: QuestaoStats;
   apenasComErros?: boolean;
+  statusFiltro?: "todas" | "erros" | "nao_feitas" | "feitas_hoje";
+  feitasHojeIds?: string[];
   startOpen?: boolean;
   isAdmin?: boolean;
 }) {
@@ -794,17 +799,21 @@ function QuestaoRow({
 
   const isErro = stats?.ultimo === "erro";
   const isAcerto = stats?.ultimo === "acerto";
+  const isRespondida = !!stats;
+  const isFeitaHoje = feitasHojeIds.includes(questao.id);
 
-  if (apenasComErros && !isErro) {
-    return null;
-  }
+  const effectiveStatus = statusFiltro !== "todas" ? statusFiltro : (apenasComErros ? "erros" : "todas");
 
-  const showErroStyle = apenasComErros && isErro;
+  if (effectiveStatus === "erros" && !isErro) return null;
+  if (effectiveStatus === "nao_feitas" && isRespondida) return null;
+  if (effectiveStatus === "feitas_hoje" && !isFeitaHoje) return null;
+
+  const showHighlightStyle = (effectiveStatus === "erros" && isErro) || (effectiveStatus === "feitas_hoje" && isFeitaHoje);
 
   return (
     <div className="flex flex-col py-1">
       <div className={`flex items-center gap-3 py-1.5 px-2.5 transition-all rounded-lg ${
-        showErroStyle ? "bg-rose-500/[0.03] border border-rose-500/15" : "hover:bg-white/[0.03]"
+        showHighlightStyle ? "bg-rose-500/[0.03] border border-rose-500/15" : "hover:bg-white/[0.03]"
       }`}>
         <button
           onClick={() => { setOpen(v => !v); setShowResp(false); }}
@@ -1114,6 +1123,8 @@ function CasoCard({
   onAnswered,
   resultadosMap,
   apenasComErros,
+  statusFiltro = "todas",
+  feitasHojeIds = [],
   isAdmin = false,
 }: { 
   caso: Caso; 
@@ -1124,6 +1135,8 @@ function CasoCard({
   onAnswered: () => void;
   resultadosMap?: Map<string, QuestaoStats>;
   apenasComErros?: boolean;
+  statusFiltro?: "todas" | "erros" | "nao_feitas" | "feitas_hoje";
+  feitasHojeIds?: string[];
   isAdmin?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -1200,11 +1213,13 @@ function CasoCard({
     ? questoes.filter(q => resultadosMap.get(q.id)?.ultimo === "erro").length
     : 0;
 
-  if (apenasComErros && loaded && errosInCaso === 0) {
+  const effectiveStatus = statusFiltro !== "todas" ? statusFiltro : (apenasComErros ? "erros" : "todas");
+
+  if (effectiveStatus === "erros" && loaded && errosInCaso === 0) {
     return null;
   }
 
-  const hasErrosInCaso = apenasComErros && errosInCaso > 0;
+  const hasErrosInCaso = effectiveStatus === "erros" && errosInCaso > 0;
   const indent = depth > 0 ? "pl-4 border-l border-indigo-500/[0.15] ml-3" : "";
 
   return (
@@ -1263,6 +1278,8 @@ function CasoCard({
                   onAnswered={onAnswered}
                   resultadosMap={resultadosMap}
                   apenasComErros={apenasComErros}
+                  statusFiltro={statusFiltro}
+                  feitasHojeIds={feitasHojeIds}
                   isAdmin={isAdmin}
                 />
               ))}
@@ -1277,6 +1294,8 @@ function CasoCard({
                     onAnswered={onAnswered}
                     stats={resultadosMap?.get(q.id)}
                     apenasComErros={apenasComErros}
+                    statusFiltro={statusFiltro}
+                    feitasHojeIds={feitasHojeIds}
                     isAdmin={isAdmin}
                   />
                 </div>
@@ -1297,6 +1316,8 @@ function BlockViewer({
   onAnswered,
   resultadosMap,
   apenasComErros,
+  statusFiltro = "todas",
+  feitasHojeIds = [],
   isAdmin = false,
 }: { 
   block: NotionBlockRow; 
@@ -1306,23 +1327,34 @@ function BlockViewer({
   onAnswered: () => void;
   resultadosMap?: Map<string, QuestaoStats>;
   apenasComErros?: boolean;
+  statusFiltro?: "todas" | "erros" | "nao_feitas" | "feitas_hoje";
+  feitasHojeIds?: string[];
   isAdmin?: boolean;
 }) {
   const [casos, setCasos] = useState<Caso[]>([]);
-  const [erroItens, setErroItens] = useState<QuestaoResumo[] | null>(null);
+  const [filteredItens, setFilteredItens] = useState<QuestaoResumo[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const effectiveStatus = statusFiltro !== "todas" ? statusFiltro : (apenasComErros ? "erros" : "todas");
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true); setError("");
       try {
-        if (apenasComErros) {
+        if (effectiveStatus !== "todas") {
           const details = await collectQuestaoDetails(block.block_id);
-          const errs = details.itens.filter(i => resultadosMap?.get(i.id)?.ultimo === "erro");
+          let filtered: QuestaoResumo[] = [];
+          if (effectiveStatus === "erros") {
+            filtered = details.itens.filter(i => resultadosMap?.get(i.id)?.ultimo === "erro");
+          } else if (effectiveStatus === "nao_feitas") {
+            filtered = details.itens.filter(i => !resultadosMap?.has(i.id));
+          } else if (effectiveStatus === "feitas_hoje") {
+            filtered = details.itens.filter(i => feitasHojeIds.includes(i.id));
+          }
           if (!cancelled) {
-            setErroItens(errs);
+            setFilteredItens(filtered);
             setLoading(false);
           }
           return;
@@ -1355,7 +1387,7 @@ function BlockViewer({
       }
     })();
     return () => { cancelled = true; };
-  }, [block.block_id, apenasComErros, resultadosMap]);
+  }, [block.block_id, effectiveStatus, resultadosMap, feitasHojeIds]);
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -1371,15 +1403,20 @@ function BlockViewer({
     </div>
   );
 
-  if (apenasComErros) {
-    if (!erroItens || erroItens.length === 0) {
-      return <p className="text-[11px] text-slate-600 italic text-center py-6">Nenhuma questão errada neste caderno.</p>;
+  if (effectiveStatus !== "todas") {
+    if (!filteredItens || filteredItens.length === 0) {
+      const msgMap: Record<string, string> = {
+        erros: "Nenhuma questão errada neste caderno.",
+        nao_feitas: "Todas as questões deste caderno já foram respondidas!",
+        feitas_hoje: "Nenhuma questão respondida hoje neste caderno.",
+      };
+      return <p className="text-[11px] text-slate-600 italic text-center py-6">{msgMap[effectiveStatus] || "Nenhuma questão encontrada."}</p>;
     }
 
     return (
-      <div className="flex flex-col gap-1 pl-4 border-l border-red-500/20 ml-4 my-1">
-        {erroItens.map((item, idx) => (
-          <div key={item.id} className={idx < erroItens.length - 1 ? "border-b border-white/[0.05] pb-1 mb-1" : ""}>
+      <div className="flex flex-col gap-1 pl-4 border-l border-indigo-500/20 ml-4 my-1">
+        {filteredItens.map((item, idx) => (
+          <div key={item.id} className={idx < filteredItens.length - 1 ? "border-b border-white/[0.05] pb-1 mb-1" : ""}>
             <QuestaoRow
               questao={{
                 id: item.id,
@@ -1395,7 +1432,8 @@ function BlockViewer({
               onToggleDuvida={onToggleDuvida}
               onAnswered={onAnswered}
               stats={resultadosMap?.get(item.id)}
-              apenasComErros={apenasComErros}
+              statusFiltro={statusFiltro}
+              feitasHojeIds={feitasHojeIds}
               isAdmin={isAdmin}
             />
           </div>
@@ -1418,6 +1456,8 @@ function BlockViewer({
           onAnswered={onAnswered}
           resultadosMap={resultadosMap}
           apenasComErros={apenasComErros}
+          statusFiltro={statusFiltro}
+          feitasHojeIds={feitasHojeIds}
           isAdmin={isAdmin}
         />
       ))}
@@ -1712,6 +1752,8 @@ function NotionBlockRowItem({
   onAnswered,
   resultadosMap,
   apenasComErros,
+  statusFiltro = "todas",
+  feitasHojeIds = [],
   isAdmin = false,
 }: {
   block: NotionBlockRow;
@@ -1722,6 +1764,8 @@ function NotionBlockRowItem({
   onAnswered: () => void;
   resultadosMap: Map<string, QuestaoStats>;
   apenasComErros?: boolean;
+  statusFiltro?: "todas" | "erros" | "nao_feitas" | "feitas_hoje";
+  feitasHojeIds?: string[];
   isAdmin?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -1748,7 +1792,9 @@ function NotionBlockRowItem({
     return () => { active = false; };
   }, [block.block_id]);
 
-  if (apenasComErros && blockStats !== null && blockStats.erros === 0) {
+  const effectiveStatus = statusFiltro !== "todas" ? statusFiltro : (apenasComErros ? "erros" : "todas");
+
+  if (effectiveStatus === "erros" && blockStats !== null && blockStats.erros === 0) {
     return null;
   }
 
@@ -1843,6 +1889,8 @@ function NotionBlockRowItem({
             onAnswered={onAnswered}
             resultadosMap={resultadosMap}
             apenasComErros={apenasComErros}
+            statusFiltro={statusFiltro}
+            feitasHojeIds={feitasHojeIds}
             isAdmin={isAdmin}
           />
         </div>
@@ -1855,23 +1903,78 @@ function PainelDesempenho({
   user,
   duvidasIds,
   resultadosMap,
+  feitasHojeIds,
+  respostasHojeMap,
   onRefresh,
   blocks,
 }: {
   user: any;
   duvidasIds: Set<string>;
   resultadosMap: Map<string, QuestaoStats>;
+  feitasHojeIds: string[];
+  respostasHojeMap: Map<string, { data: string; horario: string; correto: string }>;
   onRefresh: () => void;
   blocks: NotionBlockRow[];
 }) {
-  // Múltiplos cartões podem ficar abertos ao mesmo tempo (não é mais exclusivo)
-  const [openSections, setOpenSections] = useState<Set<"acertos" | "erros" | "duvidas">>(new Set());
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set());
+  const [topCasosErros, setTopCasosErros] = useState<{
+    caseLabel: string;
+    blockNome: string;
+    errosCount: number;
+    totalCount: number;
+    icon: string;
+  }[]>([]);
+  const [allQuestaoIds, setAllQuestaoIds] = useState<string[]>([]);
 
   const blocksMap = useMemo(() => {
     const map = new Map<string, string>();
     for (const b of blocks) map.set(b.block_id.replace(/-/g, ""), b.nome);
     return map;
   }, [blocks]);
+
+  // Coleta os casos com mais erros e a lista total de questões conhecidas
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const casoMap = new Map<string, { caseLabel: string; blockNome: string; errosCount: number; totalCount: number; icon: string }>();
+        const allIds: string[] = [];
+
+        for (const b of blocks) {
+          const details = await collectQuestaoDetails(b.block_id);
+          for (const item of details.itens) {
+            allIds.push(item.id);
+            const key = `${b.nome} — ${item.caseLabel}`;
+            const existing = casoMap.get(key) || {
+              caseLabel: item.caseLabel,
+              blockNome: b.nome,
+              errosCount: 0,
+              totalCount: 0,
+              icon: details.caseIcons[item.caseLabel] || "📁"
+            };
+            existing.totalCount++;
+            if (resultadosMap.get(item.id)?.ultimo === "erro") {
+              existing.errosCount++;
+            }
+            casoMap.set(key, existing);
+          }
+        }
+
+        const sorted = [...casoMap.values()]
+          .filter(c => c.errosCount > 0)
+          .sort((a, b) => b.errosCount - a.errosCount)
+          .slice(0, 4);
+
+        if (active) {
+          setTopCasosErros(sorted);
+          setAllQuestaoIds(allIds);
+        }
+      } catch (e) {
+        console.error("Erro ao agregar casos com erro:", e);
+      }
+    })();
+    return () => { active = false; };
+  }, [blocks, resultadosMap]);
 
   const { acertadas, erradas } = useMemo(() => {
     const a: string[] = [], e: string[] = [];
@@ -1881,7 +1984,11 @@ function PainelDesempenho({
     return { acertadas: a, erradas: e };
   }, [resultadosMap]);
 
-  const toggleSection = (key: "acertos" | "erros" | "duvidas") => {
+  const naoFeitasIds = useMemo(() => {
+    return allQuestaoIds.filter(id => !resultadosMap.has(id));
+  }, [allQuestaoIds, resultadosMap]);
+
+  const toggleSection = (key: string) => {
     setOpenSections(prev => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key); else next.add(key);
@@ -1894,54 +2001,79 @@ function PainelDesempenho({
   const duvidasArr = [...duvidasIds];
 
   const cards: {
-    key: "acertos" | "erros" | "duvidas";
+    key: string;
     label: string;
+    sublabel?: string;
     ids: string[];
-    color: "emerald" | "red" | "amber";
+    color: "blue" | "emerald" | "red" | "amber" | "purple";
     icon: ReactNode;
   }[] = [
-    { key: "acertos", label: "Acertadas", ids: acertadas, color: "emerald", icon: <Check size={13} /> },
-    { key: "erros", label: "Erradas", ids: erradas, color: "red", icon: <X size={13} /> },
-    { key: "duvidas", label: "Em dúvida", ids: duvidasArr, color: "amber", icon: <Flag size={13} /> },
+    { key: "feitas_hoje", label: "Feitas Hoje", sublabel: `${feitasHojeIds.length} hoje`, ids: feitasHojeIds, color: "blue", icon: <Clock size={13} /> },
+    { key: "acertos", label: "Acertadas", sublabel: `${acertadas.length} total`, ids: acertadas, color: "emerald", icon: <Check size={13} /> },
+    { key: "erros", label: "Erradas", sublabel: `${erradas.length} total`, ids: erradas, color: "red", icon: <X size={13} /> },
+    { key: "duvidas", label: "Em Dúvida", sublabel: `${duvidasArr.length} pendentes`, ids: duvidasArr, color: "amber", icon: <Flag size={13} /> },
+    { key: "nao_feitas", label: "Não Feitas", sublabel: `${naoFeitasIds.length} sem resposta`, ids: naoFeitasIds, color: "purple", icon: <HelpCircle size={13} /> },
   ];
 
-  const colorClasses: Record<string, { border: string; text: string; iconBg: string }> = {
-    emerald: { border: "border-emerald-500/20", text: "text-emerald-400", iconBg: "bg-emerald-500/10" },
-    red: { border: "border-red-500/20", text: "text-red-400", iconBg: "bg-red-500/10" },
-    amber: { border: "border-amber-500/20", text: "text-amber-400", iconBg: "bg-amber-500/10" },
+  const colorClasses: Record<string, { border: string; text: string; iconBg: string; bg: string }> = {
+    blue: { border: "border-blue-500/25", text: "text-blue-400", iconBg: "bg-blue-500/10", bg: "bg-blue-500/[0.02]" },
+    emerald: { border: "border-emerald-500/25", text: "text-emerald-400", iconBg: "bg-emerald-500/10", bg: "bg-emerald-500/[0.02]" },
+    red: { border: "border-red-500/25", text: "text-red-400", iconBg: "bg-red-500/10", bg: "bg-red-500/[0.02]" },
+    amber: { border: "border-amber-500/25", text: "text-amber-400", iconBg: "bg-amber-500/10", bg: "bg-amber-500/[0.02]" },
+    purple: { border: "border-purple-500/25", text: "text-purple-400", iconBg: "bg-purple-500/10", bg: "bg-purple-500/[0.02]" },
   };
 
   return (
-    <div className="flex flex-col gap-3 border border-white/[0.06] rounded-2xl bg-[#111623] p-4">
+    <div className="flex flex-col gap-4 border border-white/[0.06] rounded-2xl bg-[#111623] p-4 sm:p-5 shadow-xl">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Desempenho</p>
-        <button onClick={onRefresh} className="text-slate-600 hover:text-blue-400 transition-all">
+        <div className="flex items-center gap-2">
+          <BarChart3 size={15} className="text-indigo-400" />
+          <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest">Painel de Desempenho & Estatísticas</p>
+        </div>
+        <button onClick={onRefresh} title="Atualizar desempenho" className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/[0.03] border border-white/[0.06] text-slate-500 hover:text-indigo-400 transition-all">
           <RefreshCw size={12} />
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      {/* Grid com os 5 cartões de resumo */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
         {cards.map(card => {
           const c = colorClasses[card.color];
           const isOpen = openSections.has(card.key);
           return (
-            <div key={card.key} className={`rounded-xl border ${c.border} bg-[#0d1220] overflow-hidden`}>
+            <div key={card.key} className={`rounded-xl border ${c.border} ${c.bg} overflow-hidden transition-all hover:border-white/20`}>
               <button
                 onClick={() => toggleSection(card.key)}
-                className="w-full flex items-center justify-between px-3 py-2.5"
+                className="w-full flex items-center justify-between px-3 py-2.5 text-left"
               >
-                <span className="flex items-center gap-2 text-[11px] font-black uppercase tracking-wider text-slate-300">
-                  <span className={`w-5 h-5 rounded-md flex items-center justify-center ${c.iconBg} ${c.text}`}>{card.icon}</span>
-                  {card.label}
-                </span>
-                <span className={`text-sm font-black tabular-nums ${c.text}`}>{card.ids.length}</span>
+                <div className="flex flex-col gap-1 min-w-0">
+                  <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-300 truncate">
+                    <span className={`w-4 h-4 rounded-md flex items-center justify-center ${c.iconBg} ${c.text} shrink-0`}>{card.icon}</span>
+                    <span className="truncate">{card.label}</span>
+                  </span>
+                  <span className="text-[9px] text-slate-500 font-bold truncate">{card.sublabel}</span>
+                </div>
+                <span className={`text-base font-black tabular-nums ml-2 ${c.text}`}>{card.ids.length}</span>
               </button>
+
               {isOpen && (
-                <div className="border-t border-white/[0.06] max-h-52 overflow-y-auto custom-scrollbar px-1 py-1">
+                <div className="border-t border-white/[0.06] max-h-52 overflow-y-auto custom-scrollbar px-1.5 py-1.5 bg-[#0d1220]/90">
                   {card.ids.length === 0 ? (
-                    <p className="text-[10px] text-slate-600 italic px-2 py-2">Nenhuma questão aqui ainda.</p>
+                    <p className="text-[10px] text-slate-600 italic px-2 py-2 text-center">Nenhuma questão aqui ainda.</p>
                   ) : (
-                    card.ids.map(id => <QuestaoTitleLabel key={id} questaoId={id} blocksMap={blocksMap} />)
+                    card.ids.map(id => {
+                      const hojeData = respostasHojeMap.get(id);
+                      return (
+                        <div key={id} className="relative">
+                          <QuestaoTitleLabel questaoId={id} blocksMap={blocksMap} />
+                          {hojeData && card.key === "feitas_hoje" && (
+                            <span className="text-[9px] text-blue-400/80 font-mono pl-6 pb-1 block">
+                              🕒 {hojeData.horario?.slice(0, 5)} — {hojeData.correto === "Sim" ? "✅ Acertou" : "❌ Errou"}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               )}
@@ -1949,6 +2081,50 @@ function PainelDesempenho({
           );
         })}
       </div>
+
+      {/* Destaque: Casos com Mais Erros */}
+      {topCasosErros.length > 0 && (
+        <div className="mt-1 pt-3 border-t border-white/[0.06] flex flex-col gap-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Flame size={14} className="text-rose-400 animate-pulse" />
+              <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest">
+                Casos com Mais Erros
+              </p>
+            </div>
+            <span className="text-[10px] text-slate-500 font-bold">Atenção priorizada para revisão</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+            {topCasosErros.map((caso, idx) => {
+              const pct = Math.round((caso.errosCount / caso.totalCount) * 100);
+              return (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-2.5 rounded-xl border border-rose-500/20 bg-rose-500/[0.03] hover:bg-rose-500/[0.06] transition-all"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-6 h-6 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 font-black text-[10px] flex items-center justify-center shrink-0">
+                      #{idx + 1}
+                    </span>
+                    <span className="text-sm shrink-0">{caso.icon}</span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[11.5px] font-bold text-slate-200 truncate">{caso.caseLabel}</span>
+                      <span className="text-[9px] text-slate-500 font-medium truncate">{caso.blockNome}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end shrink-0 ml-2">
+                    <span className="text-[11px] font-black text-rose-400 tabular-nums">
+                      {caso.errosCount} {caso.errosCount === 1 ? "erro" : "erros"}
+                    </span>
+                    <span className="text-[9px] text-slate-500 tabular-nums">{pct}% erro</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1958,14 +2134,19 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   const [loadingBlocks, setLoadingBlocks] = useState(true);
   const [duvidasIds, setDuvidasIds] = useState<Set<string>>(new Set());
   const [resultadosMap, setResultadosMap] = useState<Map<string, QuestaoStats>>(new Map());
+  const [feitasHojeIds, setFeitasHojeIds] = useState<string[]>([]);
+  const [respostasHojeMap, setRespostasHojeMap] = useState<Map<string, { data: string; horario: string; correto: string }>>(new Map());
+  
   const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
   const handleAnswered = useCallback(() => setStatsRefreshTrigger(v => v + 1), []);
   const [isAdmin, setIsAdmin] = useState(false);
 
   const [showForm, setShowForm] = useState(false);
   const [formId, setFormId] = useState(""); const [formNome, setFormNome] = useState(""); const [formDesc, setFormDesc] = useState(""); const [formMateria, setFormMateria] = useState("");
+  
   const [materiaFiltro, setMateriaFiltro] = useState("Todas");
-  const [apenasComErros, setApenasComErros] = useState(false);
+  const [cadernoFiltro, setCadernoFiltro] = useState("Todos");
+  const [statusFiltro, setStatusFiltro] = useState<"todas" | "erros" | "nao_feitas" | "feitas_hoje">("todas");
   const [saving, setSaving] = useState(false); const [saveErr, setSaveErr] = useState("");
 
   const fetchBlocks = useCallback(async () => {
@@ -1993,10 +2174,13 @@ export default function NotionQuestionTab({ user }: { user: any }) {
     }
   }, [user?.id]);
 
-  // Resultados (acerto/erro mais recente por questão) — buscado uma única vez aqui
-  // e compartilhado entre o Painel de Desempenho e o resumo por caderno.
   const fetchResultados = useCallback(async () => {
-    if (!user?.id) { setResultadosMap(new Map()); return; }
+    if (!user?.id) {
+      setResultadosMap(new Map());
+      setFeitasHojeIds([]);
+      setRespostasHojeMap(new Map());
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from("notion_respostas")
@@ -2006,26 +2190,44 @@ export default function NotionQuestionTab({ user }: { user: any }) {
         .order("horario", { ascending: false });
       if (error) throw error;
 
-      // Agrega TODAS as tentativas de cada questão: total, corretas e o resultado
-      // mais recente (o primeiro que aparece, já que a busca vem ordenada desc).
+      const now = new Date();
+      const hojeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
       const stats = new Map<string, QuestaoStats>();
+      const hojeSet = new Set<string>();
+      const hojeMap = new Map<string, { data: string; horario: string; correto: string }>();
+
       for (const row of data ?? []) {
+        if (row.data === hojeStr) {
+          hojeSet.add(row.questao_id);
+          if (!hojeMap.has(row.questao_id)) {
+            hojeMap.set(row.questao_id, { data: row.data, horario: row.horario, correto: row.correto });
+          }
+        }
+
         const isCorrect = row.correto === "Sim";
         const existing = stats.get(row.questao_id);
         if (!existing) {
-          stats.set(row.questao_id, { total: 1, corretas: isCorrect ? 1 : 0, ultimo: isCorrect ? "acerto" : "erro" });
+          stats.set(row.questao_id, {
+            total: 1,
+            corretas: isCorrect ? 1 : 0,
+            ultimo: isCorrect ? "acerto" : "erro",
+            ultimaData: row.data,
+          });
         } else {
           existing.total += 1;
           if (isCorrect) existing.corretas += 1;
         }
       }
+
       setResultadosMap(stats);
+      setFeitasHojeIds(Array.from(hojeSet));
+      setRespostasHojeMap(hojeMap);
     } catch (e) {
       console.error("Erro ao buscar resultados do Notion:", e);
     }
   }, [user?.id]);
 
-  // Verifica se o e-mail do usuário logado está liberado para criar blocos
   const fetchIsAdmin = useCallback(async () => {
     if (!user?.email) { setIsAdmin(false); return; }
     try {
@@ -2057,6 +2259,8 @@ export default function NotionQuestionTab({ user }: { user: any }) {
     } else {
       setDuvidasIds(new Set());
       setResultadosMap(new Map());
+      setFeitasHojeIds([]);
+      setRespostasHojeMap(new Map());
     }
   }, [user?.id, fetchDuvidas, fetchResultados, statsRefreshTrigger]);
 
@@ -2121,7 +2325,6 @@ export default function NotionQuestionTab({ user }: { user: any }) {
     await fetchBlocks();
   };
 
-  // Lista de matérias já cadastradas (usada no autocomplete do form e no filtro da lista)
   const materiasDisponiveis = useMemo(() => {
     const set = new Set<string>();
     for (const b of blocks) {
@@ -2131,10 +2334,19 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   }, [blocks]);
 
   const blocksFiltrados = useMemo(() => {
-    if (materiaFiltro === "Todas") return blocks;
-    if (materiaFiltro === "Sem matéria") return blocks.filter(b => !b.materia?.trim());
-    return blocks.filter(b => b.materia?.trim() === materiaFiltro);
-  }, [blocks, materiaFiltro]);
+    let result = blocks;
+    if (materiaFiltro !== "Todas") {
+      if (materiaFiltro === "Sem matéria") {
+        result = result.filter(b => !b.materia?.trim());
+      } else {
+        result = result.filter(b => b.materia?.trim() === materiaFiltro);
+      }
+    }
+    if (cadernoFiltro !== "Todos") {
+      result = result.filter(b => b.id === cadernoFiltro || b.block_id === cadernoFiltro);
+    }
+    return result;
+  }, [blocks, materiaFiltro, cadernoFiltro]);
 
   return (
     <div className="flex flex-col gap-6 bg-[#0b0f19]/80 rounded-[2rem] border border-white/[0.04] p-5 sm:p-7">
@@ -2160,7 +2372,15 @@ export default function NotionQuestionTab({ user }: { user: any }) {
         </div>
       </div>
 
-      <PainelDesempenho user={user} duvidasIds={duvidasIds} resultadosMap={resultadosMap} onRefresh={fetchResultados} blocks={blocks} />
+      <PainelDesempenho 
+        user={user} 
+        duvidasIds={duvidasIds} 
+        resultadosMap={resultadosMap} 
+        feitasHojeIds={feitasHojeIds}
+        respostasHojeMap={respostasHojeMap}
+        onRefresh={fetchResultados} 
+        blocks={blocks} 
+      />
 
       {showForm && (
         <div className="border border-indigo-500/20 rounded-2xl bg-[#111623] p-5 flex flex-col gap-4">
@@ -2206,34 +2426,76 @@ export default function NotionQuestionTab({ user }: { user: any }) {
       )}
 
       {!loadingBlocks && blocks.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap justify-between">
-          <div className="flex items-center gap-2 flex-wrap">
-            {["Todas", ...materiasDisponiveis, "Sem matéria"].map(m => (
-              <button
-                key={m}
-                onClick={() => setMateriaFiltro(m)}
-                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all ${
-                  materiaFiltro === m
-                    ? "bg-indigo-600 border-indigo-500 text-white"
-                    : "bg-[#111623] border-white/[0.07] text-slate-500 hover:text-slate-300 hover:border-white/[0.15]"
-                }`}
+        <div className="flex items-center gap-3 flex-wrap justify-between bg-[#111623] p-3 rounded-2xl border border-white/[0.06]">
+          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+            {/* Filtro por Caderno */}
+            <div className="flex items-center gap-1.5 bg-[#0d1220] border border-white/[0.08] px-2.5 py-1 rounded-xl">
+              <BookMarked size={12} className="text-indigo-400 shrink-0" />
+              <select
+                value={cadernoFiltro}
+                onChange={e => setCadernoFiltro(e.target.value)}
+                className="bg-transparent text-[11px] font-bold text-slate-300 focus:outline-none cursor-pointer"
               >
-                {m}
-              </button>
-            ))}
+                <option value="Todos" className="bg-[#0d1220]">Todos os Cadernos ({blocks.length})</option>
+                {blocks.map(b => (
+                  <option key={b.id} value={b.id} className="bg-[#0d1220]">{b.nome}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filtro por Matéria */}
+            <div className="flex items-center gap-1 flex-wrap">
+              {["Todas", ...materiasDisponiveis, "Sem matéria"].map(m => (
+                <button
+                  key={m}
+                  onClick={() => setMateriaFiltro(m)}
+                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all ${
+                    materiaFiltro === m
+                      ? "bg-indigo-600 border-indigo-500 text-white"
+                      : "bg-[#0d1220] border-white/[0.07] text-slate-500 hover:text-slate-300 hover:border-white/[0.15]"
+                  }`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <button
-            onClick={() => setApenasComErros(prev => !prev)}
-            className={`px-3 py-1.5 rounded-xl text-[11px] font-medium tracking-wide border transition-all inline-flex items-center gap-2 ${
-              apenasComErros
-                ? "bg-rose-950/40 border-rose-500/30 text-rose-300 shadow-sm"
-                : "bg-[#111623] border-white/[0.07] text-slate-400 hover:text-slate-200 hover:border-white/[0.15]"
-            }`}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${apenasComErros ? "bg-rose-400" : "bg-slate-500"}`} />
-            Apenas com Erros
-          </button>
+          {/* Filtro por Status da Questão */}
+          <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] shrink-0">
+            <button
+              onClick={() => setStatusFiltro("todas")}
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                statusFiltro === "todas" ? "bg-indigo-600 text-white" : "text-slate-500 hover:text-slate-300"
+              }`}
+            >
+              Todas
+            </button>
+            <button
+              onClick={() => setStatusFiltro("erros")}
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                statusFiltro === "erros" ? "bg-rose-600 text-white" : "text-rose-400/70 hover:text-rose-300"
+              }`}
+            >
+              🔴 Erros
+            </button>
+            <button
+              onClick={() => setStatusFiltro("nao_feitas")}
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                statusFiltro === "nao_feitas" ? "bg-purple-600 text-white" : "text-purple-400/70 hover:text-purple-300"
+              }`}
+            >
+              ⭕ Não Feitas
+            </button>
+            <button
+              onClick={() => setStatusFiltro("feitas_hoje")}
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                statusFiltro === "feitas_hoje" ? "bg-blue-600 text-white" : "text-blue-400/70 hover:text-blue-300"
+              }`}
+            >
+              ⚡ Feitas Hoje
+            </button>
+          </div>
         </div>
       )}
 
@@ -2247,8 +2509,8 @@ export default function NotionQuestionTab({ user }: { user: any }) {
         </div>
       ) : blocksFiltrados.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-2 text-center bg-[#111623] border border-white/[0.06] rounded-2xl">
-          <p className="text-[12px] font-black text-slate-600 uppercase tracking-widest">Nenhum caderno em "{materiaFiltro}"</p>
-          <button onClick={() => setMateriaFiltro("Todas")} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold">Limpar filtro</button>
+          <p className="text-[12px] font-black text-slate-600 uppercase tracking-widest">Nenhum caderno encontrado</p>
+          <button onClick={() => { setMateriaFiltro("Todas"); setCadernoFiltro("Todos"); setStatusFiltro("todas"); }} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold">Limpar filtros</button>
         </div>
       ) : (
         <div className="flex flex-col bg-[#111623] border border-white/[0.06] rounded-2xl p-2 divide-y divide-white/[0.05]">
@@ -2262,7 +2524,8 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               onToggleDuvida={handleToggleDuvida}
               onAnswered={handleAnswered}
               resultadosMap={resultadosMap}
-              apenasComErros={apenasComErros}
+              statusFiltro={statusFiltro}
+              feitasHojeIds={feitasHojeIds}
               isAdmin={isAdmin}
             />
           ))}
