@@ -1904,26 +1904,16 @@ function PainelDesempenho({
   duvidasIds,
   resultadosMap,
   feitasHojeIds,
-  respostasHojeMap,
   onRefresh,
-  blocks,
 }: {
   user: any;
   duvidasIds: Set<string>;
   resultadosMap: Map<string, QuestaoStats>;
   feitasHojeIds: string[];
-  respostasHojeMap: Map<string, { data: string; horario: string; correto: string }>;
+  respostasHojeMap?: Map<string, { data: string; horario: string; correto: string }>;
   onRefresh: () => void;
-  blocks: NotionBlockRow[];
+  blocks?: NotionBlockRow[];
 }) {
-  const [openSections, setOpenSections] = useState<Set<string>>(new Set());
-
-  const blocksMap = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const b of blocks) map.set(b.block_id.replace(/-/g, ""), b.nome);
-    return map;
-  }, [blocks]);
-
   const { acertadas, erradas } = useMemo(() => {
     const a: string[] = [], e: string[] = [];
     for (const [id, stats] of resultadosMap.entries()) {
@@ -1932,14 +1922,6 @@ function PainelDesempenho({
     return { acertadas: a, erradas: e };
   }, [resultadosMap]);
 
-  const toggleSection = (key: string) => {
-    setOpenSections(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
-      return next;
-    });
-  };
-
   if (!user) return null;
 
   const duvidasArr = [...duvidasIds];
@@ -1947,15 +1929,15 @@ function PainelDesempenho({
   const cards: {
     key: string;
     label: string;
-    sublabel?: string;
-    ids: string[];
+    sublabel: string;
+    count: number;
     color: "blue" | "emerald" | "red" | "amber";
     icon: ReactNode;
   }[] = [
-    { key: "feitas_hoje", label: "Feitas Hoje", sublabel: `${feitasHojeIds.length} hoje`, ids: feitasHojeIds, color: "blue", icon: <Clock size={13} /> },
-    { key: "acertos", label: "Acertadas", sublabel: `${acertadas.length} acertos`, ids: acertadas, color: "emerald", icon: <Check size={13} /> },
-    { key: "erros", label: "Erradas", sublabel: `${erradas.length} com erro`, ids: erradas, color: "red", icon: <X size={13} /> },
-    { key: "duvidas", label: "Em Dúvida", sublabel: `${duvidasArr.length} marcadas`, ids: duvidasArr, color: "amber", icon: <Flag size={13} /> },
+    { key: "feitas_hoje", label: "Feitas Hoje", sublabel: `${feitasHojeIds.length} hoje`, count: feitasHojeIds.length, color: "blue", icon: <Clock size={13} /> },
+    { key: "acertos", label: "Acertadas", sublabel: `${acertadas.length} acertos`, count: acertadas.length, color: "emerald", icon: <Check size={13} /> },
+    { key: "erros", label: "Erradas", sublabel: `${erradas.length} com erro`, count: erradas.length, color: "red", icon: <X size={13} /> },
+    { key: "duvidas", label: "Em Dúvida", sublabel: `${duvidasArr.length} marcadas`, count: duvidasArr.length, color: "amber", icon: <Flag size={13} /> },
   ];
 
   const colorClasses: Record<string, { border: string; text: string; iconBg: string; bg: string }> = {
@@ -1977,48 +1959,20 @@ function PainelDesempenho({
         </button>
       </div>
 
-      {/* Grid de estatísticas rápidas */}
+      {/* Grid de estatísticas estáticas limpas */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         {cards.map(card => {
           const c = colorClasses[card.color];
-          const isOpen = openSections.has(card.key);
           return (
-            <div key={card.key} className={`rounded-xl border ${c.border} ${c.bg} overflow-hidden transition-all hover:border-white/20`}>
-              <button
-                onClick={() => toggleSection(card.key)}
-                className="w-full flex items-center justify-between px-3 py-2.5 text-left"
-              >
-                <div className="flex flex-col gap-1 min-w-0">
-                  <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-300 truncate">
-                    <span className={`w-4 h-4 rounded-md flex items-center justify-center ${c.iconBg} ${c.text} shrink-0`}>{card.icon}</span>
-                    <span className="truncate">{card.label}</span>
-                  </span>
-                  <span className="text-[9px] text-slate-500 font-bold truncate">{card.sublabel}</span>
-                </div>
-                <span className={`text-base font-black tabular-nums ml-2 ${c.text}`}>{card.ids.length}</span>
-              </button>
-
-              {isOpen && (
-                <div className="border-t border-white/[0.06] max-h-52 overflow-y-auto custom-scrollbar px-1.5 py-1.5 bg-[#0d1220]/90">
-                  {card.ids.length === 0 ? (
-                    <p className="text-[10px] text-slate-600 italic px-2 py-2 text-center">Nenhuma questão aqui ainda.</p>
-                  ) : (
-                    card.ids.map(id => {
-                      const hojeData = respostasHojeMap.get(id);
-                      return (
-                        <div key={id} className="relative">
-                          <QuestaoTitleLabel questaoId={id} blocksMap={blocksMap} />
-                          {hojeData && card.key === "feitas_hoje" && (
-                            <span className="text-[9px] text-blue-400/80 font-mono pl-6 pb-1 block">
-                              🕒 {hojeData.horario?.slice(0, 5)} — {hojeData.correto === "Sim" ? "✅ Acertou" : "❌ Errou"}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              )}
+            <div key={card.key} className={`rounded-xl border ${c.border} ${c.bg} px-3.5 py-3 flex items-center justify-between transition-all`}>
+              <div className="flex flex-col gap-1 min-w-0">
+                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-300 truncate">
+                  <span className={`w-4 h-4 rounded-md flex items-center justify-center ${c.iconBg} ${c.text} shrink-0`}>{card.icon}</span>
+                  <span className="truncate">{card.label}</span>
+                </span>
+                <span className="text-[9px] text-slate-500 font-bold truncate">{card.sublabel}</span>
+              </div>
+              <span className={`text-lg font-black tabular-nums ml-2 ${c.text}`}>{card.count}</span>
             </div>
           );
         })}
