@@ -902,36 +902,36 @@ function QuestaoRow({
 
               <button
                 onClick={() => setShowResp(v => !v)}
-                className="flex items-center gap-2 self-start px-3 py-1.5 rounded-full border border-indigo-500/25 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 text-[11px] font-bold transition-all shadow-sm active:scale-95"
+                className="flex items-center gap-2 self-start px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.04] text-slate-300 hover:text-white hover:bg-white/[0.08] text-[11px] font-medium transition-all shadow-sm active:scale-95"
               >
-                {showResp ? <EyeOff size={12} /> : <Eye size={12} />}
-                {showResp ? "Ocultar Caderno" : "📖 Ver Caderno de Resposta 🌸"}
+                {showResp ? <EyeOff size={11} /> : <Eye size={11} />}
+                {showResp ? "Ocultar Resposta" : "✨ Ver Resposta"}
               </button>
 
               {user && (
                 <button
                   onClick={toggleHistorico}
-                  className="flex items-center gap-2 self-start px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-indigo-300 hover:border-indigo-500/30 text-[10px] font-bold transition-all"
+                  className="flex items-center gap-2 self-start px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] text-[10px] font-medium transition-all"
                 >
                   <History size={10} />
                   {showHistorico ? "Ocultar Histórico" : "Ver Histórico de Tentativas"}
                   {historico && historico.length > 0 && (
-                    <span className="text-[9px] text-indigo-400 font-bold ml-0.5">({historico.length})</span>
+                    <span className="text-[9px] text-slate-400 font-bold ml-0.5">({historico.length})</span>
                   )}
                 </button>
               )}
 
               {showHistorico && (
-                <div className="border border-indigo-500/20 rounded-2xl p-3.5 bg-[#0d1424] flex flex-col gap-2">
+                <div className="border border-white/[0.08] rounded-2xl p-3.5 bg-[#0d1424] flex flex-col gap-2">
                   {loadingHistorico ? (
                     <div className="flex items-center gap-2 text-[11px] text-slate-500 italic py-1">
                       <Loader2 size={11} className="animate-spin" /> Carregando histórico...
                     </div>
                   ) : !historico || historico.length === 0 ? (
-                    <p className="text-[11px] text-slate-600 italic">Nenhuma tentativa registrada ainda.</p>
+                    <p className="text-[11px] text-slate-500 italic">Nenhuma tentativa registrada ainda.</p>
                   ) : (
                     <>
-                      <p className="text-[10px] text-indigo-300 font-black uppercase tracking-wider">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                         {historico.length} tentativa{historico.length > 1 ? "s" : ""} registrada{historico.length > 1 ? "s" : ""}
                       </p>
                       <div className="flex flex-col gap-1 max-h-40 overflow-y-auto custom-scrollbar pr-1">
@@ -960,103 +960,78 @@ function QuestaoRow({
               )}
 
               {showResp && (
-                <div className="relative flex rounded-2xl overflow-hidden border border-indigo-500/20 shadow-2xl my-1 bg-[#090e1a]">
-                  {/* Mola de Caderno / Espiral Lateral */}
-                  <div className="w-7 sm:w-8 bg-[#070b15] border-r border-[#19243a] flex flex-col justify-around items-center py-4 shrink-0 select-none z-10 shadow-inner">
-                    {[1, 2, 3, 4, 5, 6, 7].map(ringIndex => (
-                      <div key={ringIndex} className="relative flex items-center justify-center w-full my-1">
-                        {/* Furo no papel */}
-                        <div className="w-2.5 h-2.5 rounded-full bg-[#04060d] shadow-inner border border-slate-800/80" />
-                        {/* Anel metálico da mola do caderno */}
-                        <div className="absolute -left-1 w-6 h-2 rounded-full border border-slate-300/70 bg-gradient-to-r from-slate-400 via-slate-100 to-slate-500 shadow-md transform -rotate-12" />
-                      </div>
-                    ))}
+                <div className="border border-white/[0.08] rounded-2xl p-4 bg-[#0d1424] flex flex-col gap-3 my-1">
+                  <div className="flex items-center justify-between pb-2 border-b border-white/[0.06] flex-wrap gap-2">
+                    <span className="text-xs font-semibold text-slate-200">✨ Resposta e Gabarito</span>
+                    <span className="text-[10px] text-slate-400 bg-white/[0.04] border border-white/[0.06] px-2.5 py-0.5 rounded-full">
+                      Questão {questao.numero || "1"}
+                    </span>
                   </div>
 
-                  {/* Folha do Caderno com Linhas Pautadas */}
-                  <div className="flex-1 bg-[#0d1424] p-4 sm:p-5 flex flex-col gap-3 relative min-w-0" style={{
-                    backgroundImage: "repeating-linear-gradient(transparent, transparent 27px, rgba(255, 255, 255, 0.035) 28px)"
-                  }}>
-                    {/* Margem Vermelha do Caderno */}
-                    <div className="absolute top-0 bottom-0 left-4 w-[2px] bg-rose-500/30 pointer-events-none" />
-
-                    {/* Cabeçalho fofo do Caderno */}
-                    <div className="flex items-center justify-between pb-2 border-b border-indigo-500/20 pl-4 flex-wrap gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">📝</span>
-                        <span className="text-xs font-bold text-indigo-300 tracking-wide">Caderno de Resposta & Gabarito 🌸</span>
+                  <div className="flex flex-col gap-3">
+                    {respostaImageUrls.map((url, i) => (
+                      <div key={i} className="relative group max-w-2xl">
+                        <img
+                          src={url}
+                          alt={`Resposta img${i + 1}`}
+                          onClick={() => setZoomedImage(url)}
+                          className="w-full rounded-xl border border-white/[0.08] object-contain bg-white cursor-zoom-in hover:brightness-95 transition-all shadow-md"
+                        />
+                        <button
+                          onClick={() => setZoomedImage(url)}
+                          className="absolute top-2 right-2 opacity-90 group-hover:opacity-100 transition-all px-2.5 py-1 rounded-lg bg-black/75 hover:bg-black/95 text-white text-[10px] font-bold flex items-center gap-1.5 backdrop-blur-md border border-white/20 shadow-xl active:scale-95"
+                        >
+                          <Maximize2 size={12} className="text-emerald-400" />
+                          Expandir 100%
+                        </button>
                       </div>
-                      <span className="text-[10px] font-bold text-slate-400 bg-white/[0.04] border border-white/[0.08] px-2.5 py-0.5 rounded-full">
-                        Questão {questao.numero || "1"}
-                      </span>
+                    ))}
+                    {respostaText ? (
+                      <p className="text-[13px] sm:text-[14px] font-normal text-slate-300 whitespace-pre-wrap leading-relaxed">
+                        {respostaText}
+                      </p>
+                    ) : respostaImageUrls.length === 0 ? (
+                      <p className="text-[11px] text-slate-500 italic">Sem resposta escrita registrada no Notion.</p>
+                    ) : null}
+                  </div>
+
+                  {user && (
+                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/[0.06] flex-wrap">
+                      <span className="text-[10px] text-slate-400 font-medium mr-auto">Registrar tentativa:</span>
+                      
+                      <button
+                        onClick={handleToggleDuvidaLocal}
+                        disabled={recordingDuvida}
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium transition-all disabled:opacity-50 active:scale-95 ${
+                          isDuvida 
+                            ? 'bg-amber-500/20 border border-amber-500/40 text-amber-300' 
+                            : 'bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] text-slate-400'
+                        }`}
+                      >
+                        <Flag size={11} className={isDuvida ? "fill-amber-400 text-amber-400" : ""} /> Em dúvida
+                      </button>
+
+                      <button
+                        onClick={() => handleRecordAnswer(true)}
+                        disabled={recording}
+                        className="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[10px] font-medium transition-all disabled:opacity-50 active:scale-95"
+                      >
+                        <Check size={11} /> Acertei
+                      </button>
+                      <button
+                        onClick={() => handleRecordAnswer(false)}
+                        disabled={recording}
+                        className="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/25 text-rose-400 text-[10px] font-medium transition-all disabled:opacity-50 active:scale-95"
+                      >
+                        <X size={11} /> Errei
+                      </button>
+                      {recorded && (
+                        <span className={`text-[10px] font-medium ml-1 animate-pulse ${recorded === 'acerto' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {recorded === 'acerto' ? 'Salvo! 🎉' : 'Salvo! ❌'}
+                        </span>
+                      )}
                     </div>
-
-                    {/* Imagens e Texto da Resposta */}
-                    <div className="pl-4 flex flex-col gap-3">
-                      {respostaImageUrls.map((url, i) => (
-                        <div key={i} className="relative group max-w-2xl">
-                          <img
-                            src={url}
-                            alt={`Resposta img${i + 1}`}
-                            onClick={() => setZoomedImage(url)}
-                            className="w-full rounded-xl border border-white/[0.08] object-contain bg-white cursor-zoom-in hover:brightness-95 transition-all shadow-md"
-                          />
-                          <button
-                            onClick={() => setZoomedImage(url)}
-                            className="absolute top-2 right-2 opacity-90 group-hover:opacity-100 transition-all px-2.5 py-1 rounded-lg bg-black/75 hover:bg-black/95 text-white text-[10px] font-bold flex items-center gap-1.5 backdrop-blur-md border border-white/20 shadow-xl active:scale-95"
-                          >
-                            <Maximize2 size={12} className="text-emerald-400" />
-                            Expandir 100%
-                          </button>
-                        </div>
-                      ))}
-                      {respostaText ? (
-                        <p className="text-[13px] sm:text-[14px] font-normal text-slate-200 whitespace-pre-wrap leading-relaxed">
-                          {respostaText}
-                        </p>
-                      ) : respostaImageUrls.length === 0 ? (
-                        <p className="text-[11px] text-slate-500 italic">Sem resposta escrita registrada no Notion.</p>
-                      ) : null}
-                    </div>
-
-                    {/* Botões de Ação na Folha do Caderno */}
-                    {user && (
-                      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-indigo-500/15 pl-4 flex-wrap">
-                        <span className="text-[10px] text-slate-400 font-bold mr-auto">Registrar tentativa:</span>
-                        
-                        <button
-                          onClick={handleToggleDuvidaLocal}
-                          disabled={recordingDuvida}
-                          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold transition-all disabled:opacity-50 active:scale-95 ${
-                            isDuvida 
-                              ? 'bg-amber-500/20 border border-amber-500/50 text-amber-300' 
-                              : 'bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] text-slate-300'
-                          }`}
-                        >
-                          <Flag size={11} className={isDuvida ? "fill-amber-400 text-amber-400" : ""} /> Em dúvida
-                        </button>
-
-                        <button
-                          onClick={() => handleRecordAnswer(true)}
-                          disabled={recording}
-                          className="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold transition-all disabled:opacity-50 active:scale-95"
-                        >
-                          <Check size={11} /> 🌱 Acertei
-                        </button>
-                        <button
-                          onClick={() => handleRecordAnswer(false)}
-                          disabled={recording}
-                          className="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-rose-500/20 hover:bg-rose-500/35 border border-rose-500/30 text-rose-300 text-[10px] font-bold transition-all disabled:opacity-50 active:scale-95"
-                        >
-                          <X size={11} /> 🍓 Errei
-                        </button>
-                        {recorded && (
-                          <span className={`text-[10px] font-bold ml-1 animate-pulse ${recorded === 'acerto' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                            {recorded === 'acerto' ? 'Salvo! 🎉' : 'Salvo! ❌'}
-                          </span>
-                        )}
-                      </div>
-                    )}
+                  )}
 
                     {/* Admin edit panel */}
                     {isAdmin && (
@@ -1140,8 +1115,7 @@ function QuestaoRow({
                     </div>
                   )}
                 </div>
-              </div>
-            )}
+              )}
             </>
           )}
         </div>
