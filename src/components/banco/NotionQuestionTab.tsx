@@ -1917,64 +1917,12 @@ function PainelDesempenho({
   blocks: NotionBlockRow[];
 }) {
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
-  const [topCasosErros, setTopCasosErros] = useState<{
-    caseLabel: string;
-    blockNome: string;
-    errosCount: number;
-    totalCount: number;
-    icon: string;
-  }[]>([]);
-  const [allQuestaoIds, setAllQuestaoIds] = useState<string[]>([]);
 
   const blocksMap = useMemo(() => {
     const map = new Map<string, string>();
     for (const b of blocks) map.set(b.block_id.replace(/-/g, ""), b.nome);
     return map;
   }, [blocks]);
-
-  // Coleta os casos com mais erros e a lista total de questões conhecidas
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const casoMap = new Map<string, { caseLabel: string; blockNome: string; errosCount: number; totalCount: number; icon: string }>();
-        const allIds: string[] = [];
-
-        for (const b of blocks) {
-          const details = await collectQuestaoDetails(b.block_id);
-          for (const item of details.itens) {
-            allIds.push(item.id);
-            const key = `${b.nome} — ${item.caseLabel}`;
-            const existing = casoMap.get(key) || {
-              caseLabel: item.caseLabel,
-              blockNome: b.nome,
-              errosCount: 0,
-              totalCount: 0,
-              icon: details.caseIcons[item.caseLabel] || "📁"
-            };
-            existing.totalCount++;
-            if (resultadosMap.get(item.id)?.ultimo === "erro") {
-              existing.errosCount++;
-            }
-            casoMap.set(key, existing);
-          }
-        }
-
-        const sorted = [...casoMap.values()]
-          .filter(c => c.errosCount > 0)
-          .sort((a, b) => b.errosCount - a.errosCount)
-          .slice(0, 4);
-
-        if (active) {
-          setTopCasosErros(sorted);
-          setAllQuestaoIds(allIds);
-        }
-      } catch (e) {
-        console.error("Erro ao agregar casos com erro:", e);
-      }
-    })();
-    return () => { active = false; };
-  }, [blocks, resultadosMap]);
 
   const { acertadas, erradas } = useMemo(() => {
     const a: string[] = [], e: string[] = [];
@@ -1983,10 +1931,6 @@ function PainelDesempenho({
     }
     return { acertadas: a, erradas: e };
   }, [resultadosMap]);
-
-  const naoFeitasIds = useMemo(() => {
-    return allQuestaoIds.filter(id => !resultadosMap.has(id));
-  }, [allQuestaoIds, resultadosMap]);
 
   const toggleSection = (key: string) => {
     setOpenSections(prev => {
@@ -2005,14 +1949,13 @@ function PainelDesempenho({
     label: string;
     sublabel?: string;
     ids: string[];
-    color: "blue" | "emerald" | "red" | "amber" | "purple";
+    color: "blue" | "emerald" | "red" | "amber";
     icon: ReactNode;
   }[] = [
     { key: "feitas_hoje", label: "Feitas Hoje", sublabel: `${feitasHojeIds.length} hoje`, ids: feitasHojeIds, color: "blue", icon: <Clock size={13} /> },
-    { key: "acertos", label: "Acertadas", sublabel: `${acertadas.length} total`, ids: acertadas, color: "emerald", icon: <Check size={13} /> },
-    { key: "erros", label: "Erradas", sublabel: `${erradas.length} total`, ids: erradas, color: "red", icon: <X size={13} /> },
-    { key: "duvidas", label: "Em Dúvida", sublabel: `${duvidasArr.length} pendentes`, ids: duvidasArr, color: "amber", icon: <Flag size={13} /> },
-    { key: "nao_feitas", label: "Não Feitas", sublabel: `${naoFeitasIds.length} sem resposta`, ids: naoFeitasIds, color: "purple", icon: <HelpCircle size={13} /> },
+    { key: "acertos", label: "Acertadas", sublabel: `${acertadas.length} acertos`, ids: acertadas, color: "emerald", icon: <Check size={13} /> },
+    { key: "erros", label: "Erradas", sublabel: `${erradas.length} com erro`, ids: erradas, color: "red", icon: <X size={13} /> },
+    { key: "duvidas", label: "Em Dúvida", sublabel: `${duvidasArr.length} marcadas`, ids: duvidasArr, color: "amber", icon: <Flag size={13} /> },
   ];
 
   const colorClasses: Record<string, { border: string; text: string; iconBg: string; bg: string }> = {
@@ -2020,23 +1963,22 @@ function PainelDesempenho({
     emerald: { border: "border-emerald-500/25", text: "text-emerald-400", iconBg: "bg-emerald-500/10", bg: "bg-emerald-500/[0.02]" },
     red: { border: "border-red-500/25", text: "text-red-400", iconBg: "bg-red-500/10", bg: "bg-red-500/[0.02]" },
     amber: { border: "border-amber-500/25", text: "text-amber-400", iconBg: "bg-amber-500/10", bg: "bg-amber-500/[0.02]" },
-    purple: { border: "border-purple-500/25", text: "text-purple-400", iconBg: "bg-purple-500/10", bg: "bg-purple-500/[0.02]" },
   };
 
   return (
-    <div className="flex flex-col gap-4 border border-white/[0.06] rounded-2xl bg-[#111623] p-4 sm:p-5 shadow-xl">
+    <div className="flex flex-col gap-3.5 border border-white/[0.06] rounded-2xl bg-[#111623] p-4 sm:p-5 shadow-xl">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <BarChart3 size={15} className="text-indigo-400" />
-          <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest">Painel de Desempenho & Estatísticas</p>
+          <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest">Painel de Desempenho</p>
         </div>
-        <button onClick={onRefresh} title="Atualizar desempenho" className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/[0.03] border border-white/[0.06] text-slate-500 hover:text-indigo-400 transition-all">
+        <button onClick={onRefresh} title="Atualizar estatísticas" className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/[0.03] border border-white/[0.06] text-slate-500 hover:text-indigo-400 transition-all">
           <RefreshCw size={12} />
         </button>
       </div>
 
-      {/* Grid com os 5 cartões de resumo */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+      {/* Grid de estatísticas rápidas */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         {cards.map(card => {
           const c = colorClasses[card.color];
           const isOpen = openSections.has(card.key);
@@ -2081,50 +2023,6 @@ function PainelDesempenho({
           );
         })}
       </div>
-
-      {/* Destaque: Casos com Mais Erros */}
-      {topCasosErros.length > 0 && (
-        <div className="mt-1 pt-3 border-t border-white/[0.06] flex flex-col gap-2.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Flame size={14} className="text-rose-400 animate-pulse" />
-              <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest">
-                Casos com Mais Erros
-              </p>
-            </div>
-            <span className="text-[10px] text-slate-500 font-bold">Atenção priorizada para revisão</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-            {topCasosErros.map((caso, idx) => {
-              const pct = Math.round((caso.errosCount / caso.totalCount) * 100);
-              return (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-2.5 rounded-xl border border-rose-500/20 bg-rose-500/[0.03] hover:bg-rose-500/[0.06] transition-all"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="w-6 h-6 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 font-black text-[10px] flex items-center justify-center shrink-0">
-                      #{idx + 1}
-                    </span>
-                    <span className="text-sm shrink-0">{caso.icon}</span>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-[11.5px] font-bold text-slate-200 truncate">{caso.caseLabel}</span>
-                      <span className="text-[9px] text-slate-500 font-medium truncate">{caso.blockNome}</span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end shrink-0 ml-2">
-                    <span className="text-[11px] font-black text-rose-400 tabular-nums">
-                      {caso.errosCount} {caso.errosCount === 1 ? "erro" : "erros"}
-                    </span>
-                    <span className="text-[9px] text-slate-500 tabular-nums">{pct}% erro</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
