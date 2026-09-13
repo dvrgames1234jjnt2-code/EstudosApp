@@ -6,7 +6,8 @@ import {
   Plus, Trash2, ChevronDown, ChevronRight, Loader2,
   BookMarked, RefreshCw, X, Check, Play, Eye, EyeOff,
   Triangle, Flag, History, LayoutGrid, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw,
-  Clock, HelpCircle, Filter, Flame, Calendar, BarChart3, Target, AlertTriangle
+  Clock, HelpCircle, Filter, Flame, Calendar, BarChart3, Target, AlertTriangle,
+  GripVertical, ArrowUp, ArrowDown, MoreVertical
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
@@ -33,7 +34,7 @@ const CATEGORY_ORDER: Record<CategoryKey, number> = {
 };
 
 interface NotionBlockRow {
-  id: string; block_id: string; nome: string; descricao?: string; materia?: string; created_at: string;
+  id: string; block_id: string; nome: string; descricao?: string; materia?: string; created_at: string; ordem?: number;
 }
 
 interface RichText {
@@ -489,6 +490,11 @@ function QuestaoRow({
   feitasHojeIds = [],
   startOpen = false,
   isAdmin = false,
+  onMoveUp,
+  onMoveDown,
+  onDropQuestao,
+  isFirst = false,
+  isLast = false,
 }: { 
   questao: Questao; 
   user: any;
@@ -501,6 +507,11 @@ function QuestaoRow({
   feitasHojeIds?: string[];
   startOpen?: boolean;
   isAdmin?: boolean;
+  onMoveUp?: (id: string) => void;
+  onMoveDown?: (id: string) => void;
+  onDropQuestao?: (draggedId: string, targetId: string) => void;
+  isFirst?: boolean;
+  isLast?: boolean;
 }) {
   const [open, setOpen] = useState(startOpen);
   const [showResp, setShowResp] = useState(false);
@@ -517,6 +528,7 @@ function QuestaoRow({
 
   const [showHistorico, setShowHistorico] = useState(false);
   const [historico, setHistorico] = useState<{ data: string; horario: string; correto: string }[] | null>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
 
   // Admin edit panel states
@@ -811,10 +823,47 @@ function QuestaoRow({
   const showHighlightStyle = (effectiveStatus === "erros" && isErro) || (effectiveStatus === "feitas_hoje" && isFeitaHoje);
 
   return (
-    <div className="flex flex-col py-1">
-      <div className={`flex items-center gap-3 py-1.5 px-2.5 transition-all rounded-lg ${
+    <div
+      draggable={isAdmin}
+      onDragStart={(e) => {
+        if (!isAdmin) return;
+        e.dataTransfer.setData("text/plain", questao.id);
+        e.dataTransfer.effectAllowed = "move";
+      }}
+      onDragOver={(e) => {
+        if (isAdmin) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+          setIsDraggingOver(true);
+        }
+      }}
+      onDragLeave={() => setIsDraggingOver(false)}
+      onDrop={(e) => {
+        if (isAdmin) {
+          e.preventDefault();
+          setIsDraggingOver(false);
+          const draggedId = e.dataTransfer.getData("text/plain");
+          if (draggedId && draggedId !== questao.id && onDropQuestao) {
+            onDropQuestao(draggedId, questao.id);
+          }
+        }
+      }}
+      className={`flex flex-col py-1 transition-all rounded-lg ${
+        isDraggingOver ? "ring-2 ring-indigo-500/50 bg-indigo-500/10" : ""
+      }`}
+    >
+      <div className={`flex items-center gap-2.5 sm:gap-3 py-1.5 px-2.5 transition-all rounded-lg group ${
         showHighlightStyle ? "bg-rose-500/[0.03] border border-rose-500/15" : "hover:bg-white/[0.03]"
       }`}>
+        {isAdmin && (
+          <span 
+            className="cursor-grab active:cursor-grabbing p-0.5 text-slate-600 hover:text-indigo-400 transition-colors shrink-0 select-none" 
+            title="Arrastar para reordenar questão"
+          >
+            <GripVertical size={13} />
+          </span>
+        )}
+
         <button
           onClick={() => { setOpen(v => !v); setShowResp(false); }}
           className="text-slate-500 hover:text-slate-300 transition-all w-4 h-4 flex items-center justify-center shrink-0"
@@ -855,14 +904,35 @@ function QuestaoRow({
           <Flag size={11} className="fill-red-500 text-red-500 shrink-0 ml-1" />
         )}
 
+        {isAdmin && (
+          <div className="flex items-center gap-0.5 opacity-30 group-hover:opacity-100 transition-opacity ml-auto mr-1">
+            <button
+              onClick={(e) => { e.stopPropagation(); onMoveUp?.(questao.id); }}
+              disabled={isFirst}
+              title="Mover questão para cima"
+              className="w-5 h-5 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent transition-all"
+            >
+              <ArrowUp size={10} />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onMoveDown?.(questao.id); }}
+              disabled={isLast}
+              title="Mover questão para baixo"
+              className="w-5 h-5 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent transition-all"
+            >
+              <ArrowDown size={10} />
+            </button>
+          </div>
+        )}
+
         {isErro && (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-rose-300 bg-rose-950/30 border border-rose-500/20 shrink-0 ml-auto shadow-sm">
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-rose-300 bg-rose-950/30 border border-rose-500/20 shrink-0 shadow-sm ${!isAdmin ? "ml-auto" : ""}`}>
             <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
             Errou
           </span>
         )}
         {isAcerto && (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-emerald-300 bg-emerald-950/30 border border-emerald-500/20 shrink-0 ml-auto shadow-sm">
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-emerald-300 bg-emerald-950/30 border border-emerald-500/20 shrink-0 shadow-sm ${!isAdmin ? "ml-auto" : ""}`}>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
             Acertou
           </span>
@@ -1137,6 +1207,11 @@ function CasoCard({
   statusFiltro = "todas",
   feitasHojeIds = [],
   isAdmin = false,
+  onMoveUp,
+  onMoveDown,
+  onDropCaso,
+  isFirst = false,
+  isLast = false,
 }: { 
   caso: Caso; 
   depth?: number; 
@@ -1149,12 +1224,90 @@ function CasoCard({
   statusFiltro?: "todas" | "erros" | "nao_feitas" | "feitas_hoje";
   feitasHojeIds?: string[];
   isAdmin?: boolean;
+  onMoveUp?: (id: string) => void;
+  onMoveDown?: (id: string) => void;
+  onDropCaso?: (draggedId: string, targetId: string) => void;
+  isFirst?: boolean;
+  isLast?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [questoes, setQuestoes] = useState<Questao[]>([]);
   const [subcasos, setSubcasos] = useState<Caso[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+
+  const handleReorderSubcasos = (newSubcasos: Caso[]) => {
+    setSubcasos(newSubcasos);
+    try {
+      const idOrder = newSubcasos.map(s => s.id);
+      localStorage.setItem(`notion_subcasos_order_${caso.id}`, JSON.stringify(idOrder));
+    } catch (e) {}
+  };
+
+  const handleMoveSubcaso = (subId: string, direction: "up" | "down") => {
+    setSubcasos(prev => {
+      const idx = prev.findIndex(s => s.id === subId);
+      if (idx === -1) return prev;
+      const newIdx = direction === "up" ? idx - 1 : idx + 1;
+      if (newIdx < 0 || newIdx >= prev.length) return prev;
+      const copy = [...prev];
+      const [moved] = copy.splice(idx, 1);
+      copy.splice(newIdx, 0, moved);
+      handleReorderSubcasos(copy);
+      return copy;
+    });
+  };
+
+  const handleDropSubcaso = (draggedId: string, targetId: string) => {
+    if (draggedId === targetId) return;
+    setSubcasos(prev => {
+      const dragIdx = prev.findIndex(s => s.id === draggedId);
+      const targetIdx = prev.findIndex(s => s.id === targetId);
+      if (dragIdx === -1 || targetIdx === -1) return prev;
+      const copy = [...prev];
+      const [moved] = copy.splice(dragIdx, 1);
+      copy.splice(targetIdx, 0, moved);
+      handleReorderSubcasos(copy);
+      return copy;
+    });
+  };
+
+  const handleReorderQuestoes = (newQuestoes: Questao[]) => {
+    setQuestoes(newQuestoes);
+    try {
+      const idOrder = newQuestoes.map(q => q.id);
+      localStorage.setItem(`notion_questoes_order_${caso.id}`, JSON.stringify(idOrder));
+    } catch (e) {}
+  };
+
+  const handleMoveQuestao = (qId: string, direction: "up" | "down") => {
+    setQuestoes(prev => {
+      const idx = prev.findIndex(q => q.id === qId);
+      if (idx === -1) return prev;
+      const newIdx = direction === "up" ? idx - 1 : idx + 1;
+      if (newIdx < 0 || newIdx >= prev.length) return prev;
+      const copy = [...prev];
+      const [moved] = copy.splice(idx, 1);
+      copy.splice(newIdx, 0, moved);
+      handleReorderQuestoes(copy);
+      return copy;
+    });
+  };
+
+  const handleDropQuestao = (draggedId: string, targetId: string) => {
+    if (draggedId === targetId) return;
+    setQuestoes(prev => {
+      const dragIdx = prev.findIndex(q => q.id === draggedId);
+      const targetIdx = prev.findIndex(q => q.id === targetId);
+      if (dragIdx === -1 || targetIdx === -1) return prev;
+      const copy = [...prev];
+      const [moved] = copy.splice(dragIdx, 1);
+      copy.splice(targetIdx, 0, moved);
+      handleReorderQuestoes(copy);
+      return copy;
+    });
+  };
 
   useEffect(() => {
     if (open && !loaded && !loading) {
@@ -1183,12 +1336,53 @@ function CasoCard({
           }
 
           if (active) {
-            tempQuestoes.sort((a, b) => {
-              const valA = CATEGORY_ORDER[a.categoryKey] ?? 99;
-              const valB = CATEGORY_ORDER[b.categoryKey] ?? 99;
-              if (valA !== valB) return valA - valB;
-              return parseInt(a.numero || "0", 10) - parseInt(b.numero || "0", 10);
-            });
+            // Ordenar subcasos se houver ordem salva
+            try {
+              const savedSub = localStorage.getItem(`notion_subcasos_order_${caso.id}`);
+              if (savedSub) {
+                const orderIds: string[] = JSON.parse(savedSub);
+                const map = new Map<string, number>();
+                orderIds.forEach((id, i) => map.set(id, i));
+                tempSubcasos.sort((a, b) => {
+                  const idxA = map.has(a.id) ? map.get(a.id)! : 999;
+                  const idxB = map.has(b.id) ? map.get(b.id)! : 999;
+                  return idxA - idxB;
+                });
+              }
+            } catch (e) {}
+
+            // Ordenar questões se houver ordem salva
+            try {
+              const savedQ = localStorage.getItem(`notion_questoes_order_${caso.id}`);
+              if (savedQ) {
+                const orderIds: string[] = JSON.parse(savedQ);
+                const map = new Map<string, number>();
+                orderIds.forEach((id, i) => map.set(id, i));
+                tempQuestoes.sort((a, b) => {
+                  const idxA = map.has(a.id) ? map.get(a.id)! : 999;
+                  const idxB = map.has(b.id) ? map.get(b.id)! : 999;
+                  if (idxA !== 999 || idxB !== 999) return idxA - idxB;
+                  const valA = CATEGORY_ORDER[a.categoryKey] ?? 99;
+                  const valB = CATEGORY_ORDER[b.categoryKey] ?? 99;
+                  if (valA !== valB) return valA - valB;
+                  return parseInt(a.numero || "0", 10) - parseInt(b.numero || "0", 10);
+                });
+              } else {
+                tempQuestoes.sort((a, b) => {
+                  const valA = CATEGORY_ORDER[a.categoryKey] ?? 99;
+                  const valB = CATEGORY_ORDER[b.categoryKey] ?? 99;
+                  if (valA !== valB) return valA - valB;
+                  return parseInt(a.numero || "0", 10) - parseInt(b.numero || "0", 10);
+                });
+              }
+            } catch (e) {
+              tempQuestoes.sort((a, b) => {
+                const valA = CATEGORY_ORDER[a.categoryKey] ?? 99;
+                const valB = CATEGORY_ORDER[b.categoryKey] ?? 99;
+                if (valA !== valB) return valA - valB;
+                return parseInt(a.numero || "0", 10) - parseInt(b.numero || "0", 10);
+              });
+            }
 
             setQuestoes(tempQuestoes);
             setSubcasos(tempSubcasos);
@@ -1234,10 +1428,47 @@ function CasoCard({
   const indent = depth > 0 ? "pl-4 border-l border-indigo-500/[0.15] ml-3" : "";
 
   return (
-    <div className={`flex flex-col gap-0.5 ${indent}`}>
+    <div
+      draggable={isAdmin}
+      onDragStart={(e) => {
+        if (!isAdmin) return;
+        e.dataTransfer.setData("text/plain", caso.id);
+        e.dataTransfer.effectAllowed = "move";
+      }}
+      onDragOver={(e) => {
+        if (isAdmin) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+          setIsDraggingOver(true);
+        }
+      }}
+      onDragLeave={() => setIsDraggingOver(false)}
+      onDrop={(e) => {
+        if (isAdmin) {
+          e.preventDefault();
+          setIsDraggingOver(false);
+          const draggedId = e.dataTransfer.getData("text/plain");
+          if (draggedId && draggedId !== caso.id && onDropCaso) {
+            onDropCaso(draggedId, caso.id);
+          }
+        }
+      }}
+      className={`flex flex-col gap-0.5 ${indent} transition-all rounded-lg ${
+        isDraggingOver ? "ring-2 ring-indigo-500/50 bg-indigo-500/10" : ""
+      }`}
+    >
       <div className={`flex items-center justify-between py-1 px-2 transition-all rounded-lg group ${
         hasErrosInCaso ? "bg-rose-500/[0.03] border border-rose-500/20" : "hover:bg-white/[0.02]"
       }`}>
+        {isAdmin && (
+          <span 
+            className="cursor-grab active:cursor-grabbing p-0.5 text-slate-600 hover:text-indigo-400 transition-colors shrink-0 select-none" 
+            title="Arrastar para reordenar caso"
+          >
+            <GripVertical size={13} />
+          </span>
+        )}
+
         <button
           onClick={() => setOpen(v => !v)}
           className="flex items-center gap-2 text-left flex-1"
@@ -1260,8 +1491,30 @@ function CasoCard({
             </span>
           )}
         </button>
+
+        {isAdmin && (
+          <div className="flex items-center gap-0.5 opacity-30 group-hover:opacity-100 transition-opacity ml-2">
+            <button
+              onClick={(e) => { e.stopPropagation(); onMoveUp?.(caso.id); }}
+              disabled={isFirst}
+              title="Mover caso para cima"
+              className="w-5 h-5 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent transition-all"
+            >
+              <ArrowUp size={10} />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onMoveDown?.(caso.id); }}
+              disabled={isLast}
+              title="Mover caso para baixo"
+              className="w-5 h-5 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent transition-all"
+            >
+              <ArrowDown size={10} />
+            </button>
+          </div>
+        )}
+
         {total !== undefined && (
-          <span className="text-[10px] font-bold text-slate-500 bg-white/[0.04] px-2 py-0.5 rounded-md tabular-nums shrink-0">
+          <span className="text-[10px] font-bold text-slate-500 bg-white/[0.04] px-2 py-0.5 rounded-md tabular-nums shrink-0 ml-1">
             {total}
           </span>
         )}
@@ -1278,7 +1531,7 @@ function CasoCard({
             <div className="text-[11px] text-slate-600 italic py-1 px-2">Sem questões com emoji reconhecido.</div>
           ) : (
             <>
-              {subcasos.map(sub => (
+              {subcasos.map((sub, idx) => (
                 <CasoCard 
                   key={sub.id} 
                   caso={sub} 
@@ -1292,6 +1545,11 @@ function CasoCard({
                   statusFiltro={statusFiltro}
                   feitasHojeIds={feitasHojeIds}
                   isAdmin={isAdmin}
+                  onMoveUp={(id) => handleMoveSubcaso(id, "up")}
+                  onMoveDown={(id) => handleMoveSubcaso(id, "down")}
+                  onDropCaso={handleDropSubcaso}
+                  isFirst={idx === 0}
+                  isLast={idx === subcasos.length - 1}
                 />
               ))}
 
@@ -1308,6 +1566,11 @@ function CasoCard({
                     statusFiltro={statusFiltro}
                     feitasHojeIds={feitasHojeIds}
                     isAdmin={isAdmin}
+                    onMoveUp={(id) => handleMoveQuestao(id, "up")}
+                    onMoveDown={(id) => handleMoveQuestao(id, "down")}
+                    onDropQuestao={handleDropQuestao}
+                    isFirst={idx === 0}
+                    isLast={idx === questoes.length - 1}
                   />
                 </div>
               ))}
@@ -1349,6 +1612,42 @@ function BlockViewer({
 
   const effectiveStatus = statusFiltro !== "todas" ? statusFiltro : (apenasComErros ? "erros" : "todas");
 
+  const handleReorderCasos = (newCasos: Caso[]) => {
+    setCasos(newCasos);
+    try {
+      const idOrder = newCasos.map(c => c.id);
+      localStorage.setItem(`notion_casos_order_${block.block_id}`, JSON.stringify(idOrder));
+    } catch (e) {}
+  };
+
+  const handleMoveCaso = (casoId: string, direction: "up" | "down") => {
+    setCasos(prev => {
+      const idx = prev.findIndex(c => c.id === casoId);
+      if (idx === -1) return prev;
+      const newIdx = direction === "up" ? idx - 1 : idx + 1;
+      if (newIdx < 0 || newIdx >= prev.length) return prev;
+      const copy = [...prev];
+      const [moved] = copy.splice(idx, 1);
+      copy.splice(newIdx, 0, moved);
+      handleReorderCasos(copy);
+      return copy;
+    });
+  };
+
+  const handleDropCaso = (draggedId: string, targetId: string) => {
+    if (draggedId === targetId) return;
+    setCasos(prev => {
+      const dragIdx = prev.findIndex(c => c.id === draggedId);
+      const targetIdx = prev.findIndex(c => c.id === targetId);
+      if (dragIdx === -1 || targetIdx === -1) return prev;
+      const copy = [...prev];
+      const [moved] = copy.splice(dragIdx, 1);
+      copy.splice(targetIdx, 0, moved);
+      handleReorderCasos(copy);
+      return copy;
+    });
+  };
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -1385,6 +1684,21 @@ function BlockViewer({
 
           built.push({ id: casoBlock.id, nome: casoNome, questoes: [] });
         }
+
+        // Ordenar casos com base na ordem salva
+        try {
+          const savedCasoOrder = localStorage.getItem(`notion_casos_order_${block.block_id}`);
+          if (savedCasoOrder) {
+            const orderIds: string[] = JSON.parse(savedCasoOrder);
+            const map = new Map<string, number>();
+            orderIds.forEach((id, i) => map.set(id, i));
+            built.sort((a, b) => {
+              const idxA = map.has(a.id) ? map.get(a.id)! : 999;
+              const idxB = map.has(b.id) ? map.get(b.id)! : 999;
+              return idxA - idxB;
+            });
+          }
+        } catch (e) {}
 
         if (!cancelled) setCasos(built);
 
@@ -1457,7 +1771,7 @@ function BlockViewer({
 
   return (
     <div className="flex flex-col gap-2 pl-4 border-l border-indigo-500/[0.15] ml-4 mt-1">
-      {casos.map(caso => (
+      {casos.map((caso, idx) => (
         <CasoCard 
           key={caso.id} 
           caso={caso} 
@@ -1470,6 +1784,11 @@ function BlockViewer({
           statusFiltro={statusFiltro}
           feitasHojeIds={feitasHojeIds}
           isAdmin={isAdmin}
+          onMoveUp={(id) => handleMoveCaso(id, "up")}
+          onMoveDown={(id) => handleMoveCaso(id, "down")}
+          onDropCaso={handleDropCaso}
+          isFirst={idx === 0}
+          isLast={idx === casos.length - 1}
         />
       ))}
     </div>
@@ -1766,6 +2085,12 @@ function NotionBlockRowItem({
   statusFiltro = "todas",
   feitasHojeIds = [],
   isAdmin = false,
+  onMoveUp,
+  onMoveDown,
+  onDropBlock,
+  onUpdateOrdem,
+  isFirst = false,
+  isLast = false,
 }: {
   block: NotionBlockRow;
   user: any;
@@ -1778,11 +2103,35 @@ function NotionBlockRowItem({
   statusFiltro?: "todas" | "erros" | "nao_feitas" | "feitas_hoje";
   feitasHojeIds?: string[];
   isAdmin?: boolean;
+  onMoveUp?: (id: string) => void;
+  onMoveDown?: (id: string) => void;
+  onDropBlock?: (draggedId: string, targetId: string) => void;
+  onUpdateOrdem?: (id: string, newOrdem: number | null) => void;
+  isFirst?: boolean;
+  isLast?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [showGabarito, setShowGabarito] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [blockIcon, setBlockIcon] = useState<string>("📝");
   const [blockStats, setBlockStats] = useState<{ acertos: number; erros: number; duvidas: number; total: number } | null>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [editingOrdem, setEditingOrdem] = useState<string | number | null>(block.ordem ?? null);
+
+  useEffect(() => {
+    setEditingOrdem(block.ordem ?? null);
+  }, [block.ordem]);
+
+  const handleSaveOrdem = () => {
+    if (editingOrdem === null || editingOrdem === "" || isNaN(Number(editingOrdem))) {
+      onUpdateOrdem?.(block.id, null);
+    } else {
+      const val = Number(editingOrdem);
+      if (val !== block.ordem) {
+        onUpdateOrdem?.(block.id, val);
+      }
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -1803,18 +2152,47 @@ function NotionBlockRowItem({
     return () => { active = false; };
   }, [block.block_id]);
 
-  const effectiveStatus = statusFiltro !== "todas" ? statusFiltro : (apenasComErros ? "erros" : "todas");
+  const isFilteringErros = statusFiltro === "erros" || apenasComErros;
 
-  if (effectiveStatus === "erros" && blockStats !== null && blockStats.erros === 0) {
+  if (isFilteringErros && blockStats !== null && blockStats.erros === 0) {
     return null;
   }
 
-  const hasErros = blockStats !== null && blockStats.erros > 0;
+  // A marcação em vermelho SÓ aparece quando o usuário está filtrando por erros especificamente
+  const showRedHighlight = isFilteringErros && blockStats !== null && blockStats.erros > 0;
 
   return (
-    <div className="py-1">
-      <div className={`flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap group px-1 rounded-xl transition-all ${
-        hasErros ? "bg-rose-500/[0.02] border border-rose-500/15" : "hover:bg-white/[0.02]"
+    <div
+      draggable={isAdmin}
+      onDragStart={(e) => {
+        if (!isAdmin) return;
+        e.dataTransfer.setData("text/plain", block.id);
+        e.dataTransfer.effectAllowed = "move";
+      }}
+      onDragOver={(e) => {
+        if (isAdmin) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+          setIsDraggingOver(true);
+        }
+      }}
+      onDragLeave={() => setIsDraggingOver(false)}
+      onDrop={(e) => {
+        if (isAdmin) {
+          e.preventDefault();
+          setIsDraggingOver(false);
+          const draggedId = e.dataTransfer.getData("text/plain");
+          if (draggedId && draggedId !== block.id && onDropBlock) {
+            onDropBlock(draggedId, block.id);
+          }
+        }
+      }}
+      className={`py-1 transition-all rounded-xl ${
+        isDraggingOver ? "ring-2 ring-indigo-500/50 bg-indigo-500/10" : ""
+      }`}
+    >
+      <div className={`flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap group px-2 rounded-xl transition-all ${
+        showRedHighlight ? "bg-rose-500/[0.02] border border-rose-500/15" : "hover:bg-white/[0.02]"
       }`}>
         <button
           onClick={() => setOpen(v => !v)}
@@ -1825,7 +2203,7 @@ function NotionBlockRowItem({
           </span>
           <span className="text-base shrink-0 select-none">{blockIcon}</span>
           <span className={`text-[14px] sm:text-[15px] font-medium transition-colors shrink-0 ${
-            hasErros ? "text-rose-300" : "text-[#8E97A8] group-hover:text-white"
+            showRedHighlight ? "text-rose-300" : "text-[#8E97A8] group-hover:text-white"
           }`}>
             {block.nome}
           </span>
@@ -1834,7 +2212,7 @@ function NotionBlockRowItem({
               {block.materia}
             </span>
           )}
-          {hasErros && (
+          {showRedHighlight && blockStats && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-rose-300 bg-rose-950/30 border border-rose-500/20 shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
               {blockStats.erros} {blockStats.erros === 1 ? "erro" : "erros"}
@@ -1845,7 +2223,7 @@ function NotionBlockRowItem({
           )}
         </button>
 
-        <div className="flex items-center gap-2 shrink-0 pr-1">
+        <div className="flex items-center gap-1.5 shrink-0 pr-1">
           <BlocoStatsBadge 
             block={block} 
             resultadosMap={resultadosMap} 
@@ -1865,13 +2243,112 @@ function NotionBlockRowItem({
             <LayoutGrid size={12} />
           </button>
 
-          {user && (
-            <button
-              onClick={() => onDelete(block.id)}
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-700 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100 shrink-0"
-            >
-              <Trash2 size={12} />
-            </button>
+          {/* Menu de 3 Pontinhos (Admin) */}
+          {isAdmin && (
+            <div className="relative shrink-0">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMenu(v => !v);
+                }}
+                title="Opções do Caderno (Admin)"
+                className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-all ${
+                  showMenu
+                    ? "bg-indigo-600/30 border-indigo-500/50 text-indigo-300"
+                    : "bg-white/[0.03] border-white/[0.07] text-slate-500 hover:text-slate-200 hover:border-white/[0.15]"
+                }`}
+              >
+                <MoreVertical size={13} />
+              </button>
+
+              {showMenu && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={(e) => { e.stopPropagation(); setShowMenu(false); }} 
+                  />
+                  
+                  <div 
+                    className="absolute right-0 top-full mt-1.5 w-60 z-50 bg-[#111623] border border-white/[0.12] rounded-2xl p-3 shadow-2xl flex flex-col gap-2.5 backdrop-blur-xl"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
+                      <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <span>⚙️</span> Opções de Admin
+                      </span>
+                      <button 
+                        onClick={() => setShowMenu(false)}
+                        className="text-slate-500 hover:text-slate-300 p-0.5"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+
+                    {/* Campo de Alterar Ordem */}
+                    <div className="flex flex-col gap-1 bg-[#0d1220] p-2.5 rounded-xl border border-white/[0.06]">
+                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                        Ordem no Banco (Supabase)
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={editingOrdem ?? ""}
+                          onChange={(e) => setEditingOrdem(e.target.value === "" ? "" : Number(e.target.value))}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              handleSaveOrdem();
+                              setShowMenu(false);
+                            }
+                          }}
+                          placeholder="Ex: 1"
+                          className="w-full text-center text-[12px] font-mono font-black text-indigo-300 bg-black/50 border border-indigo-500/30 rounded-lg py-1 focus:outline-none focus:border-indigo-400 transition-all"
+                        />
+                        <button
+                          onClick={() => {
+                            handleSaveOrdem();
+                            setShowMenu(false);
+                          }}
+                          className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all shrink-0"
+                        >
+                          Salvar
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Botões Mover Para Cima / Baixo */}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => { onMoveUp?.(block.id); }}
+                        disabled={isFirst}
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-[#0d1220] hover:bg-white/[0.06] border border-white/[0.06] rounded-xl text-[10px] font-bold text-slate-300 disabled:opacity-30 disabled:hover:bg-[#0d1220] transition-all"
+                      >
+                        <ArrowUp size={12} className="text-indigo-400" /> Subir
+                      </button>
+                      <button
+                        onClick={() => { onMoveDown?.(block.id); }}
+                        disabled={isLast}
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-[#0d1220] hover:bg-white/[0.06] border border-white/[0.06] rounded-xl text-[10px] font-bold text-slate-300 disabled:opacity-30 disabled:hover:bg-[#0d1220] transition-all"
+                      >
+                        <ArrowDown size={12} className="text-indigo-400" /> Descer
+                      </button>
+                    </div>
+
+                    {/* Botão Excluir Caderno */}
+                    <div className="border-t border-white/[0.06] pt-2">
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          onDelete(block.id);
+                        }}
+                        className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 rounded-xl text-[10px] font-bold transition-all"
+                      >
+                        <Trash2 size={12} /> Excluir Caderno
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -2015,12 +2492,81 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   const fetchBlocks = useCallback(async () => {
     setLoadingBlocks(true);
     try {
-      const { data, error } = await supabase.from("notion_blocks").select("*").order("created_at", { ascending: false });
+      // Buscar blocos ordenados primariamente pela coluna 'ordem' do banco no Supabase
+      const { data, error } = await supabase
+        .from("notion_blocks")
+        .select("*")
+        .order("ordem", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: false });
+      
       if (error) throw error;
       setBlocks(data ?? []);
     } catch (e: any) { console.error(e.message); }
     finally { setLoadingBlocks(false); }
   }, []);
+
+  const handleReorder = useCallback(async (newBlocks: NotionBlockRow[]) => {
+    // Atribui números ordinais (1, 2, 3...) para o estado local
+    const updatedBlocks = newBlocks.map((b, index) => ({ ...b, ordem: index + 1 }));
+    setBlocks(updatedBlocks);
+
+    // ATUALIZA A COLUNA 'ordem' NA TABELA 'notion_blocks' NO SUPABASE PARA TODOS OS USUÁRIOS
+    try {
+      const updates = updatedBlocks.map((b) => 
+        supabase.from("notion_blocks").update({ ordem: b.ordem }).eq("id", b.id)
+      );
+      await Promise.allSettled(updates);
+      await fetchBlocks();
+    } catch (e) {
+      console.error("Erro ao salvar coluna ordem no Supabase:", e);
+    }
+  }, [fetchBlocks]);
+
+  const handleSingleOrdemChange = useCallback(async (blockId: string, newOrdem: number | null) => {
+    setBlocks(prev => prev.map(b => b.id === blockId ? { ...b, ordem: newOrdem ?? undefined } : b));
+    try {
+      const { error } = await supabase
+        .from("notion_blocks")
+        .update({ ordem: newOrdem })
+        .eq("id", blockId);
+      if (error) throw error;
+      await fetchBlocks();
+    } catch (e) {
+      console.error("Erro ao atualizar ordem do bloco no Supabase:", e);
+    }
+  }, [fetchBlocks]);
+
+  const handleMoveBlock = useCallback((blockId: string, direction: "up" | "down") => {
+    setBlocks(prev => {
+      const index = prev.findIndex(b => b.id === blockId);
+      if (index === -1) return prev;
+      const newIndex = direction === "up" ? index - 1 : index + 1;
+      if (newIndex < 0 || newIndex >= prev.length) return prev;
+      
+      const newBlocks = [...prev];
+      const [moved] = newBlocks.splice(index, 1);
+      newBlocks.splice(newIndex, 0, moved);
+      
+      handleReorder(newBlocks);
+      return newBlocks;
+    });
+  }, [handleReorder]);
+
+  const handleDropBlock = useCallback((draggedId: string, targetId: string) => {
+    if (draggedId === targetId) return;
+    setBlocks(prev => {
+      const dragIndex = prev.findIndex(b => b.id === draggedId);
+      const targetIndex = prev.findIndex(b => b.id === targetId);
+      if (dragIndex === -1 || targetIndex === -1) return prev;
+
+      const newBlocks = [...prev];
+      const [moved] = newBlocks.splice(dragIndex, 1);
+      newBlocks.splice(targetIndex, 0, moved);
+
+      handleReorder(newBlocks);
+      return newBlocks;
+    });
+  }, [handleReorder]);
 
   const fetchDuvidas = useCallback(async () => {
     if (!user?.id) return;
@@ -2362,6 +2908,13 @@ export default function NotionQuestionTab({ user }: { user: any }) {
         </div>
       )}
 
+      {isAdmin && !loadingBlocks && blocksFiltrados.length > 0 && (
+        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 bg-[#111623] px-3 py-1.5 rounded-xl border border-white/[0.05]">
+          <MoreVertical size={12} className="text-indigo-400 shrink-0" />
+          <span>Modo Admin: Clique no menu de 3 pontinhos (⋮) no caderno para alterar a ordem no banco ou reordenar.</span>
+        </div>
+      )}
+
       {loadingBlocks ? (
         <div className="flex items-center justify-center py-16"><Loader2 className="w-7 h-7 text-indigo-500 animate-spin" /></div>
       ) : blocks.length === 0 ? (
@@ -2377,7 +2930,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
         </div>
       ) : (
         <div className="flex flex-col bg-[#111623] border border-white/[0.06] rounded-2xl p-2 divide-y divide-white/[0.05]">
-          {blocksFiltrados.map(block => (
+          {blocksFiltrados.map((block, index) => (
             <NotionBlockRowItem
               key={block.id}
               block={block}
@@ -2390,6 +2943,12 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               statusFiltro={statusFiltro}
               feitasHojeIds={feitasHojeIds}
               isAdmin={isAdmin}
+              onMoveUp={(id) => handleMoveBlock(id, "up")}
+              onMoveDown={(id) => handleMoveBlock(id, "down")}
+              onDropBlock={handleDropBlock}
+              onUpdateOrdem={handleSingleOrdemChange}
+              isFirst={index === 0}
+              isLast={index === blocksFiltrados.length - 1}
             />
           ))}
         </div>
