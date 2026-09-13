@@ -37,16 +37,33 @@ async function proxyNotion(path: string, request: NextRequest) {
 
   const body = request.method !== 'GET' ? await request.text() : undefined;
 
-  try {
-    const response = await fetch(url, {
-      method: request.method,
-      headers,
-      body,
-    });
+  let attempts = 0;
+  const maxAttempts = 3;
 
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  while (attempts < maxAttempts) {
+    attempts++;
+    try {
+      const response = await fetch(url, {
+        method: request.method,
+        headers,
+        body,
+      });
+
+      if (response.status === 429 && attempts < maxAttempts) {
+        const retryAfter = parseInt(response.headers.get('Retry-After') || '1', 10);
+        const waitMs = Math.max(retryAfter * 1000, attempts * 400);
+        await new Promise(resolve => setTimeout(resolve, waitMs));
+        continue;
+      }
+
+      const data = await response.json();
+      return NextResponse.json(data, { status: response.status });
+    } catch (error: any) {
+      if (attempts >= maxAttempts) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+      await new Promise(resolve => setTimeout(resolve, 400));
+    }
   }
+  return NextResponse.json({ error: 'Max retry attempts reached' }, { status: 500 });
 }
