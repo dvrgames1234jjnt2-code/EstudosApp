@@ -328,6 +328,11 @@ function ImagemLightbox({
   caseLabel,
   respostaText,
   respostaImageUrls,
+  user,
+  questaoId,
+  isDuvida = false,
+  onToggleDuvida,
+  onAnswered,
 }: {
   url: string;
   onClose: () => void;
@@ -340,6 +345,11 @@ function ImagemLightbox({
   caseLabel?: string;
   respostaText?: string;
   respostaImageUrls?: string[];
+  user?: any;
+  questaoId?: string;
+  isDuvida?: boolean;
+  onToggleDuvida?: (questaoId: string, marcar: boolean) => Promise<void>;
+  onAnswered?: () => void;
 }) {
   const [scale, setScale] = useState(1);
   const [isFullWidth, setIsFullWidth] = useState(false); // Default to Modo Ajustado!
@@ -347,6 +357,56 @@ function ImagemLightbox({
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  const [recording, setRecording] = useState(false);
+  const [recorded, setRecorded] = useState<'acerto' | 'erro' | null>(null);
+  const [recordingDuvida, setRecordingDuvida] = useState(false);
+  const [localDuvida, setLocalDuvida] = useState(isDuvida);
+
+  useEffect(() => {
+    setLocalDuvida(isDuvida);
+  }, [isDuvida, questaoId]);
+
+  const handleRecordAnswer = async (isCorrect: boolean) => {
+    if (!user || !questaoId) return;
+    setRecording(true);
+    setRecorded(null);
+    const now = new Date();
+    const date = now.toISOString().slice(0, 10);
+    const time = now.toTimeString().slice(0, 8);
+
+    try {
+      const { error } = await supabase.from("notion_respostas").insert({
+        questao_id: questaoId,
+        resposta_usuario: isCorrect ? "Acerto" : "Erro",
+        correto: isCorrect ? "Sim" : "Não",
+        data: date,
+        horario: time,
+        status: isCorrect ? "Acertei" : "Errei",
+        user_id: user.id,
+      });
+      if (error) throw error;
+      setRecorded(isCorrect ? 'acerto' : 'erro');
+      setTimeout(() => setRecorded(null), 3000);
+      onAnswered?.();
+    } catch (e: any) {
+      console.error(e);
+      alert("Erro ao salvar resposta: " + e.message);
+    } finally {
+      setRecording(false);
+    }
+  };
+
+  const handleToggleDuvidaLocal = async () => {
+    if (!user || !questaoId || !onToggleDuvida) return;
+    setRecordingDuvida(true);
+    try {
+      await onToggleDuvida(questaoId, !localDuvida);
+      setLocalDuvida(prev => !prev);
+    } finally {
+      setRecordingDuvida(false);
+    }
+  };
 
   const handleZoomIn = () => setScale(prev => Math.min(prev + 0.25, 4));
   const handleZoomOut = () => setScale(prev => Math.max(prev - 0.25, 0.5));
@@ -603,6 +663,48 @@ function ImagemLightbox({
           ) : (!respostaImageUrls || respostaImageUrls.length === 0) ? (
             <p className="text-xs text-slate-400 italic">Nenhuma resposta registrada no Notion.</p>
           ) : null}
+
+          {/* User Record Answer Section inside Lightbox */}
+          {user && questaoId && (
+            <div className="flex items-center gap-2.5 mt-3 pt-3 border-t border-white/10 flex-wrap">
+              <span className="text-xs text-slate-300 font-semibold mr-auto">Registrar tentativa:</span>
+              
+              {onToggleDuvida && (
+                <button
+                  onClick={handleToggleDuvidaLocal}
+                  disabled={recordingDuvida}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all disabled:opacity-50 active:scale-95 ${
+                    localDuvida 
+                      ? 'bg-amber-500/25 border border-amber-500/50 text-amber-200' 
+                      : 'bg-white/10 border border-white/15 hover:bg-white/20 text-slate-300'
+                  }`}
+                >
+                  <Flag size={12} className={localDuvida ? "fill-amber-400 text-amber-400" : ""} /> Em dúvida
+                </button>
+              )}
+
+              <button
+                onClick={() => handleRecordAnswer(true)}
+                disabled={recording}
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-500/35 text-emerald-300 text-xs font-bold transition-all disabled:opacity-50 active:scale-95 shadow-md"
+              >
+                <Check size={13} /> Acertei
+              </button>
+              <button
+                onClick={() => handleRecordAnswer(false)}
+                disabled={recording}
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 border border-rose-500/35 text-rose-300 text-xs font-bold transition-all disabled:opacity-50 active:scale-95 shadow-md"
+              >
+                <X size={13} /> Errei
+              </button>
+
+              {recorded && (
+                <span className={`text-xs font-bold ml-1 animate-pulse ${recorded === 'acerto' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {recorded === 'acerto' ? 'Salvo! 🎉' : 'Salvo! ❌'}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -619,6 +721,11 @@ function ImagemLightbox({
 
 function ZoomedQuestaoWrapper({
   questao,
+  user,
+  isDuvida,
+  duvidasIds,
+  onToggleDuvida,
+  onAnswered,
   onClose,
   onNext,
   onPrev,
@@ -629,6 +736,11 @@ function ZoomedQuestaoWrapper({
   initialRespostaImageUrls,
 }: {
   questao: Questao;
+  user?: any;
+  isDuvida?: boolean;
+  duvidasIds?: Set<string>;
+  onToggleDuvida?: (questaoId: string, marcar: boolean) => Promise<void>;
+  onAnswered?: () => void;
   onClose: () => void;
   onNext?: () => void;
   onPrev?: () => void;
@@ -711,6 +823,11 @@ function ZoomedQuestaoWrapper({
       caseLabel={questao.caseLabel}
       respostaText={respostaText}
       respostaImageUrls={respostaImageUrls}
+      user={user}
+      questaoId={questao.id}
+      isDuvida={isDuvida ?? duvidasIds?.has(questao.id)}
+      onToggleDuvida={onToggleDuvida}
+      onAnswered={onAnswered}
     />
   );
 }
