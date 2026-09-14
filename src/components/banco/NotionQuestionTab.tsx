@@ -2187,7 +2187,7 @@ function NotionBlockRowItem({
           }
         }
       }}
-      className={`flex flex-col gap-2.5 p-3.5 rounded-2xl border transition-all ${
+      className={`flex flex-col gap-2 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border transition-all ${
         isDraggingOver ? "ring-2 ring-indigo-500/50 bg-indigo-500/10" : ""
       } ${
         showRedHighlight
@@ -2199,21 +2199,26 @@ function NotionBlockRowItem({
       <div className="flex items-center justify-between gap-2">
         <button
           onClick={() => setOpen(v => !v)}
-          className="flex items-center gap-2.5 text-left transition-all flex-1 min-w-0 group"
+          className="flex items-center gap-2 text-left transition-all flex-1 min-w-0 group"
         >
           <span className="text-[10px] text-slate-500 w-4 h-4 flex items-center justify-center shrink-0 select-none">
             {open ? "▼" : "▶"}
           </span>
           <span className="text-base shrink-0 select-none">{blockIcon}</span>
-          <div className="flex flex-col min-w-0">
+          <div className="flex items-center gap-2 min-w-0 flex-wrap sm:flex-nowrap">
             <span className={`text-[13px] sm:text-[14px] font-black transition-colors truncate ${
               showRedHighlight ? "text-rose-300" : "text-slate-200 group-hover:text-white"
             }`}>
               {block.nome}
             </span>
             {block.materia && (
-              <span className="text-[10px] font-bold text-indigo-400/90 truncate">
+              <span className="text-[10px] font-bold text-indigo-400/90 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md shrink-0">
                 {block.materia}
+              </span>
+            )}
+            {block.descricao && (
+              <span className="text-[11px] text-slate-400/70 font-normal truncate shrink-0">
+                {block.descricao}
               </span>
             )}
           </div>
@@ -2349,9 +2354,7 @@ function NotionBlockRowItem({
         </div>
       </div>
 
-      {block.descricao && (
-        <p className="text-[11px] text-slate-400/80 truncate px-1 font-normal">{block.descricao}</p>
-      )}
+
 
       {showGabarito && (
         <div className="mt-1">
