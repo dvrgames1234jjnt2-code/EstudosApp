@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
-  Plus, Trash2, ChevronDown, ChevronRight, Loader2,
+  Plus, Trash2, ChevronDown, ChevronRight, ChevronLeft, Loader2,
   BookMarked, RefreshCw, X, Check, Play, Eye, EyeOff,
   Triangle, Flag, History, LayoutGrid, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw,
   Clock, HelpCircle, Filter, Flame, Calendar, BarChart3, Target, AlertTriangle,
@@ -316,16 +316,41 @@ function QuestaoTitleLabel({ questaoId, blocksMap }: { questaoId: string; blocks
   );
 }
 
-function ImagemLightbox({ url, onClose }: { url: string; onClose: () => void }) {
+function ImagemLightbox({
+  url,
+  onClose,
+  onNext,
+  onPrev,
+  hasNext = false,
+  hasPrev = false,
+  questaoNumero,
+  questaoTopic,
+  caseLabel,
+  respostaText,
+  respostaImageUrls,
+}: {
+  url: string;
+  onClose: () => void;
+  onNext?: () => void;
+  onPrev?: () => void;
+  hasNext?: boolean;
+  hasPrev?: boolean;
+  questaoNumero?: string;
+  questaoTopic?: string;
+  caseLabel?: string;
+  respostaText?: string;
+  respostaImageUrls?: string[];
+}) {
   const [scale, setScale] = useState(1);
-  const [isFullWidth, setIsFullWidth] = useState(true);
+  const [isFullWidth, setIsFullWidth] = useState(false); // Default to Modo Ajustado!
+  const [showResposta, setShowResposta] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   const handleZoomIn = () => setScale(prev => Math.min(prev + 0.25, 4));
   const handleZoomOut = () => setScale(prev => Math.max(prev - 0.25, 0.5));
-  const handleReset = () => { setScale(1); setPosition({ x: 0, y: 0 }); setIsFullWidth(true); };
+  const handleReset = () => { setScale(1); setPosition({ x: 0, y: 0 }); setIsFullWidth(false); };
 
   const toggleFullWidth = () => {
     setIsFullWidth(prev => !prev);
@@ -340,6 +365,13 @@ function ImagemLightbox({ url, onClose }: { url: string; onClose: () => void }) 
       if (e.key === "-") handleZoomOut();
       if (e.key === "0") handleReset();
       if (e.key.toLowerCase() === "f") toggleFullWidth();
+      if (e.key.toLowerCase() === "r") setShowResposta(prev => !prev);
+      if ((e.key === "ArrowRight" || e.key === "PageDown") && hasNext && onNext) {
+        onNext();
+      }
+      if ((e.key === "ArrowLeft" || e.key === "PageUp") && hasPrev && onPrev) {
+        onPrev();
+      }
     };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -347,7 +379,7 @@ function ImagemLightbox({ url, onClose }: { url: string; onClose: () => void }) 
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [onClose]);
+  }, [onClose, onNext, onPrev, hasNext, hasPrev]);
 
   const handleWheel = (e: React.WheelEvent) => {
     if (e.deltaY < 0) {
@@ -381,15 +413,34 @@ function ImagemLightbox({ url, onClose }: { url: string; onClose: () => void }) 
       onMouseUp={handleMouseUp}
     >
       {/* Top Bar Controls */}
-      <div className="w-full px-4 sm:px-6 py-3 flex items-center justify-between bg-black/80 backdrop-blur-md border-b border-white/10 z-20">
-        <div className="flex items-center gap-2 text-white font-bold text-xs">
-          <Maximize2 size={16} className="text-indigo-400" />
-          <span className="hidden sm:inline">Visualizador de Imagem — 100% Tela Cheia</span>
-          <span className="sm:hidden">Imagem 100%</span>
+      <div className="w-full px-3 sm:px-6 py-2.5 flex items-center justify-between bg-black/85 backdrop-blur-md border-b border-white/10 z-30 flex-wrap gap-2">
+        {/* Left Info */}
+        <div className="flex items-center gap-2 text-white font-bold text-xs truncate max-w-xs sm:max-w-md">
+          <Maximize2 size={16} className="text-indigo-400 shrink-0" />
+          <span className="truncate">
+            {questaoNumero ? `Questão ${questaoNumero}` : "Visualizador de Imagem"}
+            {questaoTopic ? ` — ${questaoTopic}` : ""}
+          </span>
+          {caseLabel && (
+            <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[10px] text-slate-300 font-normal shrink-0">
+              {caseLabel}
+            </span>
+          )}
         </div>
 
         {/* Toolbar Center */}
-        <div className="flex items-center gap-1.5 sm:gap-2 bg-white/10 p-1 rounded-xl backdrop-blur-md border border-white/10">
+        <div className="flex items-center gap-1 sm:gap-2 bg-white/10 p-1 rounded-xl backdrop-blur-md border border-white/10">
+          {hasPrev && onPrev && (
+            <button
+              onClick={onPrev}
+              title="Questão Anterior (←)"
+              className="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/60 text-indigo-200 hover:text-white border border-indigo-500/40 transition-all text-xs font-bold flex items-center gap-1 active:scale-95"
+            >
+              <ChevronLeft size={14} />
+              <span className="hidden sm:inline">Anterior</span>
+            </button>
+          )}
+
           <button
             onClick={handleZoomOut}
             title="Diminuir zoom (-)"
@@ -398,7 +449,7 @@ function ImagemLightbox({ url, onClose }: { url: string; onClose: () => void }) 
             <ZoomOut size={15} />
           </button>
 
-          <span className="text-[11px] sm:text-xs font-mono font-bold text-slate-200 px-1 sm:px-2 min-w-[45px] text-center">
+          <span className="text-[11px] sm:text-xs font-mono font-bold text-slate-200 px-1 min-w-[40px] text-center">
             {Math.round(scale * 100)}%
           </span>
 
@@ -410,19 +461,20 @@ function ImagemLightbox({ url, onClose }: { url: string; onClose: () => void }) 
             <ZoomIn size={15} />
           </button>
 
-          <div className="w-px h-5 bg-white/20 my-auto mx-0.5 sm:mx-1" />
+          <div className="w-px h-5 bg-white/20 my-auto mx-0.5" />
 
+          {/* Modo Ajustado / 100% Tela Cheia */}
           <button
             onClick={toggleFullWidth}
-            title="Alternar Modo 100% Ocupar Tela Inteira (F)"
+            title="Alternar Modo de Visualização (Tecla F)"
             className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold flex items-center gap-1.5 transition-all ${
-              isFullWidth
-                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+              !isFullWidth
+                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 border border-indigo-400/40"
                 : "hover:bg-white/20 text-slate-200"
             }`}
           >
-            {isFullWidth ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-            <span>{isFullWidth ? "Modo Ajustado" : "100% Tela Cheia"}</span>
+            {!isFullWidth ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+            <span>{!isFullWidth ? "Modo Ajustado" : "100% Tela Cheia"}</span>
           </button>
 
           <button
@@ -432,17 +484,64 @@ function ImagemLightbox({ url, onClose }: { url: string; onClose: () => void }) 
           >
             <RotateCcw size={13} />
           </button>
+
+          {hasNext && onNext && (
+            <button
+              onClick={onNext}
+              title="Próxima Questão (→)"
+              className="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/60 text-indigo-200 hover:text-white border border-indigo-500/40 transition-all text-xs font-bold flex items-center gap-1 active:scale-95"
+            >
+              <span className="hidden sm:inline">Próxima</span>
+              <ChevronRight size={14} />
+            </button>
+          )}
         </div>
 
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          title="Fechar (Esc)"
-          className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-300 border border-red-500/30 transition-all"
-        >
-          <X size={18} />
-        </button>
+        {/* Action Right: Revelar Resposta & Close */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowResposta(v => !v)}
+            title="Revelar ou Ocultar Resposta (Tecla R)"
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 border ${
+              showResposta
+                ? "bg-emerald-600 text-white border-emerald-400/50 shadow-lg shadow-emerald-500/30"
+                : "bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/30"
+            }`}
+          >
+            {showResposta ? <EyeOff size={14} /> : <Eye size={14} />}
+            <span>{showResposta ? "Ocultar Resposta" : "✨ Revelar Resposta"}</span>
+          </button>
+
+          <button
+            onClick={onClose}
+            title="Fechar (Esc)"
+            className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-300 border border-red-500/30 transition-all active:scale-95"
+          >
+            <X size={18} />
+          </button>
+        </div>
       </div>
+
+      {/* Floating Side Arrows for Next/Prev */}
+      {hasPrev && onPrev && (
+        <button
+          onClick={onPrev}
+          title="Questão Anterior (←)"
+          className="fixed left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-black/70 hover:bg-indigo-600 text-white flex items-center justify-center border border-white/20 shadow-2xl backdrop-blur-md transition-all active:scale-90 group"
+        >
+          <ChevronLeft size={26} className="group-hover:-translate-x-0.5 transition-transform" />
+        </button>
+      )}
+
+      {hasNext && onNext && (
+        <button
+          onClick={onNext}
+          title="Próxima Questão (→)"
+          className="fixed right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-black/70 hover:bg-indigo-600 text-white flex items-center justify-center border border-white/20 shadow-2xl backdrop-blur-md transition-all active:scale-90 group"
+        >
+          <ChevronRight size={26} className="group-hover:translate-x-0.5 transition-transform" />
+        </button>
+      )}
 
       {/* Main Image View Container */}
       <div
@@ -469,12 +568,150 @@ function ImagemLightbox({ url, onClose }: { url: string; onClose: () => void }) 
         />
       </div>
 
+      {/* Slide-Up Answer Panel */}
+      {showResposta && (
+        <div className="fixed bottom-12 left-1/2 -translate-x-1/2 w-[92vw] max-w-3xl max-h-[48vh] overflow-y-auto bg-[#0b101d]/95 backdrop-blur-2xl border border-emerald-500/40 rounded-2xl p-4 shadow-2xl z-40 text-white animate-in slide-in-from-bottom duration-200 custom-scrollbar">
+          <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-white/10">
+            <span className="text-xs sm:text-sm font-bold text-emerald-400 flex items-center gap-2">
+              <span>✨</span> Resposta e Gabarito {questaoNumero ? `— Questão ${questaoNumero}` : ""}
+            </span>
+            <button
+              onClick={() => setShowResposta(false)}
+              className="text-slate-400 hover:text-white text-xs p-1 rounded-lg hover:bg-white/10 transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {respostaImageUrls && respostaImageUrls.length > 0 && (
+            <div className="flex flex-col gap-3 mb-3">
+              {respostaImageUrls.map((rUrl, i) => (
+                <img
+                  key={i}
+                  src={rUrl}
+                  alt={`Resposta ${i + 1}`}
+                  className="w-full rounded-xl border border-white/10 object-contain bg-white shadow-md max-h-[35vh]"
+                />
+              ))}
+            </div>
+          )}
+
+          {respostaText ? (
+            <p className="text-xs sm:text-sm font-normal text-slate-200 whitespace-pre-wrap leading-relaxed">
+              {respostaText}
+            </p>
+          ) : (!respostaImageUrls || respostaImageUrls.length === 0) ? (
+            <p className="text-xs text-slate-400 italic">Nenhuma resposta registrada no Notion.</p>
+          ) : null}
+        </div>
+      )}
+
       {/* Footer hint */}
-      <div className="w-full px-4 py-2 bg-black/80 backdrop-blur-md text-[11px] text-slate-400 font-medium z-20 flex items-center justify-center gap-4 text-center">
-        <span>💡 Dica: Use o scroll do mouse para Zoom • Arraste para Mover • Aperte <kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-slate-200">ESC</kbd> para fechar</span>
+      <div className="w-full px-4 py-2 bg-black/85 backdrop-blur-md text-[11px] text-slate-400 font-medium z-20 flex items-center justify-center gap-3 sm:gap-6 text-center flex-wrap">
+        <span>💡 Dica: <span className="text-indigo-300 font-bold">Modo Ajustado</span> ativo por padrão</span>
+        <span>• Use <kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-slate-200">←</kbd> / <kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-slate-200">→</kbd> para Pular Questão</span>
+        <span>• Aperte <kbd className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded font-mono">R</kbd> para Revelar Resposta</span>
       </div>
     </div>,
     document.body
+  );
+}
+
+function ZoomedQuestaoWrapper({
+  questao,
+  onClose,
+  onNext,
+  onPrev,
+  hasNext,
+  hasPrev,
+  initialUrl,
+  initialRespostaText,
+  initialRespostaImageUrls,
+}: {
+  questao: Questao;
+  onClose: () => void;
+  onNext?: () => void;
+  onPrev?: () => void;
+  hasNext?: boolean;
+  hasPrev?: boolean;
+  initialUrl?: string;
+  initialRespostaText?: string;
+  initialRespostaImageUrls?: string[];
+}) {
+  const [imageUrls, setImageUrls] = useState<string[]>(initialUrl ? [initialUrl] : []);
+  const [respostaImageUrls, setRespostaImageUrls] = useState<string[]>(initialRespostaImageUrls ?? []);
+  const [respostaText, setRespostaText] = useState<string | undefined>(initialRespostaText);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const children = await fetchChildren(questao.id);
+        const imgs: string[] = [];
+        const rImgs: string[] = [];
+        let textResp: string | undefined;
+
+        for (const child of children) {
+          if (child.type === "image") {
+            const url = imgUrl(child);
+            if (url) imgs.push(url);
+          } else if (child.type === "toggle") {
+            const tText = richText(child.toggle?.rich_text ?? []).toLowerCase();
+            if (tText.includes("resposta") && child.has_children) {
+              const rChildren = await fetchChildren(child.id);
+              const texts: string[] = [];
+              for (const rc of rChildren) {
+                if (rc.type === "image") {
+                  const url = imgUrl(rc);
+                  if (url) rImgs.push(url);
+                } else {
+                  const icon = rc.callout?.icon?.type === "emoji" ? `${rc.callout.icon.emoji} ` : "";
+                  const t = richText(
+                    rc.paragraph?.rich_text ??
+                    rc.bulleted_list_item?.rich_text ??
+                    rc.numbered_list_item?.rich_text ??
+                    rc.callout?.rich_text ??
+                    rc.quote?.rich_text ??
+                    rc.heading_1?.rich_text ??
+                    rc.heading_2?.rich_text ??
+                    rc.heading_3?.rich_text ??
+                    []
+                  );
+                  if (t) texts.push(icon + t);
+                }
+              }
+              textResp = texts.join("\n") || undefined;
+            }
+          }
+        }
+        if (active) {
+          if (imgs.length > 0) setImageUrls(imgs);
+          setRespostaImageUrls(rImgs);
+          setRespostaText(textResp);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+    return () => { active = false; };
+  }, [questao.id]);
+
+  const mainUrl = imageUrls[0] || initialUrl || "";
+
+  return (
+    <ImagemLightbox
+      url={mainUrl}
+      onClose={onClose}
+      onNext={onNext}
+      onPrev={onPrev}
+      hasNext={hasNext}
+      hasPrev={hasPrev}
+      questaoNumero={questao.numero}
+      questaoTopic={questao.topic}
+      caseLabel={questao.caseLabel}
+      respostaText={respostaText}
+      respostaImageUrls={respostaImageUrls}
+    />
   );
 }
 
@@ -495,6 +732,10 @@ function QuestaoRow({
   onDropQuestao,
   isFirst = false,
   isLast = false,
+  onNextQuestion,
+  onPrevQuestion,
+  hasNextQuestion,
+  hasPrevQuestion,
 }: { 
   questao: Questao; 
   user: any;
@@ -512,6 +753,10 @@ function QuestaoRow({
   onDropQuestao?: (draggedId: string, targetId: string) => void;
   isFirst?: boolean;
   isLast?: boolean;
+  onNextQuestion?: () => void;
+  onPrevQuestion?: () => void;
+  hasNextQuestion?: boolean;
+  hasPrevQuestion?: boolean;
 }) {
   const [open, setOpen] = useState(startOpen);
   const [showResp, setShowResp] = useState(false);
@@ -1190,7 +1435,19 @@ function QuestaoRow({
           )}
         </div>
       )}
-      {zoomedImage && <ImagemLightbox url={zoomedImage} onClose={() => setZoomedImage(null)} />}
+      {zoomedImage && (
+        <ZoomedQuestaoWrapper
+          questao={questao}
+          initialUrl={zoomedImage}
+          initialRespostaText={respostaText}
+          initialRespostaImageUrls={respostaImageUrls}
+          onClose={() => setZoomedImage(null)}
+          onNext={onNextQuestion}
+          onPrev={onPrevQuestion}
+          hasNext={hasNextQuestion}
+          hasPrev={hasPrevQuestion}
+        />
+      )}
     </div>
   );
 }
@@ -1236,6 +1493,7 @@ function CasoCard({
   const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [zoomedQuestaoIndex, setZoomedQuestaoIndex] = useState<number | null>(null);
 
   const handleReorderSubcasos = (newSubcasos: Caso[]) => {
     setSubcasos(newSubcasos);
@@ -1571,12 +1829,27 @@ function CasoCard({
                     onDropQuestao={handleDropQuestao}
                     isFirst={idx === 0}
                     isLast={idx === questoes.length - 1}
+                    onNextQuestion={idx < questoes.length - 1 ? () => setZoomedQuestaoIndex(idx + 1) : undefined}
+                    onPrevQuestion={idx > 0 ? () => setZoomedQuestaoIndex(idx - 1) : undefined}
+                    hasNextQuestion={idx < questoes.length - 1}
+                    hasPrevQuestion={idx > 0}
                   />
                 </div>
               ))}
             </>
           )}
         </div>
+      )}
+
+      {zoomedQuestaoIndex !== null && questoes[zoomedQuestaoIndex] && (
+        <ZoomedQuestaoWrapper
+          questao={questoes[zoomedQuestaoIndex]}
+          onClose={() => setZoomedQuestaoIndex(null)}
+          onNext={zoomedQuestaoIndex < questoes.length - 1 ? () => setZoomedQuestaoIndex(zoomedQuestaoIndex + 1) : undefined}
+          onPrev={zoomedQuestaoIndex > 0 ? () => setZoomedQuestaoIndex(zoomedQuestaoIndex - 1) : undefined}
+          hasNext={zoomedQuestaoIndex < questoes.length - 1}
+          hasPrev={zoomedQuestaoIndex > 0}
+        />
       )}
     </div>
   );
