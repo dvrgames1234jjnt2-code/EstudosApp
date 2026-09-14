@@ -2187,43 +2187,39 @@ function NotionBlockRowItem({
           }
         }
       }}
-      className={`py-1 transition-all rounded-xl ${
+      className={`flex flex-col gap-2.5 p-3.5 rounded-2xl border transition-all ${
         isDraggingOver ? "ring-2 ring-indigo-500/50 bg-indigo-500/10" : ""
+      } ${
+        showRedHighlight
+          ? "bg-rose-500/[0.03] border-rose-500/25 shadow-md shadow-rose-500/5"
+          : "bg-[#111623] border-white/[0.06] hover:border-white/[0.12] shadow-md"
       }`}
     >
-      <div className={`flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap group px-2 rounded-xl transition-all ${
-        showRedHighlight ? "bg-rose-500/[0.02] border border-rose-500/15" : "hover:bg-white/[0.02]"
-      }`}>
+      {/* Header do Card */}
+      <div className="flex items-center justify-between gap-2">
         <button
           onClick={() => setOpen(v => !v)}
-          className="flex items-center gap-3 text-left py-2 px-2 rounded-lg transition-all flex-1 min-w-0"
+          className="flex items-center gap-2.5 text-left transition-all flex-1 min-w-0 group"
         >
           <span className="text-[10px] text-slate-500 w-4 h-4 flex items-center justify-center shrink-0 select-none">
             {open ? "▼" : "▶"}
           </span>
           <span className="text-base shrink-0 select-none">{blockIcon}</span>
-          <span className={`text-[14px] sm:text-[15px] font-medium transition-colors shrink-0 ${
-            showRedHighlight ? "text-rose-300" : "text-[#8E97A8] group-hover:text-white"
-          }`}>
-            {block.nome}
-          </span>
-          {block.materia && (
-            <span className="text-[11px] font-normal text-blue-400 bg-white/[0.03] border border-white/[0.06] px-2.5 py-0.5 rounded-md shrink-0">
-              {block.materia}
+          <div className="flex flex-col min-w-0">
+            <span className={`text-[13px] sm:text-[14px] font-black transition-colors truncate ${
+              showRedHighlight ? "text-rose-300" : "text-slate-200 group-hover:text-white"
+            }`}>
+              {block.nome}
             </span>
-          )}
-          {showRedHighlight && blockStats && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-rose-300 bg-rose-950/30 border border-rose-500/20 shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
-              {blockStats.erros} {blockStats.erros === 1 ? "erro" : "erros"}
-            </span>
-          )}
-          {block.descricao && (
-            <span className="text-[12px] font-normal text-[#8E97A8] truncate hidden md:inline">— {block.descricao}</span>
-          )}
+            {block.materia && (
+              <span className="text-[10px] font-bold text-indigo-400/90 truncate">
+                {block.materia}
+              </span>
+            )}
+          </div>
         </button>
 
-        <div className="flex items-center gap-1.5 shrink-0 pr-1">
+        <div className="flex items-center gap-1.5 shrink-0">
           <BlocoStatsBadge 
             block={block} 
             resultadosMap={resultadosMap} 
@@ -2353,8 +2349,12 @@ function NotionBlockRowItem({
         </div>
       </div>
 
+      {block.descricao && (
+        <p className="text-[11px] text-slate-400/80 truncate px-1 font-normal">{block.descricao}</p>
+      )}
+
       {showGabarito && (
-        <div className="ml-1 mt-1 mb-2">
+        <div className="mt-1">
           <GabaritoBloco
             block={block}
             user={user}
@@ -2368,7 +2368,7 @@ function NotionBlockRowItem({
       )}
 
       {open && (
-        <div className="pl-6 border-l border-indigo-500/[0.15] ml-5 mt-1 mb-2">
+        <div className="mt-1 pl-3 border-l border-indigo-500/[0.2]">
           <BlockViewer 
             block={block} 
             user={user} 
@@ -2929,7 +2929,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           <button onClick={() => { setMateriaFiltro("Todas"); setCadernoFiltro("Todos"); setStatusFiltro("todas"); }} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold">Limpar filtros</button>
         </div>
       ) : (
-        <div className="flex flex-col bg-[#111623] border border-white/[0.06] rounded-2xl p-2 divide-y divide-white/[0.05]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           {blocksFiltrados.map((block, index) => (
             <NotionBlockRowItem
               key={block.id}
