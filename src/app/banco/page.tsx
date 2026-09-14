@@ -1147,251 +1147,247 @@ export default function BancoPage() {
                   </div>
                 </div>
 
-                {/* LISTAGEM DE BLOCOS */}
-                {Object.entries(blocos).map(([blocoKey, bloco]) => {
-                  // Filtrar provas pela busca, família e status
-                  if (simuladoFamiliaFilter !== "todas" && bloco.familia !== simuladoFamiliaFilter) {
-                    return null;
-                  }
+                {/* LISTAGEM DE BLOCOS EM GRID 2 COLUNAS LADO A LADO */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
+                  {Object.entries(blocos).map(([blocoKey, bloco]) => {
+                    // Filtrar provas pela busca, família e status
+                    if (simuladoFamiliaFilter !== "todas" && bloco.familia !== simuladoFamiliaFilter) {
+                      return null;
+                    }
 
-                  const tiposFiltrados: Record<string, ProvaData[]> = {};
+                    const tiposFiltrados: Record<string, ProvaData[]> = {};
 
-                  for (const [tipoNome, provasDoTipo] of Object.entries(bloco.tipos)) {
-                    const provasMatching = provasDoTipo.filter(p => {
-                      // Busca por texto
-                      if (simuladoSearch.trim()) {
-                        const term = simuladoSearch.toLowerCase();
-                        const matchName = p.rawName.toLowerCase().includes(term);
-                        const matchNum = p.numero.includes(term);
-                        const matchFam = p.familia.toLowerCase().includes(term);
-                        const matchConc = p.concurso.toLowerCase().includes(term);
-                        if (!matchName && !matchNum && !matchFam && !matchConc) return false;
+                    for (const [tipoNome, provasDoTipo] of Object.entries(bloco.tipos)) {
+                      const provasMatching = provasDoTipo.filter(p => {
+                        // Busca por texto
+                        if (simuladoSearch.trim()) {
+                          const term = simuladoSearch.toLowerCase();
+                          const matchName = p.rawName.toLowerCase().includes(term);
+                          const matchNum = p.numero.includes(term);
+                          const matchFam = p.familia.toLowerCase().includes(term);
+                          const matchConc = p.concurso.toLowerCase().includes(term);
+                          if (!matchName && !matchNum && !matchFam && !matchConc) return false;
+                        }
+
+                        // Filtro de Status
+                        const qTot = p.questions.length;
+                        const isConcluida = p.answered === qTot && qTot > 0;
+                        const isEmAndamento = p.answered > 0 && !isConcluida;
+                        const isNaoIniciada = p.answered === 0;
+
+                        if (simuladoStatusFilter === "concluidos" && !isConcluida) return false;
+                        if (simuladoStatusFilter === "em_andamento" && !isEmAndamento) return false;
+                        if (simuladoStatusFilter === "nao_iniciados" && !isNaoIniciada) return false;
+
+                        return true;
+                      });
+
+                      if (provasMatching.length > 0) {
+                        tiposFiltrados[tipoNome] = provasMatching;
                       }
+                    }
 
-                      // Filtro de Status
+                    if (Object.keys(tiposFiltrados).length === 0) return null;
+
+                    const todasProvas = Object.values(tiposFiltrados).flat();
+                    let concluidasCount = 0;
+                    let emAndamentoCount = 0;
+                    let naoIniciadasCount = 0;
+                    let totalQuestõesBloco = 0;
+                    let respondidasQuestõesBloco = 0;
+                    let acertosQuestõesBloco = 0;
+
+                    todasProvas.forEach(p => {
                       const qTot = p.questions.length;
-                      const isConcluida = p.answered === qTot && qTot > 0;
-                      const isEmAndamento = p.answered > 0 && !isConcluida;
-                      const isNaoIniciada = p.answered === 0;
-
-                      if (simuladoStatusFilter === "concluidos" && !isConcluida) return false;
-                      if (simuladoStatusFilter === "em_andamento" && !isEmAndamento) return false;
-                      if (simuladoStatusFilter === "nao_iniciados" && !isNaoIniciada) return false;
-
-                      return true;
+                      totalQuestõesBloco += qTot;
+                      respondidasQuestõesBloco += p.answered;
+                      acertosQuestõesBloco += p.correct;
+                      if (p.answered === 0) naoIniciadasCount++;
+                      else if (p.answered === qTot) concluidasCount++;
+                      else emAndamentoCount++;
                     });
 
-                    if (provasMatching.length > 0) {
-                      tiposFiltrados[tipoNome] = provasMatching;
-                    }
-                  }
+                    const pendentesQuestõesBloco = totalQuestõesBloco - respondidasQuestõesBloco;
+                    const aproveitamentoGeral = respondidasQuestõesBloco > 0 
+                      ? Math.round((acertosQuestõesBloco / respondidasQuestõesBloco) * 100) 
+                      : 0;
 
-                  if (Object.keys(tiposFiltrados).length === 0) return null;
+                    return (
+                      <div
+                        key={blocoKey}
+                        className="bg-[#0b0f1d] border border-white/[0.08] rounded-2xl p-3.5 sm:p-4 space-y-3 shadow-xl backdrop-blur-xl flex flex-col justify-between"
+                      >
+                        {/* 1. TOPO SUPERIOR (Familiaridade / Concurso | Status Globais) */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-white/[0.05]">
+                          {/* Seletor Pill (2G | BLOCO) */}
+                          <div className="flex items-center bg-[#151b2d] border border-white/10 rounded-xl p-1 shadow-inner shrink-0">
+                            <span className="bg-blue-600 text-white font-black text-[10px] px-2.5 py-0.5 rounded-lg uppercase tracking-wider shadow-sm">
+                              {bloco.familia}
+                            </span>
+                            <span className="text-slate-400 font-bold text-[10px] px-2 py-0.5 uppercase tracking-wider">
+                              {bloco.concurso}
+                            </span>
+                          </div>
 
-                  const todasProvas = Object.values(tiposFiltrados).flat();
-                  let concluidasCount = 0;
-                  let emAndamentoCount = 0;
-                  let naoIniciadasCount = 0;
-                  let totalQuestõesBloco = 0;
-                  let respondidasQuestõesBloco = 0;
-                  let acertosQuestõesBloco = 0;
+                          {/* Indicadores no canto superior direito */}
+                          <div className="flex items-center gap-3 ml-auto text-[10px]">
+                            <div className="flex items-center gap-1 text-right">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                              <span className="text-[8px] font-bold text-slate-400 uppercase">CONC:</span>
+                              <span className="font-black text-slate-100 tabular-nums">{concluidasCount}</span>
+                            </div>
 
-                  todasProvas.forEach(p => {
-                    const qTot = p.questions.length;
-                    totalQuestõesBloco += qTot;
-                    respondidasQuestõesBloco += p.answered;
-                    acertosQuestõesBloco += p.correct;
-                    if (p.answered === 0) naoIniciadasCount++;
-                    else if (p.answered === qTot) concluidasCount++;
-                    else emAndamentoCount++;
-                  });
+                            <div className="flex items-center gap-1 text-right">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                              <span className="text-[8px] font-bold text-slate-400 uppercase">AND:</span>
+                              <span className="font-black text-slate-100 tabular-nums">{emAndamentoCount}</span>
+                            </div>
 
-                  const pendentesQuestõesBloco = totalQuestõesBloco - respondidasQuestõesBloco;
-                  const aproveitamentoGeral = respondidasQuestõesBloco > 0 
-                    ? Math.round((acertosQuestõesBloco / respondidasQuestõesBloco) * 100) 
-                    : 0;
+                            <div className="flex items-center gap-1 text-right">
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" />
+                              <span className="text-[8px] font-bold text-slate-400 uppercase">VIRG:</span>
+                              <span className="font-black text-slate-100 tabular-nums">{naoIniciadasCount}</span>
+                            </div>
 
-                  return (
-                    <div
-                      key={blocoKey}
-                      className="bg-[#0b0f1d] border border-white/[0.08] rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl backdrop-blur-xl"
-                    >
-                      {/* 1. TOPO SUPERIOR (Familiaridade / Concurso | Status Globais) */}
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-1">
-                        {/* Seletor Pill (2G | BLOCO) */}
-                        <div className="flex items-center bg-[#151b2d] border border-white/10 rounded-xl p-1 shadow-inner">
-                          <span className="bg-blue-600 text-white font-black text-[10px] px-2.5 py-1 rounded-lg uppercase tracking-wider shadow-sm">
-                            {bloco.familia}
-                          </span>
-                          <span className="text-slate-400 font-bold text-[10px] px-2.5 py-1 uppercase tracking-wider">
-                            {bloco.concurso}
-                          </span>
+                            <div className="pl-2.5 border-l border-white/10 text-right">
+                              <div className="text-[8px] font-extrabold text-slate-400 uppercase">APROV.</div>
+                              <div className="text-sm font-black text-white tabular-nums leading-none">
+                                {aproveitamentoGeral}<span className="text-[10px] font-bold text-slate-400">%</span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
 
-                        {/* Indicadores no canto superior direito (LOTADOS / DISPONÍVEIS / VAZIOS / OCUPAÇÃO) */}
-                        <div className="flex items-center gap-4 sm:gap-6 ml-auto">
-                          <div className="flex items-center gap-1.5 text-right">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                        {/* 2. LINHA DE CAPACIDADES GERAIS */}
+                        <div className="bg-[#070a14] border border-white/[0.05] rounded-xl p-2.5 sm:p-3 flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-3 sm:gap-4 flex-wrap text-[11px]">
                             <div>
-                              <div className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest">CONCLUÍDOS</div>
-                              <div className="text-sm font-black text-slate-100 tabular-nums leading-tight">{concluidasCount}</div>
+                              <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">TOTAL</div>
+                              <div className="text-sm font-black text-white tabular-nums">
+                                {totalQuestõesBloco} <span className="text-[9px] font-bold text-slate-500">Q</span>
+                              </div>
                             </div>
-                          </div>
 
-                          <div className="flex items-center gap-1.5 text-right">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                            <div className="h-5 w-px bg-white/10" />
+
                             <div>
-                              <div className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest">EM ANDAMENTO</div>
-                              <div className="text-sm font-black text-slate-100 tabular-nums leading-tight">{emAndamentoCount}</div>
+                              <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">FEITAS</div>
+                              <div className="text-sm font-black text-emerald-400 tabular-nums">
+                                {respondidasQuestõesBloco} <span className="text-[9px] font-bold text-emerald-500/70">RES</span>
+                              </div>
                             </div>
-                          </div>
 
-                          <div className="flex items-center gap-1.5 text-right">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" />
+                            <div className="h-5 w-px bg-white/10" />
+
                             <div>
-                              <div className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest">NÃO INICIADOS</div>
-                              <div className="text-sm font-black text-slate-100 tabular-nums leading-tight">{naoIniciadasCount}</div>
+                              <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">PENDENTES</div>
+                              <div className="text-sm font-black text-blue-400 tabular-nums">
+                                {pendentesQuestõesBloco} <span className="text-[9px] font-bold text-blue-500/70">PEND</span>
+                              </div>
                             </div>
                           </div>
 
-                          <div className="pl-3 border-l border-white/10 text-right">
-                            <div className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest">APROVEITAMENTO</div>
-                            <div className="text-lg font-black text-white tabular-nums leading-none tracking-tight">
-                              {aproveitamentoGeral}<span className="text-xs font-bold text-slate-400">%</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 2. LINHA DE CAPACIDADES GERAIS (CAPACIDADE TOTAL / EM USO / ESPAÇO LIVRE) */}
-                      <div className="bg-[#070a14] border border-white/[0.05] rounded-xl p-3 sm:p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
-                        <div className="flex items-center gap-6 w-full sm:w-auto justify-around sm:justify-start">
+                          {/* STATUS GLOBAL BADGE */}
                           <div>
-                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">CAPACIDADE TOTAL</div>
-                            <div className="text-base sm:text-lg font-black text-white tabular-nums">
-                              {totalQuestõesBloco} <span className="text-[10px] font-bold text-slate-500">QUESTÕES</span>
-                            </div>
-                          </div>
-
-                          <div className="h-6 w-px bg-white/10" />
-
-                          <div>
-                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">RESPONDIDAS</div>
-                            <div className="text-base sm:text-lg font-black text-emerald-400 tabular-nums">
-                              {respondidasQuestõesBloco} <span className="text-[10px] font-bold text-emerald-500/70">RES</span>
-                            </div>
-                          </div>
-
-                          <div className="h-6 w-px bg-white/10" />
-
-                          <div>
-                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">PENDENTES</div>
-                            <div className="text-base sm:text-lg font-black text-blue-400 tabular-nums">
-                              {pendentesQuestõesBloco} <span className="text-[10px] font-bold text-blue-500/70">PEND</span>
-                            </div>
+                            <span className="px-2.5 py-0.5 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-400 text-[8px] font-black uppercase tracking-widest shadow-[0_0_8px_rgba(245,158,11,0.12)]">
+                              STATUS: {aproveitamentoGeral >= 70 ? "ALTO RENDIMENTO" : "EM ANDAMENTO"}
+                            </span>
                           </div>
                         </div>
 
-                        {/* STATUS GLOBAL BADGE */}
-                        <div className="self-end sm:self-center">
-                          <span className="px-3 py-1 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-400 text-[9px] font-black uppercase tracking-widest shadow-[0_0_12px_rgba(245,158,11,0.15)]">
-                            STATUS GLOBAL: {aproveitamentoGeral >= 70 ? "ALTO RENDIMENTO" : "EM ANDAMENTO"}
-                          </span>
-                        </div>
-                      </div>
+                        {/* 3. SEÇÕES DE TIPOS (SIMULADO, PROVAS, etc.) */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-0.5">
+                          {Object.entries(tiposFiltrados).map(([tipoNome, provasDoTipo]) => {
+                            const tipoTotalQ = provasDoTipo.reduce((s, p) => s + p.questions.length, 0);
+                            const tipoAnsweredQ = provasDoTipo.reduce((s, p) => s + p.answered, 0);
+                            const tipoPendingQ = tipoTotalQ - tipoAnsweredQ;
 
-                      {/* 3. SEÇÕES DE TIPOS (SIMULADO, PROVAS, etc.) */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-1">
-                        {Object.entries(tiposFiltrados).map(([tipoNome, provasDoTipo]) => {
-                          const tipoTotalQ = provasDoTipo.reduce((s, p) => s + p.questions.length, 0);
-                          const tipoAnsweredQ = provasDoTipo.reduce((s, p) => s + p.answered, 0);
-                          const tipoPendingQ = tipoTotalQ - tipoAnsweredQ;
+                            // Agrupar provas pela matéria dominante
+                            const porMateria: Record<string, ProvaData[]> = {};
+                            for (const prova of provasDoTipo) {
+                              const freq: Record<string, number> = {};
+                              prova.questions.forEach(q => {
+                                const m = q.materia || "Geral";
+                                freq[m] = (freq[m] || 0) + 1;
+                              });
+                              const matDom = Object.entries(freq).sort((a, b) => b[1] - a[1])[0]?.[0] || "Geral";
+                              if (!porMateria[matDom]) porMateria[matDom] = [];
+                              porMateria[matDom].push(prova);
+                            }
+                            const materias = Object.keys(porMateria).sort();
 
-                          // Agrupar provas pela matéria dominante
-                          const porMateria: Record<string, ProvaData[]> = {};
-                          for (const prova of provasDoTipo) {
-                            const freq: Record<string, number> = {};
-                            prova.questions.forEach(q => {
-                              const m = q.materia || "Geral";
-                              freq[m] = (freq[m] || 0) + 1;
-                            });
-                            const matDom = Object.entries(freq).sort((a, b) => b[1] - a[1])[0]?.[0] || "Geral";
-                            if (!porMateria[matDom]) porMateria[matDom] = [];
-                            porMateria[matDom].push(prova);
-                          }
-                          const materias = Object.keys(porMateria).sort();
+                            return (
+                              <div key={tipoNome} className="space-y-2 bg-[#080c18] border border-white/[0.04] rounded-xl p-3">
+                                {/* Cabeçalho do Tipo */}
+                                <div className="flex items-center justify-between pb-1 border-b border-white/[0.06]">
+                                  <h4 className="text-[10px] font-black text-slate-200 uppercase tracking-widest flex items-center gap-1">
+                                    <span className="w-1 h-2 bg-blue-500 rounded-full" />
+                                    {tipoNome}
+                                  </h4>
+                                  <div className="flex items-center gap-2 text-[9px] font-mono">
+                                    <span className="text-slate-400">TOT: <strong className="text-slate-200 font-bold">{tipoTotalQ}</strong></span>
+                                    <span className="text-slate-400">FEITOS: <strong className="text-emerald-400 font-bold">{tipoAnsweredQ}</strong></span>
+                                    <span className="text-slate-400">PEND: <strong className="text-blue-400 font-bold">{tipoPendingQ}</strong></span>
+                                  </div>
+                                </div>
 
-                          return (
-                            <div key={tipoNome} className="space-y-2 bg-[#080c18] border border-white/[0.04] rounded-xl p-3.5">
-                              {/* Cabeçalho do Tipo */}
-                              <div className="flex items-center justify-between pb-1.5 border-b border-white/[0.06]">
-                                <h4 className="text-[11px] font-black text-slate-200 uppercase tracking-widest flex items-center gap-1.5">
-                                  <span className="w-1 h-2.5 bg-blue-500 rounded-full" />
-                                  {tipoNome}
-                                </h4>
-                                <div className="flex items-center gap-2.5 text-[10px] font-mono">
-                                  <span className="text-slate-400">TOT: <strong className="text-slate-200 font-bold">{tipoTotalQ}</strong></span>
-                                  <span className="text-slate-400">FEITOS: <strong className="text-emerald-400 font-bold">{tipoAnsweredQ}</strong></span>
-                                  <span className="text-slate-400">PEND: <strong className="text-blue-400 font-bold">{tipoPendingQ}</strong></span>
+                                {/* GRID DE PROVAS agrupadas por Matéria dominante */}
+                                <div className="space-y-1.5 pt-0.5">
+                                  {materias.map(mat => {
+                                    const provasMat = porMateria[mat];
+                                    const matAnswered = provasMat.reduce((s, p) => s + p.answered, 0);
+                                    const matTotal   = provasMat.reduce((s, p) => s + p.questions.length, 0);
+                                    return (
+                                      <div key={mat}>
+                                        {/* Sub-header da Matéria */}
+                                        {materias.length > 1 && (
+                                          <div className="flex items-center justify-between mb-1">
+                                            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 truncate max-w-[65%]">{mat}</span>
+                                            <span className="text-[9px] font-mono text-slate-600 tabular-nums">{matAnswered}/{matTotal}</span>
+                                          </div>
+                                        )}
+                                        <div className="flex flex-wrap gap-1.5">
+                                          {provasMat.map(prova => {
+                                            const qTot = prova.questions.length;
+                                            const isConcluida = prova.answered === qTot && qTot > 0;
+                                            const isEmAndamento = prova.answered > 0 && !isConcluida;
+
+                                            let tileStyle = "bg-[#0f1422] border-white/[0.08] text-slate-500 hover:border-slate-500 hover:text-slate-300";
+                                            if (isConcluida) {
+                                              tileStyle = "bg-[#0a2318] border-emerald-500/50 text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.15)]";
+                                            } else if (isEmAndamento) {
+                                              tileStyle = "bg-[#271018] border-rose-500/50 text-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.15)]";
+                                            }
+
+                                            return (
+                                              <button
+                                                key={prova.rawName}
+                                                onClick={() => {
+                                                  setResolverQueue(prova.questions);
+                                                  setResolverIndex(0);
+                                                  setSelectedQuestion(prova.questions[0]);
+                                                  setActiveTab("desempenho");
+                                                }}
+                                                title={`${prova.rawName} — ${prova.answered}/${qTot} feitas · clique para ver o desempenho`}
+                                                className={`w-7 h-7 rounded-md border font-mono font-bold text-[10px] transition-all hover:scale-105 active:scale-95 flex items-center justify-center ${tileStyle}`}
+                                              >
+                                                {prova.numero}
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </div>
-
-                              {/* GRID DE PROVAS agrupadas por Matéria dominante */}
-                              <div className="space-y-2 pt-0.5">
-                                {materias.map(mat => {
-                                  const provasMat = porMateria[mat];
-                                  const matAnswered = provasMat.reduce((s, p) => s + p.answered, 0);
-                                  const matTotal   = provasMat.reduce((s, p) => s + p.questions.length, 0);
-                                  return (
-                                    <div key={mat}>
-                                      {/* Sub-header da Matéria — só aparece se há mais de 1 matéria */}
-                                      {materias.length > 1 && (
-                                        <div className="flex items-center justify-between mb-1">
-                                          <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 truncate max-w-[65%]">{mat}</span>
-                                          <span className="text-[9px] font-mono text-slate-600 tabular-nums">{matAnswered}/{matTotal}</span>
-                                        </div>
-                                      )}
-                                      <div className="flex flex-wrap gap-1.5">
-                                        {provasMat.map(prova => {
-                                          const qTot = prova.questions.length;
-                                          const isConcluida = prova.answered === qTot && qTot > 0;
-                                          const isEmAndamento = prova.answered > 0 && !isConcluida;
-
-                                          let tileStyle = "bg-[#0f1422] border-white/[0.08] text-slate-500 hover:border-slate-500 hover:text-slate-300";
-                                          if (isConcluida) {
-                                            tileStyle = "bg-[#0a2318] border-emerald-500/50 text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.15)]";
-                                          } else if (isEmAndamento) {
-                                            tileStyle = "bg-[#271018] border-rose-500/50 text-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.15)]";
-                                          }
-
-                                          return (
-                                            <button
-                                              key={prova.rawName}
-                                              onClick={() => {
-                                                setResolverQueue(prova.questions);
-                                                setResolverIndex(0);
-                                                setSelectedQuestion(prova.questions[0]);
-                                                setActiveTab("desempenho");
-                                              }}
-                                              title={`${prova.rawName} — ${prova.answered}/${qTot} feitas · clique para ver o desempenho`}
-                                              className={`w-8 h-8 rounded-md border font-mono font-bold text-[10px] transition-all hover:scale-105 active:scale-95 flex items-center justify-center ${tileStyle}`}
-                                            >
-                                              {prova.numero}
-                                            </button>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </motion.div>
             );
           })()}

@@ -2929,7 +2929,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           <button onClick={() => { setMateriaFiltro("Todas"); setCadernoFiltro("Todos"); setStatusFiltro("todas"); }} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold">Limpar filtros</button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+        <div className="flex flex-col bg-[#111623] border border-white/[0.06] rounded-2xl p-2 divide-y divide-white/[0.05]">
           {blocksFiltrados.map((block, index) => (
             <NotionBlockRowItem
               key={block.id}
