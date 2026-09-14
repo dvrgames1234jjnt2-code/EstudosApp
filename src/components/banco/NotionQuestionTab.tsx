@@ -368,9 +368,24 @@ function ImagemLightbox({
   }, [isDuvida, questaoId]);
 
   const handleRecordAnswer = async (isCorrect: boolean) => {
-    if (!user || !questaoId) return;
+    if (!questaoId) return;
     setRecording(true);
     setRecorded(null);
+
+    let currentUser = user;
+    if (!currentUser) {
+      try {
+        const { data } = await supabase.auth.getUser();
+        currentUser = data?.user;
+      } catch (e) {}
+    }
+
+    if (!currentUser) {
+      alert("Por favor, faça login para registrar sua resposta.");
+      setRecording(false);
+      return;
+    }
+
     const now = new Date();
     const date = now.toISOString().slice(0, 10);
     const time = now.toTimeString().slice(0, 8);
@@ -383,7 +398,7 @@ function ImagemLightbox({
         data: date,
         horario: time,
         status: isCorrect ? "Acertei" : "Errei",
-        user_id: user.id,
+        user_id: currentUser.id,
       });
       if (error) throw error;
       setRecorded(isCorrect ? 'acerto' : 'erro');
@@ -665,7 +680,7 @@ function ImagemLightbox({
           ) : null}
 
           {/* User Record Answer Section inside Lightbox */}
-          {user && questaoId && (
+          {questaoId && (
             <div className="flex items-center gap-2.5 mt-3 pt-3 border-t border-white/10 flex-wrap">
               <span className="text-xs text-slate-300 font-semibold mr-auto">Registrar tentativa:</span>
               
@@ -2596,7 +2611,7 @@ function NotionBlockRowItem({
           </span>
           <span className="text-base shrink-0 select-none">{blockIcon}</span>
           <div className="flex items-center gap-2 min-w-0 flex-wrap sm:flex-nowrap">
-            <span className={`text-[13px] sm:text-[14px] font-black transition-colors truncate ${
+            <span className={`text-[13px] sm:text-[14px] font-normal transition-colors truncate ${
               showRedHighlight ? "text-rose-300" : "text-slate-200 group-hover:text-white"
             }`}>
               {block.nome}
