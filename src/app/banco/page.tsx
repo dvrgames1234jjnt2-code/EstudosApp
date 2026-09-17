@@ -37,7 +37,6 @@ import FixationDashboardView from "../../components/fixacao/FixationDashboardVie
 import { PrintSimuladoModal } from "../../components/banco/PrintSimuladoModal";
 import NotionQuestionTab from "../../components/banco/NotionQuestionTab";
 import CronometroTab from "../../components/banco/CronometroTab";
-import { AppSidebarNav } from "../../components/AppSidebarNav";
 
 // ──────────────────────────────────────────────
 // Types
@@ -116,7 +115,6 @@ export default function BancoPage() {
   const [loadingUser, setLoadingUser] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showGlobalPrintModal, setShowGlobalPrintModal] = useState(false);
-  const [showSidebarNav, setShowSidebarNav] = useState(false);
 
   // Data
   const [questions, setQuestions]   = useState<BancoQuestion[]>([]);
@@ -405,11 +403,8 @@ export default function BancoPage() {
       {/* Navbar */}
       <nav className="sticky top-0 z-50 h-16 border-b border-white/[0.05] bg-[#020617]/80 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div 
-            className="flex items-center gap-2 cursor-pointer group"
-            onMouseEnter={() => setShowSidebarNav(true)}
-          >
-            <div className="w-8 h-8 bg-blue-600 group-hover:bg-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/30 transition-colors">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/30">
               <GraduationCap size={16} className="text-white" />
             </div>
             <div className="hidden sm:block">
@@ -458,6 +453,55 @@ export default function BancoPage() {
           )}
         </div>
       </nav>
+
+      {/* Sub-navbar / Tab Bar Sutil */}
+      <div className="sticky top-16 z-40 border-b border-white/[0.06] bg-[#020617]/90 backdrop-blur-md px-4 sm:px-8">
+        <div className="flex items-center gap-1.5 w-full max-w-[1920px] mx-auto overflow-x-auto py-2 custom-scrollbar">
+          {[
+            { id: "banco",      icon: <BookOpen size={13} />,       label: "Banco de Questões", count: questions.length },
+            { id: "resolver",   icon: <Layers size={13} />,         label: "Questão Ativa", badge: selectedQuestion ? "●" : null },
+            { id: "simulados",  icon: <ClipboardList size={13} />,  label: "Simulados", count: provasDisponiveis.length },
+            { id: "desempenho", icon: <BarChart3 size={13} />,      label: "Desempenho", badge: resolverQueue.length > 0 ? "●" : null },
+            { id: "notion",     icon: <BookMarked size={13} />,     label: "Notion Question" },
+            ...(isAdmin ? [{ id: "cronometro", icon: <Timer size={13} />, label: "Cronômetro" }] : []),
+          ].map(tab => {
+            const isSelected = activeTab === tab.id;
+            const isDisabled = (tab.id === "resolver" && !selectedQuestion);
+
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  if (isDisabled) return;
+                  if (tab.id === "desempenho" && resolverQueue.length === 0) return;
+                  setActiveTab(tab.id as ActiveTab);
+                }}
+                disabled={isDisabled}
+                className={`relative px-3.5 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 ${
+                  isSelected
+                    ? "bg-blue-600/15 text-blue-400 border border-blue-500/30 shadow-sm"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border border-transparent"
+                }`}
+              >
+                <span className={isSelected ? "text-blue-400" : "text-slate-500"}>
+                  {tab.icon}
+                </span>
+                <span>{tab.label}</span>
+                {tab.count !== undefined && (
+                  <span className={`px-1.5 py-0.2 rounded-md text-[9px] font-black tabular-nums ${
+                    isSelected ? "bg-blue-500/20 text-blue-300" : "bg-white/[0.06] text-slate-400"
+                  }`}>
+                    {tab.count}
+                  </span>
+                )}
+                {tab.badge && (
+                  <span className="text-[8px] text-blue-400 animate-pulse">{tab.badge}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Main */}
       <main className="w-full max-w-[1920px] mx-auto px-4 sm:px-8 py-6">
@@ -1410,20 +1454,6 @@ export default function BancoPage() {
         questions={filteredQuestions.length > 0 ? filteredQuestions : questions}
         title="SIMULADO BANCO DE QUESTÕES"
         subTitle="Estação de Treinamento — Todas as Questões"
-      />
-
-      <AppSidebarNav
-        isOpen={showSidebarNav}
-        onClose={() => setShowSidebarNav(false)}
-        onMouseEnter={() => setShowSidebarNav(true)}
-        onMouseLeave={() => setShowSidebarNav(false)}
-        activeTab={activeTab}
-        onSelectTab={(tabId) => setActiveTab(tabId as ActiveTab)}
-        questionsCount={questions.length}
-        provasCount={provasDisponiveis.length}
-        hasSelectedQuestion={!!selectedQuestion}
-        hasResolverQueue={resolverQueue.length > 0}
-        isAdmin={isAdmin}
       />
     </div>
   );
