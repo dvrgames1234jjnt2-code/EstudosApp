@@ -459,44 +459,6 @@ export default function BancoPage() {
         </div>
       </nav>
 
-      {/* Tab bar */}
-      <div className="sticky top-16 z-40 border-b border-white/[0.05] bg-[#020617]/90 backdrop-blur-md px-4 sm:px-8">
-        <div className="flex items-center gap-1 w-full max-w-[1920px] mx-auto overflow-x-auto">
-          {[
-            { id: "banco",      icon: <BookOpen size={13} />,       label: "Banco de Questões", count: questions.length },
-            { id: "resolver",   icon: <Layers size={13} />,         label: "Questão Ativa", badge: selectedQuestion ? "●" : null },
-            { id: "simulados",  icon: <ClipboardList size={13} />,  label: "Simulados", count: provasDisponiveis.length },
-            { id: "desempenho", icon: <BarChart3 size={13} />,      label: "Desempenho", badge: resolverQueue.length > 0 ? "●" : null },
-            { id: "notion",     icon: <BookMarked size={13} />,     label: "Notion Question", count: undefined, badge: null },
-            ...(isAdmin ? [{ id: "cronometro", icon: <Timer size={13} />, label: "Cronômetro", count: undefined, badge: null }] : []),
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => {
-                if (tab.id === "resolver" && !selectedQuestion) return;
-                if (tab.id === "desempenho" && resolverQueue.length === 0) return;
-                setActiveTab(tab.id as ActiveTab);
-              }}
-              disabled={(tab.id === "resolver" && !selectedQuestion)}
-              className={`relative px-4 py-3 text-[11px] font-bold border-b-2 flex items-center gap-2 -mb-px transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-                activeTab === tab.id
-                  ? "border-blue-500 text-blue-400"
-                  : "border-transparent text-slate-500 hover:text-slate-300"
-              }`}
-            >
-              {tab.icon}
-              {tab.label}
-              {tab.count !== undefined && (
-                <span className="px-1.5 py-0.5 text-[9px] font-black bg-white/[0.06] rounded-md text-slate-500">{tab.count}</span>
-              )}
-              {tab.badge && (
-                <span className="text-[8px] text-blue-400 animate-pulse">{tab.badge}</span>
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Main */}
       <main className="w-full max-w-[1920px] mx-auto px-4 sm:px-8 py-6">
         <AnimatePresence mode="wait">
@@ -1456,7 +1418,12 @@ export default function BancoPage() {
         onMouseEnter={() => setShowSidebarNav(true)}
         onMouseLeave={() => setShowSidebarNav(false)}
         activeTab={activeTab}
-        onSelectTab={(tabId) => setActiveTab(tabId)}
+        onSelectTab={(tabId) => setActiveTab(tabId as ActiveTab)}
+        questionsCount={questions.length}
+        provasCount={provasDisponiveis.length}
+        hasSelectedQuestion={!!selectedQuestion}
+        hasResolverQueue={resolverQueue.length > 0}
+        isAdmin={isAdmin}
       />
     </div>
   );
