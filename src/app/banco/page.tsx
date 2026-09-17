@@ -37,6 +37,7 @@ import FixationDashboardView from "../../components/fixacao/FixationDashboardVie
 import { PrintSimuladoModal } from "../../components/banco/PrintSimuladoModal";
 import NotionQuestionTab from "../../components/banco/NotionQuestionTab";
 import CronometroTab from "../../components/banco/CronometroTab";
+import { AppSidebarNav } from "../../components/AppSidebarNav";
 
 // ──────────────────────────────────────────────
 // Types
@@ -115,6 +116,7 @@ export default function BancoPage() {
   const [loadingUser, setLoadingUser] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showGlobalPrintModal, setShowGlobalPrintModal] = useState(false);
+  const [showSidebarNav, setShowSidebarNav] = useState(false);
 
   // Data
   const [questions, setQuestions]   = useState<BancoQuestion[]>([]);
@@ -403,8 +405,11 @@ export default function BancoPage() {
       {/* Navbar */}
       <nav className="sticky top-0 z-50 h-16 border-b border-white/[0.05] bg-[#020617]/80 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/30">
+          <div 
+            className="flex items-center gap-2 cursor-pointer group"
+            onMouseEnter={() => setShowSidebarNav(true)}
+          >
+            <div className="w-8 h-8 bg-blue-600 group-hover:bg-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/30 transition-colors">
               <GraduationCap size={16} className="text-white" />
             </div>
             <div className="hidden sm:block">
@@ -1443,6 +1448,15 @@ export default function BancoPage() {
         questions={filteredQuestions.length > 0 ? filteredQuestions : questions}
         title="SIMULADO BANCO DE QUESTÕES"
         subTitle="Estação de Treinamento — Todas as Questões"
+      />
+
+      <AppSidebarNav
+        isOpen={showSidebarNav}
+        onClose={() => setShowSidebarNav(false)}
+        onMouseEnter={() => setShowSidebarNav(true)}
+        onMouseLeave={() => setShowSidebarNav(false)}
+        activeTab={activeTab}
+        onSelectTab={(tabId) => setActiveTab(tabId)}
       />
     </div>
   );
