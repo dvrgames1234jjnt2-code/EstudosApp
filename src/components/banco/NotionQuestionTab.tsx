@@ -3189,14 +3189,14 @@ export default function NotionQuestionTab({ user }: { user: any }) {
         </div>
       )}
 
-      {!loadingBlocks && blocks.length > 0 && (
+      {!selectedBlock && !loadingBlocks && blocks.length > 0 && (
         <div className="flex items-center gap-3 flex-wrap justify-between bg-[#101526]/80 p-3 rounded-2xl border border-white/[0.08] backdrop-blur-xl relative z-10 shadow-xl">
           <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
             {/* Filtro por Caderno */}
             <div className="flex items-center gap-1.5 bg-[#0d1220] border border-white/[0.08] hover:border-white/[0.18] px-3 py-1.5 rounded-xl transition-all">
               <BookMarked size={13} className="text-indigo-400 shrink-0" />
               <select
-                value={selectedBlock ? selectedBlock.id : cadernoFiltro}
+                value={cadernoFiltro}
                 onChange={e => {
                   const val = e.target.value;
                   setCadernoFiltro(val);
