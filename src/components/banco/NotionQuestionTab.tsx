@@ -2821,54 +2821,59 @@ function PainelDesempenho({
   if (!user) return null;
 
   const duvidasArr = [...duvidasIds];
+  const totalRespondidas = acertadas.length + erradas.length;
+  const taxaAcerto = totalRespondidas > 0 ? Math.round((acertadas.length / totalRespondidas) * 100) : 0;
 
-  const cards: {
-    key: string;
-    label: string;
-    sublabel: string;
-    count: number;
-    color: "blue" | "emerald" | "red" | "amber";
-    icon: ReactNode;
-  }[] = [
-    { key: "feitas_hoje", label: "Feitas Hoje", sublabel: `${feitasHojeIds.length} hoje`, count: feitasHojeIds.length, color: "blue", icon: <Clock size={13} /> },
-    { key: "acertos", label: "Acertadas", sublabel: `${acertadas.length} acertos`, count: acertadas.length, color: "emerald", icon: <Check size={13} /> },
-    { key: "erros", label: "Erradas", sublabel: `${erradas.length} com erro`, count: erradas.length, color: "red", icon: <X size={13} /> },
-    { key: "duvidas", label: "Em Dúvida", sublabel: `${duvidasArr.length} marcadas`, count: duvidasArr.length, color: "amber", icon: <Flag size={13} /> },
+  const cards = [
+    { key: "feitas_hoje", emoji: "🌸", label: "Feitas Hoje", sublabel: `${feitasHojeIds.length} hoje`, count: feitasHojeIds.length, border: "border-sky-500/25 hover:border-sky-400/40", text: "text-sky-400", bg: "bg-sky-500/[0.03]", badgeBg: "bg-sky-500/10" },
+    { key: "acertos", emoji: "✨", label: "Acertadas", sublabel: `${acertadas.length} acertos`, count: acertadas.length, border: "border-emerald-500/25 hover:border-emerald-400/40", text: "text-emerald-400", bg: "bg-emerald-500/[0.03]", badgeBg: "bg-emerald-500/10" },
+    { key: "erros", emoji: "👾", label: "Com Erros", sublabel: `${erradas.length} pendentes`, count: erradas.length, border: "border-rose-500/25 hover:border-rose-400/40", text: "text-rose-400", bg: "bg-rose-500/[0.03]", badgeBg: "bg-rose-500/10" },
+    { key: "duvidas", emoji: "⭐️", label: "Em Dúvida", sublabel: `${duvidasArr.length} salvas`, count: duvidasArr.length, border: "border-amber-500/25 hover:border-amber-400/40", text: "text-amber-400", bg: "bg-amber-500/[0.03]", badgeBg: "bg-amber-500/10" },
   ];
 
-  const colorClasses: Record<string, { border: string; text: string; iconBg: string; bg: string }> = {
-    blue: { border: "border-blue-500/25", text: "text-blue-400", iconBg: "bg-blue-500/10", bg: "bg-blue-500/[0.02]" },
-    emerald: { border: "border-emerald-500/25", text: "text-emerald-400", iconBg: "bg-emerald-500/10", bg: "bg-emerald-500/[0.02]" },
-    red: { border: "border-red-500/25", text: "text-red-400", iconBg: "bg-red-500/10", bg: "bg-red-500/[0.02]" },
-    amber: { border: "border-amber-500/25", text: "text-amber-400", iconBg: "bg-amber-500/10", bg: "bg-amber-500/[0.02]" },
-  };
-
   return (
-    <div className="flex flex-col gap-3.5 border border-white/[0.06] rounded-2xl bg-[#111623] p-4 sm:p-5 shadow-xl">
-      <div className="flex items-center justify-between">
+    <div className="relative overflow-hidden flex flex-col gap-3.5 border border-white/[0.08] rounded-2xl bg-gradient-to-br from-[#101526]/90 via-[#0d1222]/90 to-[#141a2e]/90 p-4 sm:p-5 shadow-2xl backdrop-blur-xl">
+      {/* Glow aesthetic kawaii background */}
+      <div className="absolute -top-12 -right-12 w-36 h-36 bg-indigo-500/10 blur-3xl rounded-full pointer-events-none" />
+      <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-pink-500/10 blur-3xl rounded-full pointer-events-none" />
+
+      <div className="flex items-center justify-between flex-wrap gap-2 relative z-10">
         <div className="flex items-center gap-2">
-          <BarChart3 size={15} className="text-indigo-400" />
-          <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest">Painel de Desempenho</p>
+          <span className="w-7 h-7 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-xs text-indigo-300 shadow-sm">
+            ✨
+          </span>
+          <div>
+            <p className="text-[11px] font-black text-slate-200 uppercase tracking-widest flex items-center gap-1.5">
+              Desempenho de Estudos <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-300 border border-pink-500/20">🎮 Kawaii Mode</span>
+            </p>
+          </div>
         </div>
-        <button onClick={onRefresh} title="Atualizar estatísticas" className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/[0.03] border border-white/[0.06] text-slate-500 hover:text-indigo-400 transition-all">
-          <RefreshCw size={12} />
-        </button>
+
+        <div className="flex items-center gap-2">
+          {totalRespondidas > 0 && (
+            <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 flex items-center gap-1">
+              🎯 Precisão: <span className="text-white font-black">{taxaAcerto}%</span>
+            </span>
+          )}
+          <button onClick={onRefresh} title="Atualizar estatísticas" className="w-7 h-7 flex items-center justify-center rounded-xl bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:text-indigo-300 hover:border-indigo-500/30 transition-all">
+            <RefreshCw size={12} />
+          </button>
+        </div>
       </div>
 
       {/* Grid de estatísticas estáticas limpas */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 relative z-10">
         {cards.map(card => {
-          const c = colorClasses[card.color];
           return (
-            <div key={card.key} className={`rounded-xl border ${c.border} ${c.bg} px-3.5 py-3 flex items-center justify-between transition-all`}>
+            <div key={card.key} className={`rounded-2xl border ${card.border} ${card.bg} p-3.5 flex items-center justify-between transition-all group hover:scale-[1.02]`}>
               <div className="flex flex-col gap-1 min-w-0">
-                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-300 truncate">
-                  <span className={`w-4 h-4 rounded-md flex items-center justify-center ${c.iconBg} ${c.text} shrink-0`}>{card.icon}</span>
+                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-200 truncate">
+                  <span className={`w-5 h-5 rounded-lg flex items-center justify-center ${card.badgeBg} text-xs shrink-0`}>{card.emoji}</span>
                   <span className="truncate">{card.label}</span>
                 </span>
-                <span className="text-[9px] text-slate-500 font-bold truncate">{card.sublabel}</span>
+                <span className="text-[9px] text-slate-400 font-bold truncate pl-0.5">{card.sublabel}</span>
               </div>
-              <span className={`text-lg font-black tabular-nums ml-2 ${c.text}`}>{card.count}</span>
+              <span className={`text-xl font-black tabular-nums ml-2 ${card.text}`}>{card.count}</span>
             </div>
           );
         })}
@@ -3166,23 +3171,33 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   }, [blocks, materiaFiltro, cadernoFiltro]);
 
   return (
-    <div className="flex flex-col gap-6 bg-[#0b0f19]/80 rounded-[2rem] border border-white/[0.04] p-5 sm:p-7">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="flex flex-col gap-6 bg-[#080d1a]/90 backdrop-blur-2xl rounded-[2.5rem] border border-white/[0.06] p-5 sm:p-7 shadow-2xl relative overflow-hidden">
+      {/* Background kawaii aesthetic glows */}
+      <div className="absolute top-0 right-1/4 w-80 h-80 bg-indigo-600/[0.04] blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-pink-600/[0.04] blur-[120px] rounded-full pointer-events-none" />
+
+      {/* Top Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3 relative z-10">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
-            <BookMarked size={16} className="text-indigo-400" />
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-pink-500/20 border border-white/10 flex items-center justify-center shrink-0 shadow-lg">
+            <BookMarked size={18} className="text-indigo-300" />
           </div>
           <div>
-            <h2 className="text-sm font-black text-white leading-none">Notion Question</h2>
-            <p className="text-[10px] text-slate-600 font-bold mt-1">Questões agrupadas por emoji</p>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-black text-white tracking-tight leading-none">Notion Question</h2>
+              <span className="text-[9px] font-extrabold px-2.5 py-0.5 rounded-full bg-pink-500/10 text-pink-300 border border-pink-500/20 uppercase tracking-widest flex items-center gap-1">
+                🌸 Cadernos & Casos
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-400 font-bold mt-1">Questões organizadas por matérias e cadernos do Notion</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={fetchBlocks} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/[0.04] border border-white/[0.07] text-slate-500 hover:text-blue-400 hover:border-blue-500/30 transition-all">
+          <button onClick={fetchBlocks} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:text-indigo-300 hover:border-indigo-500/30 transition-all">
             <RefreshCw size={13} className={loadingBlocks ? "animate-spin" : ""} />
           </button>
           {isAdmin && (
-            <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-2 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-indigo-600/10">
+            <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-2 px-3.5 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-indigo-600/20">
               <Plus size={12} /> Novo Bloco
             </button>
           )}
@@ -3200,9 +3215,11 @@ export default function NotionQuestionTab({ user }: { user: any }) {
       />
 
       {showForm && (
-        <div className="border border-indigo-500/20 rounded-2xl bg-[#111623] p-5 flex flex-col gap-4">
+        <div className="border border-indigo-500/20 rounded-2xl bg-[#101526]/90 p-5 flex flex-col gap-4 backdrop-blur-xl relative z-10 shadow-2xl">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-black text-indigo-300 uppercase tracking-widest">Cadastrar Bloco Notion</p>
+            <p className="text-[11px] font-black text-indigo-300 uppercase tracking-widest flex items-center gap-1.5">
+              <span>🌸</span> Cadastrar Bloco Notion
+            </p>
             <button onClick={() => setShowForm(false)} className="text-slate-600 hover:text-slate-400"><X size={14} /></button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -3243,15 +3260,15 @@ export default function NotionQuestionTab({ user }: { user: any }) {
       )}
 
       {!loadingBlocks && blocks.length > 0 && (
-        <div className="flex items-center gap-3 flex-wrap justify-between bg-[#111623] p-3 rounded-2xl border border-white/[0.06]">
+        <div className="flex items-center gap-3 flex-wrap justify-between bg-[#101526]/80 p-3 rounded-2xl border border-white/[0.08] backdrop-blur-xl relative z-10 shadow-xl">
           <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
             {/* Filtro por Caderno */}
-            <div className="flex items-center gap-1.5 bg-[#0d1220] border border-white/[0.08] px-2.5 py-1 rounded-xl">
-              <BookMarked size={12} className="text-indigo-400 shrink-0" />
+            <div className="flex items-center gap-1.5 bg-[#0d1220] border border-white/[0.08] px-3 py-1.5 rounded-xl">
+              <BookMarked size={13} className="text-indigo-400 shrink-0" />
               <select
                 value={cadernoFiltro}
                 onChange={e => setCadernoFiltro(e.target.value)}
-                className="bg-transparent text-[11px] font-bold text-slate-300 focus:outline-none cursor-pointer"
+                className="bg-transparent text-[11px] font-bold text-slate-200 focus:outline-none cursor-pointer"
               >
                 <option value="Todos" className="bg-[#0d1220]">Todos os Cadernos ({blocks.length})</option>
                 {blocks.map(b => (
@@ -3266,10 +3283,10 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                 <button
                   key={m}
                   onClick={() => setMateriaFiltro(m)}
-                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all ${
+                  className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all ${
                     materiaFiltro === m
-                      ? "bg-indigo-600 border-indigo-500 text-white"
-                      : "bg-[#0d1220] border-white/[0.07] text-slate-500 hover:text-slate-300 hover:border-white/[0.15]"
+                      ? "bg-gradient-to-r from-indigo-600 to-purple-600 border-indigo-400/50 text-white shadow-md shadow-indigo-500/20"
+                      : "bg-[#0d1220] border-white/[0.07] text-slate-400 hover:text-slate-200 hover:border-white/[0.15]"
                   }`}
                 >
                   {m}
@@ -3282,32 +3299,32 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] shrink-0">
             <button
               onClick={() => setStatusFiltro("todas")}
-              className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                statusFiltro === "todas" ? "bg-indigo-600 text-white" : "text-slate-500 hover:text-slate-300"
+              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                statusFiltro === "todas" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
               }`}
             >
               Todas
             </button>
             <button
               onClick={() => setStatusFiltro("erros")}
-              className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                statusFiltro === "erros" ? "bg-rose-600 text-white" : "text-rose-400/70 hover:text-rose-300"
+              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                statusFiltro === "erros" ? "bg-rose-600 text-white shadow" : "text-rose-400/70 hover:text-rose-300"
               }`}
             >
               🔴 Erros
             </button>
             <button
               onClick={() => setStatusFiltro("nao_feitas")}
-              className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                statusFiltro === "nao_feitas" ? "bg-purple-600 text-white" : "text-purple-400/70 hover:text-purple-300"
+              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                statusFiltro === "nao_feitas" ? "bg-purple-600 text-white shadow" : "text-purple-400/70 hover:text-purple-300"
               }`}
             >
               ⭕ Não Feitas
             </button>
             <button
               onClick={() => setStatusFiltro("feitas_hoje")}
-              className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                statusFiltro === "feitas_hoje" ? "bg-blue-600 text-white" : "text-blue-400/70 hover:text-blue-300"
+              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                statusFiltro === "feitas_hoje" ? "bg-sky-600 text-white shadow" : "text-sky-400/70 hover:text-sky-300"
               }`}
             >
               ⚡ Feitas Hoje
@@ -3317,7 +3334,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
       )}
 
       {isAdmin && !loadingBlocks && blocksFiltrados.length > 0 && (
-        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 bg-[#111623] px-3 py-1.5 rounded-xl border border-white/[0.05]">
+        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 bg-[#101526]/80 px-3.5 py-2 rounded-xl border border-white/[0.06] relative z-10">
           <MoreVertical size={12} className="text-indigo-400 shrink-0" />
           <span>Modo Admin: Clique no menu de 3 pontinhos (⋮) no caderno para alterar a ordem no banco ou reordenar.</span>
         </div>
@@ -3326,18 +3343,18 @@ export default function NotionQuestionTab({ user }: { user: any }) {
       {loadingBlocks ? (
         <div className="flex items-center justify-center py-16"><Loader2 className="w-7 h-7 text-indigo-500 animate-spin" /></div>
       ) : blocks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-center bg-[#111623] border border-white/[0.06] rounded-2xl">
+        <div className="flex flex-col items-center justify-center py-20 gap-3 text-center bg-[#101526]/80 border border-white/[0.06] rounded-2xl relative z-10">
           <BookMarked size={32} className="text-slate-800" />
           <p className="text-[12px] font-black text-slate-600 uppercase tracking-widest">Nenhum bloco cadastrado</p>
           <p className="text-[11px] text-slate-700 max-w-xs">Clique em "Novo Bloco" para cadastrar o ID de um bloco do Notion.</p>
         </div>
       ) : blocksFiltrados.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 gap-2 text-center bg-[#111623] border border-white/[0.06] rounded-2xl">
+        <div className="flex flex-col items-center justify-center py-16 gap-2 text-center bg-[#101526]/80 border border-white/[0.06] rounded-2xl relative z-10">
           <p className="text-[12px] font-black text-slate-600 uppercase tracking-widest">Nenhum caderno encontrado</p>
           <button onClick={() => { setMateriaFiltro("Todas"); setCadernoFiltro("Todos"); setStatusFiltro("todas"); }} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold">Limpar filtros</button>
         </div>
       ) : (
-        <div className="flex flex-col bg-[#111623] border border-white/[0.06] rounded-2xl p-2 divide-y divide-white/[0.05]">
+        <div className="flex flex-col bg-[#101526]/80 border border-white/[0.06] rounded-2xl p-2.5 divide-y divide-white/[0.05] shadow-2xl relative z-10">
           {blocksFiltrados.map((block, index) => (
             <NotionBlockRowItem
               key={block.id}
