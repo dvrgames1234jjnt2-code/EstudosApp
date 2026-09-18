@@ -2609,11 +2609,6 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
             }`}>
               {block.nome}
             </span>
-            {block.materia && (
-              <span className="text-[9px] font-semibold text-indigo-400/90 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded shrink-0 whitespace-nowrap">
-                {block.materia}
-              </span>
-            )}
             {block.descricao && (
               <span className="text-[10px] text-slate-400/70 font-normal truncate shrink min-w-0 whitespace-nowrap">
                 {block.descricao}
