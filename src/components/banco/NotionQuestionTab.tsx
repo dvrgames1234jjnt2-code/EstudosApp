@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, memo, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
   Plus, Trash2, ChevronDown, ChevronRight, ChevronLeft, Loader2,
@@ -217,6 +217,7 @@ async function collectQuestaoIds(rootBlockId: string): Promise<string[]> {
 
   async function walk(blockId: string) {
     const children = await fetchChildren(blockId);
+    const promises: Promise<void>[] = [];
     for (const child of children) {
       if (child.type !== "toggle") continue;
       const rawTitle = richText(child.toggle?.rich_text ?? []);
@@ -226,9 +227,10 @@ async function collectQuestaoIds(rootBlockId: string): Promise<string[]> {
       if (categoryKey) {
         ids.push(child.id);
       } else if (child.has_children) {
-        await walk(child.id);
+        promises.push(walk(child.id));
       }
     }
+    if (promises.length > 0) await Promise.all(promises);
   }
 
   await walk(clean);
@@ -261,6 +263,7 @@ async function collectQuestaoDetails(rootBlockId: string): Promise<QuestaoDetalh
 
   async function walk(blockId: string, parentLabel: string) {
     const children = await fetchChildren(blockId);
+    const promises: Promise<void>[] = [];
     for (const child of children) {
       if (child.type !== "toggle") continue;
       const rawTitle = richText(child.toggle?.rich_text ?? []);
@@ -274,9 +277,10 @@ async function collectQuestaoDetails(rootBlockId: string): Promise<QuestaoDetalh
         if (!(label in caseIcons) && child.icon?.type === "emoji" && child.icon.emoji) {
           caseIcons[label] = child.icon.emoji;
         }
-        if (child.has_children) await walk(child.id, label);
+        if (child.has_children) promises.push(walk(child.id, label));
       }
     }
+    if (promises.length > 0) await Promise.all(promises);
   }
 
   await walk(clean, "Geral");
@@ -1777,19 +1781,6 @@ function CasoCard({
             setQuestoes(tempQuestoes);
             setSubcasos(tempSubcasos);
             setLoaded(true);
-
-            for (const q of tempQuestoes) {
-              fetchChildren(q.id).then(children => {
-                for (const child of children) {
-                  if (child.type === "toggle") {
-                    const tText = richText(child.toggle?.rich_text ?? []).toLowerCase();
-                    if (tText.includes("resposta") && child.has_children) {
-                      fetchChildren(child.id).catch(() => {});
-                    }
-                  }
-                }
-              }).catch(() => {});
-            }
           }
         } catch (e) {
           console.error("Erro ao carregar caso:", e);
@@ -2478,7 +2469,7 @@ function GabaritoBloco({
   );
 }
 
-function NotionBlockRowItem({
+const NotionBlockRowItem = memo(function NotionBlockRowItem({
   block,
   user,
   onDelete,
@@ -2783,7 +2774,7 @@ function NotionBlockRowItem({
       )}
     </div>
   );
-}
+});
 
 
 export default function NotionQuestionTab({ user }: { user: any }) {
