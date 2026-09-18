@@ -2166,7 +2166,7 @@ function BlockViewer({
   if (casos.length === 0) return <p className="text-[11px] text-slate-600 italic text-center py-10">Nenhum caso encontrado.</p>;
 
   return (
-    <div className="flex flex-col gap-2 pl-4 border-l border-indigo-500/[0.15] ml-4 mt-1">
+    <div className="flex flex-col gap-2">
       {casos.map((caso, idx) => (
         <CasoCard 
           key={caso.id} 
@@ -2585,44 +2585,44 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
           }
         }
       }}
-      className={`flex flex-col gap-2 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border transition-all ${
+      className={`flex flex-col gap-1.5 p-2 sm:p-2.5 rounded-xl border transition-all ${
         isDraggingOver ? "ring-2 ring-indigo-500/50 bg-indigo-500/10" : ""
       } ${
         showRedHighlight
           ? "bg-rose-500/[0.03] border-rose-500/25 shadow-md shadow-rose-500/5"
-          : "bg-[#111623] border-white/[0.06] hover:border-white/[0.12] shadow-md"
+          : "bg-[#111623]/90 border-white/[0.06] hover:border-white/[0.12] shadow-sm"
       }`}
     >
       {/* Header do Card */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-1.5 min-w-0 flex-nowrap whitespace-nowrap overflow-hidden">
         <button
           onClick={() => onSelect ? onSelect(block) : setOpen(v => !v)}
-          className="flex items-center gap-2 text-left transition-all flex-1 min-w-0 group"
+          className="flex items-center gap-1.5 text-left transition-all flex-1 min-w-0 group flex-nowrap whitespace-nowrap overflow-hidden"
         >
-          <span className="text-[10px] text-slate-500 w-4 h-4 flex items-center justify-center shrink-0 select-none">
+          <span className="text-[9px] text-slate-500 w-3.5 h-3.5 flex items-center justify-center shrink-0 select-none">
             {onSelect ? "→" : open ? "▼" : "▶"}
           </span>
-          <span className="text-base shrink-0 select-none">{blockIcon}</span>
-          <div className="flex items-center gap-2 min-w-0 flex-wrap sm:flex-nowrap">
-            <span className={`text-[13px] sm:text-[14px] font-normal transition-colors truncate ${
-              showRedHighlight ? "text-rose-300" : "text-slate-200 group-hover:text-white"
+          <span className="text-sm shrink-0 select-none">{blockIcon}</span>
+          <div className="flex items-center gap-1.5 min-w-0 flex-nowrap whitespace-nowrap overflow-hidden">
+            <span className={`text-[12px] sm:text-[13px] font-normal transition-colors truncate shrink-0 ${
+              showRedHighlight ? "text-rose-300" : "text-[#66c0f4] group-hover:text-[#8ed1fc]"
             }`}>
               {block.nome}
             </span>
             {block.materia && (
-              <span className="text-[10px] font-bold text-indigo-400/90 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md shrink-0">
+              <span className="text-[9px] font-semibold text-indigo-400/90 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded shrink-0 whitespace-nowrap">
                 {block.materia}
               </span>
             )}
             {block.descricao && (
-              <span className="text-[11px] text-slate-400/70 font-normal truncate shrink-0">
+              <span className="text-[10px] text-slate-400/70 font-normal truncate shrink min-w-0 whitespace-nowrap">
                 {block.descricao}
               </span>
             )}
           </div>
         </button>
 
-        <div className="flex items-center gap-1.5 shrink-0 flex-wrap sm:flex-nowrap">
+        <div className="flex items-center gap-1.5 shrink-0 flex-nowrap whitespace-nowrap">
           <BlocoStatsBadge 
             block={block} 
             resultadosMap={resultadosMap} 
@@ -3066,6 +3066,16 @@ export default function NotionQuestionTab({ user }: { user: any }) {
     return result;
   }, [blocks, materiaFiltro, cadernoFiltro]);
 
+  const blocksPorMateria = useMemo(() => {
+    const map = new Map<string, NotionBlockRow[]>();
+    for (const b of blocksFiltrados) {
+      const mat = b.materia?.trim() || "Sem Matéria";
+      if (!map.has(mat)) map.set(mat, []);
+      map.get(mat)!.push(b);
+    }
+    return map;
+  }, [blocksFiltrados]);
+
   const { acertadas, erradas } = useMemo(() => {
     const a: string[] = [], e: string[] = [];
     for (const [id, stats] of resultadosMap.entries()) {
@@ -3323,7 +3333,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           </div>
 
           {/* Conteúdo do caderno selecionado */}
-          <div className="bg-[#101526]/80 border border-white/[0.06] rounded-2xl p-4 shadow-2xl">
+          <div className="bg-[#101526]/80 border border-white/[0.06] rounded-2xl p-4 sm:p-5 shadow-2xl ml-2 sm:ml-5">
             <BlockViewer
               block={selectedBlock}
               user={user}
@@ -3360,28 +3370,49 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               <button onClick={() => { setMateriaFiltro("Todas"); setCadernoFiltro("Todos"); setStatusFiltro("todas"); }} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold">Limpar filtros</button>
             </div>
           ) : (
-            <div className="flex flex-col bg-[#101526]/80 border border-white/[0.06] rounded-2xl p-2.5 divide-y divide-white/[0.05] shadow-2xl relative z-10">
-              {blocksFiltrados.map((block, index) => (
-                <NotionBlockRowItem
-                  key={block.id}
-                  block={block}
-                  user={user}
-                  onDelete={handleDelete}
-                  duvidasIds={duvidasIds}
-                  onToggleDuvida={handleToggleDuvida}
-                  onAnswered={handleAnswered}
-                  resultadosMap={resultadosMap}
-                  statusFiltro={statusFiltro}
-                  feitasHojeIds={feitasHojeIds}
-                  isAdmin={isAdmin}
-                  onMoveUp={(id) => handleMoveBlock(id, "up")}
-                  onMoveDown={(id) => handleMoveBlock(id, "down")}
-                  onDropBlock={handleDropBlock}
-                  onUpdateOrdem={handleSingleOrdemChange}
-                  isFirst={index === 0}
-                  isLast={index === blocksFiltrados.length - 1}
-                  onSelect={(b) => setSelectedBlock(b)}
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 relative z-10">
+              {[...blocksPorMateria.entries()].map(([materiaName, mBlocks]) => (
+                <div 
+                  key={materiaName} 
+                  className="flex flex-col bg-[#101526]/80 border border-white/[0.06] rounded-xl p-2.5 sm:p-3 shadow-lg gap-1.5 transition-all hover:border-white/[0.10]"
+                >
+                  <div className="flex items-center justify-between border-b border-white/[0.06] pb-1.5 px-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
+                      <h3 className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+                        {materiaName}
+                      </h3>
+                    </div>
+                    <span className="text-[9.5px] font-normal text-slate-500 font-mono bg-white/[0.03] px-1.5 py-0.5 rounded border border-white/[0.04]">
+                      {mBlocks.length} caderno{mBlocks.length > 1 ? "s" : ""}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-1 mt-0.5">
+                    {mBlocks.map((block, index) => (
+                      <NotionBlockRowItem
+                        key={block.id}
+                        block={block}
+                        user={user}
+                        onDelete={handleDelete}
+                        duvidasIds={duvidasIds}
+                        onToggleDuvida={handleToggleDuvida}
+                        onAnswered={handleAnswered}
+                        resultadosMap={resultadosMap}
+                        statusFiltro={statusFiltro}
+                        feitasHojeIds={feitasHojeIds}
+                        isAdmin={isAdmin}
+                        onMoveUp={(id) => handleMoveBlock(id, "up")}
+                        onMoveDown={(id) => handleMoveBlock(id, "down")}
+                        onDropBlock={handleDropBlock}
+                        onUpdateOrdem={handleSingleOrdemChange}
+                        isFirst={index === 0}
+                        isLast={index === mBlocks.length - 1}
+                        onSelect={(b) => setSelectedBlock(b)}
+                      />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           )}
