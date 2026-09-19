@@ -487,12 +487,12 @@ function ImagemLightbox({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-between select-none animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-2xl flex flex-col items-center justify-between select-none animate-in fade-in duration-200"
       onWheel={handleWheel}
       onMouseUp={handleMouseUp}
     >
       {/* Top Bar Controls */}
-      <div className="w-full px-3 sm:px-6 py-2.5 flex items-center justify-between bg-black/85 backdrop-blur-md border-b border-white/10 z-30 flex-wrap gap-2">
+      <div className="w-full px-3 sm:px-6 py-2.5 flex items-center justify-between bg-black/70 backdrop-blur-md border-b border-white/10 z-30 flex-wrap gap-2">
         {/* Left Info */}
         <div className="flex items-center gap-2 text-white font-bold text-xs truncate max-w-xs sm:max-w-md">
           <Maximize2 size={16} className="text-indigo-400 shrink-0" />
@@ -622,110 +622,115 @@ function ImagemLightbox({
         </button>
       )}
 
-      {/* Main Image View Container */}
-      <div
-        className="relative flex-1 w-full h-full overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing p-1 sm:p-4"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) onClose();
-        }}
-      >
-        <img
-          src={url}
-          alt="Imagem em tela cheia"
-          draggable={false}
-          style={{
-            transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-            transition: isDragging ? "none" : "transform 0.15s ease-out",
+      {/* Main Image View & Side-by-Side Answer Panel Area */}
+      <div className="relative flex-1 w-full h-full overflow-hidden flex flex-col md:flex-row items-center justify-between min-h-0">
+        {/* Left Question Image Container */}
+        <div
+          className="relative flex-1 w-full h-full overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing p-2 sm:p-4 min-w-0"
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) onClose();
           }}
-          className={`bg-white rounded-xl shadow-2xl object-contain ${
-            isFullWidth
-              ? "w-full h-full max-w-none max-h-none"
-              : "max-w-[95vw] max-h-[85vh]"
-          }`}
-        />
-      </div>
-
-      {/* Slide-Up Answer Panel */}
-      {showResposta && (
-        <div className="fixed bottom-12 left-1/2 -translate-x-1/2 w-[92vw] max-w-3xl max-h-[48vh] overflow-y-auto bg-[#0b101d]/95 backdrop-blur-2xl border border-emerald-500/40 rounded-2xl p-4 shadow-2xl z-40 text-white animate-in slide-in-from-bottom duration-200 custom-scrollbar">
-          <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-white/10">
-            <span className="text-xs sm:text-sm font-bold text-emerald-400 flex items-center gap-2">
-              <span>✨</span> Resposta e Gabarito {questaoNumero ? `— Questão ${questaoNumero}` : ""}
-            </span>
-            <button
-              onClick={() => setShowResposta(false)}
-              className="text-slate-400 hover:text-white text-xs p-1 rounded-lg hover:bg-white/10 transition-colors"
-            >
-              <X size={16} />
-            </button>
-          </div>
-
-          {respostaImageUrls && respostaImageUrls.length > 0 && (
-            <div className="flex flex-col gap-3 mb-3">
-              {respostaImageUrls.map((rUrl, i) => (
-                <img
-                  key={i}
-                  src={rUrl}
-                  alt={`Resposta ${i + 1}`}
-                  className="w-full rounded-xl border border-white/10 object-contain bg-white shadow-md max-h-[35vh]"
-                />
-              ))}
-            </div>
-          )}
-
-          {respostaText ? (
-            <p className="text-xs sm:text-sm font-normal text-slate-200 whitespace-pre-wrap leading-relaxed">
-              {respostaText}
-            </p>
-          ) : (!respostaImageUrls || respostaImageUrls.length === 0) ? (
-            <p className="text-xs text-slate-400 italic">Nenhuma resposta registrada no Notion.</p>
-          ) : null}
-
-          {/* User Record Answer Section inside Lightbox */}
-          {questaoId && (
-            <div className="flex items-center gap-2.5 mt-3 pt-3 border-t border-white/10 flex-wrap">
-              <span className="text-xs text-slate-300 font-semibold mr-auto">Registrar tentativa:</span>
-              
-              {onToggleDuvida && (
-                <button
-                  onClick={handleToggleDuvidaLocal}
-                  disabled={recordingDuvida}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all disabled:opacity-50 active:scale-95 ${
-                    localDuvida 
-                      ? 'bg-amber-500/25 border border-amber-500/50 text-amber-200' 
-                      : 'bg-white/10 border border-white/15 hover:bg-white/20 text-slate-300'
-                  }`}
-                >
-                  <Flag size={12} className={localDuvida ? "fill-amber-400 text-amber-400" : ""} /> Em dúvida
-                </button>
-              )}
-
-              <button
-                onClick={() => handleRecordAnswer(true)}
-                disabled={recording}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-500/35 text-emerald-300 text-xs font-bold transition-all disabled:opacity-50 active:scale-95 shadow-md"
-              >
-                <Check size={13} /> Acertei
-              </button>
-              <button
-                onClick={() => handleRecordAnswer(false)}
-                disabled={recording}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 border border-rose-500/35 text-rose-300 text-xs font-bold transition-all disabled:opacity-50 active:scale-95 shadow-md"
-              >
-                <X size={13} /> Errei
-              </button>
-
-              {recorded && (
-                <span className={`text-xs font-bold ml-1 animate-pulse ${recorded === 'acerto' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {recorded === 'acerto' ? 'Salvo! 🎉' : 'Salvo! ❌'}
-                </span>
-              )}
-            </div>
-          )}
+        >
+          <img
+            src={url}
+            alt="Imagem da questão"
+            draggable={false}
+            style={{
+              transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+              transition: isDragging ? "none" : "transform 0.15s ease-out",
+            }}
+            className={`bg-white rounded-xl shadow-2xl object-contain transition-all ${
+              showResposta
+                ? "max-w-[95%] max-h-[80vh] md:max-w-[90%]"
+                : isFullWidth
+                ? "w-full h-full max-w-none max-h-none"
+                : "max-w-[95vw] max-h-[85vh]"
+            }`}
+          />
         </div>
-      )}
+
+        {/* Right Side Answer Screen Panel */}
+        {showResposta && (
+          <div className="w-full md:w-[440px] lg:w-[500px] h-full bg-[#0b101d]/95 backdrop-blur-2xl border-t md:border-t-0 md:border-l border-white/10 p-4 sm:p-5 shadow-2xl z-40 text-white flex flex-col gap-3 overflow-y-auto custom-scrollbar shrink-0 animate-in slide-in-from-right duration-200">
+            <div className="flex items-center justify-between pb-2.5 border-b border-white/10 shrink-0">
+              <span className="text-xs sm:text-sm font-bold text-emerald-400 flex items-center gap-2">
+                <span>✨</span> Resposta e Gabarito {questaoNumero ? `— Questão ${questaoNumero}` : ""}
+              </span>
+              <button
+                onClick={() => setShowResposta(false)}
+                className="text-slate-400 hover:text-white text-xs p-1 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {respostaImageUrls && respostaImageUrls.length > 0 && (
+              <div className="flex flex-col gap-3">
+                {respostaImageUrls.map((rUrl, i) => (
+                  <img
+                    key={i}
+                    src={rUrl}
+                    alt={`Resposta ${i + 1}`}
+                    className="w-full rounded-xl border border-white/10 object-contain bg-white shadow-md max-h-[40vh]"
+                  />
+                ))}
+              </div>
+            )}
+
+            {respostaText ? (
+              <p className="text-xs sm:text-sm font-normal text-slate-200 whitespace-pre-wrap leading-relaxed">
+                {respostaText}
+              </p>
+            ) : (!respostaImageUrls || respostaImageUrls.length === 0) ? (
+              <p className="text-xs text-slate-400 italic">Nenhuma resposta registrada no Notion.</p>
+            ) : null}
+
+            {/* User Record Answer Section inside Side Panel */}
+            {questaoId && (
+              <div className="flex items-center gap-2 mt-auto pt-3 border-t border-white/10 flex-wrap">
+                <span className="text-xs text-slate-300 font-semibold mr-auto">Registrar tentativa:</span>
+                
+                {onToggleDuvida && (
+                  <button
+                    onClick={handleToggleDuvidaLocal}
+                    disabled={recordingDuvida}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all disabled:opacity-50 active:scale-95 ${
+                      localDuvida 
+                        ? 'bg-amber-500/25 border border-amber-500/50 text-amber-200' 
+                        : 'bg-white/10 border border-white/15 hover:bg-white/20 text-slate-300'
+                    }`}
+                  >
+                    <Flag size={12} className={localDuvida ? "fill-amber-400 text-amber-400" : ""} /> Em dúvida
+                  </button>
+                )}
+
+                <button
+                  onClick={() => handleRecordAnswer(true)}
+                  disabled={recording}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-500/35 text-emerald-300 text-xs font-bold transition-all disabled:opacity-50 active:scale-95 shadow-md"
+                >
+                  <Check size={13} /> Acertei
+                </button>
+                <button
+                  onClick={() => handleRecordAnswer(false)}
+                  disabled={recording}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 border border-rose-500/35 text-rose-300 text-xs font-bold transition-all disabled:opacity-50 active:scale-95 shadow-md"
+                >
+                  <X size={13} /> Errei
+                </button>
+
+                {recorded && (
+                  <span className={`text-xs font-bold ml-1 animate-pulse ${recorded === 'acerto' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {recorded === 'acerto' ? 'Salvo! 🎉' : 'Salvo! ❌'}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Footer hint */}
       <div className="w-full px-4 py-2 bg-black/85 backdrop-blur-md text-[11px] text-slate-400 font-medium z-20 flex items-center justify-center gap-3 sm:gap-6 text-center flex-wrap">
