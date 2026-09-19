@@ -2605,7 +2605,7 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
           <span className="text-sm shrink-0 select-none">{blockIcon}</span>
           <div className="flex items-center gap-1.5 min-w-0 flex-nowrap whitespace-nowrap overflow-hidden">
             <span className={`text-[12px] sm:text-[13px] font-normal transition-colors truncate shrink-0 ${
-              showRedHighlight ? "text-rose-300" : "text-slate-300 group-hover:text-white"
+              showRedHighlight ? "text-rose-300" : "text-slate-400 group-hover:text-slate-200"
             }`}>
               {block.nome}
             </span>
@@ -3374,7 +3374,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                   <div className="flex items-center justify-between border-b border-white/[0.06] pb-1.5 px-0.5">
                     <div className="flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
-                      <h3 className="text-[11px] font-bold text-white uppercase tracking-wider">
+                      <h3 className="text-[10.5px] font-semibold text-slate-300 uppercase tracking-wider">
                         {materiaName}
                       </h3>
                     </div>
