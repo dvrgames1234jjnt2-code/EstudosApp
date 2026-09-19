@@ -144,6 +144,84 @@ async function fetchChildren(blockId: string): Promise<NotionAPIBlock[]> {
   return req;
 }
 
+const fullQuestaoInFlight = new Map<string, Promise<{ children: NotionAPIBlock[]; imgs: string[]; rImgs: string[]; textResp?: string; foundToggleId: string | null }>>();
+
+async function fetchQuestaoFullData(blockId: string) {
+  const clean = blockId.replace(/-/g, "");
+  if (fullQuestaoInFlight.has(clean)) {
+    return fullQuestaoInFlight.get(clean)!;
+  }
+
+  const promise = (async () => {
+    const children = await fetchChildren(clean);
+    const imgs: string[] = [];
+    const rImgs: string[] = [];
+    let textResp: string | undefined;
+    let foundToggleId: string | null = null;
+
+    for (const child of children) {
+      if (child.type === "image") {
+        const url = imgUrl(child);
+        if (url) imgs.push(url);
+      } else if (child.type === "toggle") {
+        const tText = richText(child.toggle?.rich_text ?? []).toLowerCase();
+        if (tText.includes("resposta")) {
+          foundToggleId = child.id;
+        }
+      }
+    }
+
+    const togglePromises = children
+      .filter(child => {
+        if (child.type !== "toggle" || !child.has_children) return false;
+        const tText = richText(child.toggle?.rich_text ?? []).toLowerCase();
+        return tText.includes("resposta");
+      })
+      .map(async child => {
+        const rChildren = await fetchChildren(child.id);
+        const childImgs: string[] = [];
+        const texts: string[] = [];
+        for (const rc of rChildren) {
+          if (rc.type === "image") {
+            const url = imgUrl(rc);
+            if (url) childImgs.push(url);
+          } else {
+            const icon = rc.callout?.icon?.type === "emoji" ? `${rc.callout.icon.emoji} ` : "";
+            const t = richText(
+              rc.paragraph?.rich_text ??
+              rc.bulleted_list_item?.rich_text ??
+              rc.numbered_list_item?.rich_text ??
+              rc.callout?.rich_text ??
+              rc.quote?.rich_text ??
+              rc.heading_1?.rich_text ??
+              rc.heading_2?.rich_text ??
+              rc.heading_3?.rich_text ??
+              []
+            );
+            if (t) texts.push(icon + t);
+          }
+        }
+        return { imgs: childImgs, text: texts.join("\n") || undefined };
+      });
+
+    const toggleResults = await Promise.all(togglePromises);
+    for (const res of toggleResults) {
+      rImgs.push(...res.imgs);
+      if (res.text && !textResp) textResp = res.text;
+    }
+
+    fullQuestaoInFlight.delete(clean);
+    return { children, imgs, rImgs, textResp, foundToggleId };
+  })().catch(err => {
+    fullQuestaoInFlight.delete(clean);
+    throw err;
+  });
+
+  fullQuestaoInFlight.set(clean, promise);
+  return promise;
+}
+
+
 // Cache de informações resolvidas individualmente (usado pelo painel de desempenho,
 // que recebe apenas IDs de questão vindos do Supabase, sem a árvore carregada)
 interface QuestaoInfo { title: string; emoji?: string; blocoNome?: string }
@@ -891,59 +969,20 @@ function ZoomedQuestaoWrapper({
     setRespostaText(questao.resposta || initialRespostaText);
     setLoading(currentImgs.length === 0);
 
-    (async () => {
-      try {
-        const children = await fetchChildren(questao.id);
-        const imgs: string[] = [];
-        const rImgs: string[] = [];
-        let textResp: string | undefined;
+    fetchQuestaoFullData(questao.id).then(result => {
+      if (!active) return;
+      if (result.imgs.length > 0) setImageUrls(result.imgs);
+      if (result.rImgs.length > 0) setRespostaImageUrls(result.rImgs);
+      if (result.textResp) setRespostaText(result.textResp);
+      setLoading(false);
+    }).catch(e => {
+      console.error(e);
+      if (active) setLoading(false);
+    });
 
-        for (const child of children) {
-          if (child.type === "image") {
-            const url = imgUrl(child);
-            if (url) imgs.push(url);
-          } else if (child.type === "toggle") {
-            const tText = richText(child.toggle?.rich_text ?? []).toLowerCase();
-            if (tText.includes("resposta") && child.has_children) {
-              const rChildren = await fetchChildren(child.id);
-              const texts: string[] = [];
-              for (const rc of rChildren) {
-                if (rc.type === "image") {
-                  const url = imgUrl(rc);
-                  if (url) rImgs.push(url);
-                } else {
-                  const icon = rc.callout?.icon?.type === "emoji" ? `${rc.callout.icon.emoji} ` : "";
-                  const t = richText(
-                    rc.paragraph?.rich_text ??
-                    rc.bulleted_list_item?.rich_text ??
-                    rc.numbered_list_item?.rich_text ??
-                    rc.callout?.rich_text ??
-                    rc.quote?.rich_text ??
-                    rc.heading_1?.rich_text ??
-                    rc.heading_2?.rich_text ??
-                    rc.heading_3?.rich_text ??
-                    []
-                  );
-                  if (t) texts.push(icon + t);
-                }
-              }
-              textResp = texts.join("\n") || undefined;
-            }
-          }
-        }
-        if (active) {
-          if (imgs.length > 0) setImageUrls(imgs);
-          if (rImgs.length > 0) setRespostaImageUrls(rImgs);
-          if (textResp) setRespostaText(textResp);
-          setLoading(false);
-        }
-      } catch (e) {
-        console.error(e);
-        if (active) setLoading(false);
-      }
-    })();
     return () => { active = false; };
   }, [questao.id, initialUrl]);
+
 
   const mainUrl = imageUrls[0] || initialUrl || "";
 
@@ -1239,75 +1278,23 @@ function QuestaoRow({
   useEffect(() => {
     if (open && !loaded && !loading) {
       let active = true;
-      (async () => {
-        setLoading(true);
-        try {
-          console.log(`[QuestaoRow DEBUG] Buscando filhos da questao ${questao.numero} (ID: ${questao.id})`);
-          const children = await fetchChildren(questao.id);
-          console.log(`[QuestaoRow DEBUG] Filhos recebidos para questao ${questao.numero}:`, children);
-
-          const imgs: string[] = [];
-          const rImgs: string[] = [];
-          let textResp: string | undefined;
-          let foundToggleId: string | null = null;
-
-          for (const child of children) {
-            if (child.type === "image") {
-              const url = imgUrl(child);
-              console.log(`[QuestaoRow DEBUG] Bloco de imagem detectado na questao ${questao.numero}:`, child, "URL:", url);
-              if (url) imgs.push(url);
-            } else if (child.type === "toggle") {
-              const tText = richText(child.toggle?.rich_text ?? []).toLowerCase();
-              if (tText.includes("resposta")) {
-                foundToggleId = child.id;
-                if (child.has_children) {
-                  console.log(`[QuestaoRow DEBUG] Toggle de resposta encontrado na questao ${questao.numero} (ID: ${child.id})`);
-                  const rChildren = await fetchChildren(child.id);
-                  console.log(`[QuestaoRow DEBUG] Filhos do toggle de resposta da questao ${questao.numero}:`, rChildren);
-                  const texts: string[] = [];
-                  for (const rc of rChildren) {
-                    if (rc.type === "image") {
-                      const url = imgUrl(rc);
-                      console.log(`[QuestaoRow DEBUG] Bloco de imagem na resposta da questao ${questao.numero}:`, rc, "URL:", url);
-                      if (url) rImgs.push(url);
-                    } else {
-                      const icon = rc.callout?.icon?.type === "emoji" ? `${rc.callout.icon.emoji} ` : "";
-                      const t = richText(
-                        rc.paragraph?.rich_text ??
-                        rc.bulleted_list_item?.rich_text ??
-                        rc.numbered_list_item?.rich_text ??
-                        rc.callout?.rich_text ??
-                        rc.quote?.rich_text ??
-                        rc.heading_1?.rich_text ??
-                        rc.heading_2?.rich_text ??
-                        rc.heading_3?.rich_text ??
-                        []
-                      );
-                      if (t) texts.push(icon + t);
-                    }
-                  }
-                  textResp = texts.join("\n") || undefined;
-                }
-              }
-            }
-          }
-          if (active) {
-            console.log(`[QuestaoRow DEBUG] Definindo dados da questao ${questao.numero}. Imagens:`, imgs, "Imagens Resposta:", rImgs);
-            setImageUrls(imgs);
-            setRespostaImageUrls(rImgs);
-            setRespostaText(textResp);
-            setRespostaToggleId(foundToggleId);
-            setLoaded(true);
-          }
-        } catch (e) {
-          console.error("Erro ao carregar detalhes da questão:", e);
-        } finally {
-          if (active) setLoading(false);
-        }
-      })();
+      setLoading(true);
+      fetchQuestaoFullData(questao.id).then(result => {
+        if (!active) return;
+        setImageUrls(result.imgs);
+        setRespostaImageUrls(result.rImgs);
+        setRespostaText(result.textResp);
+        setRespostaToggleId(result.foundToggleId);
+        setLoaded(true);
+      }).catch(e => {
+        console.error("Erro ao carregar detalhes da questão:", e);
+      }).finally(() => {
+        if (active) setLoading(false);
+      });
       return () => { active = false; };
     }
   }, [open, questao.id, loaded]);
+
 
   const isErro = stats?.ultimo === "erro";
   const isAcerto = stats?.ultimo === "acerto";
@@ -1762,6 +1749,17 @@ function CasoCard({
   const [loading, setLoading] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [zoomedQuestaoIndex, setZoomedQuestaoIndex] = useState<number | null>(null);
+
+  // Pre-fetch das questões adjacentes para navegação instantânea
+  useEffect(() => {
+    if (zoomedQuestaoIndex === null) return;
+    const neighbors = [zoomedQuestaoIndex - 1, zoomedQuestaoIndex + 1];
+    for (const ni of neighbors) {
+      if (ni >= 0 && ni < questoes.length) {
+        fetchQuestaoFullData(questoes[ni].id).catch(() => {});
+      }
+    }
+  }, [zoomedQuestaoIndex, questoes]);
 
   const handleReorderSubcasos = (newSubcasos: Caso[]) => {
     setSubcasos(newSubcasos);
