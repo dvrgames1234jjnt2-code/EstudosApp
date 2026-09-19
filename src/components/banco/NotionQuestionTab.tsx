@@ -1204,15 +1204,15 @@ function QuestaoRow({
   const showHighlightStyle = (effectiveStatus === "erros" && isErro) || (effectiveStatus === "feitas_hoje" && isFeitaHoje);
 
   const diffBgClasses: Record<string, string> = {
-    faceis: "bg-[#0b1612]/80 border-emerald-950/40 hover:bg-[#0f1d18]",
-    lacuna: "bg-[#0b1612]/80 border-emerald-950/40 hover:bg-[#0f1d18]",
-    media: "bg-[#16120b]/80 border-amber-950/40 hover:bg-[#1d180f]",
-    atencao: "bg-[#0b1216]/80 border-sky-950/40 hover:bg-[#0f181d]",
-    dificil: "bg-[#160b0d]/80 border-rose-950/40 hover:bg-[#1d0f11]",
-    ultrahard: "bg-[#120b16]/80 border-purple-950/40 hover:bg-[#180f1d]",
-    bonus: "bg-[#120b16]/80 border-purple-950/40 hover:bg-[#180f1d]",
+    faceis: "bg-[#0b1612]/60 hover:bg-[#0f1d18]",
+    lacuna: "bg-[#0b1612]/60 hover:bg-[#0f1d18]",
+    media: "bg-[#16120b]/60 hover:bg-[#1d180f]",
+    atencao: "bg-[#0b1216]/60 hover:bg-[#0f181d]",
+    dificil: "bg-[#160b0d]/60 hover:bg-[#1d0f11]",
+    ultrahard: "bg-[#120b16]/60 hover:bg-[#180f1d]",
+    bonus: "bg-[#120b16]/60 hover:bg-[#180f1d]",
   };
-  const bgClass = diffBgClasses[questao.categoryKey] || "bg-[#101420]/80 border-white/[0.04] hover:bg-[#141a29]";
+  const bgClass = diffBgClasses[questao.categoryKey] || "hover:bg-white/[0.03]";
 
   return (
     <div
@@ -1244,8 +1244,8 @@ function QuestaoRow({
         isDraggingOver ? "ring-2 ring-indigo-500/50 bg-indigo-500/10" : ""
       }`}
     >
-      <div className={`flex items-center gap-2 py-1 px-2.5 transition-all rounded-lg border group ${
-        showHighlightStyle ? "bg-rose-500/[0.05] border-rose-500/25" : bgClass
+      <div className={`flex items-center gap-2 py-1 px-2.5 transition-all rounded-lg group ${
+        showHighlightStyle ? "bg-rose-500/[0.05]" : bgClass
       }`}>
         {isAdmin && (
           <span 
