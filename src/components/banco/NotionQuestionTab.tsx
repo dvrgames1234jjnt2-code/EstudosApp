@@ -80,7 +80,8 @@ function formatDataBR(iso: string) {
 function imgUrl(b: NotionAPIBlock) {
   const img = b.image;
   if (!img) return undefined;
-  return img.type === "external" ? img.external?.url : img.file?.url;
+  const rawUrl = img.type === "external" ? img.external?.url : img.file?.url;
+  return rawUrl && rawUrl.trim() !== "" ? rawUrl.trim() : undefined;
 }
 
 const ALL_EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F000}-\u{1FFFF}\u{FE00}-\u{FEFF}][\uFE0F\u20E3]?/gu;
@@ -702,9 +703,9 @@ function ImagemLightbox({
               <Loader2 size={36} className="animate-spin text-indigo-400" />
               <span className="text-xs font-semibold text-slate-300 animate-pulse">Carregando imagem da questão...</span>
             </div>
-          ) : url ? (
+          ) : url && url.trim() !== "" ? (
             <img
-              src={url}
+              src={url.trim()}
               alt="Imagem da questão"
               draggable={false}
               style={{
@@ -742,12 +743,12 @@ function ImagemLightbox({
               </button>
             </div>
 
-            {respostaImageUrls && respostaImageUrls.filter(Boolean).length > 0 && (
+            {respostaImageUrls && respostaImageUrls.filter(u => u && u.trim() !== "").length > 0 && (
               <div className="flex flex-col gap-3">
-                {respostaImageUrls.filter(Boolean).map((rUrl, i) => (
+                {respostaImageUrls.filter(u => u && u.trim() !== "").map((rUrl, i) => (
                   <img
                     key={i}
-                    src={rUrl}
+                    src={rUrl.trim()}
                     alt={`Resposta ${i + 1}`}
                     style={getImageFilterStyle()}
                     className={`w-full rounded-xl border border-white/10 object-contain shadow-md max-h-[40vh] ${
@@ -1450,18 +1451,18 @@ function QuestaoRow({
             </div>
           ) : (
             <>
-              {imageUrls.filter(Boolean).length > 0 ? (
-                imageUrls.filter(Boolean).map((url, i) => (
+              {imageUrls.filter(u => u && u.trim() !== "").length > 0 ? (
+                imageUrls.filter(u => u && u.trim() !== "").map((url, i) => (
                   <div key={i} className="relative group max-w-2xl">
                     <img
-                      src={url}
+                      src={url.trim()}
                       alt={`Q${questao.numero} img${i + 1}`}
-                      onClick={() => setZoomedImage(url)}
+                      onClick={() => setZoomedImage(url.trim())}
                       style={{ filter: 'brightness(0.85) contrast(1.08)' }}
                       className="w-full rounded-xl border border-slate-700/60 object-contain bg-slate-900/90 cursor-zoom-in hover:brightness-105 transition-all shadow-md"
                     />
                     <button
-                      onClick={() => setZoomedImage(url)}
+                      onClick={() => setZoomedImage(url.trim())}
                       className="absolute top-2 right-2 opacity-90 group-hover:opacity-100 transition-all px-2.5 py-1 rounded-lg bg-black/75 hover:bg-black/95 text-white text-[10px] font-bold flex items-center gap-1.5 backdrop-blur-md border border-white/20 shadow-xl active:scale-95"
                     >
                       <Maximize2 size={12} className="text-indigo-400" />
@@ -1542,12 +1543,12 @@ function QuestaoRow({
                   </div>
 
                   <div className="flex flex-col gap-3">
-                    {respostaImageUrls.filter(Boolean).map((url, i) => (
+                    {respostaImageUrls.filter(u => u && u.trim() !== "").map((url, i) => (
                       <div key={i} className="relative group max-w-2xl">
                         <img
-                          src={url}
+                          src={url.trim()}
                           alt={`Resposta img${i + 1}`}
-                          onClick={() => setZoomedImage(url)}
+                          onClick={() => setZoomedImage(url.trim())}
                           style={{ filter: 'brightness(0.85) contrast(1.08)' }}
                           className="w-full rounded-xl border border-slate-700/60 object-contain bg-slate-900/90 cursor-zoom-in hover:brightness-105 transition-all shadow-md"
                         />
