@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import {
   Plus, Trash2, ChevronDown, ChevronRight, ChevronLeft, Loader2,
   BookMarked, RefreshCw, X, Check, Play, Eye, EyeOff,
-  Triangle, Flag, History, LayoutGrid, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw,
+  Triangle, Flag, History, LayoutGrid, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Moon, Sun,
   Clock, HelpCircle, Filter, Flame, Calendar, BarChart3, Target, AlertTriangle,
   GripVertical, ArrowUp, ArrowDown, MoreVertical
 } from "lucide-react";
@@ -367,6 +367,23 @@ function ImagemLightbox({
   const [recordingDuvida, setRecordingDuvida] = useState(false);
   const [localDuvida, setLocalDuvida] = useState(isDuvida);
 
+  const [antiBrilho, setAntiBrilho] = useState<'off' | 'suave' | 'noturno'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('notion_anti_brilho') as 'off' | 'suave' | 'noturno') || 'off';
+    }
+    return 'off';
+  });
+
+  const toggleAntiBrilho = () => {
+    setAntiBrilho(prev => {
+      const next = prev === 'off' ? 'suave' : prev === 'suave' ? 'noturno' : 'off';
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('notion_anti_brilho', next);
+      }
+      return next;
+    });
+  };
+
   useEffect(() => {
     setLocalDuvida(isDuvida);
   }, [isDuvida, questaoId]);
@@ -445,6 +462,7 @@ function ImagemLightbox({
       if (e.key === "0") handleReset();
       if (e.key.toLowerCase() === "f") toggleFullWidth();
       if (e.key.toLowerCase() === "r") setShowResposta(prev => !prev);
+      if (e.key.toLowerCase() === "b") toggleAntiBrilho();
       if ((e.key === "ArrowRight" || e.key === "PageDown") && hasNext && onNext) {
         onNext();
       }
@@ -458,7 +476,31 @@ function ImagemLightbox({
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [onClose, onNext, onPrev, hasNext, hasPrev]);
+  }, [onClose, onNext, onPrev, hasNext, hasPrev, antiBrilho]);
+
+  const getImageFilterStyle = () => {
+    if (antiBrilho === 'suave') {
+      return {
+        filter: 'brightness(0.83) contrast(1.1) saturate(0.9)',
+      };
+    }
+    if (antiBrilho === 'noturno') {
+      return {
+        filter: 'invert(0.92) hue-rotate(180deg) brightness(0.95) contrast(1.15)',
+      };
+    }
+    return {};
+  };
+
+  const getImageCardBgClass = () => {
+    if (antiBrilho === 'suave') {
+      return 'bg-slate-800/90 border border-slate-700/60 shadow-2xl opacity-95';
+    }
+    if (antiBrilho === 'noturno') {
+      return 'bg-[#0b101d] border border-white/10 shadow-2xl';
+    }
+    return 'bg-white shadow-2xl';
+  };
 
   const handleWheel = (e: React.WheelEvent) => {
     if (e.deltaY < 0) {
@@ -556,6 +598,34 @@ function ImagemLightbox({
             <span>{!isFullWidth ? "Modo Ajustado" : "100% Tela Cheia"}</span>
           </button>
 
+          {/* Anti-Brilho / Filtro Noturno */}
+          <button
+            onClick={toggleAntiBrilho}
+            title="Alternar Filtro Anti-Brilho / Modo Noturno para Imagens (Tecla B)"
+            className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 border ${
+              antiBrilho === 'suave'
+                ? "bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm shadow-amber-500/20"
+                : antiBrilho === 'noturno'
+                ? "bg-indigo-500/25 text-indigo-300 border-indigo-500/40 shadow-sm shadow-indigo-500/20"
+                : "hover:bg-white/20 text-slate-300 border-transparent"
+            }`}
+          >
+            {antiBrilho === 'noturno' ? (
+              <Moon size={13} className="text-indigo-400" />
+            ) : antiBrilho === 'suave' ? (
+              <Sun size={13} className="text-amber-400" />
+            ) : (
+              <Sun size={13} className="text-slate-400" />
+            )}
+            <span>
+              {antiBrilho === 'suave'
+                ? "Anti-Brilho: Suave"
+                : antiBrilho === 'noturno'
+                ? "Anti-Brilho: Noturno"
+                : "Anti-Brilho: Off"}
+            </span>
+          </button>
+
           <button
             onClick={handleReset}
             title="Resetar Zoom (0)"
@@ -640,8 +710,9 @@ function ImagemLightbox({
             style={{
               transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
               transition: isDragging ? "none" : "transform 0.15s ease-out",
+              ...getImageFilterStyle(),
             }}
-            className={`bg-white rounded-xl shadow-2xl object-contain transition-all ${
+            className={`${getImageCardBgClass()} rounded-xl object-contain transition-all ${
               showResposta
                 ? "max-w-[95%] max-h-[80vh] md:max-w-[90%]"
                 : isFullWidth
@@ -673,7 +744,10 @@ function ImagemLightbox({
                     key={i}
                     src={rUrl}
                     alt={`Resposta ${i + 1}`}
-                    className="w-full rounded-xl border border-white/10 object-contain bg-white shadow-md max-h-[40vh]"
+                    style={getImageFilterStyle()}
+                    className={`w-full rounded-xl border border-white/10 object-contain shadow-md max-h-[40vh] ${
+                      antiBrilho === 'suave' ? 'bg-slate-800' : antiBrilho === 'noturno' ? 'bg-[#0b101d]' : 'bg-white'
+                    }`}
                   />
                 ))}
               </div>
@@ -735,7 +809,8 @@ function ImagemLightbox({
       {/* Footer hint */}
       <div className="w-full px-4 py-2 bg-black/85 backdrop-blur-md text-[11px] text-slate-400 font-medium z-20 flex items-center justify-center gap-3 sm:gap-6 text-center flex-wrap">
         <span>💡 Dica: <span className="text-indigo-300 font-bold">Modo Ajustado</span> ativo por padrão</span>
-        <span>• Use <kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-slate-200">←</kbd> / <kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-slate-200">→</kbd> para Pular Questão</span>
+        <span>• <kbd className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 rounded font-mono">B</kbd> Anti-Brilho</span>
+        <span>• <kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-slate-200">←</kbd> / <kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-slate-200">→</kbd> Pular Questão</span>
         <span>• Aperte <kbd className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded font-mono">R</kbd> para Revelar Resposta</span>
       </div>
     </div>,
