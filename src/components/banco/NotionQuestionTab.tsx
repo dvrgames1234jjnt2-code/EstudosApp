@@ -12,13 +12,13 @@ import {
 import { supabase } from "../../lib/supabase";
 
 const CATEGORIES = [
-  { key: "bonus",     label: "Bônus",     emojis: ["🎉","🥳","🎊"],        icon: "🎉",  color: "#f59e0b", textColor: "#fbbf24", dot: false },
-  { key: "faceis",    label: "Fáceis",    emojis: ["🟢","✅","💚","🍀"],   icon: null,  color: "#22c55e", textColor: "#4ade80", dot: true  },
-  { key: "atencao",   label: "Atenção",   emojis: ["🔵","💙","🌀","🫐"],   icon: null,  color: "#3b82f6", textColor: "#60a5fa", dot: true  },
-  { key: "lacuna",    label: "Lacuna",    emojis: ["🌱","🌿","🪴"],         icon: "🌱",  color: "#84cc16", textColor: "#a3e635", dot: false },
-  { key: "media",     label: "Média",     emojis: ["🟡","💛","⭐","🌟","🟠","🧡"],   icon: null,  color: "#f97316", textColor: "#fb923c", dot: true  },
-  { key: "dificil",   label: "Difícil",   emojis: ["🔴","❤️","💔","🔥"],   icon: null,  color: "#ef4444", textColor: "#f87171", dot: true  },
-  { key: "ultrahard", label: "Ultrahard", emojis: ["🟣","💜","👾","🫀"],   icon: null,  color: "#a855f7", textColor: "#c084fc", dot: true  },
+  { key: "bonus",     label: "Bônus",     emojis: ["🎉","🥳","🎊"],        icon: "🎉",  color: "#d97706", textColor: "#c69238", dot: false },
+  { key: "faceis",    label: "Fáceis",    emojis: ["🟢","✅","💚","🍀"],   icon: null,  color: "#16a34a", textColor: "#479e78", dot: true  },
+  { key: "atencao",   label: "Atenção",   emojis: ["🔵","💙","🌀","🫐"],   icon: null,  color: "#2563eb", textColor: "#4a88b5", dot: true  },
+  { key: "lacuna",    label: "Lacuna",    emojis: ["🌱","🌿","🪴"],         icon: "🌱",  color: "#65a30d", textColor: "#6b9e44", dot: false },
+  { key: "media",     label: "Média",     emojis: ["🟡","💛","⭐","🌟","🟠","🧡"],   icon: null,  color: "#ea580c", textColor: "#c69238", dot: true  },
+  { key: "dificil",   label: "Difícil",   emojis: ["🔴","❤️","💔","🔥"],   icon: null,  color: "#dc2626", textColor: "#c45454", dot: true  },
+  { key: "ultrahard", label: "Ultrahard", emojis: ["🟣","💜","👾","🫀"],   icon: null,  color: "#9333ea", textColor: "#8e66ab", dot: true  },
 ] as const;
 
 type CategoryKey = typeof CATEGORIES[number]["key"];
@@ -1204,15 +1204,15 @@ function QuestaoRow({
   const showHighlightStyle = (effectiveStatus === "erros" && isErro) || (effectiveStatus === "feitas_hoje" && isFeitaHoje);
 
   const diffBgClasses: Record<string, string> = {
-    faceis: "bg-emerald-950/20 border-emerald-500/20 hover:bg-emerald-950/30",
-    lacuna: "bg-emerald-950/20 border-emerald-500/20 hover:bg-emerald-950/30",
-    media: "bg-amber-950/20 border-amber-500/20 hover:bg-amber-950/30",
-    atencao: "bg-sky-950/20 border-sky-500/20 hover:bg-sky-950/30",
-    dificil: "bg-rose-950/20 border-rose-500/20 hover:bg-rose-950/30",
-    ultrahard: "bg-purple-950/20 border-purple-500/20 hover:bg-purple-950/30",
-    bonus: "bg-purple-950/20 border-purple-500/20 hover:bg-purple-950/30",
+    faceis: "bg-[#0b1612]/80 border-emerald-950/40 hover:bg-[#0f1d18]",
+    lacuna: "bg-[#0b1612]/80 border-emerald-950/40 hover:bg-[#0f1d18]",
+    media: "bg-[#16120b]/80 border-amber-950/40 hover:bg-[#1d180f]",
+    atencao: "bg-[#0b1216]/80 border-sky-950/40 hover:bg-[#0f181d]",
+    dificil: "bg-[#160b0d]/80 border-rose-950/40 hover:bg-[#1d0f11]",
+    ultrahard: "bg-[#120b16]/80 border-purple-950/40 hover:bg-[#180f1d]",
+    bonus: "bg-[#120b16]/80 border-purple-950/40 hover:bg-[#180f1d]",
   };
-  const bgClass = diffBgClasses[questao.categoryKey] || "bg-[#111623]/70 border-white/[0.05] hover:bg-[#151c2e]";
+  const bgClass = diffBgClasses[questao.categoryKey] || "bg-[#101420]/80 border-white/[0.04] hover:bg-[#141a29]";
 
   return (
     <div
