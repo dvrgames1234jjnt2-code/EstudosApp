@@ -615,134 +615,132 @@ function ImagemLightbox({
       onMouseUp={handleMouseUp}
     >
       {/* Top Bar Controls */}
-      <div className="w-full px-3 sm:px-6 py-2.5 flex items-center justify-between bg-black/70 backdrop-blur-md border-b border-white/10 z-30 flex-wrap gap-2">
-        {/* Left Info */}
-        <div className="flex items-center gap-2 text-white font-bold text-xs truncate max-w-xs sm:max-w-md">
-          <Maximize2 size={16} className="text-indigo-400 shrink-0" />
-          <span className="truncate">
-            {questaoNumero ? `Questão ${questaoNumero}` : "Visualizador de Imagem"}
+      <div className="w-full px-2 sm:px-4 py-2 flex items-center gap-2 bg-black/70 backdrop-blur-md border-b border-white/10 z-30 overflow-hidden" style={{ minHeight: 44 }}>
+        {/* Left Info — shrink aggressively */}
+        <div className="flex items-center gap-1.5 text-white font-bold text-xs shrink min-w-0 overflow-hidden">
+          <Maximize2 size={14} className="text-indigo-400 shrink-0" />
+          <span className="truncate max-w-[120px] sm:max-w-xs">
+            {questaoNumero ? `Q${questaoNumero}` : "Imagem"}
             {questaoTopic ? ` — ${questaoTopic}` : ""}
           </span>
           {caseLabel && (
-            <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[10px] text-slate-300 font-normal shrink-0">
+            <span className="hidden md:inline-block px-1.5 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[10px] text-slate-300 font-normal shrink-0 truncate max-w-[100px]">
               {caseLabel}
             </span>
           )}
         </div>
 
-        {/* Toolbar Center */}
-        <div className="flex items-center gap-1 sm:gap-2 bg-white/10 p-1 rounded-xl backdrop-blur-md border border-white/10">
+        {/* Toolbar Center — scrollable horizontally, no wrap */}
+        <div className="flex items-center gap-1 bg-white/10 p-1 rounded-xl backdrop-blur-md border border-white/10 shrink-0 overflow-x-auto max-w-[55vw] sm:max-w-none" style={{ scrollbarWidth: 'none' }}>
           {hasPrev && onPrev && (
             <button
               onClick={onPrev}
               title="Questão Anterior (←)"
-              className="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/60 text-indigo-200 hover:text-white border border-indigo-500/40 transition-all text-xs font-bold flex items-center gap-1 active:scale-95"
+              className="px-2 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/60 text-indigo-200 hover:text-white border border-indigo-500/40 transition-all text-xs font-bold flex items-center gap-1 active:scale-95 shrink-0"
             >
               <ChevronLeft size={14} />
-              <span className="hidden sm:inline">Anterior</span>
             </button>
           )}
 
           <button
             onClick={handleZoomOut}
             title="Diminuir zoom (-)"
-            className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg hover:bg-white/20 text-white transition-all"
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/20 text-white transition-all shrink-0"
           >
-            <ZoomOut size={15} />
+            <ZoomOut size={14} />
           </button>
 
-          <span className="text-[11px] sm:text-xs font-mono font-bold text-slate-200 px-1 min-w-[40px] text-center">
+          <span className="text-[11px] font-mono font-bold text-slate-200 px-1 min-w-[36px] text-center shrink-0">
             {Math.round(scale * 100)}%
           </span>
 
           <button
             onClick={handleZoomIn}
             title="Aumentar zoom (+)"
-            className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg hover:bg-white/20 text-white transition-all"
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/20 text-white transition-all shrink-0"
           >
-            <ZoomIn size={15} />
+            <ZoomIn size={14} />
           </button>
 
-          <div className="w-px h-5 bg-white/20 my-auto mx-0.5" />
+          <div className="w-px h-5 bg-white/20 my-auto mx-0.5 shrink-0" />
 
           {/* Modo Ajustado / 100% Tela Cheia */}
           <button
             onClick={toggleFullWidth}
             title="Alternar Modo de Visualização (Tecla F)"
-            className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold flex items-center gap-1.5 transition-all ${
+            className={`px-2 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all shrink-0 ${
               !isFullWidth
                 ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 border border-indigo-400/40"
                 : "hover:bg-white/20 text-slate-200"
             }`}
           >
-            {!isFullWidth ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-            <span>{!isFullWidth ? "Modo Ajustado" : "100% Tela Cheia"}</span>
+            {!isFullWidth ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+            <span className="hidden sm:inline">{!isFullWidth ? "Ajustado" : "Tela Cheia"}</span>
           </button>
 
           {/* Anti-Brilho / Filtro Noturno */}
           <button
             onClick={toggleAntiBrilho}
             title="Alternar Filtro Anti-Brilho / Modo Noturno (Tecla B)"
-            className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 border ${
+            className={`px-2 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all active:scale-95 border shrink-0 ${
               antiBrilho === 'noturno'
-                ? "bg-indigo-500/25 text-indigo-300 border-indigo-500/40 shadow-sm shadow-indigo-500/20"
-                : "bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm shadow-amber-500/20"
+                ? "bg-indigo-500/25 text-indigo-300 border-indigo-500/40"
+                : "bg-amber-500/20 text-amber-300 border-amber-500/40"
             }`}
           >
             {antiBrilho === 'noturno' ? (
-              <Moon size={13} className="text-indigo-400" />
+              <Moon size={12} className="text-indigo-400" />
             ) : (
-              <Sun size={13} className="text-amber-400" />
+              <Sun size={12} className="text-amber-400" />
             )}
-            <span>
-              {antiBrilho === 'noturno' ? "Anti-Brilho: Noturno" : "Anti-Brilho: Ativo"}
-            </span>
+            <span className="hidden sm:inline">{antiBrilho === 'noturno' ? "Noturno" : "Anti-Brilho"}</span>
           </button>
 
           <button
             onClick={handleReset}
             title="Resetar Zoom (0)"
-            className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg hover:bg-white/20 text-slate-400 hover:text-white transition-all"
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/20 text-slate-400 hover:text-white transition-all shrink-0"
           >
-            <RotateCcw size={13} />
+            <RotateCcw size={12} />
           </button>
 
           {hasNext && onNext && (
             <button
               onClick={onNext}
               title="Próxima Questão (→)"
-              className="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/60 text-indigo-200 hover:text-white border border-indigo-500/40 transition-all text-xs font-bold flex items-center gap-1 active:scale-95"
+              className="px-2 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/60 text-indigo-200 hover:text-white border border-indigo-500/40 transition-all text-xs font-bold flex items-center gap-1 active:scale-95 shrink-0"
             >
-              <span className="hidden sm:inline">Próxima</span>
               <ChevronRight size={14} />
             </button>
           )}
         </div>
 
-        {/* Action Right: Revelar Resposta & Close */}
-        <div className="flex items-center gap-2">
+        {/* Action Right: Revelar Resposta & Close — always pinned right, never hidden */}
+        <div className="flex items-center gap-1.5 ml-auto shrink-0">
           <button
             onClick={() => setShowResposta(v => !v)}
             title="Revelar ou Ocultar Resposta (Tecla R)"
-            className={`px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all active:scale-95 border ${
+            className={`px-2.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all active:scale-95 border shrink-0 ${
               showResposta
                 ? "bg-slate-800 text-emerald-400 border-slate-700"
                 : "bg-slate-800/90 hover:bg-slate-700/90 text-slate-300 border-slate-700"
             }`}
           >
             {showResposta ? <EyeOff size={14} className="text-emerald-400" /> : <Eye size={14} className="text-slate-400" />}
-            <span>{showResposta ? "Ocultar Resposta" : "✨ Revelar Resposta"}</span>
+            <span className="hidden sm:inline">{showResposta ? "Ocultar" : "✨ Revelar Resposta"}</span>
+            <span className="sm:hidden">{showResposta ? <EyeOff size={14} /> : <Eye size={14} />}</span>
           </button>
 
           <button
             onClick={onClose}
             title="Fechar (Esc)"
-            className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-300 border border-red-500/30 transition-all active:scale-95"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-300 border border-red-500/30 transition-all active:scale-95 shrink-0"
           >
             <X size={18} />
           </button>
         </div>
       </div>
+
 
       {/* Main Image View & Side-by-Side Split Screen Answer Panel Area */}
       <div className="relative flex-1 w-full h-full overflow-hidden flex flex-row items-center justify-between min-h-0">
