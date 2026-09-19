@@ -646,13 +646,13 @@ function ImagemLightbox({
           <button
             onClick={() => setShowResposta(v => !v)}
             title="Revelar ou Ocultar Resposta (Tecla R)"
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 border ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all active:scale-95 border ${
               showResposta
-                ? "bg-emerald-600 text-white border-emerald-400/50 shadow-lg shadow-emerald-500/30"
-                : "bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/30"
+                ? "bg-slate-800 text-emerald-400 border-slate-700"
+                : "bg-slate-800/90 hover:bg-slate-700/90 text-slate-300 border-slate-700"
             }`}
           >
-            {showResposta ? <EyeOff size={14} /> : <Eye size={14} />}
+            {showResposta ? <EyeOff size={14} className="text-emerald-400" /> : <Eye size={14} className="text-slate-400" />}
             <span>{showResposta ? "Ocultar Resposta" : "✨ Revelar Resposta"}</span>
           </button>
 
@@ -784,29 +784,29 @@ function ImagemLightbox({
                   <button
                     onClick={handleToggleDuvidaLocal}
                     disabled={recordingDuvida}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all disabled:opacity-50 active:scale-95 ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all disabled:opacity-50 active:scale-95 border ${
                       localDuvida 
-                        ? 'bg-amber-500/25 border border-amber-500/50 text-amber-200' 
-                        : 'bg-white/10 border border-white/15 hover:bg-white/20 text-slate-300'
+                        ? 'bg-slate-800 text-amber-300 border-slate-700' 
+                        : 'bg-slate-800/80 hover:bg-slate-700/80 border-slate-700 text-slate-300'
                     }`}
                   >
-                    <Flag size={12} className={localDuvida ? "fill-amber-400 text-amber-400" : ""} /> Em dúvida
+                    <Flag size={12} className={localDuvida ? "fill-amber-400 text-amber-400" : "text-slate-400"} /> Em dúvida
                   </button>
                 )}
 
                 <button
                   onClick={() => handleRecordAnswer(true)}
                   disabled={recording}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-500/35 text-emerald-300 text-xs font-bold transition-all disabled:opacity-50 active:scale-95 shadow-md"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-200 hover:text-emerald-400 text-xs font-semibold transition-all disabled:opacity-50 active:scale-95"
                 >
-                  <Check size={14} /> Acertei
+                  <Check size={14} className="text-emerald-400" /> Acertei
                 </button>
                 <button
                   onClick={() => handleRecordAnswer(false)}
                   disabled={recording}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 border border-rose-500/35 text-rose-300 text-xs font-bold transition-all disabled:opacity-50 active:scale-95 shadow-md"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-200 hover:text-rose-400 text-xs font-semibold transition-all disabled:opacity-50 active:scale-95"
                 >
-                  <X size={14} /> Errei
+                  <X size={14} className="text-rose-400" /> Errei
                 </button>
 
                 {recorded && (
@@ -1437,13 +1437,13 @@ function QuestaoRow({
         )}
 
         {isErro && (
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-rose-300 bg-rose-950/30 border border-rose-500/20 shrink-0 shadow-sm ${!isAdmin ? "ml-auto" : ""}`}>
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-slate-300 bg-slate-800/80 border border-slate-700 shrink-0 ${!isAdmin ? "ml-auto" : ""}`}>
             <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
             Errou
           </span>
         )}
         {isAcerto && (
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-emerald-300 bg-emerald-950/30 border border-emerald-500/20 shrink-0 shadow-sm ${!isAdmin ? "ml-auto" : ""}`}>
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-slate-300 bg-slate-800/80 border border-slate-700 shrink-0 ${!isAdmin ? "ml-auto" : ""}`}>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
             Acertou
           </span>
@@ -1585,28 +1585,28 @@ function QuestaoRow({
                       <button
                         onClick={handleToggleDuvidaLocal}
                         disabled={recordingDuvida}
-                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium transition-all disabled:opacity-50 active:scale-95 ${
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium transition-all disabled:opacity-50 active:scale-95 border ${
                           isDuvida 
-                            ? 'bg-amber-500/20 border border-amber-500/40 text-amber-300' 
-                            : 'bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] text-slate-400'
+                            ? 'bg-slate-800 text-amber-300 border-slate-700' 
+                            : 'bg-slate-800/80 hover:bg-slate-700/80 border-slate-700 text-slate-300'
                         }`}
                       >
-                        <Flag size={11} className={isDuvida ? "fill-amber-400 text-amber-400" : ""} /> Em dúvida
+                        <Flag size={11} className={isDuvida ? "fill-amber-400 text-amber-400" : "text-slate-400"} /> Em dúvida
                       </button>
 
                       <button
                         onClick={() => handleRecordAnswer(true)}
                         disabled={recording}
-                        className="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[10px] font-medium transition-all disabled:opacity-50 active:scale-95"
+                        className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-300 hover:text-emerald-400 text-[10px] font-medium transition-all disabled:opacity-50 active:scale-95"
                       >
-                        <Check size={11} /> Acertei
+                        <Check size={11} className="text-emerald-400" /> Acertei
                       </button>
                       <button
                         onClick={() => handleRecordAnswer(false)}
                         disabled={recording}
-                        className="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/25 text-rose-400 text-[10px] font-medium transition-all disabled:opacity-50 active:scale-95"
+                        className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-300 hover:text-rose-400 text-[10px] font-medium transition-all disabled:opacity-50 active:scale-95"
                       >
-                        <X size={11} /> Errei
+                        <X size={11} className="text-rose-400" /> Errei
                       </button>
                       {recorded && (
                         <span className={`text-[10px] font-medium ml-1 animate-pulse ${recorded === 'acerto' ? 'text-emerald-400' : 'text-rose-400'}`}>
