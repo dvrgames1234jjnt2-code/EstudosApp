@@ -70,7 +70,7 @@ interface Caso {
 }
 
 // Estatísticas agregadas de todas as tentativas de uma questão (não só a última)
-interface QuestaoStats { total: number; corretas: number; ultimo: "acerto" | "erro"; ultimaData?: string }
+interface QuestaoStats { total: number; corretas: number; totalErros: number; ultimo: "acerto" | "erro"; ultimaData?: string }
 
 function richText(rt: RichText[] = []) { return rt.map(r => r.plain_text).join(""); }
 function formatDataBR(iso: string) {
@@ -1043,7 +1043,7 @@ function QuestaoRow({
   onAnswered: () => void;
   stats?: QuestaoStats;
   apenasComErros?: boolean;
-  statusFiltro?: "todas" | "erros" | "nao_feitas" | "feitas_hoje";
+  statusFiltro?: "todas" | "erros" | "nao_feitas" | "feitas_hoje" | "mais_erros";
   feitasHojeIds?: string[];
   startOpen?: boolean;
   isAdmin?: boolean;
@@ -1309,10 +1309,11 @@ function QuestaoRow({
   const effectiveStatus = statusFiltro !== "todas" ? statusFiltro : (apenasComErros ? "erros" : "todas");
 
   if (effectiveStatus === "erros" && !isErro) return null;
+  if (effectiveStatus === "mais_erros" && (stats?.totalErros ?? 0) === 0) return null;
   if (effectiveStatus === "nao_feitas" && isRespondida) return null;
   if (effectiveStatus === "feitas_hoje" && !isFeitaHoje) return null;
 
-  const showHighlightStyle = (effectiveStatus === "erros" && isErro) || (effectiveStatus === "feitas_hoje" && isFeitaHoje);
+  const showHighlightStyle = (effectiveStatus === "erros" && isErro) || (effectiveStatus === "mais_erros" && (stats?.totalErros ?? 0) > 0) || (effectiveStatus === "feitas_hoje" && isFeitaHoje);
 
   const diffBgClasses: Record<string, string> = {
     faceis: "bg-[#0b1612]/60 hover:bg-[#0f1d18]",
@@ -1428,15 +1429,22 @@ function QuestaoRow({
           </div>
         )}
 
+        {stats && stats.totalErros > 0 && (
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-rose-300 bg-rose-950/60 border border-rose-500/30 shrink-0 ${!isAdmin && !isErro && !isAcerto ? "ml-auto" : ""}`} title={`${stats.totalErros} erro(s) no histórico`}>
+            <span>🔥</span>
+            <span>{stats.totalErros} {stats.totalErros === 1 ? "erro" : "erros"}</span>
+          </span>
+        )}
+
         {isErro && (
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-slate-300 bg-slate-800/80 border border-slate-700 shrink-0 ${!isAdmin ? "ml-auto" : ""}`}>
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-rose-300 bg-rose-950/50 border border-rose-700/60 shrink-0 ${!isAdmin && !(stats && stats.totalErros > 0) ? "ml-auto" : ""}`}>
+            <span className="w-2 h-2 rounded-full bg-rose-500 border border-rose-400/50 shrink-0 shadow-sm shadow-rose-500/50" />
             Errou
           </span>
         )}
         {isAcerto && (
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-slate-300 bg-slate-800/80 border border-slate-700 shrink-0 ${!isAdmin ? "ml-auto" : ""}`}>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-emerald-300 bg-emerald-950/50 border border-emerald-700/60 shrink-0 ${!isAdmin && !(stats && stats.totalErros > 0) ? "ml-auto" : ""}`}>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 border border-emerald-400/50 shrink-0 shadow-sm shadow-emerald-500/50" />
             Acertou
           </span>
         )}
@@ -1738,7 +1746,7 @@ function CasoCard({
   onAnswered: () => void;
   resultadosMap?: Map<string, QuestaoStats>;
   apenasComErros?: boolean;
-  statusFiltro?: "todas" | "erros" | "nao_feitas" | "feitas_hoje";
+  statusFiltro?: "todas" | "erros" | "nao_feitas" | "feitas_hoje" | "mais_erros";
   feitasHojeIds?: string[];
   isAdmin?: boolean;
   onMoveUp?: (id: string) => void;
@@ -1927,20 +1935,30 @@ function CasoCard({
     }
   }, [open, caso.id, loaded]);
 
-  const hasContent = questoes.length > 0 || subcasos.length > 0;
-  const total = loaded ? (questoes.length + subcasos.length) || undefined : undefined;
-
-  const errosInCaso = loaded && resultadosMap
-    ? questoes.filter(q => resultadosMap.get(q.id)?.ultimo === "erro").length
-    : 0;
-
   const effectiveStatus = statusFiltro !== "todas" ? statusFiltro : (apenasComErros ? "erros" : "todas");
 
-  if (effectiveStatus === "erros" && loaded && errosInCaso === 0) {
+  const sortedQuestoes = useMemo(() => {
+    if (effectiveStatus !== "mais_erros" || !resultadosMap) return questoes;
+    return [...questoes].sort((a, b) => {
+      const aErros = resultadosMap.get(a.id)?.totalErros ?? 0;
+      const bErros = resultadosMap.get(b.id)?.totalErros ?? 0;
+      return bErros - aErros;
+    });
+  }, [questoes, effectiveStatus, resultadosMap]);
+
+  const errosInCaso = loaded && resultadosMap
+    ? (effectiveStatus === "mais_erros"
+        ? questoes.filter(q => (resultadosMap.get(q.id)?.totalErros ?? 0) > 0).length
+        : questoes.filter(q => resultadosMap.get(q.id)?.ultimo === "erro").length)
+    : 0;
+
+  if ((effectiveStatus === "erros" || effectiveStatus === "mais_erros") && loaded && errosInCaso === 0) {
     return null;
   }
 
-  const hasErrosInCaso = effectiveStatus === "erros" && errosInCaso > 0;
+  const hasErrosInCaso = (effectiveStatus === "erros" || effectiveStatus === "mais_erros") && errosInCaso > 0;
+  const hasContent = sortedQuestoes.length > 0 || subcasos.length > 0;
+  const total = loaded ? (sortedQuestoes.length + subcasos.length) || undefined : undefined;
   const indent = depth > 0 ? "pl-4 border-l border-indigo-500/[0.15] ml-3" : "";
 
   return (
@@ -2044,7 +2062,7 @@ function CasoCard({
               Carregando...
             </div>
           ) : !hasContent ? (
-            <div className="text-[11px] text-slate-600 italic py-1 px-2">Sem questões com emoji reconhecido.</div>
+            <div className="text-[11px] text-slate-600 italic py-1 px-2">Sem questões registradas.</div>
           ) : (
             <>
               {subcasos.map((sub, idx) => (
@@ -2069,7 +2087,7 @@ function CasoCard({
                 />
               ))}
 
-              {questoes.map((q, idx) => (
+              {sortedQuestoes.map((q, idx) => (
                 <div key={q.id} className={idx < questoes.length - 1 ? "border-b border-white/[0.06] pb-1 mb-1" : ""}>
                   <QuestaoRow 
                     questao={q} 
@@ -2132,7 +2150,7 @@ function BlockViewer({
   onAnswered: () => void;
   resultadosMap?: Map<string, QuestaoStats>;
   apenasComErros?: boolean;
-  statusFiltro?: "todas" | "erros" | "nao_feitas" | "feitas_hoje";
+  statusFiltro?: "todas" | "erros" | "nao_feitas" | "feitas_hoje" | "mais_erros";
   feitasHojeIds?: string[];
   isAdmin?: boolean;
 }) {
@@ -2622,7 +2640,7 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
   onAnswered: () => void;
   resultadosMap: Map<string, QuestaoStats>;
   apenasComErros?: boolean;
-  statusFiltro?: "todas" | "erros" | "nao_feitas" | "feitas_hoje";
+  statusFiltro?: "todas" | "erros" | "nao_feitas" | "feitas_hoje" | "mais_erros";
   feitasHojeIds?: string[];
   isAdmin?: boolean;
   onMoveUp?: (id: string) => void;
@@ -2915,7 +2933,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   
   const [materiaFiltro, setMateriaFiltro] = useState("Todas");
   const [cadernoFiltro, setCadernoFiltro] = useState("Todos");
-  const [statusFiltro, setStatusFiltro] = useState<"todas" | "erros" | "nao_feitas" | "feitas_hoje">("todas");
+  const [statusFiltro, setStatusFiltro] = useState<"todas" | "erros" | "nao_feitas" | "feitas_hoje" | "mais_erros">("todas");
   const [saving, setSaving] = useState(false); const [saveErr, setSaveErr] = useState("");
 
   const fetchBlocks = useCallback(async () => {
@@ -3049,12 +3067,14 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           stats.set(row.questao_id, {
             total: 1,
             corretas: isCorrect ? 1 : 0,
+            totalErros: isCorrect ? 0 : 1,
             ultimo: isCorrect ? "acerto" : "erro",
             ultimaData: row.data,
           });
         } else {
           existing.total += 1;
           if (isCorrect) existing.corretas += 1;
+          else existing.totalErros += 1;
         }
       }
 
@@ -3370,7 +3390,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           </div>
 
           {/* Filtro por Status da Questão */}
-          <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] shrink-0">
+          <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] shrink-0 flex-wrap">
             <button
               onClick={() => setStatusFiltro("todas")}
               className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
@@ -3385,7 +3405,15 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                 statusFiltro === "erros" ? "bg-rose-600 text-white shadow" : "text-rose-400/70 hover:text-rose-300"
               }`}
             >
-              🔴 Erros
+              🔴 Últs. Erros
+            </button>
+            <button
+              onClick={() => setStatusFiltro("mais_erros")}
+              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                statusFiltro === "mais_erros" ? "bg-amber-600 text-white shadow" : "text-amber-400/70 hover:text-amber-300"
+              }`}
+            >
+              🔥 Mais Erros
             </button>
             <button
               onClick={() => setStatusFiltro("nao_feitas")}
@@ -3449,6 +3477,56 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                 resultadosMap={resultadosMap}
                 duvidasIds={duvidasIds}
               />
+            </div>
+          </div>
+
+          {/* Barra de Filtro interna do Caderno */}
+          <div className="flex items-center justify-between gap-3 bg-[#101526]/80 p-3 rounded-2xl border border-white/[0.06] backdrop-blur-xl flex-wrap">
+            <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <Filter size={14} className="text-indigo-400" />
+              Filtrar questões neste caderno:
+            </span>
+            <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] shrink-0 flex-wrap">
+              <button
+                onClick={() => setStatusFiltro("todas")}
+                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                  statusFiltro === "todas" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                Todas
+              </button>
+              <button
+                onClick={() => setStatusFiltro("erros")}
+                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                  statusFiltro === "erros" ? "bg-rose-600 text-white shadow" : "text-rose-400/70 hover:text-rose-300"
+                }`}
+              >
+                🔴 Últs. Erros
+              </button>
+              <button
+                onClick={() => setStatusFiltro("mais_erros")}
+                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                  statusFiltro === "mais_erros" ? "bg-amber-600 text-white shadow" : "text-amber-400/70 hover:text-amber-300"
+                }`}
+              >
+                🔥 Mais Erros
+              </button>
+              <button
+                onClick={() => setStatusFiltro("nao_feitas")}
+                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                  statusFiltro === "nao_feitas" ? "bg-purple-600 text-white shadow" : "text-purple-400/70 hover:text-purple-300"
+                }`}
+              >
+                ⭕ Não Feitas
+              </button>
+              <button
+                onClick={() => setStatusFiltro("feitas_hoje")}
+                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                  statusFiltro === "feitas_hoje" ? "bg-sky-600 text-white shadow" : "text-sky-400/70 hover:text-sky-300"
+                }`}
+              >
+                ⚡ Feitas Hoje
+              </button>
             </div>
           </div>
 
