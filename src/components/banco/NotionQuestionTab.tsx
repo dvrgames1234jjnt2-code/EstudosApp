@@ -688,11 +688,11 @@ function ImagemLightbox({
       )}
 
       {/* Main Image View & Side-by-Side Split Screen Answer Panel Area */}
-      <div className="relative flex-1 w-full h-full overflow-hidden flex flex-col md:flex-row items-center justify-between min-h-0">
+      <div className="relative flex-1 w-full h-full overflow-hidden flex flex-row items-center justify-between min-h-0">
         {/* Left Question Image Container (Fixed 50% when showResposta is true) */}
         <div
           className={`relative h-full overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing p-2 sm:p-4 min-w-0 transition-all ${
-            showResposta ? "w-full md:w-1/2 border-b md:border-b-0 md:border-r border-white/10" : "w-full flex-1"
+            showResposta ? "w-1/2 flex-1 border-r border-white/10" : "w-full flex-1"
           }`}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -730,9 +730,9 @@ function ImagemLightbox({
           )}
         </div>
 
-        {/* Right Side Answer Screen Panel (50% Width, Scrollable Content) */}
+        {/* Right Side Answer Screen Panel (Fixed 50% Width, Scrollable Content) */}
         {showResposta && (
-          <div className="w-full md:w-1/2 h-full bg-[#0b101d]/95 backdrop-blur-2xl p-4 sm:p-6 shadow-2xl z-40 text-white flex flex-col gap-4 overflow-y-auto custom-scrollbar shrink-0 animate-in slide-in-from-right duration-200">
+          <div className="w-1/2 flex-1 h-full bg-[#0b101d] backdrop-blur-2xl p-4 sm:p-6 shadow-2xl z-40 text-white flex flex-col gap-4 overflow-y-auto custom-scrollbar shrink-0 min-w-0 border-l border-white/10 animate-in slide-in-from-right duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
               <span className="text-sm sm:text-base font-bold text-emerald-400 flex items-center gap-2">
                 <span>✨</span> Resposta e Gabarito {questaoNumero ? `— Questão ${questaoNumero}` : ""}
