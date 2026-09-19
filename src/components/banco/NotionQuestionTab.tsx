@@ -703,23 +703,27 @@ function ImagemLightbox({
             if (e.target === e.currentTarget) onClose();
           }}
         >
-          <img
-            src={url}
-            alt="Imagem da questão"
-            draggable={false}
-            style={{
-              transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-              transition: isDragging ? "none" : "transform 0.15s ease-out",
-              ...getImageFilterStyle(),
-            }}
-            className={`${getImageCardBgClass()} rounded-xl object-contain transition-all ${
-              showResposta
-                ? "max-w-[95%] max-h-[80vh] md:max-w-[90%]"
-                : isFullWidth
-                ? "w-full h-full max-w-none max-h-none"
-                : "max-w-[95vw] max-h-[85vh]"
-            }`}
-          />
+          {url ? (
+            <img
+              src={url}
+              alt="Imagem da questão"
+              draggable={false}
+              style={{
+                transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+                transition: isDragging ? "none" : "transform 0.15s ease-out",
+                ...getImageFilterStyle(),
+              }}
+              className={`${getImageCardBgClass()} rounded-xl object-contain transition-all ${
+                showResposta
+                  ? "max-w-[95%] max-h-[80vh] md:max-w-[90%]"
+                  : isFullWidth
+                  ? "w-full h-full max-w-none max-h-none"
+                  : "max-w-[95vw] max-h-[85vh]"
+              }`}
+            />
+          ) : (
+            <div className="text-slate-400 italic text-xs">Sem imagem disponível</div>
+          )}
         </div>
 
         {/* Right Side Answer Screen Panel */}
@@ -737,9 +741,9 @@ function ImagemLightbox({
               </button>
             </div>
 
-            {respostaImageUrls && respostaImageUrls.length > 0 && (
+            {respostaImageUrls && respostaImageUrls.filter(Boolean).length > 0 && (
               <div className="flex flex-col gap-3">
-                {respostaImageUrls.map((rUrl, i) => (
+                {respostaImageUrls.filter(Boolean).map((rUrl, i) => (
                   <img
                     key={i}
                     src={rUrl}
@@ -1420,8 +1424,8 @@ function QuestaoRow({
             </div>
           ) : (
             <>
-              {imageUrls.length > 0 ? (
-                imageUrls.map((url, i) => (
+              {imageUrls.filter(Boolean).length > 0 ? (
+                imageUrls.filter(Boolean).map((url, i) => (
                   <div key={i} className="relative group max-w-2xl">
                     <img
                       src={url}
@@ -1511,7 +1515,7 @@ function QuestaoRow({
                   </div>
 
                   <div className="flex flex-col gap-3">
-                    {respostaImageUrls.map((url, i) => (
+                    {respostaImageUrls.filter(Boolean).map((url, i) => (
                       <div key={i} className="relative group max-w-2xl">
                         <img
                           src={url}
@@ -1635,9 +1639,9 @@ function QuestaoRow({
                               placeholder="https://..."
                               className="w-full px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500/40 transition-all font-mono"
                             />
-                            {adminImageUrl && (
+                            {adminImageUrl?.trim() ? (
                               <img src={adminImageUrl} alt="preview" className="mt-1 max-h-32 rounded-lg border border-white/10 object-contain bg-white/5" />
-                            )}
+                            ) : null}
                           </div>
 
                           <div className="flex items-center gap-2 justify-end">
