@@ -2250,25 +2250,15 @@ function BlocoStatsBadge({
 
   const aproveitamentoClasses =
     aproveitamento === null
-      ? "border-white/[0.06] text-slate-600 bg-white/[0.02]"
-      : aproveitamento >= 70
-      ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
-      : aproveitamento >= 40
-      ? "border-amber-500/30 text-amber-400 bg-amber-500/10"
-      : "border-red-500/30 text-red-400 bg-red-500/10";
+      ? "border-white/[0.04] text-slate-600 bg-white/[0.02]"
+      : "border-white/[0.06] text-slate-300 bg-white/[0.04]";
 
   return (
-    <div className="flex items-center gap-2 text-[10px] font-bold shrink-0">
-      <span className="text-slate-400 font-semibold">{ids.length} quest.</span>
-      <span className="text-emerald-400 flex items-center gap-0.5" title="Acertos"><Check size={10} />{acertos}</span>
-      <span className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border text-[10px] font-bold tabular-nums transition-all ${
-        erros > 0 
-          ? "bg-rose-500/15 border-rose-500/35 text-rose-300" 
-          : "border-transparent text-slate-500"
-      }`} title="Erros">
-        <X size={10} />{erros}
-      </span>
-      <span className="text-amber-400 flex items-center gap-0.5" title="Em Dúvida"><Flag size={10} />{duvidas}</span>
+    <div className="flex items-center gap-1.5 text-[10px] font-normal shrink-0">
+      <span className="text-slate-400">{ids.length} quest.</span>
+      <span className="text-slate-400 flex items-center gap-0.5" title="Acertos"><Check size={10} className="text-slate-400" />{acertos}</span>
+      <span className="text-slate-400 flex items-center gap-0.5" title="Erros"><X size={10} className="text-slate-400" />{erros}</span>
+      <span className="text-slate-400 flex items-center gap-0.5" title="Em Dúvida"><Flag size={10} className="text-slate-400" />{duvidas}</span>
       <span className={`px-1.5 py-0.5 rounded-md border tabular-nums ${aproveitamentoClasses}`} title="Aproveitamento">
         {aproveitamento === null ? "—" : `${aproveitamento}%`}
       </span>
@@ -3111,20 +3101,20 @@ export default function NotionQuestionTab({ user }: { user: any }) {
 
           {user && (
             <div className="flex items-center gap-1.5 pl-2 border-l border-white/10 flex-wrap">
-              <span className="text-[10px] font-bold text-slate-300 flex items-center gap-1 bg-white/[0.04] border border-white/[0.08] px-2 py-0.5 rounded-lg" title="Feitas hoje">
-                <Clock size={11} className="text-sky-400" /> {feitasHojeIds.length} hoje
+              <span className="text-[10px] font-normal text-slate-400 flex items-center gap-1 bg-white/[0.03] border border-white/[0.06] px-2 py-0.5 rounded-lg" title="Feitas hoje">
+                <Clock size={11} className="text-slate-400" /> {feitasHojeIds.length} hoje
               </span>
-              <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg" title="Total de acertos">
-                <Check size={11} /> {acertadas.length} acertos
+              <span className="text-[10px] font-normal text-slate-400 flex items-center gap-1 bg-white/[0.03] border border-white/[0.06] px-2 py-0.5 rounded-lg" title="Total de acertos">
+                <Check size={11} className="text-slate-400" /> {acertadas.length} acertos
               </span>
-              <span className="text-[10px] font-bold text-rose-400 flex items-center gap-1 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-lg" title="Com erros">
-                <X size={11} /> {erradas.length} erros
+              <span className="text-[10px] font-normal text-slate-400 flex items-center gap-1 bg-white/[0.03] border border-white/[0.06] px-2 py-0.5 rounded-lg" title="Com erros">
+                <X size={11} className="text-slate-400" /> {erradas.length} erros
               </span>
-              <span className="text-[10px] font-bold text-amber-400 flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg" title="Em dúvida">
-                <Flag size={11} /> {duvidasArr.length} dúvidas
+              <span className="text-[10px] font-normal text-slate-400 flex items-center gap-1 bg-white/[0.03] border border-white/[0.06] px-2 py-0.5 rounded-lg" title="Em dúvida">
+                <Flag size={11} className="text-slate-400" /> {duvidasArr.length} dúvidas
               </span>
               {totalRespondidas > 0 && (
-                <span className="text-[10px] font-black text-indigo-300 bg-indigo-600/20 border border-indigo-500/30 px-2 py-0.5 rounded-lg" title="Taxa de acertos">
+                <span className="text-[10px] font-normal text-slate-300 bg-white/[0.04] border border-white/[0.08] px-2 py-0.5 rounded-lg" title="Taxa de acertos">
                   🎯 {taxaAcerto}%
                 </span>
               )}
