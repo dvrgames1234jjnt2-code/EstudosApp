@@ -1203,6 +1203,17 @@ function QuestaoRow({
 
   const showHighlightStyle = (effectiveStatus === "erros" && isErro) || (effectiveStatus === "feitas_hoje" && isFeitaHoje);
 
+  const diffBgClasses: Record<string, string> = {
+    faceis: "bg-emerald-950/20 border-emerald-500/20 hover:bg-emerald-950/30",
+    lacuna: "bg-emerald-950/20 border-emerald-500/20 hover:bg-emerald-950/30",
+    media: "bg-amber-950/20 border-amber-500/20 hover:bg-amber-950/30",
+    atencao: "bg-sky-950/20 border-sky-500/20 hover:bg-sky-950/30",
+    dificil: "bg-rose-950/20 border-rose-500/20 hover:bg-rose-950/30",
+    ultrahard: "bg-purple-950/20 border-purple-500/20 hover:bg-purple-950/30",
+    bonus: "bg-purple-950/20 border-purple-500/20 hover:bg-purple-950/30",
+  };
+  const bgClass = diffBgClasses[questao.categoryKey] || "bg-[#111623]/70 border-white/[0.05] hover:bg-[#151c2e]";
+
   return (
     <div
       draggable={isAdmin}
@@ -1229,12 +1240,12 @@ function QuestaoRow({
           }
         }
       }}
-      className={`flex flex-col py-1 transition-all rounded-lg ${
+      className={`flex flex-col py-0.5 transition-all rounded-lg ${
         isDraggingOver ? "ring-2 ring-indigo-500/50 bg-indigo-500/10" : ""
       }`}
     >
-      <div className={`flex items-center gap-2.5 sm:gap-3 py-1.5 px-2.5 transition-all rounded-lg group ${
-        showHighlightStyle ? "bg-rose-500/[0.03] border border-rose-500/15" : "hover:bg-white/[0.03]"
+      <div className={`flex items-center gap-2 py-1 px-2.5 transition-all rounded-lg border group ${
+        showHighlightStyle ? "bg-rose-500/[0.05] border-rose-500/25" : bgClass
       }`}>
         {isAdmin && (
           <span 
@@ -1260,17 +1271,17 @@ function QuestaoRow({
           {questao.numero}
         </span>
 
-        <span className="text-sm shrink-0 select-none">{catEmoji}</span>
+        <span className="w-2 h-2 rounded-full shrink-0 select-none shadow-sm" style={{ backgroundColor: catColor }} title={catLabel} />
 
         <span
-          className="text-[11px] font-normal px-2.5 py-0.5 rounded-md bg-white/[0.03] border border-white/[0.06] shrink-0"
+          className="text-[11px] font-normal px-2 py-0.5 rounded-md bg-black/20 border border-white/[0.06] shrink-0"
           style={{ color: catColor }}
         >
           {catLabel}
         </span>
 
         {questao.topic && (
-          <span className="text-[14px] sm:text-[15px] font-normal text-[#8E97A8] leading-relaxed truncate ml-0.5">
+          <span className="text-[12px] sm:text-[13px] font-normal text-slate-300 leading-relaxed truncate ml-0.5">
             — {questao.topic}
           </span>
         )}
@@ -3374,7 +3385,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                   <div className="flex items-center justify-between border-b border-white/[0.06] pb-1.5 px-0.5">
                     <div className="flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
-                      <h3 className="text-[10.5px] font-semibold text-slate-300 uppercase tracking-wider">
+                      <h3 className="text-[10.5px] font-medium text-slate-400 uppercase tracking-wider">
                         {materiaName}
                       </h3>
                     </div>
