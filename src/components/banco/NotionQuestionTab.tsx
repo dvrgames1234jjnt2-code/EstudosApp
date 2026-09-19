@@ -666,27 +666,6 @@ function ImagemLightbox({
         </div>
       </div>
 
-      {/* Floating Side Arrows for Next/Prev */}
-      {hasPrev && onPrev && (
-        <button
-          onClick={onPrev}
-          title="Questão Anterior (←)"
-          className="fixed left-3 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-black/70 hover:bg-indigo-600 text-white flex items-center justify-center border border-white/20 shadow-2xl backdrop-blur-md transition-all active:scale-90 group"
-        >
-          <ChevronLeft size={26} className="group-hover:-translate-x-0.5 transition-transform" />
-        </button>
-      )}
-
-      {hasNext && onNext && (
-        <button
-          onClick={onNext}
-          title="Próxima Questão (→)"
-          className="fixed right-3 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-black/70 hover:bg-indigo-600 text-white flex items-center justify-center border border-white/20 shadow-2xl backdrop-blur-md transition-all active:scale-90 group"
-        >
-          <ChevronRight size={26} className="group-hover:translate-x-0.5 transition-transform" />
-        </button>
-      )}
-
       {/* Main Image View & Side-by-Side Split Screen Answer Panel Area */}
       <div className="relative flex-1 w-full h-full overflow-hidden flex flex-row items-center justify-between min-h-0">
         {/* Left Question Image Container (Fixed 50% when showResposta is true) */}
@@ -700,6 +679,27 @@ function ImagemLightbox({
             if (e.target === e.currentTarget) onClose();
           }}
         >
+          {/* Floating Side Arrows for Next/Prev (Absolute to Question Container) */}
+          {hasPrev && onPrev && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onPrev(); }}
+              title="Questão Anterior (←)"
+              className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-900/85 hover:bg-slate-800 text-slate-200 hover:text-white flex items-center justify-center border border-slate-700 shadow-xl backdrop-blur-md transition-all active:scale-90 group"
+            >
+              <ChevronLeft size={24} className="group-hover:-translate-x-0.5 transition-transform" />
+            </button>
+          )}
+
+          {hasNext && onNext && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onNext(); }}
+              title="Próxima Questão (→)"
+              className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-900/85 hover:bg-slate-800 text-slate-200 hover:text-white flex items-center justify-center border border-slate-700 shadow-xl backdrop-blur-md transition-all active:scale-90 group"
+            >
+              <ChevronRight size={24} className="group-hover:translate-x-0.5 transition-transform" />
+            </button>
+          )}
+
           {loading ? (
             <div className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl bg-slate-900/90 border border-white/10 shadow-2xl backdrop-blur-md">
               <Loader2 size={36} className="animate-spin text-indigo-400" />
