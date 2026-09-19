@@ -322,6 +322,7 @@ function QuestaoTitleLabel({ questaoId, blocksMap }: { questaoId: string; blocks
 
 function ImagemLightbox({
   url,
+  loading = false,
   onClose,
   onNext,
   onPrev,
@@ -339,6 +340,7 @@ function ImagemLightbox({
   onAnswered,
 }: {
   url: string;
+  loading?: boolean;
   onClose: () => void;
   onNext?: () => void;
   onPrev?: () => void;
@@ -367,16 +369,17 @@ function ImagemLightbox({
   const [recordingDuvida, setRecordingDuvida] = useState(false);
   const [localDuvida, setLocalDuvida] = useState(isDuvida);
 
-  const [antiBrilho, setAntiBrilho] = useState<'off' | 'suave' | 'noturno'>(() => {
+  const [antiBrilho, setAntiBrilho] = useState<'suave' | 'noturno'>(() => {
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem('notion_anti_brilho') as 'off' | 'suave' | 'noturno') || 'off';
+      const saved = localStorage.getItem('notion_anti_brilho');
+      if (saved === 'noturno') return 'noturno';
     }
-    return 'off';
+    return 'suave';
   });
 
   const toggleAntiBrilho = () => {
     setAntiBrilho(prev => {
-      const next = prev === 'off' ? 'suave' : prev === 'suave' ? 'noturno' : 'off';
+      const next = prev === 'suave' ? 'noturno' : 'suave';
       if (typeof window !== 'undefined') {
         localStorage.setItem('notion_anti_brilho', next);
       }
@@ -479,27 +482,21 @@ function ImagemLightbox({
   }, [onClose, onNext, onPrev, hasNext, hasPrev, antiBrilho]);
 
   const getImageFilterStyle = () => {
-    if (antiBrilho === 'suave') {
-      return {
-        filter: 'brightness(0.83) contrast(1.1) saturate(0.9)',
-      };
-    }
     if (antiBrilho === 'noturno') {
       return {
         filter: 'invert(0.92) hue-rotate(180deg) brightness(0.95) contrast(1.15)',
       };
     }
-    return {};
+    return {
+      filter: 'brightness(0.83) contrast(1.1) saturate(0.9)',
+    };
   };
 
   const getImageCardBgClass = () => {
-    if (antiBrilho === 'suave') {
-      return 'bg-slate-800/90 border border-slate-700/60 shadow-2xl opacity-95';
-    }
     if (antiBrilho === 'noturno') {
       return 'bg-[#0b101d] border border-white/10 shadow-2xl';
     }
-    return 'bg-white shadow-2xl';
+    return 'bg-slate-900/90 border border-slate-700/60 shadow-2xl opacity-95';
   };
 
   const handleWheel = (e: React.WheelEvent) => {
@@ -529,7 +526,12 @@ function ImagemLightbox({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-2xl flex flex-col items-center justify-between select-none animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-3xl flex flex-col items-center justify-between select-none animate-in fade-in duration-200"
+      style={{
+        backdropFilter: "blur(30px) brightness(0.7)",
+        WebkitBackdropFilter: "blur(30px) brightness(0.7)",
+        backgroundColor: "rgba(5, 8, 15, 0.85)",
+      }}
       onWheel={handleWheel}
       onMouseUp={handleMouseUp}
     >
@@ -601,28 +603,20 @@ function ImagemLightbox({
           {/* Anti-Brilho / Filtro Noturno */}
           <button
             onClick={toggleAntiBrilho}
-            title="Alternar Filtro Anti-Brilho / Modo Noturno para Imagens (Tecla B)"
+            title="Alternar Filtro Anti-Brilho / Modo Noturno (Tecla B)"
             className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 border ${
-              antiBrilho === 'suave'
-                ? "bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm shadow-amber-500/20"
-                : antiBrilho === 'noturno'
+              antiBrilho === 'noturno'
                 ? "bg-indigo-500/25 text-indigo-300 border-indigo-500/40 shadow-sm shadow-indigo-500/20"
-                : "hover:bg-white/20 text-slate-300 border-transparent"
+                : "bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm shadow-amber-500/20"
             }`}
           >
             {antiBrilho === 'noturno' ? (
               <Moon size={13} className="text-indigo-400" />
-            ) : antiBrilho === 'suave' ? (
-              <Sun size={13} className="text-amber-400" />
             ) : (
-              <Sun size={13} className="text-slate-400" />
+              <Sun size={13} className="text-amber-400" />
             )}
             <span>
-              {antiBrilho === 'suave'
-                ? "Anti-Brilho: Suave"
-                : antiBrilho === 'noturno'
-                ? "Anti-Brilho: Noturno"
-                : "Anti-Brilho: Off"}
+              {antiBrilho === 'noturno' ? "Anti-Brilho: Noturno" : "Anti-Brilho: Ativo"}
             </span>
           </button>
 
@@ -703,7 +697,12 @@ function ImagemLightbox({
             if (e.target === e.currentTarget) onClose();
           }}
         >
-          {url ? (
+          {loading ? (
+            <div className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl bg-slate-900/90 border border-white/10 shadow-2xl backdrop-blur-md">
+              <Loader2 size={36} className="animate-spin text-indigo-400" />
+              <span className="text-xs font-semibold text-slate-300 animate-pulse">Carregando imagem da questão...</span>
+            </div>
+          ) : url ? (
             <img
               src={url}
               alt="Imagem da questão"
@@ -722,7 +721,9 @@ function ImagemLightbox({
               }`}
             />
           ) : (
-            <div className="text-slate-400 italic text-xs">Sem imagem disponível</div>
+            <div className="text-slate-400 italic text-xs bg-slate-900/80 px-4 py-3 rounded-xl border border-white/10">
+              Sem imagem registrada para esta questão
+            </div>
           )}
         </div>
 
@@ -750,7 +751,7 @@ function ImagemLightbox({
                     alt={`Resposta ${i + 1}`}
                     style={getImageFilterStyle()}
                     className={`w-full rounded-xl border border-white/10 object-contain shadow-md max-h-[40vh] ${
-                      antiBrilho === 'suave' ? 'bg-slate-800' : antiBrilho === 'noturno' ? 'bg-[#0b101d]' : 'bg-white'
+                      antiBrilho === 'noturno' ? 'bg-[#0b101d]' : 'bg-slate-900/90'
                     }`}
                   />
                 ))}
@@ -853,12 +854,34 @@ function ZoomedQuestaoWrapper({
   initialRespostaText?: string;
   initialRespostaImageUrls?: string[];
 }) {
-  const [imageUrls, setImageUrls] = useState<string[]>(initialUrl ? [initialUrl] : []);
-  const [respostaImageUrls, setRespostaImageUrls] = useState<string[]>(initialRespostaImageUrls ?? []);
-  const [respostaText, setRespostaText] = useState<string | undefined>(initialRespostaText);
+  const initialImgs = (questao.imageUrls && questao.imageUrls.length > 0)
+    ? questao.imageUrls
+    : initialUrl ? [initialUrl] : [];
+
+  const [imageUrls, setImageUrls] = useState<string[]>(initialImgs);
+  const [respostaImageUrls, setRespostaImageUrls] = useState<string[]>(
+    (questao.respostaImageUrls && questao.respostaImageUrls.length > 0)
+      ? questao.respostaImageUrls
+      : initialRespostaImageUrls ?? []
+  );
+  const [respostaText, setRespostaText] = useState<string | undefined>(questao.resposta || initialRespostaText);
+  const [loading, setLoading] = useState<boolean>(initialImgs.length === 0);
 
   useEffect(() => {
     let active = true;
+    const currentImgs = (questao.imageUrls && questao.imageUrls.length > 0)
+      ? questao.imageUrls
+      : initialUrl ? [initialUrl] : [];
+    
+    setImageUrls(currentImgs);
+    setRespostaImageUrls(
+      (questao.respostaImageUrls && questao.respostaImageUrls.length > 0)
+        ? questao.respostaImageUrls
+        : initialRespostaImageUrls ?? []
+    );
+    setRespostaText(questao.resposta || initialRespostaText);
+    setLoading(currentImgs.length === 0);
+
     (async () => {
       try {
         const children = await fetchChildren(questao.id);
@@ -901,21 +924,24 @@ function ZoomedQuestaoWrapper({
         }
         if (active) {
           if (imgs.length > 0) setImageUrls(imgs);
-          setRespostaImageUrls(rImgs);
-          setRespostaText(textResp);
+          if (rImgs.length > 0) setRespostaImageUrls(rImgs);
+          if (textResp) setRespostaText(textResp);
+          setLoading(false);
         }
       } catch (e) {
         console.error(e);
+        if (active) setLoading(false);
       }
     })();
     return () => { active = false; };
-  }, [questao.id]);
+  }, [questao.id, initialUrl]);
 
   const mainUrl = imageUrls[0] || initialUrl || "";
 
   return (
     <ImagemLightbox
       url={mainUrl}
+      loading={loading}
       onClose={onClose}
       onNext={onNext}
       onPrev={onPrev}
@@ -1431,7 +1457,8 @@ function QuestaoRow({
                       src={url}
                       alt={`Q${questao.numero} img${i + 1}`}
                       onClick={() => setZoomedImage(url)}
-                      className="w-full rounded-xl border border-white/[0.06] object-contain bg-white cursor-zoom-in hover:brightness-95 transition-all shadow-md"
+                      style={{ filter: 'brightness(0.85) contrast(1.08)' }}
+                      className="w-full rounded-xl border border-slate-700/60 object-contain bg-slate-900/90 cursor-zoom-in hover:brightness-105 transition-all shadow-md"
                     />
                     <button
                       onClick={() => setZoomedImage(url)}
@@ -1521,7 +1548,8 @@ function QuestaoRow({
                           src={url}
                           alt={`Resposta img${i + 1}`}
                           onClick={() => setZoomedImage(url)}
-                          className="w-full rounded-xl border border-white/[0.08] object-contain bg-white cursor-zoom-in hover:brightness-95 transition-all shadow-md"
+                          style={{ filter: 'brightness(0.85) contrast(1.08)' }}
+                          className="w-full rounded-xl border border-slate-700/60 object-contain bg-slate-900/90 cursor-zoom-in hover:brightness-105 transition-all shadow-md"
                         />
                         <button
                           onClick={() => setZoomedImage(url)}
