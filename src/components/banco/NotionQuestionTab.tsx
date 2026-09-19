@@ -687,11 +687,13 @@ function ImagemLightbox({
         </button>
       )}
 
-      {/* Main Image View & Side-by-Side Answer Panel Area */}
+      {/* Main Image View & Side-by-Side Split Screen Answer Panel Area */}
       <div className="relative flex-1 w-full h-full overflow-hidden flex flex-col md:flex-row items-center justify-between min-h-0">
-        {/* Left Question Image Container */}
+        {/* Left Question Image Container (Fixed 50% when showResposta is true) */}
         <div
-          className="relative flex-1 w-full h-full overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing p-2 sm:p-4 min-w-0"
+          className={`relative h-full overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing p-2 sm:p-4 min-w-0 transition-all ${
+            showResposta ? "w-full md:w-1/2 border-b md:border-b-0 md:border-r border-white/10" : "w-full flex-1"
+          }`}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onClick={(e) => {
@@ -715,7 +717,7 @@ function ImagemLightbox({
               }}
               className={`${getImageCardBgClass()} rounded-xl object-contain transition-all ${
                 showResposta
-                  ? "max-w-[95%] max-h-[80vh] md:max-w-[90%]"
+                  ? "max-w-[95%] max-h-[82vh]"
                   : isFullWidth
                   ? "w-full h-full max-w-none max-h-none"
                   : "max-w-[95vw] max-h-[85vh]"
@@ -728,30 +730,31 @@ function ImagemLightbox({
           )}
         </div>
 
-        {/* Right Side Answer Screen Panel */}
+        {/* Right Side Answer Screen Panel (50% Width, Scrollable Content) */}
         {showResposta && (
-          <div className="w-full md:w-[440px] lg:w-[500px] h-full bg-[#0b101d]/95 backdrop-blur-2xl border-t md:border-t-0 md:border-l border-white/10 p-4 sm:p-5 shadow-2xl z-40 text-white flex flex-col gap-3 overflow-y-auto custom-scrollbar shrink-0 animate-in slide-in-from-right duration-200">
-            <div className="flex items-center justify-between pb-2.5 border-b border-white/10 shrink-0">
-              <span className="text-xs sm:text-sm font-bold text-emerald-400 flex items-center gap-2">
+          <div className="w-full md:w-1/2 h-full bg-[#0b101d]/95 backdrop-blur-2xl p-4 sm:p-6 shadow-2xl z-40 text-white flex flex-col gap-4 overflow-y-auto custom-scrollbar shrink-0 animate-in slide-in-from-right duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
+              <span className="text-sm sm:text-base font-bold text-emerald-400 flex items-center gap-2">
                 <span>✨</span> Resposta e Gabarito {questaoNumero ? `— Questão ${questaoNumero}` : ""}
               </span>
               <button
                 onClick={() => setShowResposta(false)}
-                className="text-slate-400 hover:text-white text-xs p-1 rounded-lg hover:bg-white/10 transition-colors"
+                className="text-slate-400 hover:text-white text-xs p-1.5 rounded-lg hover:bg-white/10 transition-colors"
               >
-                <X size={16} />
+                <X size={18} />
               </button>
             </div>
 
+            {/* Respostas com Imagem */}
             {respostaImageUrls && respostaImageUrls.filter(u => u && u.trim() !== "").length > 0 && (
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 {respostaImageUrls.filter(u => u && u.trim() !== "").map((rUrl, i) => (
                   <img
                     key={i}
                     src={rUrl.trim()}
                     alt={`Resposta ${i + 1}`}
                     style={getImageFilterStyle()}
-                    className={`w-full rounded-xl border border-white/10 object-contain shadow-md max-h-[40vh] ${
+                    className={`w-full rounded-xl border border-white/10 object-contain shadow-md max-h-[55vh] ${
                       antiBrilho === 'noturno' ? 'bg-[#0b101d]' : 'bg-slate-900/90'
                     }`}
                   />
@@ -759,17 +762,22 @@ function ImagemLightbox({
               </div>
             )}
 
+            {/* Resposta em Texto / Explicação */}
             {respostaText ? (
-              <p className="text-xs sm:text-sm font-normal text-slate-200 whitespace-pre-wrap leading-relaxed">
-                {respostaText}
-              </p>
+              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10">
+                <p className="text-sm sm:text-base font-normal text-slate-200 whitespace-pre-wrap leading-relaxed">
+                  {respostaText}
+                </p>
+              </div>
             ) : (!respostaImageUrls || respostaImageUrls.length === 0) ? (
-              <p className="text-xs text-slate-400 italic">Nenhuma resposta registrada no Notion.</p>
+              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 text-center">
+                <p className="text-xs text-slate-400 italic">Nenhuma resposta registrada no Notion.</p>
+              </div>
             ) : null}
 
-            {/* User Record Answer Section inside Side Panel */}
+            {/* Registro de Tentativas do Usuário no Rodapé do Painel */}
             {questaoId && (
-              <div className="flex items-center gap-2 mt-auto pt-3 border-t border-white/10 flex-wrap">
+              <div className="flex items-center gap-2 mt-auto pt-4 border-t border-white/10 flex-wrap shrink-0">
                 <span className="text-xs text-slate-300 font-semibold mr-auto">Registrar tentativa:</span>
                 
                 {onToggleDuvida && (
@@ -789,16 +797,16 @@ function ImagemLightbox({
                 <button
                   onClick={() => handleRecordAnswer(true)}
                   disabled={recording}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-500/35 text-emerald-300 text-xs font-bold transition-all disabled:opacity-50 active:scale-95 shadow-md"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-500/35 text-emerald-300 text-xs font-bold transition-all disabled:opacity-50 active:scale-95 shadow-md"
                 >
-                  <Check size={13} /> Acertei
+                  <Check size={14} /> Acertei
                 </button>
                 <button
                   onClick={() => handleRecordAnswer(false)}
                   disabled={recording}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 border border-rose-500/35 text-rose-300 text-xs font-bold transition-all disabled:opacity-50 active:scale-95 shadow-md"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 border border-rose-500/35 text-rose-300 text-xs font-bold transition-all disabled:opacity-50 active:scale-95 shadow-md"
                 >
-                  <X size={13} /> Errei
+                  <X size={14} /> Errei
                 </button>
 
                 {recorded && (
