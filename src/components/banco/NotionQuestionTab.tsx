@@ -470,6 +470,13 @@ function ImagemLightbox({
     setLocalDuvida(isDuvida);
   }, [isDuvida, questaoId]);
 
+  // Fecha o painel de resposta ao navegar para outra questão
+  useEffect(() => {
+    setShowResposta(false);
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  }, [questaoId]);
+
   const handleRecordAnswer = async (isCorrect: boolean) => {
     if (!questaoId) return;
     setRecording(true);
