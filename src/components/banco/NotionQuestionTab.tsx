@@ -1014,7 +1014,7 @@ function ZoomedQuestaoWrapper({
   );
 }
 
-function QuestaoRow({ 
+const QuestaoRow = memo(function QuestaoRow({ 
   questao, 
   user,
   isDuvida,
@@ -1352,11 +1352,11 @@ function QuestaoRow({
           }
         }
       }}
-      className={`flex flex-col py-0.5 transition-all rounded-lg ${
+      className={`flex flex-col py-0.5 rounded-lg ${
         isDraggingOver ? "ring-2 ring-indigo-500/50 bg-indigo-500/10" : ""
       }`}
     >
-      <div className={`flex items-center gap-2 py-1 px-2.5 transition-all rounded-lg group ${
+      <div className={`flex items-center gap-2 py-1 px-2.5 transition-colors duration-150 rounded-lg group ${
         showHighlightStyle ? "bg-rose-500/[0.05]" : bgClass
       }`}>
         {isAdmin && (
@@ -1370,12 +1370,12 @@ function QuestaoRow({
 
         <button
           onClick={() => { setOpen(v => !v); setShowResp(false); }}
-          className="text-slate-500 hover:text-slate-300 transition-all w-4 h-4 flex items-center justify-center shrink-0"
+          className="text-slate-500 hover:text-slate-300 transition-colors w-4 h-4 flex items-center justify-center shrink-0"
         >
           {loading ? (
             <Loader2 size={10} className="animate-spin text-slate-500" />
           ) : (
-            <span className="text-[10px] select-none">{open ? "▼" : "▶"}</span>
+            <ChevronRight size={12} className={`text-slate-500 transition-transform duration-150 shrink-0 ${open ? "rotate-90" : ""}`} />
           )}
         </button>
 
@@ -1718,9 +1718,9 @@ function QuestaoRow({
       )}
     </div>
   );
-}
+});
 
-function CasoCard({ 
+const CasoCard = memo(function CasoCard({ 
   caso, 
   depth = 0, 
   user,
@@ -1987,11 +1987,11 @@ function CasoCard({
           }
         }
       }}
-      className={`flex flex-col gap-0.5 ${indent} transition-all rounded-lg ${
+      className={`flex flex-col gap-0.5 ${indent} rounded-lg ${
         isDraggingOver ? "ring-2 ring-indigo-500/50 bg-indigo-500/10" : ""
       }`}
     >
-      <div className={`flex items-center justify-between py-1 px-2 transition-all rounded-lg group ${
+      <div className={`flex items-center justify-between py-1 px-2 transition-colors duration-150 rounded-lg group ${
         hasErrosInCaso ? "bg-rose-500/[0.03] border border-rose-500/20" : "hover:bg-white/[0.02]"
       }`}>
         {isAdmin && (
@@ -2011,7 +2011,7 @@ function CasoCard({
             {loading ? (
               <Loader2 size={10} className="animate-spin text-slate-500" />
             ) : (
-              open ? "▼" : "▶"
+              <ChevronRight size={12} className={`text-slate-500 transition-transform duration-150 shrink-0 ${open ? "rotate-90" : ""}`} />
             )}
           </span>
           <span className={`font-medium transition-colors ${hasErrosInCaso ? "text-rose-300 font-bold" : "text-[#8E97A8] group-hover:text-white"} ${depth === 0 ? "text-[14px]" : "text-[13px]"}`}>
@@ -2129,7 +2129,7 @@ function CasoCard({
       )}
     </div>
   );
-}
+});
 
 function BlockViewer({ 
   block, 
@@ -3242,7 +3242,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   const taxaAcerto = totalRespondidas > 0 ? Math.round((acertadas.length / totalRespondidas) * 100) : 0;
 
   return (
-    <div className="flex flex-col gap-4 bg-[#080d1a]/90 backdrop-blur-2xl rounded-2xl border border-white/[0.06] p-4 sm:p-5 shadow-2xl relative overflow-hidden">
+    <div className="flex flex-col gap-4 bg-[#080d1a] rounded-2xl border border-white/[0.06] p-4 sm:p-5 shadow-2xl relative overflow-hidden">
       {/* Background ambient glow */}
       <div className="absolute top-0 right-1/4 w-80 h-80 bg-indigo-600/[0.03] blur-[120px] rounded-full pointer-events-none" />
 
@@ -3350,7 +3350,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
       )}
 
       {!selectedBlock && !loadingBlocks && blocks.length > 0 && (
-        <div className="flex items-center gap-3 flex-wrap justify-between bg-[#101526]/80 p-3 rounded-2xl border border-white/[0.08] backdrop-blur-xl relative z-10 shadow-xl">
+        <div className="flex items-center gap-3 flex-wrap justify-between bg-[#101526] p-3 rounded-2xl border border-white/[0.08] relative z-10 shadow-xl">
           <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
             {/* Filtro por Caderno */}
             <div className="flex items-center gap-1.5 bg-[#0d1220] border border-white/[0.08] hover:border-white/[0.18] px-3 py-1.5 rounded-xl transition-all">
@@ -3457,7 +3457,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
       {selectedBlock ? (
         <div className="flex flex-col gap-4 relative z-10 animate-in fade-in duration-200">
           {/* Header da visão dedicada do caderno */}
-          <div className="flex items-center justify-between gap-3 bg-[#101526]/90 p-3.5 sm:p-4 rounded-2xl border border-white/[0.08] backdrop-blur-xl shadow-xl flex-wrap">
+          <div className="flex items-center justify-between gap-3 bg-[#101526] p-3.5 sm:p-4 rounded-2xl border border-white/[0.08] shadow-xl flex-wrap">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => {
@@ -3500,7 +3500,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           </div>
 
           {/* Barra de Filtro interna do Caderno */}
-          <div className="flex items-center justify-between gap-3 bg-[#101526]/80 p-3 rounded-2xl border border-white/[0.06] backdrop-blur-xl flex-wrap">
+          <div className="flex items-center justify-between gap-3 bg-[#101526] p-3 rounded-2xl border border-white/[0.06] flex-wrap">
             <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
               <Filter size={14} className="text-indigo-400" />
               Filtrar questões neste caderno:
