@@ -2392,16 +2392,20 @@ function BlocoStatsBadge({
 
   const aproveitamentoClasses =
     aproveitamento === null
-      ? "border-white/[0.04] text-slate-600 bg-white/[0.02]"
-      : "border-white/[0.06] text-slate-300 bg-white/[0.04]";
+      ? "border-slate-800 text-slate-500 bg-slate-900/40"
+      : aproveitamento >= 70
+      ? "border-emerald-800/60 text-emerald-300 bg-emerald-950/40 font-bold"
+      : aproveitamento >= 50
+      ? "border-amber-800/60 text-amber-300 bg-amber-950/40 font-bold"
+      : "border-rose-800/60 text-rose-300 bg-rose-950/40 font-bold";
 
   return (
-    <div className="flex items-center gap-1.5 text-[10px] font-normal shrink-0">
-      <span className="text-slate-400">{ids.length} quest.</span>
-      <span className="text-slate-400 flex items-center gap-0.5" title="Acertos"><Check size={10} className="text-slate-400" />{acertos}</span>
-      <span className="text-slate-400 flex items-center gap-0.5" title="Erros"><X size={10} className="text-slate-400" />{erros}</span>
-      <span className="text-slate-400 flex items-center gap-0.5" title="Em Dúvida"><Flag size={10} className="text-slate-400" />{duvidas}</span>
-      <span className={`px-1.5 py-0.5 rounded-md border tabular-nums ${aproveitamentoClasses}`} title="Aproveitamento">
+    <div className="flex items-center gap-2 text-[10.5px] font-medium shrink-0 select-none">
+      <span className="text-indigo-200/80 bg-indigo-950/40 border border-indigo-800/30 px-1.5 py-0.5 rounded-md font-medium">{ids.length} quest.</span>
+      <span className="text-emerald-400 flex items-center gap-0.5 font-medium" title="Acertos"><Check size={11} className="text-emerald-400 stroke-[2.5]" />{acertos}</span>
+      <span className="text-rose-400 flex items-center gap-0.5 font-medium" title="Erros"><X size={11} className="text-rose-400 stroke-[2.5]" />{erros}</span>
+      <span className="text-amber-400 flex items-center gap-0.5 font-medium" title="Em Dúvida"><Flag size={10} className="text-amber-400 fill-amber-400/20" />{duvidas}</span>
+      <span className={`px-1.5 py-0.5 rounded-md border tabular-nums text-[10px] ${aproveitamentoClasses}`} title="Aproveitamento">
         {aproveitamento === null ? "—" : `${aproveitamento}%`}
       </span>
     </div>
@@ -3245,20 +3249,26 @@ export default function NotionQuestionTab({ user }: { user: any }) {
 
           {user && (
             <div className="flex items-center gap-1.5 pl-2 border-l border-white/10 flex-wrap">
-              <span className="text-[10px] font-normal text-slate-400 flex items-center gap-1 bg-white/[0.03] border border-white/[0.06] px-2 py-0.5 rounded-lg" title="Feitas hoje">
-                <Clock size={11} className="text-slate-400" /> {feitasHojeIds.length} hoje
+              <span className="text-[10px] font-medium text-sky-300 flex items-center gap-1 bg-sky-950/30 border border-sky-800/40 px-2 py-0.5 rounded-lg" title="Feitas hoje">
+                <Clock size={11} className="text-sky-400" /> {feitasHojeIds.length} hoje
               </span>
-              <span className="text-[10px] font-normal text-slate-400 flex items-center gap-1 bg-white/[0.03] border border-white/[0.06] px-2 py-0.5 rounded-lg" title="Total de acertos">
-                <Check size={11} className="text-slate-400" /> {acertadas.length} acertos
+              <span className="text-[10px] font-medium text-emerald-300 flex items-center gap-1 bg-emerald-950/30 border border-emerald-800/40 px-2 py-0.5 rounded-lg" title="Total de acertos">
+                <Check size={11} className="text-emerald-400 stroke-[2.5]" /> {acertadas.length} acertos
               </span>
-              <span className="text-[10px] font-normal text-slate-400 flex items-center gap-1 bg-white/[0.03] border border-white/[0.06] px-2 py-0.5 rounded-lg" title="Com erros">
-                <X size={11} className="text-slate-400" /> {erradas.length} erros
+              <span className="text-[10px] font-medium text-rose-300 flex items-center gap-1 bg-rose-950/30 border border-rose-800/40 px-2 py-0.5 rounded-lg" title="Com erros">
+                <X size={11} className="text-rose-400 stroke-[2.5]" /> {erradas.length} erros
               </span>
-              <span className="text-[10px] font-normal text-slate-400 flex items-center gap-1 bg-white/[0.03] border border-white/[0.06] px-2 py-0.5 rounded-lg" title="Em dúvida">
-                <Flag size={11} className="text-slate-400" /> {duvidasArr.length} dúvidas
+              <span className="text-[10px] font-medium text-amber-300 flex items-center gap-1 bg-amber-950/30 border border-amber-800/40 px-2 py-0.5 rounded-lg" title="Em dúvida">
+                <Flag size={11} className="text-amber-400 fill-amber-400/20" /> {duvidasArr.length} dúvidas
               </span>
               {totalRespondidas > 0 && (
-                <span className="text-[10px] font-normal text-slate-300 bg-white/[0.04] border border-white/[0.08] px-2 py-0.5 rounded-lg" title="Taxa de acertos">
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border ${
+                  taxaAcerto >= 70
+                    ? "border-emerald-800/60 text-emerald-300 bg-emerald-950/40"
+                    : taxaAcerto >= 50
+                    ? "border-amber-800/60 text-amber-300 bg-amber-950/40"
+                    : "border-rose-800/60 text-rose-300 bg-rose-950/40"
+                }`} title="Taxa de acertos">
                   🎯 {taxaAcerto}%
                 </span>
               )}
