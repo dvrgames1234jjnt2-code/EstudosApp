@@ -2392,20 +2392,29 @@ function BlocoStatsBadge({
 
   const aproveitamentoClasses =
     aproveitamento === null
-      ? "border-slate-800 text-slate-500 bg-slate-900/40"
+      ? "border-slate-800 text-slate-500 bg-slate-900/60"
       : aproveitamento >= 70
-      ? "border-emerald-800/60 text-emerald-300 bg-emerald-950/40 font-bold"
+      ? "border-slate-800 text-emerald-400/90 bg-slate-900/60 font-medium"
       : aproveitamento >= 50
-      ? "border-amber-800/60 text-amber-300 bg-amber-950/40 font-bold"
-      : "border-rose-800/60 text-rose-300 bg-rose-950/40 font-bold";
+      ? "border-slate-800 text-amber-400/90 bg-slate-900/60 font-medium"
+      : "border-slate-800 text-rose-400/90 bg-slate-900/60 font-medium";
 
   return (
-    <div className="flex items-center gap-2 text-[10.5px] font-medium shrink-0 select-none">
-      <span className="text-indigo-200/80 bg-indigo-950/40 border border-indigo-800/30 px-1.5 py-0.5 rounded-md font-medium">{ids.length} quest.</span>
-      <span className="text-emerald-400 flex items-center gap-0.5 font-medium" title="Acertos"><Check size={11} className="text-emerald-400 stroke-[2.5]" />{acertos}</span>
-      <span className="text-rose-400 flex items-center gap-0.5 font-medium" title="Erros"><X size={11} className="text-rose-400 stroke-[2.5]" />{erros}</span>
-      <span className="text-amber-400 flex items-center gap-0.5 font-medium" title="Em Dúvida"><Flag size={10} className="text-amber-400 fill-amber-400/20" />{duvidas}</span>
-      <span className={`px-1.5 py-0.5 rounded-md border tabular-nums text-[10px] ${aproveitamentoClasses}`} title="Aproveitamento">
+    <div className="flex items-center gap-2 text-[10px] font-normal shrink-0 select-none">
+      <span className="text-slate-400">{ids.length} quest.</span>
+      <span className="text-emerald-400/90 flex items-center gap-0.5 font-normal" title="Acertos">
+        <Check size={11} className="text-emerald-400/80 stroke-[2]" />
+        {acertos}
+      </span>
+      <span className="text-rose-400/90 flex items-center gap-0.5 font-normal" title="Erros">
+        <X size={11} className="text-rose-400/80 stroke-[2]" />
+        {erros}
+      </span>
+      <span className="text-amber-400/90 flex items-center gap-0.5 font-normal" title="Em Dúvida">
+        <Flag size={10} className="text-amber-400/80 fill-amber-400/10" />
+        {duvidas}
+      </span>
+      <span className={`px-1.5 py-0.5 rounded border tabular-nums ${aproveitamentoClasses}`} title="Aproveitamento">
         {aproveitamento === null ? "—" : `${aproveitamento}%`}
       </span>
     </div>
@@ -3249,25 +3258,25 @@ export default function NotionQuestionTab({ user }: { user: any }) {
 
           {user && (
             <div className="flex items-center gap-1.5 pl-2 border-l border-white/10 flex-wrap">
-              <span className="text-[10px] font-medium text-sky-300 flex items-center gap-1 bg-sky-950/30 border border-sky-800/40 px-2 py-0.5 rounded-lg" title="Feitas hoje">
-                <Clock size={11} className="text-sky-400" /> {feitasHojeIds.length} hoje
+              <span className="text-[10px] font-normal text-slate-300 flex items-center gap-1 bg-slate-900/60 border border-slate-800 px-2 py-0.5 rounded-lg" title="Feitas hoje">
+                <Clock size={11} className="text-sky-400/80" /> <span className="text-sky-400/90 font-medium">{feitasHojeIds.length} hoje</span>
               </span>
-              <span className="text-[10px] font-medium text-emerald-300 flex items-center gap-1 bg-emerald-950/30 border border-emerald-800/40 px-2 py-0.5 rounded-lg" title="Total de acertos">
-                <Check size={11} className="text-emerald-400 stroke-[2.5]" /> {acertadas.length} acertos
+              <span className="text-[10px] font-normal text-slate-300 flex items-center gap-1 bg-slate-900/60 border border-slate-800 px-2 py-0.5 rounded-lg" title="Total de acertos">
+                <Check size={11} className="text-emerald-400/80 stroke-[2]" /> <span className="text-emerald-400/90 font-medium">{acertadas.length} acertos</span>
               </span>
-              <span className="text-[10px] font-medium text-rose-300 flex items-center gap-1 bg-rose-950/30 border border-rose-800/40 px-2 py-0.5 rounded-lg" title="Com erros">
-                <X size={11} className="text-rose-400 stroke-[2.5]" /> {erradas.length} erros
+              <span className="text-[10px] font-normal text-slate-300 flex items-center gap-1 bg-slate-900/60 border border-slate-800 px-2 py-0.5 rounded-lg" title="Com erros">
+                <X size={11} className="text-rose-400/80 stroke-[2]" /> <span className="text-rose-400/90 font-medium">{erradas.length} erros</span>
               </span>
-              <span className="text-[10px] font-medium text-amber-300 flex items-center gap-1 bg-amber-950/30 border border-amber-800/40 px-2 py-0.5 rounded-lg" title="Em dúvida">
-                <Flag size={11} className="text-amber-400 fill-amber-400/20" /> {duvidasArr.length} dúvidas
+              <span className="text-[10px] font-normal text-slate-300 flex items-center gap-1 bg-slate-900/60 border border-slate-800 px-2 py-0.5 rounded-lg" title="Em dúvida">
+                <Flag size={11} className="text-amber-400/80 fill-amber-400/10" /> <span className="text-amber-400/90 font-medium">{duvidasArr.length} dúvidas</span>
               </span>
               {totalRespondidas > 0 && (
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border ${
+                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-lg border bg-slate-900/60 border-slate-800 ${
                   taxaAcerto >= 70
-                    ? "border-emerald-800/60 text-emerald-300 bg-emerald-950/40"
+                    ? "text-emerald-400/90"
                     : taxaAcerto >= 50
-                    ? "border-amber-800/60 text-amber-300 bg-amber-950/40"
-                    : "border-rose-800/60 text-rose-300 bg-rose-950/40"
+                    ? "text-amber-400/90"
+                    : "text-rose-400/90"
                 }`} title="Taxa de acertos">
                   🎯 {taxaAcerto}%
                 </span>
