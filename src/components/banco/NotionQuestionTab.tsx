@@ -107,6 +107,53 @@ function detectCategory(emojis: string[]): CategoryKey | null {
   return null;
 }
 
+function getNotionImageFilterStyle(antiBrilho: 'suave' | 'noturno') {
+  if (antiBrilho === 'noturno') {
+    return {
+      filter: 'invert(0.92) hue-rotate(180deg) brightness(0.95) contrast(1.15)',
+    };
+  }
+  return {
+    filter: 'brightness(0.85) contrast(1.08)',
+  };
+}
+
+function useAntiBrilhoMode() {
+  const [antiBrilho, setAntiBrilho] = useState<'suave' | 'noturno'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('notion_anti_brilho');
+      if (saved === 'suave') return 'suave';
+    }
+    return 'noturno'; // Default NOTURNO (Dark tudo por padrão!)
+  });
+
+  useEffect(() => {
+    const handleSync = () => {
+      const saved = localStorage.getItem('notion_anti_brilho');
+      setAntiBrilho(saved === 'suave' ? 'suave' : 'noturno');
+    };
+    window.addEventListener('notion_anti_brilho_changed', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('notion_anti_brilho_changed', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, []);
+
+  const toggleAntiBrilho = useCallback(() => {
+    setAntiBrilho(prev => {
+      const next = prev === 'suave' ? 'noturno' : 'suave';
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('notion_anti_brilho', next);
+        window.dispatchEvent(new Event('notion_anti_brilho_changed'));
+      }
+      return next;
+    });
+  }, []);
+
+  return [antiBrilho, toggleAntiBrilho] as const;
+}
+
 // Cache de respostas com expiração inteligente de 3 minutos (para sincronizar alterações feitas no Notion em tempo quase real)
 const childrenCache = new Map<string, { data: NotionAPIBlock[]; timestamp: number }>();
 const childrenInFlight = new Map<string, Promise<NotionAPIBlock[]>>();
@@ -460,23 +507,7 @@ function ImagemLightbox({
   const [recordingDuvida, setRecordingDuvida] = useState(false);
   const [localDuvida, setLocalDuvida] = useState(isDuvida);
 
-  const [antiBrilho, setAntiBrilho] = useState<'suave' | 'noturno'>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('notion_anti_brilho');
-      if (saved === 'noturno') return 'noturno';
-    }
-    return 'suave';
-  });
-
-  const toggleAntiBrilho = () => {
-    setAntiBrilho(prev => {
-      const next = prev === 'suave' ? 'noturno' : 'suave';
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('notion_anti_brilho', next);
-      }
-      return next;
-    });
-  };
+  const [antiBrilho, toggleAntiBrilho] = useAntiBrilhoMode();
 
   useEffect(() => {
     setLocalDuvida(isDuvida);
@@ -1069,6 +1100,7 @@ const QuestaoRow = memo(function QuestaoRow({
   hasNextQuestion?: boolean;
   hasPrevQuestion?: boolean;
 }) {
+  const [antiBrilho] = useAntiBrilhoMode();
   const [open, setOpen] = useState(startOpen);
   const [showResp, setShowResp] = useState(false);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -1478,8 +1510,10 @@ const QuestaoRow = memo(function QuestaoRow({
                       src={url.trim()}
                       alt={`Q${questao.numero} img${i + 1}`}
                       onClick={() => setZoomedImage(url.trim())}
-                      style={{ filter: 'brightness(0.85) contrast(1.08)' }}
-                      className="w-full rounded-xl border border-slate-700/60 object-contain bg-slate-900/90 cursor-zoom-in hover:brightness-105 transition-all shadow-md"
+                      style={getNotionImageFilterStyle(antiBrilho)}
+                      className={`w-full rounded-xl border object-contain cursor-zoom-in hover:brightness-105 transition-all shadow-md ${
+                        antiBrilho === 'noturno' ? 'bg-[#0b101d] border-white/10' : 'bg-slate-900/90 border-slate-700/60'
+                      }`}
                     />
                     <button
                       onClick={() => setZoomedImage(url.trim())}
@@ -1569,8 +1603,10 @@ const QuestaoRow = memo(function QuestaoRow({
                           src={url.trim()}
                           alt={`Resposta img${i + 1}`}
                           onClick={() => setZoomedImage(url.trim())}
-                          style={{ filter: 'brightness(0.85) contrast(1.08)' }}
-                          className="w-full rounded-xl border border-slate-700/60 object-contain bg-slate-900/90 cursor-zoom-in hover:brightness-105 transition-all shadow-md"
+                          style={getNotionImageFilterStyle(antiBrilho)}
+                          className={`w-full rounded-xl border object-contain cursor-zoom-in hover:brightness-105 transition-all shadow-md ${
+                            antiBrilho === 'noturno' ? 'bg-[#0b101d] border-white/10' : 'bg-slate-900/90 border-slate-700/60'
+                          }`}
                         />
                         <button
                           onClick={() => setZoomedImage(url)}
@@ -2956,6 +2992,7 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
 
 
 export default function NotionQuestionTab({ user }: { user: any }) {
+  const [antiBrilho, toggleAntiBrilho] = useAntiBrilhoMode();
   const [blocks, setBlocks] = useState<NotionBlockRow[]>([]);
   const [selectedBlock, setSelectedBlock] = useState<NotionBlockRow | null>(null);
   const [loadingBlocks, setLoadingBlocks] = useState(true);
@@ -3329,6 +3366,18 @@ export default function NotionQuestionTab({ user }: { user: any }) {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={toggleAntiBrilho}
+            title={antiBrilho === 'noturno' ? "Modo Escuro (Dark Invertido) ativo para imagens — clique para alternar" : "Modo Original ativo para imagens — clique para alternar"}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95 shrink-0 ${
+              antiBrilho === 'noturno'
+                ? 'bg-purple-950/40 hover:bg-purple-900/50 text-purple-300 border-purple-500/40'
+                : 'bg-slate-800/60 hover:bg-slate-700/60 text-slate-300 border-slate-700'
+            }`}
+          >
+            <Moon size={13} className={antiBrilho === 'noturno' ? "text-purple-400 fill-purple-400/20" : "text-slate-400"} />
+            <span>🌙 Dark Imagens: {antiBrilho === 'noturno' ? "ON" : "OFF"}</span>
+          </button>
           <button
             onClick={handleForceSyncNotion}
             title="Forçar sincronização em tempo real com o Notion (Limpa todos os caches)"
