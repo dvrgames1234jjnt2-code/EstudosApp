@@ -26,7 +26,7 @@ export async function PATCH(
 
 const serverNotionCache = new Map<string, { data: any; status: number; timestamp: number }>();
 const serverInFlight = new Map<string, Promise<{ data: any; status: number }>>();
-const CACHE_TTL_MS = 35 * 60 * 1000; // 35 minutos de cache em memória no servidor
+const CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutos de cache em memória no servidor
 
 async function proxyNotion(path: string, request: NextRequest) {
   const token = process.env.NOTION_TOKEN;
@@ -34,14 +34,23 @@ async function proxyNotion(path: string, request: NextRequest) {
   const url = `https://api.notion.com/v1/${path}${searchParams ? `?${searchParams}` : ''}`;
   const isGet = request.method === 'GET';
 
+  const isForce = request.nextUrl.searchParams.get('force') === 'true' || 
+                  request.nextUrl.searchParams.get('refresh') === 'true' || 
+                  request.headers.get('cache-control') === 'no-cache';
+
   if (isGet) {
-    const cached = serverNotionCache.get(url);
-    if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
-      return NextResponse.json(cached.data, {
-        status: cached.status,
-        headers: { 'X-Cache': 'HIT', 'Cache-Control': 's-maxage=2100, stale-while-revalidate=3600' }
-      });
+    if (isForce) {
+      serverNotionCache.delete(url);
+    } else {
+      const cached = serverNotionCache.get(url);
+      if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
+        return NextResponse.json(cached.data, {
+          status: cached.status,
+          headers: { 'X-Cache': 'HIT', 'Cache-Control': 's-maxage=180, stale-while-revalidate=300' }
+        });
+      }
     }
+
     if (serverInFlight.has(url)) {
       const result = await serverInFlight.get(url)!;
       return NextResponse.json(result.data, { status: result.status, headers: { 'X-Cache': 'DEDUPED' } });

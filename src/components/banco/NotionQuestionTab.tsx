@@ -107,27 +107,37 @@ function detectCategory(emojis: string[]): CategoryKey | null {
   return null;
 }
 
-// Cache de respostas com expiração de 45 minutos (S3 do Notion expira em 1h) e deduplicação de requests simultâneos
+// Cache de respostas com expiração inteligente de 3 minutos (para sincronizar alterações feitas no Notion em tempo quase real)
 const childrenCache = new Map<string, { data: NotionAPIBlock[]; timestamp: number }>();
 const childrenInFlight = new Map<string, Promise<NotionAPIBlock[]>>();
 
-async function fetchChildren(blockId: string): Promise<NotionAPIBlock[]> {
+export function clearNotionClientCache() {
+  childrenCache.clear();
+  childrenInFlight.clear();
+  fullQuestaoInFlight.clear();
+}
+
+async function fetchChildren(blockId: string, force = false): Promise<NotionAPIBlock[]> {
   const clean = blockId.replace(/-/g, "");
   const now = Date.now();
 
-  if (childrenCache.has(clean)) {
+  if (force) {
+    childrenCache.delete(clean);
+    childrenInFlight.delete(clean);
+  } else if (childrenCache.has(clean)) {
     const cached = childrenCache.get(clean)!;
-    // Se o cache tem menos de 45 minutos, retorna. Caso contrário, expira e força refetch
-    if (now - cached.timestamp < 45 * 60 * 1000) {
+    // Cache de 3 minutos para atualizar emojis e títulos do Notion quase em tempo real
+    if (now - cached.timestamp < 3 * 60 * 1000) {
       return cached.data;
     } else {
       childrenCache.delete(clean);
     }
   }
 
-  if (childrenInFlight.has(clean)) return childrenInFlight.get(clean)!;
+  if (!force && childrenInFlight.has(clean)) return childrenInFlight.get(clean)!;
 
-  const req = fetch(`/api/notion/blocks/${clean}/children?page_size=100`)
+  const url = `/api/notion/blocks/${clean}/children?page_size=100${force ? '&force=true' : ''}`;
+  const req = fetch(url)
     .then(async res => {
       if (!res.ok) throw new Error(`Notion ${res.status}`);
       const data: NotionAPIBlock[] = (await res.json()).results ?? [];
@@ -146,14 +156,16 @@ async function fetchChildren(blockId: string): Promise<NotionAPIBlock[]> {
 
 const fullQuestaoInFlight = new Map<string, Promise<{ children: NotionAPIBlock[]; imgs: string[]; rImgs: string[]; textResp?: string; foundToggleId: string | null }>>();
 
-async function fetchQuestaoFullData(blockId: string) {
+async function fetchQuestaoFullData(blockId: string, force = false) {
   const clean = blockId.replace(/-/g, "");
-  if (fullQuestaoInFlight.has(clean)) {
+  if (force) {
+    fullQuestaoInFlight.delete(clean);
+  } else if (fullQuestaoInFlight.has(clean)) {
     return fullQuestaoInFlight.get(clean)!;
   }
 
   const promise = (async () => {
-    const children = await fetchChildren(clean);
+    const children = await fetchChildren(clean, force);
     const imgs: string[] = [];
     const rImgs: string[] = [];
     let textResp: string | undefined;
@@ -1737,6 +1749,7 @@ const CasoCard = memo(function CasoCard({
   onDropCaso,
   isFirst = false,
   isLast = false,
+  refreshKey,
 }: { 
   caso: Caso; 
   depth?: number; 
@@ -1754,6 +1767,7 @@ const CasoCard = memo(function CasoCard({
   onDropCaso?: (draggedId: string, targetId: string) => void;
   isFirst?: boolean;
   isLast?: boolean;
+  refreshKey?: number;
 }) {
   const [open, setOpen] = useState(false);
   const [questoes, setQuestoes] = useState<Questao[]>([]);
@@ -1762,6 +1776,15 @@ const CasoCard = memo(function CasoCard({
   const [loading, setLoading] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [zoomedQuestaoIndex, setZoomedQuestaoIndex] = useState<number | null>(null);
+
+  // Reseta estado carregado quando houver sincronização forçada
+  useEffect(() => {
+    if (refreshKey !== undefined && refreshKey > 0) {
+      setLoaded(false);
+      setQuestoes([]);
+      setSubcasos([]);
+    }
+  }, [refreshKey]);
 
   // Pre-fetch das questões adjacentes para navegação instantânea
   useEffect(() => {
@@ -2142,6 +2165,7 @@ function BlockViewer({
   statusFiltro = "todas",
   feitasHojeIds = [],
   isAdmin = false,
+  refreshKey,
 }: { 
   block: NotionBlockRow; 
   user: any;
@@ -2153,6 +2177,7 @@ function BlockViewer({
   statusFiltro?: "todas" | "erros" | "nao_feitas" | "feitas_hoje" | "mais_erros";
   feitasHojeIds?: string[];
   isAdmin?: boolean;
+  refreshKey?: number;
 }) {
   const [casos, setCasos] = useState<Caso[]>([]);
   const [filteredItens, setFilteredItens] = useState<QuestaoResumo[] | null>(null);
@@ -2219,7 +2244,8 @@ function BlockViewer({
           return;
         }
 
-        const rootChildren = await fetchChildren(block.block_id);
+        const forceFetch = refreshKey !== undefined && refreshKey > 0;
+        const rootChildren = await fetchChildren(block.block_id, forceFetch);
         const built: Caso[] = [];
 
         for (const casoBlock of rootChildren) {
@@ -2252,7 +2278,7 @@ function BlockViewer({
         if (!cancelled) setCasos(built);
 
         for (const c of built) {
-          fetchChildren(c.id).catch(() => {});
+          fetchChildren(c.id, forceFetch).catch(() => {});
         }
       } catch (e: any) {
         if (!cancelled) setError(e.message);
@@ -2261,7 +2287,7 @@ function BlockViewer({
       }
     })();
     return () => { cancelled = true; };
-  }, [block.block_id, effectiveStatus, resultadosMap, feitasHojeIds]);
+  }, [block.block_id, effectiveStatus, resultadosMap, feitasHojeIds, refreshKey]);
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -2338,6 +2364,7 @@ function BlockViewer({
           onDropCaso={handleDropCaso}
           isFirst={idx === 0}
           isLast={idx === casos.length - 1}
+          refreshKey={refreshKey}
         />
       ))}
     </div>
@@ -2936,6 +2963,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   const [resultadosMap, setResultadosMap] = useState<Map<string, QuestaoStats>>(new Map());
   const [feitasHojeIds, setFeitasHojeIds] = useState<string[]>([]);
   const [respostasHojeMap, setRespostasHojeMap] = useState<Map<string, { data: string; horario: string; correto: string }>>(new Map());
+  const [refreshKey, setRefreshKey] = useState(0);
   
   const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
   const handleAnswered = useCallback(() => setStatsRefreshTrigger(v => v + 1), []);
@@ -3115,6 +3143,21 @@ export default function NotionQuestionTab({ user }: { user: any }) {
     }
   }, [user?.email]);
 
+  const handleForceSyncNotion = useCallback(async () => {
+    setLoadingBlocks(true);
+    clearNotionClientCache();
+    setRefreshKey(v => v + 1);
+    try {
+      await Promise.all([
+        fetchBlocks(),
+        fetchResultados(),
+        fetchDuvidas()
+      ]);
+    } finally {
+      setLoadingBlocks(false);
+    }
+  }, [fetchBlocks, fetchResultados, fetchDuvidas]);
+
   useEffect(() => {
     fetchBlocks();
   }, [fetchBlocks]);
@@ -3287,11 +3330,12 @@ export default function NotionQuestionTab({ user }: { user: any }) {
 
         <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={() => { fetchBlocks(); fetchResultados(); }}
-            title="Atualizar estatísticas e cadernos"
-            className="w-7 h-7 flex items-center justify-center rounded-xl bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:text-indigo-300 hover:border-indigo-500/30 transition-all"
+            onClick={handleForceSyncNotion}
+            title="Forçar sincronização em tempo real com o Notion (Limpa todos os caches)"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 text-xs font-bold transition-all active:scale-95 shrink-0"
           >
-            <RefreshCw size={12} className={loadingBlocks ? "animate-spin" : ""} />
+            <RefreshCw size={13} className={loadingBlocks ? "animate-spin text-indigo-400" : "text-indigo-400"} />
+            <span className="hidden sm:inline">Sincronizar Notion</span>
           </button>
           {isAdmin && (
             <button
@@ -3561,6 +3605,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               statusFiltro={statusFiltro}
               feitasHojeIds={feitasHojeIds}
               isAdmin={isAdmin}
+              refreshKey={refreshKey}
             />
           </div>
         </div>
