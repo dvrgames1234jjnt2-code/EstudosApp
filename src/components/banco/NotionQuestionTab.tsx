@@ -2106,11 +2106,13 @@ const CasoCard = memo(function CasoCard({
           </div>
         )}
 
-        {total !== undefined && (
-          <span className="text-[10px] font-bold text-slate-500 bg-white/[0.04] px-2 py-0.5 rounded-md tabular-nums shrink-0 ml-1">
-            {total}
-          </span>
-        )}
+        <div className="flex items-center gap-1.5 shrink-0 ml-1">
+          <BlocoStatsBadge
+            blockId={caso.id}
+            resultadosMap={resultadosMap}
+            duvidasIds={duvidasIds}
+          />
+        </div>
       </div>
 
       {open && (
@@ -2409,28 +2411,32 @@ function BlockViewer({
 
 function BlocoStatsBadge({
   block,
+  blockId,
   resultadosMap,
   duvidasIds,
   onStatsLoaded,
 }: {
-  block: NotionBlockRow;
-  resultadosMap: Map<string, QuestaoStats>;
+  block?: NotionBlockRow;
+  blockId?: string;
+  resultadosMap?: Map<string, QuestaoStats>;
   duvidasIds: Set<string>;
   onStatsLoaded?: (stats: { acertos: number; erros: number; duvidas: number; total: number }) => void;
 }) {
+  const targetId = block?.block_id || blockId || "";
   const [ids, setIds] = useState<string[] | null>(null);
 
   useEffect(() => {
     let active = true;
+    if (!targetId) { setIds([]); return; }
     setIds(null);
-    collectQuestaoIds(block.block_id)
+    collectQuestaoIds(targetId)
       .then(res => { if (active) setIds(res); })
       .catch(() => { if (active) setIds([]); });
     return () => { active = false; };
-  }, [block.block_id]);
+  }, [targetId]);
 
   let acertos = 0, erros = 0, duvidas = 0;
-  if (ids) {
+  if (ids && resultadosMap) {
     for (const id of ids) {
       const status = resultadosMap.get(id)?.ultimo;
       if (status === "acerto") acertos++;
@@ -2463,7 +2469,7 @@ function BlocoStatsBadge({
       : "border-slate-800 text-rose-400/90 bg-slate-900/60 font-medium";
 
   return (
-    <div className="flex items-center gap-2 text-[10px] font-normal shrink-0 select-none">
+    <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] font-normal shrink-0 select-none flex-nowrap whitespace-nowrap">
       <span className="text-slate-400">{ids.length} quest.</span>
       <span className="text-emerald-400/90 flex items-center gap-0.5 font-normal" title="Acertos">
         <Check size={11} className="text-emerald-400/80 stroke-[2]" />
@@ -2626,6 +2632,24 @@ function GabaritoBloco({
         {[...grupos.entries()].map(([caseLabel, qs], idx) => {
           const isOpen = expandido.has(caseLabel);
           const icon = caseIcons[caseLabel] ?? "📁";
+          let cAcertos = 0, cErros = 0, cDuvidas = 0;
+          for (const q of qs) {
+            const st = resultadosMap.get(q.id)?.ultimo;
+            if (st === "acerto") cAcertos++;
+            else if (st === "erro") cErros++;
+            if (duvidasIds.has(q.id)) cDuvidas++;
+          }
+          const cRespondidas = cAcertos + cErros;
+          const cPct = cRespondidas > 0 ? Math.round((cAcertos / cRespondidas) * 100) : null;
+          const aproveitamentoClasses =
+            cPct === null
+              ? "border-slate-800 text-slate-500 bg-slate-900/60"
+              : cPct >= 70
+              ? "border-slate-800 text-emerald-400/90 bg-slate-900/60 font-medium"
+              : cPct >= 50
+              ? "border-slate-800 text-amber-400/90 bg-slate-900/60 font-medium"
+              : "border-slate-800 text-rose-400/90 bg-slate-900/60 font-medium";
+
           return (
             <div key={caseLabel} className="relative flex flex-col gap-2">
               <button
@@ -2638,9 +2662,13 @@ function GabaritoBloco({
                 <span className="flex-1 text-[11px] font-bold text-slate-200 truncate">
                   {idx + 1}. {caseLabel}
                 </span>
-                <span className="text-[9px] text-slate-500 bg-white/[0.04] px-2 py-1 rounded-md font-bold shrink-0 tabular-nums">
-                  {qs.length} questõe{qs.length !== 1 ? "s" : ""}
-                </span>
+                <div className="flex items-center gap-1.5 text-[10px] shrink-0 tabular-nums">
+                  <span className="text-slate-400">{qs.length} quest.</span>
+                  <span className="text-emerald-400 flex items-center gap-0.5"><Check size={10} />{cAcertos}</span>
+                  <span className="text-rose-400 flex items-center gap-0.5"><X size={10} />{cErros}</span>
+                  <span className="text-amber-400 flex items-center gap-0.5"><Flag size={9} />{cDuvidas}</span>
+                  <span className={`px-1.5 py-0.5 rounded border text-[9px] ${aproveitamentoClasses}`}>{cPct === null ? "—" : `${cPct}%`}</span>
+                </div>
                 <ChevronDown size={13} className={`text-slate-500 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
               </button>
 
