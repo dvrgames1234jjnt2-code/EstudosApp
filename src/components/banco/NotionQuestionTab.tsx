@@ -15,7 +15,7 @@ const CATEGORIES = [
   { key: "bonus",     label: "Bônus",     emojis: ["🎉","🥳","🎊"],        icon: "🎉",  color: "#d97706", textColor: "#c69238", dot: false },
   { key: "faceis",    label: "Fáceis",    emojis: ["🟢","✅","💚","🍀"],   icon: null,  color: "#16a34a", textColor: "#479e78", dot: true  },
   { key: "atencao",   label: "Atenção",   emojis: ["🔵","💙","🌀","🫐"],   icon: null,  color: "#2563eb", textColor: "#4a88b5", dot: true  },
-  { key: "lacuna",    label: "Lacuna",    emojis: ["🌱","🌿","🪴"],         icon: "🌱",  color: "#65a30d", textColor: "#6b9e44", dot: false },
+  { key: "lacuna",    label: "Lacuna",    emojis: ["⛳","⛳️","🌱","🌿","🪴"], icon: "⛳",  color: "#65a30d", textColor: "#6b9e44", dot: false },
   { key: "media",     label: "Média",     emojis: ["🟡","💛","⭐","🌟","🟠","🧡"],   icon: null,  color: "#ea580c", textColor: "#c69238", dot: true  },
   { key: "dificil",   label: "Difícil",   emojis: ["🔴","❤️","💔","🔥"],   icon: null,  color: "#dc2626", textColor: "#c45454", dot: true  },
   { key: "ultrahard", label: "Ultrahard", emojis: ["🟣","💜","👾","🫀"],   icon: null,  color: "#9333ea", textColor: "#8e66ab", dot: true  },
@@ -1311,7 +1311,7 @@ const QuestaoRow = memo(function QuestaoRow({
     bonus: "🎉",
     faceis: "🟢",
     atencao: "🔵",
-    lacuna: "🌱",
+    lacuna: "⛳",
     media: "🟠",
     dificil: "🔴",
     ultrahard: "🟣",
@@ -2492,7 +2492,7 @@ function BlocoStatsBadge({
 
 // Face/ícone e cor de cada nível de dificuldade, usado no badge do bloquinho
 const FACE_EMOJI: Record<CategoryKey, string> = {
-  bonus: "🎉", faceis: "😊", atencao: "🔵", lacuna: "🌱", media: "😐", dificil: "😞", ultrahard: "🟣",
+  bonus: "🎉", faceis: "😊", atencao: "🔵", lacuna: "⛳", media: "😐", dificil: "😞", ultrahard: "🟣",
 };
 
 function QuestaoBloquinho({
