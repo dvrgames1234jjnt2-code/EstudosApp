@@ -154,30 +154,70 @@ function useAntiBrilhoMode() {
   return [antiBrilho, toggleAntiBrilho] as const;
 }
 
-// Cache de respostas com expiração inteligente de 3 minutos (para sincronizar alterações feitas no Notion em tempo quase real)
+// Cache de alta performance no navegador (15 min TTL + sessionStorage)
 const childrenCache = new Map<string, { data: NotionAPIBlock[]; timestamp: number }>();
 const childrenInFlight = new Map<string, Promise<NotionAPIBlock[]>>();
+
+function getLocalNotionCache(key: string) {
+  try {
+    if (typeof window !== "undefined") {
+      const raw = sessionStorage.getItem(`notion_c_${key}`);
+      if (raw) return JSON.parse(raw);
+    }
+  } catch (e) {}
+  return null;
+}
+
+function setLocalNotionCache(key: string, data: any) {
+  try {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(`notion_c_${key}`, JSON.stringify({ data, timestamp: Date.now() }));
+    }
+  } catch (e) {}
+}
+
+function clearLocalNotionCache() {
+  try {
+    if (typeof window !== "undefined") {
+      for (let i = sessionStorage.length - 1; i >= 0; i--) {
+        const k = sessionStorage.key(i);
+        if (k && k.startsWith("notion_c_")) sessionStorage.removeItem(k);
+      }
+    }
+  } catch (e) {}
+}
 
 export function clearNotionClientCache() {
   childrenCache.clear();
   childrenInFlight.clear();
   fullQuestaoInFlight.clear();
+  questoesDoBlocoCache.clear();
+  questoesDetalhesCache.clear();
+  clearLocalNotionCache();
 }
 
 async function fetchChildren(blockId: string, force = false): Promise<NotionAPIBlock[]> {
   const clean = blockId.replace(/-/g, "");
   const now = Date.now();
+  const TTL = 15 * 60 * 1000; // 15 minutos de cache
 
   if (force) {
     childrenCache.delete(clean);
     childrenInFlight.delete(clean);
-  } else if (childrenCache.has(clean)) {
-    const cached = childrenCache.get(clean)!;
-    // Cache de 3 minutos para atualizar emojis e títulos do Notion quase em tempo real
-    if (now - cached.timestamp < 3 * 60 * 1000) {
-      return cached.data;
-    } else {
-      childrenCache.delete(clean);
+    try { sessionStorage.removeItem(`notion_c_${clean}`); } catch(e){}
+  } else {
+    if (childrenCache.has(clean)) {
+      const cached = childrenCache.get(clean)!;
+      if (now - cached.timestamp < TTL) {
+        return cached.data;
+      } else {
+        childrenCache.delete(clean);
+      }
+    }
+    const local = getLocalNotionCache(clean);
+    if (local && now - local.timestamp < TTL) {
+      childrenCache.set(clean, { data: local.data, timestamp: local.timestamp });
+      return local.data;
     }
   }
 
@@ -189,6 +229,7 @@ async function fetchChildren(blockId: string, force = false): Promise<NotionAPIB
       if (!res.ok) throw new Error(`Notion ${res.status}`);
       const data: NotionAPIBlock[] = (await res.json()).results ?? [];
       childrenCache.set(clean, { data, timestamp: Date.now() });
+      setLocalNotionCache(clean, data);
       childrenInFlight.delete(clean);
       return data;
     })
@@ -396,6 +437,12 @@ async function collectQuestaoDetails(rootBlockId: string): Promise<QuestaoDetalh
   const clean = rootBlockId.replace(/-/g, "");
   if (questoesDetalhesCache.has(clean)) return questoesDetalhesCache.get(clean)!;
 
+  const local = getLocalNotionCache(`det_${clean}`);
+  if (local && (Date.now() - local.timestamp < 15 * 60 * 1000)) {
+    questoesDetalhesCache.set(clean, local.data);
+    return local.data;
+  }
+
   const itens: QuestaoResumo[] = [];
   const caseIcons: Record<string, string> = {};
 
@@ -424,6 +471,7 @@ async function collectQuestaoDetails(rootBlockId: string): Promise<QuestaoDetalh
   await walk(clean, "Geral");
   const result: QuestaoDetalhesResult = { itens, caseIcons };
   questoesDetalhesCache.set(clean, result);
+  setLocalNotionCache(`det_${clean}`, result);
   return result;
 }
 

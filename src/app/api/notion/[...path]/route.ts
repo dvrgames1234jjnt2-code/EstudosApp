@@ -26,7 +26,7 @@ export async function PATCH(
 
 const serverNotionCache = new Map<string, { data: any; status: number; timestamp: number }>();
 const serverInFlight = new Map<string, Promise<{ data: any; status: number }>>();
-const CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutos de cache em memória no servidor
+const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutos de cache em memória no servidor
 
 async function proxyNotion(path: string, request: NextRequest) {
   const token = process.env.NOTION_TOKEN;
