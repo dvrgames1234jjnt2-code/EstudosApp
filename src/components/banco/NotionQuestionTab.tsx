@@ -2490,6 +2490,87 @@ function BlocoStatsBadge({
   );
 }
 
+function MateriaStatsBadge({
+  blocks,
+  resultadosMap,
+  duvidasIds,
+}: {
+  blocks: NotionBlockRow[];
+  resultadosMap?: Map<string, QuestaoStats>;
+  duvidasIds: Set<string>;
+}) {
+  const [ids, setIds] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (!blocks || blocks.length === 0) {
+      setIds([]);
+      return;
+    }
+    setIds(null);
+
+    Promise.all(blocks.map(b => collectQuestaoIds(b.block_id)))
+      .then(resArrays => {
+        if (!active) return;
+        const all = resArrays.flat();
+        setIds(Array.from(new Set(all)));
+      })
+      .catch(() => {
+        if (active) setIds([]);
+      });
+
+    return () => { active = false; };
+  }, [blocks]);
+
+  let acertos = 0, erros = 0, duvidas = 0;
+  if (ids && resultadosMap) {
+    for (const id of ids) {
+      const status = resultadosMap.get(id)?.ultimo;
+      if (status === "acerto") acertos++;
+      else if (status === "erro") erros++;
+      if (duvidasIds.has(id)) duvidas++;
+    }
+  }
+
+  if (ids === null) {
+    return <Loader2 size={11} className="animate-spin text-slate-700 shrink-0" />;
+  }
+  if (ids.length === 0) return null;
+
+  const respondidas = acertos + erros;
+  const aproveitamento = respondidas > 0 ? Math.round((acertos / respondidas) * 100) : null;
+
+  const aproveitamentoClasses =
+    aproveitamento === null
+      ? "border-slate-800 text-slate-500 bg-slate-900/60"
+      : aproveitamento >= 70
+      ? "border-slate-800 text-emerald-400/90 bg-slate-900/60 font-medium"
+      : aproveitamento >= 50
+      ? "border-slate-800 text-amber-400/90 bg-slate-900/60 font-medium"
+      : "border-slate-800 text-rose-400/90 bg-slate-900/60 font-medium";
+
+  return (
+    <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] font-normal shrink-0 select-none flex-nowrap whitespace-nowrap">
+      <span className="text-slate-400">{ids.length} quest.</span>
+      <span className="text-emerald-400/90 flex items-center gap-0.5 font-normal" title="Total de acertos na matéria">
+        <Check size={11} className="text-emerald-400/80 stroke-[2]" />
+        {acertos}
+      </span>
+      <span className="text-rose-400/90 flex items-center gap-0.5 font-normal" title="Total de erros na matéria">
+        <X size={11} className="text-rose-400/80 stroke-[2]" />
+        {erros}
+      </span>
+      <span className="text-amber-400/90 flex items-center gap-0.5 font-normal" title="Total em dúvida na matéria">
+        <Flag size={10} className="text-amber-400/80 fill-amber-400/10" />
+        {duvidas}
+      </span>
+      <span className={`px-1.5 py-0.5 rounded border tabular-nums ${aproveitamentoClasses}`} title="Aproveitamento geral na matéria">
+        {aproveitamento === null ? "—" : `${aproveitamento}%`}
+      </span>
+    </div>
+  );
+}
+
 // Face/ícone e cor de cada nível de dificuldade, usado no badge do bloquinho
 const FACE_EMOJI: Record<CategoryKey, string> = {
   bonus: "🎉", faceis: "😊", atencao: "🔵", lacuna: "⛳", media: "😐", dificil: "😞", ultrahard: "🟣",
@@ -3715,16 +3796,23 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                   key={materiaName} 
                   className="flex flex-col bg-[#101526]/80 border border-white/[0.06] rounded-xl p-2.5 sm:p-3 shadow-lg gap-1.5 transition-all hover:border-white/[0.10]"
                 >
-                  <div className="flex items-center justify-between border-b border-white/[0.06] pb-1.5 px-0.5">
-                    <div className="flex items-center gap-1.5">
+                  <div className="flex items-center justify-between border-b border-white/[0.06] pb-1.5 px-0.5 flex-wrap gap-1.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
-                      <h3 className="text-[10.5px] font-medium text-slate-400 uppercase tracking-wider">
+                      <h3 className="text-[10.5px] font-medium text-slate-400 uppercase tracking-wider truncate">
                         {materiaName}
                       </h3>
                     </div>
-                    <span className="text-[9.5px] font-normal text-slate-500 font-mono bg-white/[0.03] px-1.5 py-0.5 rounded border border-white/[0.04]">
-                      {mBlocks.length} caderno{mBlocks.length > 1 ? "s" : ""}
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <MateriaStatsBadge
+                        blocks={mBlocks}
+                        resultadosMap={resultadosMap}
+                        duvidasIds={duvidasIds}
+                      />
+                      <span className="text-[9.5px] font-normal text-slate-500 font-mono bg-white/[0.03] px-1.5 py-0.5 rounded border border-white/[0.04] shrink-0">
+                        {mBlocks.length} caderno{mBlocks.length > 1 ? "s" : ""}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="flex flex-col gap-1 mt-0.5">
