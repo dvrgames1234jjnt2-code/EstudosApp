@@ -7,7 +7,7 @@ import {
   BookMarked, RefreshCw, X, Check, Play, Eye, EyeOff,
   Triangle, Flag, History, LayoutGrid, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Moon, Sun,
   Clock, HelpCircle, Filter, Flame, Calendar, BarChart3, Target, AlertTriangle,
-  GripVertical, ArrowUp, ArrowDown, MoreVertical
+  GripVertical, ArrowUp, ArrowDown, MoreVertical, Printer
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
@@ -425,6 +425,299 @@ async function collectQuestaoDetails(rootBlockId: string): Promise<QuestaoDetalh
   const result: QuestaoDetalhesResult = { itens, caseIcons };
   questoesDetalhesCache.set(clean, result);
   return result;
+}
+
+export async function handlePrintCaderno(block: NotionBlockRow) {
+  const printWin = window.open("", "_blank");
+  if (!printWin) {
+    alert("Por favor, permita popups no seu navegador para visualizar e imprimir o PDF.");
+    return;
+  }
+
+  printWin.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8"/>
+      <title>Gerando PDF — ${block.nome}</title>
+      <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #080d1a; color: #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+        .spinner { border: 3px solid rgba(255,255,255,0.1); border-top-color: #38bdf8; border-radius: 50%; width: 40px; height: 40px; animation: spin 0.8s linear infinite; margin-bottom: 16px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      </style>
+    </head>
+    <body>
+      <div class="spinner"></div>
+      <h2 style="font-size: 18px; margin: 0 0 8px 0; color: #f8fafc;">📄 Preparando Caderno para Impressão...</h2>
+      <p id="status" style="font-size: 13px; color: #94a3b8; margin: 0;">Coletando questões (sem gabarito)...</p>
+    </body>
+    </html>
+  `);
+  printWin.document.close();
+
+  try {
+    const details = await collectQuestaoDetails(block.block_id);
+    const itens = details.itens;
+
+    if (!itens || itens.length === 0) {
+      printWin.document.body.innerHTML = `
+        <div style="text-align: center; color: #ef4444; padding: 40px; font-family: system-ui, sans-serif;">
+          <h3 style="font-size: 18px;">⚠️ Nenhuma questão encontrada neste caderno.</h3>
+          <p style="font-size: 13px; color: #94a3b8;">Verifique se o caderno possui questões cadastradas no Notion.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const questaoDataMap = new Map<string, string[]>();
+    let loadedCount = 0;
+
+    for (const q of itens) {
+      loadedCount++;
+      const statusEl = printWin.document.getElementById("status");
+      if (statusEl) {
+        statusEl.innerText = `Carregando questão ${loadedCount} de ${itens.length}...`;
+      }
+      try {
+        const data = await fetchQuestaoFullData(q.id);
+        questaoDataMap.set(q.id, data.imgs || []);
+      } catch (e) {
+        questaoDataMap.set(q.id, []);
+      }
+    }
+
+    const grupos = new Map<string, QuestaoResumo[]>();
+    for (const item of itens) {
+      const label = item.caseLabel || "Geral";
+      if (!grupos.has(label)) grupos.set(label, []);
+      grupos.get(label)!.push(item);
+    }
+
+    let bodyHtml = `
+      <div class="print-header">
+        <div>
+          <h1 class="print-title">📝 ${block.nome}</h1>
+          <div class="print-meta">
+            ${block.materia ? `<b>Matéria:</b> ${block.materia} &nbsp;•&nbsp; ` : ''}
+            <b>Total:</b> ${itens.length} questão(ões) &nbsp;•&nbsp;
+            <i>Caderno de Estudos (Sem Gabarito)</i>
+          </div>
+        </div>
+        <div class="student-fields">
+          <div><b>Aluno(a):</b> _____________________________________</div>
+          <div style="margin-top: 6px;"><b>Data:</b> ____/____/________ &nbsp;&nbsp;&nbsp; <b>Nota:</b> ______</div>
+        </div>
+      </div>
+    `;
+
+    let globalIndex = 1;
+    for (const [caseLabel, qs] of grupos.entries()) {
+      const caseIcon = details.caseIcons[caseLabel] ? `${details.caseIcons[caseLabel]} ` : '';
+      bodyHtml += `
+        <div class="case-section">
+          ${caseIcon}${caseLabel}
+        </div>
+      `;
+
+      for (const q of qs) {
+        const imgs = questaoDataMap.get(q.id) || [];
+        const topicText = q.topic ? ` — ${q.topic}` : '';
+        const catInfo = CATEGORIES.find(c => c.key === q.categoryKey);
+        const catLabel = catInfo ? catInfo.label : '';
+
+        bodyHtml += `
+          <div class="q-card">
+            <div class="q-header">
+              <div>
+                <span class="q-num">Questão ${globalIndex}</span>
+                <span class="q-topic">${topicText}</span>
+              </div>
+              ${catLabel ? `<span class="q-badge">${catLabel}</span>` : ''}
+            </div>
+        `;
+
+        if (imgs.length > 0) {
+          for (const imgUrl of imgs) {
+            bodyHtml += `<img src="${imgUrl}" alt="Questão ${globalIndex}" class="q-img" />`;
+          }
+        } else {
+          bodyHtml += `<div class="no-img">Sem imagem registrada para esta questão.</div>`;
+        }
+
+        bodyHtml += `
+            <div class="draft-area">Espaço para rascunho / cálculos</div>
+          </div>
+        `;
+        globalIndex++;
+      }
+    }
+
+    const fullDoc = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8"/>
+        <title>${block.nome} — Caderno (Sem Gabarito)</title>
+        <style>
+          @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 0; }
+            .no-print { display: none !important; }
+            .q-card { page-break-inside: avoid; }
+            .case-section { page-break-after: avoid; }
+          }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #ffffff;
+            color: #0f172a;
+            padding: 24px;
+            max-width: 900px;
+            margin: 0 auto;
+            font-size: 13px;
+            line-height: 1.5;
+          }
+          .print-toolbar {
+            position: sticky;
+            top: 0;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
+            z-index: 9999;
+          }
+          .print-btn {
+            background: #0284c7;
+            color: #ffffff;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+          .print-btn:hover { background: #0369a1; }
+          .print-header {
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 14px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+          }
+          .print-title { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0; }
+          .print-meta { font-size: 12px; color: #475569; margin-top: 4px; }
+          .student-fields {
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 11px;
+            color: #334155;
+            min-width: 260px;
+          }
+          .case-section {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e293b;
+            background: #f1f5f9;
+            padding: 8px 12px;
+            border-left: 4px solid #0284c7;
+            border-radius: 4px;
+            margin-top: 24px;
+            margin-bottom: 12px;
+          }
+          .q-card {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 16px;
+            background: #ffffff;
+          }
+          .q-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 8px;
+          }
+          .q-num { color: #0284c7; font-size: 14px; }
+          .q-topic { color: #475569; font-weight: 500; font-size: 12px; margin-left: 6px; }
+          .q-badge {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+          }
+          .q-img {
+            max-width: 100%;
+            max-height: 520px;
+            object-fit: contain;
+            margin: 10px 0;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            display: block;
+          }
+          .no-img { color: #94a3b8; font-style: italic; font-size: 11px; margin: 8px 0; }
+          .draft-area {
+            margin-top: 12px;
+            border: 1px dashed #cbd5e1;
+            border-radius: 6px;
+            height: 60px;
+            background: #fafafa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 10px;
+          }
+          .footer-note {
+            text-align: center;
+            font-size: 10px;
+            color: #94a3b8;
+            margin-top: 30px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 10px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-toolbar no-print">
+          <div>
+            <b>🖨️ Modo de Impressão PDF</b> &nbsp;—&nbsp; Caderno <i>${block.nome}</i> (Sem Gabarito)
+          </div>
+          <button class="print-btn" onclick="window.print()">Salvar como PDF / Imprimir</button>
+        </div>
+        ${bodyHtml}
+        <div class="footer-note">EstudosApp — Caderno de Questões sem Gabarito</div>
+      </body>
+      </html>
+    `;
+
+    printWin.document.open();
+    printWin.document.write(fullDoc);
+    printWin.document.close();
+
+    setTimeout(() => {
+      printWin.print();
+    }, 600);
+
+  } catch (e: any) {
+    printWin.document.body.innerHTML = `
+      <div style="text-align: center; color: #ef4444; padding: 40px; font-family: system-ui, sans-serif;">
+        <h3>❌ Erro ao gerar PDF</h3>
+        <p style="font-size: 12px; color: #94a3b8;">${e?.message || "Ocorreu uma falha na busca das questões."}</p>
+      </div>
+    `;
+  }
 }
 
 function QuestaoTitleLabel({ questaoId, blocksMap }: { questaoId: string; blocksMap: Map<string, string> }) {
@@ -2953,6 +3246,18 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
             onStatsLoaded={setBlockStats}
           />
 
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePrintCaderno(block);
+            }}
+            title="Imprimir caderno em PDF (Sem Gabarito)"
+            className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-400 hover:text-sky-300 transition-all shrink-0 active:scale-95 flex items-center gap-1 text-[10px] font-bold"
+          >
+            <Printer size={12} className="text-sky-400" />
+            <span className="hidden sm:inline">PDF</span>
+          </button>
+
           {/* Menu de 3 Pontinhos (Admin) */}
           {isAdmin && (
             <div className="relative shrink-0">
@@ -3698,6 +4003,14 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                 resultadosMap={resultadosMap}
                 duvidasIds={duvidasIds}
               />
+              <button
+                onClick={() => handlePrintCaderno(selectedBlock)}
+                title="Imprimir este caderno em PDF (Sem Gabarito)"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-600/20 hover:bg-sky-600/40 text-sky-300 border border-sky-500/30 text-xs font-bold transition-all active:scale-95 shrink-0"
+              >
+                <Printer size={13} className="text-sky-400" />
+                <span>Imprimir PDF (Sem Gabarito)</span>
+              </button>
             </div>
           </div>
 
