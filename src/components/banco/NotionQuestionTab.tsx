@@ -154,14 +154,14 @@ function useAntiBrilhoMode() {
   return [antiBrilho, toggleAntiBrilho] as const;
 }
 
-// Cache de alta performance no navegador (15 min TTL + sessionStorage)
+// Cache de alta performance no navegador (SWR: instantâneo 0ms + revalidação em segundo plano)
 const childrenCache = new Map<string, { data: NotionAPIBlock[]; timestamp: number }>();
 const childrenInFlight = new Map<string, Promise<NotionAPIBlock[]>>();
 
 function getLocalNotionCache(key: string) {
   try {
     if (typeof window !== "undefined") {
-      const raw = sessionStorage.getItem(`notion_c_${key}`);
+      const raw = localStorage.getItem(`notion_c_${key}`) || sessionStorage.getItem(`notion_c_${key}`);
       if (raw) return JSON.parse(raw);
     }
   } catch (e) {}
@@ -171,7 +171,9 @@ function getLocalNotionCache(key: string) {
 function setLocalNotionCache(key: string, data: any) {
   try {
     if (typeof window !== "undefined") {
-      sessionStorage.setItem(`notion_c_${key}`, JSON.stringify({ data, timestamp: Date.now() }));
+      const payload = JSON.stringify({ data, timestamp: Date.now() });
+      localStorage.setItem(`notion_c_${key}`, payload);
+      sessionStorage.setItem(`notion_c_${key}`, payload);
     }
   } catch (e) {}
 }
@@ -179,6 +181,10 @@ function setLocalNotionCache(key: string, data: any) {
 function clearLocalNotionCache() {
   try {
     if (typeof window !== "undefined") {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith("notion_c_")) localStorage.removeItem(k);
+      }
       for (let i = sessionStorage.length - 1; i >= 0; i--) {
         const k = sessionStorage.key(i);
         if (k && k.startsWith("notion_c_")) sessionStorage.removeItem(k);
@@ -196,34 +202,10 @@ export function clearNotionClientCache() {
   clearLocalNotionCache();
 }
 
-async function fetchChildren(blockId: string, force = false): Promise<NotionAPIBlock[]> {
-  const clean = blockId.replace(/-/g, "");
-  const now = Date.now();
-  const TTL = 10 * 1000; // 10 segundos max de cache temporário para renderização
-
-  if (force) {
-    childrenCache.delete(clean);
-    childrenInFlight.delete(clean);
-    try { sessionStorage.removeItem(`notion_c_${clean}`); } catch(e){}
-  } else {
-    if (childrenCache.has(clean)) {
-      const cached = childrenCache.get(clean)!;
-      if (now - cached.timestamp < TTL) {
-        return cached.data;
-      } else {
-        childrenCache.delete(clean);
-      }
-    }
-    const local = getLocalNotionCache(clean);
-    if (local && now - local.timestamp < TTL) {
-      childrenCache.set(clean, { data: local.data, timestamp: local.timestamp });
-      return local.data;
-    }
-  }
-
+async function revalidateChildrenInBackground(clean: string, force = false): Promise<NotionAPIBlock[]> {
   if (!force && childrenInFlight.has(clean)) return childrenInFlight.get(clean)!;
 
-  const url = `/api/notion/blocks/${clean}/children?page_size=100${force ? '&force=true&t=' + now : ''}`;
+  const url = `/api/notion/blocks/${clean}/children?page_size=100${force ? '&force=true&t=' + Date.now() : ''}`;
   const req = fetch(url, {
     headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
   })
@@ -242,6 +224,46 @@ async function fetchChildren(blockId: string, force = false): Promise<NotionAPIB
 
   childrenInFlight.set(clean, req);
   return req;
+}
+
+async function fetchChildren(blockId: string, force = false): Promise<NotionAPIBlock[]> {
+  const clean = blockId.replace(/-/g, "");
+  const now = Date.now();
+  const FRESH_TTL = 3 * 60 * 1000; // 3 minutos para revalidação silenciosa
+
+  if (force) {
+    childrenCache.delete(clean);
+    childrenInFlight.delete(clean);
+    try {
+      localStorage.removeItem(`notion_c_${clean}`);
+      sessionStorage.removeItem(`notion_c_${clean}`);
+    } catch(e){}
+    return revalidateChildrenInBackground(clean, true);
+  }
+
+  // 1. Ver se existe no cache em memória
+  if (childrenCache.has(clean)) {
+    const cached = childrenCache.get(clean)!;
+    if (now - cached.timestamp >= FRESH_TTL) {
+      // Revalida em segundo plano sem travar a UI!
+      revalidateChildrenInBackground(clean).catch(() => {});
+    }
+    return cached.data;
+  }
+
+  // 2. Ver se existe no localStorage/sessionStorage
+  const local = getLocalNotionCache(clean);
+  if (local && local.data && Array.isArray(local.data)) {
+    childrenCache.set(clean, { data: local.data, timestamp: local.timestamp });
+    if (now - local.timestamp >= FRESH_TTL) {
+      // Revalida em segundo plano sem travar a UI!
+      revalidateChildrenInBackground(clean).catch(() => {});
+    }
+    return local.data;
+  }
+
+  // 3. Primeiro carregamento a frio (sem cache)
+  return revalidateChildrenInBackground(clean);
 }
 
 const fullQuestaoInFlight = new Map<string, Promise<{ children: NotionAPIBlock[]; imgs: string[]; rImgs: string[]; textResp?: string; foundToggleId: string | null }>>();
@@ -390,10 +412,8 @@ async function resolveQuestaoInfo(questaoId: string, blocksMap: Map<string, stri
 // precisar abrir o caderno na tela.
 const questoesDoBlocoCache = new Map<string, string[]>();
 
-async function collectQuestaoIds(rootBlockId: string): Promise<string[]> {
+async function revalidateQuestaoIds(rootBlockId: string): Promise<string[]> {
   const clean = rootBlockId.replace(/-/g, "");
-  if (questoesDoBlocoCache.has(clean)) return questoesDoBlocoCache.get(clean)!;
-
   const ids: string[] = [];
 
   async function walk(blockId: string) {
@@ -416,7 +436,38 @@ async function collectQuestaoIds(rootBlockId: string): Promise<string[]> {
 
   await walk(clean);
   questoesDoBlocoCache.set(clean, ids);
+  setLocalNotionCache(`ids_${clean}`, ids);
   return ids;
+}
+
+async function collectQuestaoIds(rootBlockId: string, force = false): Promise<string[]> {
+  const clean = rootBlockId.replace(/-/g, "");
+  const now = Date.now();
+  const FRESH_TTL = 3 * 60 * 1000;
+
+  if (force) {
+    questoesDoBlocoCache.delete(clean);
+    try {
+      localStorage.removeItem(`notion_c_ids_${clean}`);
+      sessionStorage.removeItem(`notion_c_ids_${clean}`);
+    } catch(e){}
+    return revalidateQuestaoIds(rootBlockId);
+  }
+
+  if (questoesDoBlocoCache.has(clean)) {
+    return questoesDoBlocoCache.get(clean)!;
+  }
+
+  const local = getLocalNotionCache(`ids_${clean}`);
+  if (local && local.data && Array.isArray(local.data)) {
+    questoesDoBlocoCache.set(clean, local.data);
+    if (now - local.timestamp >= FRESH_TTL) {
+      revalidateQuestaoIds(rootBlockId).catch(() => {});
+    }
+    return local.data;
+  }
+
+  return revalidateQuestaoIds(rootBlockId);
 }
 
 // Igual à varredura acima, mas coleta os dados necessários para desenhar o
@@ -435,16 +486,8 @@ interface QuestaoDetalhesResult {
 }
 const questoesDetalhesCache = new Map<string, QuestaoDetalhesResult>();
 
-async function collectQuestaoDetails(rootBlockId: string): Promise<QuestaoDetalhesResult> {
+async function revalidateQuestaoDetails(rootBlockId: string): Promise<QuestaoDetalhesResult> {
   const clean = rootBlockId.replace(/-/g, "");
-  if (questoesDetalhesCache.has(clean)) return questoesDetalhesCache.get(clean)!;
-
-  const local = getLocalNotionCache(`det_${clean}`);
-  if (local && (Date.now() - local.timestamp < 10 * 1000)) {
-    questoesDetalhesCache.set(clean, local.data);
-    return local.data;
-  }
-
   const itens: QuestaoResumo[] = [];
   const caseIcons: Record<string, string> = {};
 
@@ -475,6 +518,36 @@ async function collectQuestaoDetails(rootBlockId: string): Promise<QuestaoDetalh
   questoesDetalhesCache.set(clean, result);
   setLocalNotionCache(`det_${clean}`, result);
   return result;
+}
+
+async function collectQuestaoDetails(rootBlockId: string, force = false): Promise<QuestaoDetalhesResult> {
+  const clean = rootBlockId.replace(/-/g, "");
+  const now = Date.now();
+  const FRESH_TTL = 3 * 60 * 1000;
+
+  if (force) {
+    questoesDetalhesCache.delete(clean);
+    try {
+      localStorage.removeItem(`notion_c_det_${clean}`);
+      sessionStorage.removeItem(`notion_c_det_${clean}`);
+    } catch(e){}
+    return revalidateQuestaoDetails(rootBlockId);
+  }
+
+  if (questoesDetalhesCache.has(clean)) {
+    return questoesDetalhesCache.get(clean)!;
+  }
+
+  const local = getLocalNotionCache(`det_${clean}`);
+  if (local && local.data) {
+    questoesDetalhesCache.set(clean, local.data);
+    if (now - local.timestamp >= FRESH_TTL) {
+      revalidateQuestaoDetails(rootBlockId).catch(() => {});
+    }
+    return local.data;
+  }
+
+  return revalidateQuestaoDetails(rootBlockId);
 }
 
 function QuestaoTitleLabel({ questaoId, blocksMap }: { questaoId: string; blocksMap: Map<string, string> }) {
