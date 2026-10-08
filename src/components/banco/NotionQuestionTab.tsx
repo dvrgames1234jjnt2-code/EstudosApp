@@ -2621,6 +2621,42 @@ function MateriaStatsBadge({
   );
 }
 
+function TotalBancoStatsBadge({ blocks }: { blocks: NotionBlockRow[] }) {
+  const [total, setTotal] = useState<number | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (!blocks || blocks.length === 0) {
+      setTotal(0);
+      return;
+    }
+    Promise.all(blocks.map(b => collectQuestaoIds(b.block_id)))
+      .then(resArrays => {
+        if (!active) return;
+        const all = new Set(resArrays.flat());
+        setTotal(all.size);
+      })
+      .catch(() => { if (active) setTotal(0); });
+    return () => { active = false; };
+  }, [blocks]);
+
+  if (total === null) {
+    return (
+      <span className="text-[10px] font-normal text-slate-300 flex items-center gap-1 bg-slate-900/60 border border-slate-800 px-2 py-0.5 rounded-lg" title="Total de questões cadastradas no banco">
+        <BookMarked size={11} className="text-indigo-400/80 animate-pulse" />
+        <span className="text-indigo-300/80 font-medium">... questões</span>
+      </span>
+    );
+  }
+
+  return (
+    <span className="text-[10px] font-normal text-slate-300 flex items-center gap-1 bg-slate-900/60 border border-slate-800 px-2 py-0.5 rounded-lg" title="Total de questões cadastradas em todos os cadernos">
+      <BookMarked size={11} className="text-indigo-400/80" />
+      <span className="text-indigo-300 font-bold">{total} questões</span>
+    </span>
+  );
+}
+
 // Face/ícone e cor de cada nível de dificuldade, usado no badge do bloquinho
 const FACE_EMOJI: Record<CategoryKey, string> = {
   bonus: "🎉", faceis: "😊", atencao: "🔵", lacuna: "⛳", media: "😐", dificil: "😞", ultrahard: "🟣",
@@ -3497,6 +3533,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
 
           {user && (
             <div className="flex items-center gap-1.5 pl-2 border-l border-white/10 flex-wrap">
+              <TotalBancoStatsBadge blocks={blocks} />
               <span className="text-[10px] font-normal text-slate-300 flex items-center gap-1 bg-slate-900/60 border border-slate-800 px-2 py-0.5 rounded-lg" title="Feitas hoje">
                 <Clock size={11} className="text-sky-400/80" /> <span className="text-sky-400/90 font-medium">{feitasHojeIds.length} hoje</span>
               </span>
