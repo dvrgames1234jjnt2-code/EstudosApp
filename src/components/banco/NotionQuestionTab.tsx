@@ -199,7 +199,7 @@ export function clearNotionClientCache() {
 async function fetchChildren(blockId: string, force = false): Promise<NotionAPIBlock[]> {
   const clean = blockId.replace(/-/g, "");
   const now = Date.now();
-  const TTL = 15 * 60 * 1000; // 15 minutos de cache
+  const TTL = 10 * 1000; // 10 segundos max de cache temporário para renderização
 
   if (force) {
     childrenCache.delete(clean);
@@ -223,8 +223,10 @@ async function fetchChildren(blockId: string, force = false): Promise<NotionAPIB
 
   if (!force && childrenInFlight.has(clean)) return childrenInFlight.get(clean)!;
 
-  const url = `/api/notion/blocks/${clean}/children?page_size=100${force ? '&force=true' : ''}`;
-  const req = fetch(url)
+  const url = `/api/notion/blocks/${clean}/children?page_size=100${force ? '&force=true&t=' + now : ''}`;
+  const req = fetch(url, {
+    headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
+  })
     .then(async res => {
       if (!res.ok) throw new Error(`Notion ${res.status}`);
       const data: NotionAPIBlock[] = (await res.json()).results ?? [];
@@ -438,7 +440,7 @@ async function collectQuestaoDetails(rootBlockId: string): Promise<QuestaoDetalh
   if (questoesDetalhesCache.has(clean)) return questoesDetalhesCache.get(clean)!;
 
   const local = getLocalNotionCache(`det_${clean}`);
-  if (local && (Date.now() - local.timestamp < 15 * 60 * 1000)) {
+  if (local && (Date.now() - local.timestamp < 10 * 1000)) {
     questoesDetalhesCache.set(clean, local.data);
     return local.data;
   }

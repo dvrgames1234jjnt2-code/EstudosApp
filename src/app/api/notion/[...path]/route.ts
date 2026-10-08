@@ -26,7 +26,7 @@ export async function PATCH(
 
 const serverNotionCache = new Map<string, { data: any; status: number; timestamp: number }>();
 const serverInFlight = new Map<string, Promise<{ data: any; status: number }>>();
-const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutos de cache em memória no servidor
+const CACHE_TTL_MS = 10 * 1000; // 10 segundos apenas para deduplicação instantânea de renderização
 
 async function proxyNotion(path: string, request: NextRequest) {
   const token = process.env.NOTION_TOKEN;
@@ -38,6 +38,12 @@ async function proxyNotion(path: string, request: NextRequest) {
                   request.nextUrl.searchParams.get('refresh') === 'true' || 
                   request.headers.get('cache-control') === 'no-cache';
 
+  const noCacheHeaders = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  };
+
   if (isGet) {
     if (isForce) {
       serverNotionCache.delete(url);
@@ -46,14 +52,14 @@ async function proxyNotion(path: string, request: NextRequest) {
       if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
         return NextResponse.json(cached.data, {
           status: cached.status,
-          headers: { 'X-Cache': 'HIT', 'Cache-Control': 's-maxage=180, stale-while-revalidate=300' }
+          headers: { 'X-Cache': 'HIT', ...noCacheHeaders }
         });
       }
     }
 
     if (serverInFlight.has(url)) {
       const result = await serverInFlight.get(url)!;
-      return NextResponse.json(result.data, { status: result.status, headers: { 'X-Cache': 'DEDUPED' } });
+      return NextResponse.json(result.data, { status: result.status, headers: { 'X-Cache': 'DEDUPED', ...noCacheHeaders } });
     }
   }
 
@@ -76,6 +82,7 @@ async function proxyNotion(path: string, request: NextRequest) {
           method: request.method,
           headers,
           body,
+          cache: 'no-store', // Impede Next.js de armazenar cache de fetch no servidor
         });
 
         if (response.status === 429 && attempts < maxAttempts) {
@@ -108,7 +115,7 @@ async function proxyNotion(path: string, request: NextRequest) {
     const result = await fetchPromise;
     return NextResponse.json(result.data, {
       status: result.status,
-      headers: isGet ? { 'Cache-Control': 's-maxage=2100, stale-while-revalidate=3600' } : {}
+      headers: noCacheHeaders
     });
   } finally {
     if (isGet) {
