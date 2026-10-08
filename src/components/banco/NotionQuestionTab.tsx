@@ -307,15 +307,19 @@ async function fetchChildren(blockId: string, force = false): Promise<NotionAPIB
   return revalidateChildrenInBackground(clean);
 }
 
-const fullQuestaoInFlight = new Map<string, Promise<{ children: NotionAPIBlock[]; imgs: string[]; rImgs: string[]; textResp?: string; foundToggleId: string | null }>>();
+interface FullQuestaoData {
+  children: NotionAPIBlock[];
+  imgs: string[];
+  rImgs: string[];
+  textResp?: string;
+  foundToggleId: string | null;
+}
 
-async function fetchQuestaoFullData(blockId: string, force = false) {
-  const clean = blockId.replace(/-/g, "");
-  if (force) {
-    fullQuestaoInFlight.delete(clean);
-  } else if (fullQuestaoInFlight.has(clean)) {
-    return fullQuestaoInFlight.get(clean)!;
-  }
+const fullQuestaoCache = new Map<string, { data: FullQuestaoData; timestamp: number }>();
+const fullQuestaoInFlight = new Map<string, Promise<FullQuestaoData>>();
+
+async function revalidateQuestaoFullData(clean: string, force = false): Promise<FullQuestaoData> {
+  if (!force && fullQuestaoInFlight.has(clean)) return fullQuestaoInFlight.get(clean)!;
 
   const promise = (async () => {
     const children = await fetchChildren(clean, force);
@@ -343,7 +347,7 @@ async function fetchQuestaoFullData(blockId: string, force = false) {
         return tText.includes("resposta");
       })
       .map(async child => {
-        const rChildren = await fetchChildren(child.id);
+        const rChildren = await fetchChildren(child.id, force);
         const childImgs: string[] = [];
         const texts: string[] = [];
         for (const rc of rChildren) {
@@ -375,8 +379,13 @@ async function fetchQuestaoFullData(blockId: string, force = false) {
       if (res.text && !textResp) textResp = res.text;
     }
 
+    const result: FullQuestaoData = { children, imgs, rImgs, textResp, foundToggleId };
+    const now = Date.now();
+    fullQuestaoCache.set(clean, { data: result, timestamp: now });
+    setLocalNotionCache(`qfull_${clean}`, result);
+    setSupabaseNotionCache(`qfull_${clean}`, result).catch(() => {});
     fullQuestaoInFlight.delete(clean);
-    return { children, imgs, rImgs, textResp, foundToggleId };
+    return result;
   })().catch(err => {
     fullQuestaoInFlight.delete(clean);
     throw err;
@@ -384,6 +393,55 @@ async function fetchQuestaoFullData(blockId: string, force = false) {
 
   fullQuestaoInFlight.set(clean, promise);
   return promise;
+}
+
+async function fetchQuestaoFullData(blockId: string, force = false): Promise<FullQuestaoData> {
+  const clean = blockId.replace(/-/g, "");
+  const now = Date.now();
+  const FRESH_TTL = 5 * 60 * 1000;
+
+  if (force) {
+    fullQuestaoCache.delete(clean);
+    fullQuestaoInFlight.delete(clean);
+    try {
+      localStorage.removeItem(`notion_c_qfull_${clean}`);
+      sessionStorage.removeItem(`notion_c_qfull_${clean}`);
+    } catch(e){}
+    return revalidateQuestaoFullData(clean, true);
+  }
+
+  // 1. Ver no cache de memória
+  if (fullQuestaoCache.has(clean)) {
+    const cached = fullQuestaoCache.get(clean)!;
+    if (now - cached.timestamp >= FRESH_TTL) {
+      revalidateQuestaoFullData(clean).catch(() => {});
+    }
+    return cached.data;
+  }
+
+  // 2. Ver no localStorage (INSTANTÂNEO 0ms!)
+  const local = getLocalNotionCache(`qfull_${clean}`);
+  if (local && local.data) {
+    fullQuestaoCache.set(clean, { data: local.data, timestamp: local.timestamp });
+    if (now - local.timestamp >= FRESH_TTL) {
+      revalidateQuestaoFullData(clean).catch(() => {});
+    }
+    return local.data;
+  }
+
+  // 3. Ver no Supabase
+  const sbCache = await getSupabaseNotionCache(`qfull_${clean}`);
+  if (sbCache && sbCache.data) {
+    fullQuestaoCache.set(clean, { data: sbCache.data, timestamp: sbCache.timestamp });
+    setLocalNotionCache(`qfull_${clean}`, sbCache.data);
+    if (now - sbCache.timestamp >= FRESH_TTL) {
+      revalidateQuestaoFullData(clean).catch(() => {});
+    }
+    return sbCache.data;
+  }
+
+  // 4. Carregamento a frio (Notion API)
+  return revalidateQuestaoFullData(clean);
 }
 
 
