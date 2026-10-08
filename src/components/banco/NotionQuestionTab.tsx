@@ -154,7 +154,7 @@ function useAntiBrilhoMode() {
   return [antiBrilho, toggleAntiBrilho] as const;
 }
 
-// Cache de alta performance no navegador (SWR: instantâneo 0ms + revalidação em segundo plano)
+// Cache de alta performance (SWR: 0ms local/Supabase + revalidação silenciosa no Notion)
 const childrenCache = new Map<string, { data: NotionAPIBlock[]; timestamp: number }>();
 const childrenInFlight = new Map<string, Promise<NotionAPIBlock[]>>();
 
@@ -193,6 +193,36 @@ function clearLocalNotionCache() {
   } catch (e) {}
 }
 
+async function getSupabaseNotionCache(key: string) {
+  try {
+    const { data, error } = await supabase
+      .from("notion_cache_blocos")
+      .select("data_json, updated_at")
+      .eq("block_id", key)
+      .maybeSingle();
+
+    if (!error && data && data.data_json) {
+      const parsedData = typeof data.data_json === "string" ? JSON.parse(data.data_json) : data.data_json;
+      const timestamp = data.updated_at ? new Date(data.updated_at).getTime() : Date.now();
+      return { data: parsedData, timestamp };
+    }
+  } catch (e) {}
+  return null;
+}
+
+async function setSupabaseNotionCache(key: string, data: any) {
+  try {
+    await supabase.from("notion_cache_blocos").upsert(
+      {
+        block_id: key,
+        data_json: data,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "block_id" }
+    );
+  } catch (e) {}
+}
+
 export function clearNotionClientCache() {
   childrenCache.clear();
   childrenInFlight.clear();
@@ -212,8 +242,10 @@ async function revalidateChildrenInBackground(clean: string, force = false): Pro
     .then(async res => {
       if (!res.ok) throw new Error(`Notion ${res.status}`);
       const data: NotionAPIBlock[] = (await res.json()).results ?? [];
-      childrenCache.set(clean, { data, timestamp: Date.now() });
+      const now = Date.now();
+      childrenCache.set(clean, { data, timestamp: now });
       setLocalNotionCache(clean, data);
+      setSupabaseNotionCache(clean, data).catch(() => {});
       childrenInFlight.delete(clean);
       return data;
     })
@@ -241,11 +273,10 @@ async function fetchChildren(blockId: string, force = false): Promise<NotionAPIB
     return revalidateChildrenInBackground(clean, true);
   }
 
-  // 1. Ver se existe no cache em memória
+  // 1. Ver se existe no cache de memória
   if (childrenCache.has(clean)) {
     const cached = childrenCache.get(clean)!;
     if (now - cached.timestamp >= FRESH_TTL) {
-      // Revalida em segundo plano sem travar a UI!
       revalidateChildrenInBackground(clean).catch(() => {});
     }
     return cached.data;
@@ -256,13 +287,23 @@ async function fetchChildren(blockId: string, force = false): Promise<NotionAPIB
   if (local && local.data && Array.isArray(local.data)) {
     childrenCache.set(clean, { data: local.data, timestamp: local.timestamp });
     if (now - local.timestamp >= FRESH_TTL) {
-      // Revalida em segundo plano sem travar a UI!
       revalidateChildrenInBackground(clean).catch(() => {});
     }
     return local.data;
   }
 
-  // 3. Primeiro carregamento a frio (sem cache)
+  // 3. Ver se existe no Supabase (notion_cache_blocos)
+  const sbCache = await getSupabaseNotionCache(clean);
+  if (sbCache && sbCache.data && Array.isArray(sbCache.data)) {
+    childrenCache.set(clean, { data: sbCache.data, timestamp: sbCache.timestamp });
+    setLocalNotionCache(clean, sbCache.data);
+    if (now - sbCache.timestamp >= FRESH_TTL) {
+      revalidateChildrenInBackground(clean).catch(() => {});
+    }
+    return sbCache.data;
+  }
+
+  // 4. Primeiro carregamento a frio (sem cache em nenhum lugar)
   return revalidateChildrenInBackground(clean);
 }
 
@@ -437,6 +478,7 @@ async function revalidateQuestaoIds(rootBlockId: string): Promise<string[]> {
   await walk(clean);
   questoesDoBlocoCache.set(clean, ids);
   setLocalNotionCache(`ids_${clean}`, ids);
+  setSupabaseNotionCache(`ids_${clean}`, ids).catch(() => {});
   return ids;
 }
 
@@ -465,6 +507,16 @@ async function collectQuestaoIds(rootBlockId: string, force = false): Promise<st
       revalidateQuestaoIds(rootBlockId).catch(() => {});
     }
     return local.data;
+  }
+
+  const sbCache = await getSupabaseNotionCache(`ids_${clean}`);
+  if (sbCache && sbCache.data && Array.isArray(sbCache.data)) {
+    questoesDoBlocoCache.set(clean, sbCache.data);
+    setLocalNotionCache(`ids_${clean}`, sbCache.data);
+    if (now - sbCache.timestamp >= FRESH_TTL) {
+      revalidateQuestaoIds(rootBlockId).catch(() => {});
+    }
+    return sbCache.data;
   }
 
   return revalidateQuestaoIds(rootBlockId);
@@ -517,6 +569,7 @@ async function revalidateQuestaoDetails(rootBlockId: string): Promise<QuestaoDet
   const result: QuestaoDetalhesResult = { itens, caseIcons };
   questoesDetalhesCache.set(clean, result);
   setLocalNotionCache(`det_${clean}`, result);
+  setSupabaseNotionCache(`det_${clean}`, result).catch(() => {});
   return result;
 }
 
@@ -545,6 +598,16 @@ async function collectQuestaoDetails(rootBlockId: string, force = false): Promis
       revalidateQuestaoDetails(rootBlockId).catch(() => {});
     }
     return local.data;
+  }
+
+  const sbCache = await getSupabaseNotionCache(`det_${clean}`);
+  if (sbCache && sbCache.data) {
+    questoesDetalhesCache.set(clean, sbCache.data);
+    setLocalNotionCache(`det_${clean}`, sbCache.data);
+    if (now - sbCache.timestamp >= FRESH_TTL) {
+      revalidateQuestaoDetails(rootBlockId).catch(() => {});
+    }
+    return sbCache.data;
   }
 
   return revalidateQuestaoDetails(rootBlockId);
