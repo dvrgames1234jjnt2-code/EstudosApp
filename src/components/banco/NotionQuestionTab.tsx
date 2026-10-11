@@ -7,9 +7,10 @@ import {
   BookMarked, RefreshCw, X, Check, Play, Eye, EyeOff,
   Triangle, Flag, History, LayoutGrid, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Moon, Sun,
   Clock, HelpCircle, Filter, Flame, Calendar, BarChart3, Target, AlertTriangle,
-  GripVertical, ArrowUp, ArrowDown, MoreVertical
+  GripVertical, ArrowUp, ArrowDown, MoreVertical, Database
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
+import { SyncBancoModal } from "./SyncBancoModal";
 
 const CATEGORIES = [
   { key: "bonus",     label: "Bônus",     emojis: ["🎉","🥳","🎊"],        icon: "🎉",  color: "#d97706", textColor: "#c69238", dot: false },
@@ -395,6 +396,31 @@ async function revalidateQuestaoFullData(clean: string, force = false): Promise<
   return promise;
 }
 
+async function getQuestaoFromBancoTable(id: string): Promise<FullQuestaoData | null> {
+  try {
+    const clean = id.replace(/-/g, "");
+    const { data, error } = await supabase
+      .from("notion_questoes_banco")
+      .select("*")
+      .or(`id.eq.${id},id.eq.${clean}`)
+      .maybeSingle();
+
+    if (!error && data) {
+      const imgs = Array.isArray(data.imagens_urls) ? data.imagens_urls : [];
+      const rImgs = Array.isArray(data.gabarito_imagens_urls) ? data.gabarito_imagens_urls : [];
+      const textResp = data.gabarito_texto || undefined;
+      return {
+        children: [],
+        imgs,
+        rImgs,
+        textResp,
+        foundToggleId: null,
+      };
+    }
+  } catch (e) {}
+  return null;
+}
+
 async function fetchQuestaoFullData(blockId: string, force = false): Promise<FullQuestaoData> {
   const clean = blockId.replace(/-/g, "");
   const now = Date.now();
@@ -429,7 +455,15 @@ async function fetchQuestaoFullData(blockId: string, force = false): Promise<Ful
     return local.data;
   }
 
-  // 3. Ver no Supabase
+  // 3. Ver na tabela notion_questoes_banco do Supabase (com imagens permanentes no Storage!)
+  const bancoQuestao = await getQuestaoFromBancoTable(blockId);
+  if (bancoQuestao && (bancoQuestao.imgs.length > 0 || bancoQuestao.rImgs.length > 0 || bancoQuestao.textResp)) {
+    fullQuestaoCache.set(clean, { data: bancoQuestao, timestamp: now });
+    setLocalNotionCache(`qfull_${clean}`, bancoQuestao);
+    return bancoQuestao;
+  }
+
+  // 4. Ver no cache genérico do Supabase (notion_cache_blocos)
   const sbCache = await getSupabaseNotionCache(`qfull_${clean}`);
   if (sbCache && sbCache.data) {
     fullQuestaoCache.set(clean, { data: sbCache.data, timestamp: sbCache.timestamp });
@@ -440,7 +474,7 @@ async function fetchQuestaoFullData(blockId: string, force = false): Promise<Ful
     return sbCache.data;
   }
 
-  // 4. Carregamento a frio (Notion API)
+  // 5. Carregamento a frio (Notion API)
   return revalidateQuestaoFullData(clean);
 }
 
@@ -540,6 +574,21 @@ async function revalidateQuestaoIds(rootBlockId: string): Promise<string[]> {
   return ids;
 }
 
+async function getIdsFromBancoTable(rootBlockId: string): Promise<string[] | null> {
+  try {
+    const clean = rootBlockId.replace(/-/g, "");
+    const { data, error } = await supabase
+      .from("notion_questoes_banco")
+      .select("id")
+      .or(`bloco_raiz_id.eq.${rootBlockId},bloco_raiz_id.eq.${clean}`);
+
+    if (!error && data && data.length > 0) {
+      return data.map((d: any) => d.id);
+    }
+  } catch (e) {}
+  return null;
+}
+
 async function collectQuestaoIds(rootBlockId: string, force = false): Promise<string[]> {
   const clean = rootBlockId.replace(/-/g, "");
   const now = Date.now();
@@ -565,6 +614,14 @@ async function collectQuestaoIds(rootBlockId: string, force = false): Promise<st
       revalidateQuestaoIds(rootBlockId).catch(() => {});
     }
     return local.data;
+  }
+
+  // Verificar na tabela estruturada do Supabase
+  const bancoIds = await getIdsFromBancoTable(rootBlockId);
+  if (bancoIds && bancoIds.length > 0) {
+    questoesDoBlocoCache.set(clean, bancoIds);
+    setLocalNotionCache(`ids_${clean}`, bancoIds);
+    return bancoIds;
   }
 
   const sbCache = await getSupabaseNotionCache(`ids_${clean}`);
@@ -595,6 +652,29 @@ interface QuestaoDetalhesResult {
   caseIcons: Record<string, string>;
 }
 const questoesDetalhesCache = new Map<string, QuestaoDetalhesResult>();
+
+async function getDetailsFromBancoTable(rootBlockId: string): Promise<QuestaoDetalhesResult | null> {
+  try {
+    const clean = rootBlockId.replace(/-/g, "");
+    const { data, error } = await supabase
+      .from("notion_questoes_banco")
+      .select("id, numero, topico, categoria, caso_nome")
+      .or(`bloco_raiz_id.eq.${rootBlockId},bloco_raiz_id.eq.${clean}`);
+
+    if (!error && data && data.length > 0) {
+      const itens: QuestaoResumo[] = data.map((d: any) => ({
+        id: d.id,
+        numero: d.numero || "",
+        topic: d.topico || "",
+        categoryKey: (d.categoria || "media") as CategoryKey,
+        caseLabel: d.caso_nome || "Geral",
+      }));
+      const caseIcons: Record<string, string> = {};
+      return { itens, caseIcons };
+    }
+  } catch (e) {}
+  return null;
+}
 
 async function revalidateQuestaoDetails(rootBlockId: string): Promise<QuestaoDetalhesResult> {
   const clean = rootBlockId.replace(/-/g, "");
@@ -656,6 +736,14 @@ async function collectQuestaoDetails(rootBlockId: string, force = false): Promis
       revalidateQuestaoDetails(rootBlockId).catch(() => {});
     }
     return local.data;
+  }
+
+  // Verificar na tabela estruturada do Supabase
+  const bancoDetails = await getDetailsFromBancoTable(rootBlockId);
+  if (bancoDetails && bancoDetails.itens.length > 0) {
+    questoesDetalhesCache.set(clean, bancoDetails);
+    setLocalNotionCache(`det_${clean}`, bancoDetails);
+    return bancoDetails;
   }
 
   const sbCache = await getSupabaseNotionCache(`det_${clean}`);
@@ -2155,6 +2243,35 @@ const CasoCard = memo(function CasoCard({
       (async () => {
         setLoading(true);
         try {
+          // 1. Tentar buscar questões deste caso diretamente da tabela definitiva notion_questoes_banco do Supabase
+          try {
+            const cleanCasoId = caso.id.replace(/-/g, "");
+            const { data: bQuestoes } = await supabase
+              .from("notion_questoes_banco")
+              .select("*")
+              .or(`caso_id.eq.${caso.id},caso_id.eq.${cleanCasoId},caso_nome.eq.${caso.nome}`);
+
+            if (bQuestoes && bQuestoes.length > 0) {
+              const mapped: Questao[] = bQuestoes.map((b: any) => ({
+                id: b.id,
+                numero: b.numero || "",
+                topic: b.topico || "",
+                categoryKey: (b.categoria || "media") as CategoryKey,
+                imageUrls: Array.isArray(b.imagens_urls) ? b.imagens_urls : [],
+                resposta: b.gabarito_texto || undefined,
+                respostaImageUrls: Array.isArray(b.gabarito_imagens_urls) ? b.gabarito_imagens_urls : [],
+                caseLabel: b.caso_nome || caso.nome,
+              }));
+
+              if (active) {
+                setQuestoes(mapped);
+                setLoaded(true);
+                setLoading(false);
+                return;
+              }
+            }
+          } catch (e) {}
+
           const children = await fetchChildren(caso.id);
           const tempQuestoes: Questao[] = [];
           const tempSubcasos: Caso[] = [];
@@ -3394,6 +3511,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
   const handleAnswered = useCallback(() => setStatsRefreshTrigger(v => v + 1), []);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showSyncModal, setShowSyncModal] = useState(false);
 
   const [showForm, setShowForm] = useState(false);
   const [formId, setFormId] = useState(""); const [formNome, setFormNome] = useState(""); const [formDesc, setFormDesc] = useState(""); const [formMateria, setFormMateria] = useState("");
@@ -3776,6 +3894,14 @@ export default function NotionQuestionTab({ user }: { user: any }) {
             <RefreshCw size={13} className={loadingBlocks ? "animate-spin text-indigo-400" : "text-indigo-400"} />
             <span className="hidden sm:inline">Sincronizar Notion</span>
           </button>
+          <button
+            onClick={() => setShowSyncModal(true)}
+            title="Espelhar questões e salvar imagens permanentemente no Supabase (Carregamento ultra-rápido de 0ms)"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all active:scale-95 shrink-0 shadow-md shadow-indigo-600/20"
+          >
+            <Database size={13} className="text-white" />
+            <span>Sincronizar Banco</span>
+          </button>
           {isAdmin && (
             <button
               onClick={() => setShowForm(v => !v)}
@@ -3786,6 +3912,16 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           )}
         </div>
       </div>
+
+      {showSyncModal && (
+        <SyncBancoModal
+          blocos={blocks}
+          onClose={() => {
+            setShowSyncModal(false);
+            handleForceSyncNotion();
+          }}
+        />
+      )}
 
       {showForm && (
         <div className="border border-indigo-500/20 rounded-2xl bg-[#101526]/90 p-5 flex flex-col gap-4 backdrop-blur-xl relative z-10 shadow-2xl">
