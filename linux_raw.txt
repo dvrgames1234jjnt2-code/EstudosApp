@@ -1,0 +1,1280 @@
+17771166784 - Danielle Roger
+29 de Março de 2026
+Diego Carvalho
+Autor:
+de Informática 
+Comercial) Passo Estratégico de Noções
+Banco do Brasil (Escriturário - Agente
+Aula 18
+----------------Page (0) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+2
+..............................................................................................................................................................................................8) Referências Bibliográficas - Linux                                                                                                                                  29
+..............................................................................................................................................................................................7) Gabarito de Questões Estratégicas - Linux - CESGRANRIO                                                                                        28
+..............................................................................................................................................................................................6) Lista de Questões Estratégicas - Linux - CESGRANRIO                                                                                               25
+..............................................................................................................................................................................................5) Questionário de Revisão - Linux                                                                                                                                    15
+..............................................................................................................................................................................................4) Questões Estratégicas - Linux - CESGRANRIO                                                                                                            12
+..............................................................................................................................................................................................3) Aposta Estratégica - Linux                                                                                                                                              11
+..............................................................................................................................................................................................2) Roteiro de Revisão - Linux                                                                                                                                               4
+..............................................................................................................................................................................................1) O que é mais cobrado no assunto - Linux - CESGRANRIO                                                                                            3
+Índice
+Aula 18
+Diego Carvalho
+----------------Page (1) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+3
+ 
+ 
+Lista de Atalhos                                                                                                                                                        02% 
+Principais Comandos                                                                                                                                               49% 
+Gerenciamento de Sistemas de Arquivos                                                                                                           11% 
+Distribuições Linux                                                                                                                                                   20% 
+Tipos de Usuários                                                                                                                                                     03% 
+Rotinas de Inicialização                                                                                                                                           01% 
+Interface Gráfica                                                                                                                                                       02% 
+Conceitos Básicos                                                                                                                                                   12% 
+[CESGRANRIO] 
+TÓPICO 
+% DE COBRANÇA 
+percentuais de incidências de bancas similares. 
+questões).  Por  fim,  quando  não  há  quantidade  razoável  de  questões  para  analisar,  nós  consideramos 
+organizadora do  concurso  de  níveis  médio  e  superior  (em  informática,  não  há diferenciação  do  nível  de 
+A  análise  estatística  refere-se  ao  período  de  2021  a  2025,  abrangendo  provas  realizadas  pela  banca 
+ QUE É MAIS COBRADO DENTRO DO ASSUNTO
+O                                                                     ? 
+ 
+                                                                                                                                                                                                                                
+Aula 18
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (2) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+4
+conectividade, sendo essencial para ambientes corporativos e tecnológicos. 
+COM REDES 
+segurança.  Suporta  servidores  web,  bancos  de  dados,  VPNs  e  diversas  soluções  de 
+COMPATIBILIDADE 
+Linux  é  amplamente  utilizado  em  infraestrutura  de  redes  devido  à  sua  estabilidade  e 
+COMANDO    configurações detalhadas e gerenciar sistemas de forma eficiente. 
+LINHA DE    e  desenvolvimento.  Com  ele,  usuários  podem   executar   tarefas   avançadas,  realizar 
+FERRAMENTAS DE    O terminal Linux oferece um vasto conjunto de comandos para administração, automação 
+a experiência e a produtividade, diferenciando-se de sistemas fechados. 
+CUSTOMIZAÇÃO    funcionamento interno do sistema. Essa liberdade permite ajustes precisos para otimizar 
+Usuários  podem  personalizar  completamente  o  Linux,  desde  a  interface  gráfica  até  o 
+especializados, adaptando-se a diferentes usos, desde desktops até servidores. 
+MODULARIDADE    Essa    arquitetura    flexível    possibilita    a    criação    de    sistemas    leves    ou    altamente 
+Linux permite  adicionar  ou remover  componentes  do sistema conforme a  necessidade. 
+global torna o Linux um sistema atualizado e inovador, com suporte acessível. 
+ATIVA 
+suporte  técnico,  desenvolvendo  novos  recursos  e  corrigindo  falhas.  Essa  colaboração 
+COMUNIDADE 
+Desenvolvedores  e  usuários  contribuem  constantemente  para  melhorias,  oferecendo 
+conforme necessidades específicas, desde uso doméstico até servidores. 
+DISTRIBUIÇÕES 
+cada uma voltada para públicos distintos. Essa diversidade permite escolha personalizada 
+VARIEDADE DE 
+O  Linux  conta  com  diversas  distribuições,  como  Ubuntu,  Debian,  Fedora  e  Arch  Linux, 
+ESTRUTURADO    para armazenamento e gerenciamento de arquivos, aumentando a confiabilidade. 
+ARQUIVOS    integridade dos dados e recuperação eficiente. Essas opções oferecem alto desempenho 
+SISTEMA DE    Utiliza   sistemas   otimizados,   como   ext4,   XFS   e   Btrfs,   que   garantem   organização, 
+vulnerabilidades e torna o sistema resistente a ameaças cibernéticas e ataques maliciosos. 
+SEGURANÇA    criptografia    e    atualizações    constantes.    Seu    modelo    de    segurança    minimiza 
+Linux possui camadas avançadas de proteção, incluindo permissões de usuários, firewall, 
+a integridade dos processos, garantindo alta disponibilidade. 
+ROBUSTEZ 
+Mesmo em servidores e sistemas críticos, mantém sua funcionalidade sem comprometer 
+ESTABILIDADE E 
+Um dos sistemas mais confiáveis, Linux apresenta baixa taxa de falhas e alto desempenho. 
+novos ambientes de hardware, garantindo compatibilidade ampla. 
+PORTABILIDADE    até servidores, dispositivos móveis e embarcados. Sua flexibilidade facilita a adaptação a 
+O  Linux  pode  ser  executado  em  diferentes  plataformas,  desde  computadores  pessoais 
+acadêmicos, permitindo o compartilhamento seguro de recursos e sistemas. 
+MULTIUSUÁRIO    acessos.   Essa   funcionalidade   é   crucial   para   servidores,   ambientes   corporativos   e 
+Suporta vários usuários simultaneamente, garantindo a separação de perfis, permissões e 
+servidores e usuários que precisam de eficiência na execução de múltiplas atividade s. 
+MULTITAREFA    paralelo sem comprometer o desempenho do sistema. Essa característica é essencial para 
+Linux executa diversos processos simultaneamente, permitindo que aplicativos rodem em 
+também são gratuitas, garantindo acessibilidade e reduzindo despesas operacionais.  
+GRATUITO    indivíduos, empresas e instituições. Além disso, as atualizações e ferramentas essenciais 
+O  sistema  operacional  Linux  não  possui  custos  de  licença,  permitindo  seu  uso  por 
+para necessidades específicas, sem restrições comerciais ou burocráticas.  
+(OPEN SOURCE) 
+livremente. Isso possibilita inovação contínua, colaboração global e adaptação do sistema 
+CÓDIGO ABERTO 
+Linux  permite  que  qualquer  pessoa  acesse,  modifique  e  distribua  seu  código  -fonte 
+CARACTERÍSTICAS                                                                          DESCRIÇÃO 
+mesmo tempo, destacar aspectos do conteúdo que merecem atenção. 
+A ideia desta seção é apresentar um roteiro para que você realize uma revisão completa do assunto e, ao 
+ERECEM          ESTAQUE
+M                 D                    
+OTEIRO DE           EVISÃO E          ONTOS DO           SSUNTO QUE 
+R                      R                   P                      A
+Aula 18
+Diego Carvalho
+----------------Page (3) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+5
+cerquilha (#) na linha de comando. 
+permissões de root e conseguir efetuar essas tarefas. Em geral, vem com um símbolo de 
+upgrade  de  todo  o  sistema  operacional,  é  utilizado  o  comando  sudo  para  se  ter  as 
+ 
+comando  sudo.  Por  exemplo:  sempre  que  for  instalar  um  programa  ou  realizar  um 
+ADMINISTRADOR 
+precise  de  acesso  administrativo,  é  necessário  o  root,  que  é  chamado  por  meio  do 
+quaisquer  tipos  de  restrições.  Sempre  que  executado  algum  software  ou  atividade  que 
+Também  chamado  de  Root,  é  responsável  por  controlar  todo  o  sistema  e  não  possui 
+de comando. 
+algumas tarefas a nível de sistema. Em geral, vem com um símbolo de cifrão ($) na linha 
+contrário  do  usuário  administrador,  o  usuário  comum  é  inviabilizado  para  realização  de 
+ 
+simples  como  criar  e  editar  documentos,  navegar  na  internet,  ouvir  música  etc.  Ao 
+COMUM 
+manipular  arquivos  em  seu  diretório  e  em  outros  diretórios,  além  de  executar  tarefas 
+esses usuários possuem um diretório base (/home/username, exemplo) e podem criar e 
+São  aqueles  que  possuem  contas  para  utilização  do  sistema  operacional.  Basicamente, 
+USUÁRIO                                                                          DESCRIÇÃO 
+ 
+desenvolvedores e entusiastas de Linux. 
+ 
+funcionalidades. Embora não seja tão comum como o Vi/Vim, ele é amplamente utilizado por 
+EMACS 
+O Emacs é um editor de texto muito poderoso e extensível, com uma grande variedade de 
+com o Vi/Vim. 
+ 
+na  parte  inferior  da  tela.  Ele  é  frequentemente  preferido  por  quem  não  está  familiarizado 
+NANO 
+O Nano é um editor de texto mais simples e intuitivo para iniciantes, com comandos visíveis 
+adicionais como destaque de sintaxe, busca avançada e auto -completação. 
+ 
+amplamente utilizados no Linux. O Vim (Vi Improved) é uma versão melhorada, com recursos 
+VI/VIM 
+Vi  (ou  Vim,  uma  versão  mais  avançada  de  Vi)  é  um  dos  editores  de  texto  mais  antigos  e 
+TEXTO 
+DESCRIÇÃO 
+EDITORES DE 
+ 
+de sistemas operacionais, além de permitir sistemas de arquivo maiores.  
+ 
+que o anterior, é mais poderoso que o LILO e suporta um número ilimitado de entradas 
+GRUB 
+Trata-se de um gerenciador de inicialização mais recente    –ele é mais bonito e moderno 
+o Bootloader GRUB começou a substituí -lo. 
+ 
+mais simples e rústica. Era o carregador de boot mais popular para Linux até 2001, quando 
+LILO 
+Trata-se de um gerenciador de inicialização mais antigo – vejam que ele tem uma interface 
+ROTINAS                                                                                    DESCRIÇÃO 
+ 
+prefere uma abordagem visual na interação com o sistema. 
+iniciantes e usuários avançados. Apesar da eficiência da CLI, a GUI é essencial para quem 
+INTERFACE (GUI) 
+e a administração do sistema com janelas, ícones e menus, tornando o Linux acessível para 
+GRAPHIC USER 
+necessidade de comandos no terminal. Ela facilita a navegação, a execução de programas 
+Ferramenta visual interativa para usuários, permitindo o gerenciamento do sistema sem a 
+devido à sua rapidez, flexibilidade e capacidade de realizar configurações detalhadas.  
+scripts.  Ela  é amplamente  utilizada por  administradores  de sistemas  e desenvolvedores 
+INTERFACE (CLI) 
+administração eficiente de arquivos, processos e redes, além da automação de tarefas via 
+COMMAND LINE 
+a   necessidade   de   interface   gráfica.   Permite   a   execução   de   operações   avançadas, 
+Ferramenta de interação com o sistema operacional por meio de comandos textuais, sem 
+INTERFACE 
+DESCRIÇÃO 
+TIPO DE 
+ 
+VIRTUALIZAÇÃO    para desenvolvimento, testes e implementação de serviços escaláveis.  
+CONTÊINERES E    virtualização  eficiente  e  isolamento  de  processos.  Essas  ferramentas  são  fundamentais 
+SUPORTE A    O  Linux  possui  suporte  nativo  a  tecnologias  como  Docker,  LXC  e  KVM,  permitindo 
+Aula 18
+Diego Carvalho
+----------------Page (4) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+6
+ 
+ 
+ 
+performance, principalmente para um número muito grande de arquivos pequenos.  
+REISERFS 
+Criado  recentemente  e  suportado  por  quase  todas  as  distribuições,  apresenta  ótima 
+ 
+ 
+desempenho de compatibilidade, formatos e limites de armazenamentos.  
+EXT4 
+Este  é  uma  espécie  de  versão  do  EXT3  que  surgiu  com  a  prerrogativa  de  melhorar  o 
+ 
+ 
+uma evolução e tornou o EXT3 um sistema de arquivos muito estável e robusto.  
+EXT3 
+Trata-se de uma versão do EXT2, porém com suporte a journaling. Essa característica foi 
+muito eficiente. 
+ 
+(Second Extended FileSystem)  –  embora ele tenha sido uma espécie de padrão não era 
+EXT2 
+Um dos primeiros sistemas de arquivos utilizado nas primeiras versões do Linux foi o EXT2 
+==2bbd1a==
+USUÁRIO                                                                                    DESCRIÇÃO 
+ 
+– inclusive – distribuições brasileiras. As mais famosas são a Kurumin, Conectiva, Kalango e Mandriva.  
+atualmente são: Debian, Ubuntu, RedHat, Fedora, Suse, Mint, CentOS, Mandrake, Slackware, etc. Galera, existem 
+A escolha da  distribuição  que funciona melhor  para você pode levar  algum tempo. As principais  distribuições 
+enquanto outras são projetadas para um caso de uso muito específico, como um firewall ou um servidor da Web. 
+Linux. Cada distribuição possui recursos que a tornam única. Algumas distribuições são projetadas para uso geral, 
+Trata-se  de  um  sistema  operacional  criado  a  partir  de  uma  coleção  de  software  construído  sobre  o  Kernel  do 
+DISTRIBUIÇÃO LINUX 
+ 
+ 
+ 
+data, que pode ser utilizado para controlar servidores web como Apache e Nginx.    
+ 
+propriedade de uma pessoa em particular. Um exemplo desse tipo de usuário é o www   -
+SISTEMA 
+conectam.  São  contas  usadas  para  propósitos  específicos  do  sistema  e  não  são  de 
+Estes  comumente  não  possuem  senhas  e,  diferentemente  dos  usuários  comuns,  não  se 
+Usuários  que  não  necessitam  estar  logados  no  sistema  para  controlar  alguns  serviços. 
+Aula 18
+Diego Carvalho
+----------------Page (5) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+7
+[X]                      
+EXECUÇÃO            Permissão de execução de arquivos ou de acesso a diretórios.  
+[W]                     
+ESCRITA               Permissão de escrita em arquivos ou diretórios (inclusive deleção).  
+[R]                      
+LEITURA               Permissão de leitura de arquivos e listagem de conteúdo em diretórios.  
+PERMISSÃO                                                                                 DESCRIÇÃO 
+ 
+ 
+ 
+ 
+ 
+OUTROS 
+arquivo. 
+Trata-se  da  categoria  de  usuários  que  não  são  donos  ou  não  pertencem  ao  grupo  do 
+ 
+que estes arquivos tenham outro dono). Um usuário pode pertencer a um ou mais grupos. 
+ 
+mais grupos e então acessar arquivos que pertençam ao mesmo grupo que o seu (mesmo 
+GRUPO 
+somente o dono poderia ter acesso ao arquivo). Cada usuário pode fazer parte de um ou 
+Permite  que  vários  usuários  diferentes  tenham  acesso  a  um  mesmo  arquivo  (já  que 
+também é chamada de User ID (UID).  
+arquivo  somente  se  aplicam  ao  dono  do  arquivo/diretório.  A  identificação  do  dono 
+ 
+modificar as permissões de acesso do arquivo. As permissões de acesso do dono de um 
+DONO 
+mesmo  do  usuário  usado  para  entrar  no  sistema  GNU/Linux.  Somente  o  dono  pode 
+É a pessoa que criou o arquivo ou o diretório. O nome do dono do arquivo/diretório é o 
+PRIVILÉGIO                                                                          DESCRIÇÃO 
+ 
+ 
+/srv
+Dados dos serviços do sistema
+/var
+Informações variáveis do sistema
+etc)
+/usr
+Arquivos  e  programas  acessados  pelo  usuário  (documentações,  cabeçalhos,
+/tmp
+Arquivos temporários do sistema
+/mnt
+Ponto de montagem utilizado por administradores de sistemas
+/media
+Ponto de montagem utilizado por usuários comuns
+/proc
+Padrão FHS                           Informações sobre os processos sendo executados
+/opt
+Softwares adicionados de maneira não padrão
+/root
+Diretório pessoal do usuário root
+/sbin
+Programas essenciais do usuário root para o funcionamento do sistema
+/lib
+Bibliotecasc compartilhadas  essenciais e módulos do kernel
+/home
+diretório contendo os arquivos pessoais dos usuários
+/etc
+Arquivos de configuração do sistema e dos seus programas
+/dev
+contém arquivos sobre Dispositivos de hardware conectados
+/boot
+Arquivos utilizados durante a inicialização do sistema
+/bin
+Programas utilizados com frequência no shell
+Aula 18
+Diego Carvalho
+----------------Page (6) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+8
+ 
+ 
+(arquivos e diretórios)  – chmod vem de change mode.  
+CHMOD 
+Trata-se  do  comando  que  permite  alterar  permissões  de  acesso  de  objetos  do  sistema 
+ 
+ 
+arquivos através de sua data de modificação, tamanho, etc através do uso de opções.   
+FIND 
+Este  comando  permite  procurar  por  arquivos/diretórios  no  disco.  Ele  pode  procurar 
+ 
+ 
+ 
+MV 
+Este comando move (ou renomeia) arquivos.  
+ 
+ 
+usado para cópias de arquivos especiais ou dispositivos do sistema.  
+TAR 
+Este  comando  é  utilizado  para  juntar  vários  arquivos  em  um  só.  O  tar  também  é  muito 
+ 
+ 
+ 
+CAT 
+O comando cat, do sistema operacional, Unix é usado para unir, criar e exibir arquivos.  
+ 
+                        
+PWD                  diretório atual. 
+Este  comando  é  extremamente  simples –  ele  apenas  mostra  o  nome  e  o  caminho  do 
+ 
+ 
+ 
+MKDIR 
+Este comando é utilizado para criar um diretório no sistema. 
+tenham nomes diferentes. 
+ 
+podem residir em sistemas de arquivo diferentes, ou até no mesmo diretório desde que 
+CP 
+Esse comando é utilizado para copiar arquivos. O arquivo de origem e o destino da cópia 
+ 
+ 
+ 
+RM  
+Este comando remove arquivos. É uma forma curta de se referir a remove (remover). 
+ 
+ 
+pode ser feita de forma sequencial ou pode ser feita de forma aleatória. 
+CD 
+Este comando permite ao usuário mudar o diretório de trabalho. A mudança de diretório 
+ 
+ 
+ 
+LS 
+Trata-se de um comando que exibe o conteúdo de diretórios (ls = list source).  
+COMANDO                                                                                  DESCRIÇÃO 
+ 
+ 
+TIPO DE OBJETOGRUPO - EXECUÇÃO 
+GRUPO - ESCRITA 
+GRUPO - LEITURA 
+ 
+DONO - LEITURA
+-  rwx rwx rwx OUTROS  -  EXECUÇÃO
+DONO - ESCRITA 
+OUTROS    -    ESCRITA
+DONO - EXECUÇÃO                                                                                                                                                                                     OUTROS - LEITURA 
+ 
+Aula 18
+Diego Carvalho
+----------------Page (7) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+9
+ 
+Colocar o texto que foi apagado na posição atual do cursor. 
+CTRL+Y 
+ 
+Apagar a última palavra. 
+CTRL+W 
+ 
+Apagar o que estiver à esquerda do cursor. 
+CTRL+U 
+ 
+Visualizar o último comando 
+CTRL+P 
+ 
+Limpar a tela (semelhante ao comando clear). 
+CTRL+L 
+ 
+Apagar o que estiver à direita do cursor. 
+CTRL+K 
+ 
+Mover o cursor para o fim da linha de comandos. 
+CTRL+E 
+ 
+Logout do sistema (semelhante ao comando logout ou exit). 
+CTRL+D 
+ 
+Cancelar a execução de algum processo rodando em primeiro plano. 
+CTRL+C 
+ 
+Mover o cursor para o início da linha de comandos. 
+CTRL+A 
+SHELL 
+DESCRIÇÃO 
+ATALHOS DE 
+ 
+ 
+Pula para a próxima ocorrência da palavra que estiver pesquisando, no Linux. 
+F3 
+ 
+Renomeia um arquivo ou diretório. 
+F2 
+BACKSPACE 
+Finaliza a interface gráfica (Servidor X).  
+CTRL+ALT+ 
+ 
+Reiniciar o computador. 
+CTRL+ALT+DEL 
+ 
+Bloquear o computador na tela de login.  
+CTRL+ALT+L 
+ 
+Abre o terminal em modo gráfico. 
+CTRL+ALT+T 
+ 
+Abre o terminal for a do ambiente gráfico  – apenas em modo texto. 
+CTRL+ALT+F5 
+ 
+Alterna o foco entre os aplicativos abertos e em execução de forma concorrente.  
+ALT+TAB 
+ 
+Atalho utilizado para exibir a janela Executar Comando.  
+ALT+F2 
+ 
+Permite fechar uma caixa de diálogo, página da internet ou item utilizado no momento.  
+ALT+F4 
+GENÉRICOS 
+DESCRIÇÃO 
+ATALHOS 
+ 
+programa). 
+ 
+parâmetros,  o  kill  enviará  um  sinal  de  término  ao  processo  sendo  executado  (fechará  o 
+KILL 
+Este comando permite enviar um sinal a um processo em execução. Caso seja usado sem 
+ 
+ 
+padrão. 
+GREP 
+Realiza buscas no conteúdo dos arquivos (ou input) procurando linhas que respeitem um 
+Aula 18
+Diego Carvalho
+----------------Page (8) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+10
+ 
+       
+PARA MAIS DICAS:           WWW.INSTAGRAM.COM/PROFESSORDIEGOCARVALHO 
+ 
+ 
+Para execução de um processo rodando em primeiro plano.  
+CTRL+Z 
+Aula 18
+Diego Carvalho
+----------------Page (9) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+11
+ 
+ 
+ 
+ 
+ 
+chmod          e diretórios) – chmod vem de change mode.  
+Trata-se do comando que permite alterar permissões de acesso de objetos do sistema (arquivos 
+ 
+pwd            atual. 
+Este  comando  é extremamente  simples –  ele apenas  mostra  o  nome e o  caminho  do  diretório 
+ 
+mkdir            
+Este comando é utilizado para criar um diretório no sistema.  
+diferentes. 
+cp               residir em sistemas de arquivo diferentes, ou até no mesmo diretório desde que tenham nomes 
+Esse comando é utilizado para copiar arquivos. O arquivo de origem e o destino da cópia podem 
+ 
+rm               
+Este comando remove arquivos. É uma forma curta de se referir a remove (remover).  
+ 
+cd               ser feita de forma sequencial ou pode ser feita de forma aleatória.  
+Este comando permite ao usuário mudar o diretório de trabalho. A mudança de diretório pode ==2bbd1a==
+ 
+ls                
+Trata-se de um comando que exibe o conteúdo de diretórios (ls = list source).  
+COMANDO                                                                                  DESCRIÇÃO 
+ 
+dentro do assunto?”  
+mais chances de ser cobrado pela banca, conforme análise realizada no tópico “O que é mais cobrado 
+Dentro do assunto  Linux, o tópico  Principais Comandos  é o ponto que acreditamos ser o que possui 
+como a experiência do professor. 
+em prova, considerando o histórico de questões  da  banca em provas de  nível semelhante  à nossa,  bem 
+A ideia desta seção é apresentar os pontos do conteúdo que mais possuem chances de serem cobrados 
+POSTA    STRATÉGICA
+A           E                    
+ 
+                                                                                                                                                                                                                                
+Aula 18
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (10) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+12
+repetia  em  todas  as  agências.  Percebendo  isso  como  um  sinal  de  que  havia  uma  demanda 
+computador servidor do banco, que r odava o Linux SUSE. Descobriu, depois, que o mesmo se 
+tocava  no  celular  do  empregado,  e  que,  nesse  momento,  ele  executava  um  programa  no 
+banco  percebeu,  durante  sua  conversa  com  um  bancário,  que  a  cada  15  minutos,  um  alarme 
+2.  (CESGRANRIO  /  Banco  do  Brasil  –  2021)  Ao  visitar  uma  agência,  um  funcionário  de  TI  de  um 
+ 
+Gabarito: Letra B 
+ 
+escolha para garantir a compatibilidade total com sistemas  Linux. 
+para leitura de NTFS, a gravação pode ser mais problemática e menos confiável. Logo, não é a melhor 
+e) Errado. O NTFS é o sistema de arquivos padrão do Windows e embora o Linux tenha algum suporte 
+ 
+suportado pelo Windows ou sistemas Linux modernos. Portanto, não é a escolha ideal.  
+d) Errado. O HPFS é um sistema de arquivos antigo usado principalmente pelo OS/2 e não é amplamente 
+ 
+com ambos os sistemas. 
+pelo Windows sem software adicional. Portanto, não é a melhor escolha para garantir a compatibilidade 
+(c) Errado. O Ext4 é um sistema de arquivos amplamente usado em sistemas Linux, mas não é suportado 
+ 
+os sistemas. É uma escolha comum para garantir compatibilidade.  
+tornando-o uma escolha adequada para a formatação de um pendrive que precisa ser usado em ambos 
+(b)  Correto.  O  FAT32  é  amplamente  suportado  tanto  pelo  Windows  10  quanto  pelos  sistemas  Linux, 
+ 
+entre Windows 10 e Linux SUSE SLES 15 SP2.  
+amplamente suportado pelo Windows. Portanto, não é a escolha ideal para garantir a compatibilidade 
+(a) Errado. O BtrFS é um sistema de arquivos moderno usado principalmente em sistemas Linux, e não é 
+ 
+Comentários: 
+ 
+e) NTFS 
+d) HPFS 
+c) Ext4 
+b) FAT32 
+a) BtrFS 
+ 
+formatado no sistema de arquivos do tipo:  
+Linux SUSE SLES 15 SP2 para aquele que utiliza o Windows 10. Nesse caso, o pendrive deve ser 
+caminho  contrário  possa  ser  feito,  ou  seja,  transferir  arquivos  desse  computador  que  utiliza 
+sistema  operacional  Linux  SUSE  SLES  15  SP2.  Tal  formatação  deve  ser  feita  de  modo  que  o 
+10 precisa formatar um pendrive para transferir arquivos desse computador para um outro, com 
+1.  (CESGRANRIO / BB – 2023) O usuário de um computador com sistema operacional MS Windows 
+faça uma boa revisão global do assunto a partir de, relativamente, poucas questões. 
+A ideia, aqui, não é que você fixe o conteúdo por meio de uma bateria extensa de questões, mas que você 
+prova e que, em conjunto, abordam os principais pontos do assunto. 
+estrategicamente: são questões com nível de dificuldade semelhante ao que você deve esperar para a sua 
+Nesta   seção,   apresentamos   e   comentamos   uma   amostra   de   questões   objetivas   selecionadas 
+UESTÕES          STRATÉGICAS
+Q                   E                            
+Aula 18
+Diego Carvalho
+----------------Page (11) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+13
+Gabarito: Letra E 
+ 
+que são visíveis ao usuário.  
+'*' irá pesquisar recursivamente todos os arquivos e pastas a partir do diretório raiz ("/"), listando aqueles 
+comando lista tanto arquivos quanto pastas, não apenas arquivos; (e) Correto. O comando find /     -name 
+se  limita  ao  diretório  raiz;  ele  busca  em  toda  a  estrutura  de  diretórios  a  partir  da  raiz;  (d)  Errado.  Este 
+pastas; ele apenas lista os arquivos e pastas; (c) Err  ado. O comando vai listar arquivos e pastas, mas não 
+mas  para  pesquisar  arquivos  e  pastas;  (b)  Errado.  Este  comando  não  lista  os  atributos  dos  arquivos  e 
+(a) Errado. O comando find /   -name '*' não é usado para encontrar um arquivo específico chamado "*", 
+ 
+Comentários: 
+ 
+e) recursivamente listar todas as pastas e arquivos visíveis ao usuário a partir do diretório raiz..   
+d) listar apenas os arquivos no diretório raiz.  
+c) listar apenas os arquivos e as pastas no diretório raiz.  
+b) listar os atributos dos arquivos e das pastas no diretório raiz, com exceção dos nomes dos arquivos. 
+a) encontrar o arquivo * no diretório raiz.  
+ 
+Esse comando irá: 
+ 
+find / -name '*' 
+ 
+3.  (CESGRANRIO / BASA – 2018) Considere o seguinte comando do sistema operacional Linux:  
+ 
+Gabarito: Letra C 
+                                                                                                                                                                                                                                                                                                                      
+arquivo existente, e não para agendamento de tarefas. 
+(e) Errado. touch é usado para criar um novo arquivo vazio ou alterar os carimbos de data/hora de um 
+ 
+para agendar tarefas; 
+(d) Errado. timedatectl é usado para alterar e visualizar as configurações de data e hora do sistema, não 
+ 
+agendamento de tarefas; 
+(c)  Errado. jobs  é  um  comando  que  lista  os  trabalhos  atuais  em  um  terminal,  mas  não  é  usado  para 
+ 
+protocolos de rede, não está relacionado com agendamento de tarefas; ==2bbd1a==
+(b) Errado. curl é uma ferramenta usada para transferir dados de ou para um servidor, principalmente via 
+ 
+exemplo, a cada 15 minutos automaticamente; 
+(a)  Correto. cron  é  usado  para  agendar  tarefas  para  serem  executadas  em  intervalos  regulares,  por 
+ 
+Comentários: 
+ 
+e) curl. 
+d) touch. 
+c) cron. 
+b) timedatectl. 
+a) jobs. 
+ 
+alcançar esse objetivo, esse funcionário utilizou a funcionalidade do comando: 
+processo,  fazendo  esse  programa  ser  executado  automaticamente  de  forma  periódica.    Para 
+interna de executar esse programa de tempos em tempos, o funcionário de TI resolveu mudar o 
+Aula 18
+Diego Carvalho
+----------------Page (12) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+14
+ 
+ 
+ 
+ 
+ 
+Gabarito: Letra A 
+ 
+Identificar – PID) é o ps. A partir dele, um processo pode ser interrompido por meio do kill.  
+O comando que permite listar processos em execução, inclusive do seu número de identificação (Process 
+ 
+Comentários: 
+ 
+e) pwd 
+d) set 
+c) du 
+b) ls 
+a) ps 
+ 
+deve ser utilizado para obter esse pid?  
+por meio do comando kill. Para isso, é necessário saber o pid desse processo. Qual comando 
+5.  (CESGRANRIO / PETROBRÁS  –  2011)  Nos sistemas Linux, um processo pode ser interrompido 
+ 
+Gabarito: Letra C 
+ 
+configurada de fábrica em menus prontos. Ele possui amb ientes gráficos também! 
+interface por linha de comando está restrita aos serviços de manutenção e restauração do equipamento, 
+Trata-se  do  Linux,  uma  vez  que  todo  esses  são  de  proprietários –  exceto  o  Android.  No  entanto,  sua 
+ 
+Comentários: 
+ 
+e) Android 
+d) Windows 
+c) Linux 
+b) iOS 
+a) Mac OS 
+ 
+e interface por linha de comando é o:  
+4.  (CESGRANRIO / BB – 2014) O sistema operacional cujas características são utilizar código aberto 
+ 
+Aula 18
+Diego Carvalho
+----------------Page (13) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+15
+ 
+40. O que faz o comando "top"? 
+39. O que faz o comando "ps"? 
+38. O que é o comando "grep"? 
+37. O que faz o comando "du"? 
+36. O que é o comando "df"? 
+35. O que é o processo de montagem no Linux? 
+34. O que é o GRUB? 
+33. O que é o LILO? 
+32. O que é o Dual Boot? 
+31. O que é o ambiente gráfico KDE? 
+30. O que é o ambiente gráfico Gnome? 
+29. O que faz o comando "chmod"? 
+28. O que é o sistema de arquivos ReiserFS? 
+27. O que é o comando "sudo"? 
+26. Quem é o usuário root? 
+25. O que são usuários comuns no Linux? 
+24. O que faz o comando "find"? 
+23. Qual a diferença entre CLI e GUI? 
+22. O que é o Shell no Linux? 
+21. O que faz o comando "cat"? 
+20. O que faz o comando "pwd"? 
+19. O que faz o comando "mkdir"? 
+18. O que faz o comando "mv"? 
+17. O que faz o comando "cp"? 
+16. O que faz o comando "rm"? 
+15. O que faz o comando "cd"? 
+14. O que faz o comando "ls"? 
+13. O que significa chmod no Linux? 
+12. O que são permissões de acesso no Linux? 
+11. O que é o sistema de arquivos EXT4? 
+10. O que é o sistema de arquivos EXT3? 
+9.  O que são distribuições Linux? 
+8.  O que significa dizer que o Linux é modular? 
+7.  O que é o conceito de software livre? 
+6.  O que é o Projeto GNU? 
+5.  Qual é a função da Free Software Foundation? 
+4.  O que é o kernel no Linux? 
+3.  O que é um sistema multitarefa? 
+2.  O que é um sistema multiusuário? 
+1.  O que é o sistema operacional Linux? 
+Perguntas 
+(e discursivas também). 
+bem como a memorização da matéria, e, consequentemente, facilitando a resolução de questões objetivas 
+perguntas  que  exigem  respostas  subjetivas,  estimulando  a  conexão  entre  diversos  pontos  do  conteúdo, 
+A ideia do  questionário  é  elevar o nível  da  compreensão  e da  retenção  do  assunto  estudado  a  partir  de 
+UESTIONÁRIO DE    EVISÃO E    PERFEIÇOAMENTO
+Q                           R               A                             
+ 
+                                                                                                                                                                                                                                
+Aula 18
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (14) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+16
+ 
+ 
+ 
+ 
+75. O que faz o comando "whoami"? 
+74. O que faz o comando "ln"? 
+73. O que é o diretório /usr? 
+72. O que é o diretório /opt? 
+71. O que é o diretório /boot? 
+70. O que é o diretório /tmp? 
+69. O que é o diretório /proc? 
+68. O que é o diretório /dev? 
+67. O que é o diretório /var? 
+66. O que é o diretório /sbin? 
+65. O que é o diretório /bin? 
+64. O que é o diretório /etc? 
+63. O que é o diretório /root? 
+62. O que é o diretório /home? 
+61. O que faz o comando "umount"? 
+60. O que faz o comando "mount"? 
+59. O que é o sistema de arquivos NTFS? 
+58. O que é o sistema de arquivos FAT32? 
+57. O que é um cliente no Linux? 
+56. O que é um servidor no Linux? 
+55. O que faz o comando "echo"? 
+54. O que é o cron no Linux? 
+53. O que faz o comando "wget"? 
+52. O que faz o comando "ssh"? 
+51. O que faz o comando "iptables"? 
+50. O que faz o comando "ifconfig"? 
+49. O que faz o comando "ping"? 
+48. O que faz o comando "scp"? 
+47. O que faz o comando "gzip"? 
+46. O que faz o comando "tar"? 
+45. O que é um ambiente gráfico no Linux? 
+44. O que faz o comando "apt-get"? 
+43. O que são pacotes no Linux? 
+42. O que faz o comando "passwd"? 
+41. O que faz o comando "kill"? 
+ 
+                                                                                                                                                                                                                                
+Aula 18
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (15) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+17
+ 
+10. O que é o sistema de arquivos EXT3? 
+características específicas. 
+São  sistemas  operacionais  completos  baseados  no  kernel  Linux,  como  Debian,  Ubuntu,  Fedora,  com 
+9.  O que são distribuições Linux? 
+são mais utilizados. 
+Significa que ele carrega apenas os módulos necessários, liberando memória quando esses módulos não 
+8.  O que significa dizer que o Linux é modular? 
+modificá-lo e redistribuí-lo. 
+São  programas  cujo  código-fonte  está  disponível  para  que  qualquer  pessoa  possa  usá-lo,  estudá-lo, 
+7.  O que é o conceito de software livre? 
+com Unix. 
+Iniciado pela Free Software Foundation, visa criar um sistema operacional livre e completo, compatível 
+6.  O que é o Projeto GNU? 
+modificação e distribuição. 
+Fundada por Richard Stallman, promove a criação e difusão de software livre, com código aberto para 
+5.  Qual é a função da Free Software Foundation? 
+processos. 
+É o núcleo do sistema operacional, responsável por gerenciar o hardware e coordenar a execução dos 
+4.  O que é o kernel no Linux? 
+memória. 
+==2bbd1a==
+Capacidade  de  executar  vários  programas  ao  mesmo  tempo,  dividindo  o  uso  do  processador  e  da 
+3.  O que é um sistema multitarefa? 
+recursos. 
+Permite  que  vários  usuários  utilizem  simultaneamente  um  mesmo  sistema,  gerenciando  o  uso  dos 
+2.  O que é um sistema multiusuário? 
+Unix. 
+É um sistema multitarefa, multiusuário e de código aberto, desenvolvido para ser uma alternativa livre ao 
+1.  O que é o sistema operacional Linux? 
+Perguntas com Respostas 
+ 
+                                                                                                                                                                                                                                
+Aula 18
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (16) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+18
+ 
+21. O que faz o comando "cat"? 
+arquivos. 
+Mostra  o  caminho  completo  do  diretório  atual,  útil  para  verificar  onde  o  usuário  está  no  sistema  de 
+20. O que faz o comando "pwd"? 
+Cria novos diretórios, permitindo a criação de hierarquias de pastas dentro do sistema de arquivos. 
+19. O que faz o comando "mkdir"? 
+Move ou renomeia arquivos e diretórios, removendo o original após a operação de cópia. 
+18. O que faz o comando "mv"? 
+subpastas. 
+Copia arquivos ou diretórios de um local para outro, podendo também copiar diretórios inteiros com suas 
+17. O que faz o comando "cp"? 
+recursiva. 
+Remove  arquivos  ou  diretórios,  podendo  ser  usado  com  opções  para  apagar  de  forma  forçada  ou 
+16. O que faz o comando "rm"? 
+Altera o diretório de trabalho atual, permitindo que o usuário navegue entre os diretórios do sistema. 
+15. O que faz o comando "cd"? 
+e tamanhos. 
+Lista os arquivos e diretórios em um diretório especificado, podendo mostrar detalhes como permissões 
+14. O que faz o comando "ls"? 
+ou modificar. 
+É o comando usado para modificar permissões de arquivos e diretórios, definindo quem pode acessar 
+13. O que significa chmod no Linux? 
+usuários e grupos. 
+São regras que determinam quem pode ler, gravar ou executar um arquivo ou diretório, com base em 
+12. O que são permissões de acesso no Linux? 
+volumes de dados. 
+Uma  evolução  do  EXT3,  oferece  melhor  compatibilidade,  desempenho  e  capacidade  para  grandes 
+11. O que é o sistema de arquivos EXT4? 
+e seguro. 
+É uma versão aprimorada do EXT2 com suporte a journaling, tornando o sistema de arquivos mais estável 
+ 
+                                                                                                                                                                                                                                
+Aula 18
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (17) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+19
+ 
+migração de usuários. 
+É  um  ambiente  gráfico  flexível,  personalizável  e  com  aparência  semelhante  ao  Windows,  facilitando  a 
+31. O que é o ambiente gráfico KDE? 
+usabilidade. 
+É  um  dos  ambientes  gráficos  mais  usados  no  Linux,  com  foco  em  simplicidade,  acessibilidade  e 
+30. O que é o ambiente gráfico Gnome? 
+conteúdo. 
+Altera  permissões  de  acesso  de  arquivos  e  diretórios,  definindo  quem  pode  ler,  gravar  ou  executar  o 
+29. O que faz o comando "chmod"? 
+quantidades de pequenos arquivos. 
+É um sistema de arquivos desenvolvido para alta performance, especialmente para manipular grandes 
+28. O que é o sistema de arquivos ReiserFS? 
+de superusuário. 
+Permite que usuários comuns executem tarefas administrativas temporariamente, utilizando permissões 
+27. O que é o comando "sudo"? 
+É o administrador do sistema com permissões totais, capaz de modificar qualquer aspecto do sistema. 
+26. Quem é o usuário root? 
+no sistema. 
+São contas de usuários que possuem permissões limitadas e não podem realizar tarefas administrativas 
+25. O que são usuários comuns no Linux? 
+modificação. 
+Busca  arquivos  ou  diretórios  no  sistema  com  base  em  critérios  como  nome,  tamanho  ou  data  de 
+24. O que faz o comando "find"? 
+e menus. 
+CLI (Interface de Linha de Comando) usa texto para interação; GUI (Interface Gráfica) usa ícones, janelas 
+23. Qual a diferença entre CLI e GUI? 
+diretamente. 
+É a interface de linha de comando usada para interagir com o sistema operacional, enviando comandos 
+22. O que é o Shell no Linux? 
+arquivos. 
+Concatena  e  exibe  o  conteúdo  de  arquivos  no  terminal,  podendo  também  ser  usado  para  criar  novos 
+ 
+                                                                                                                                                                                                                                
+Aula 18
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (18) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+20
+ 
+42. O que faz o comando "passwd"? 
+processo (PID). 
+Encerra  processos  em  execução  no  sistema,  forçando  sua  interrupção  com  base  no  identificador  do 
+41. O que faz o comando "kill"? 
+outros recursos. 
+Monitora  em  tempo  real  os  processos  em  execução  no  sistema,  mostrando  o  uso  de  CPU,  memória  e 
+40. O que faz o comando "top"? 
+processo. 
+Exibe uma lista dos processos em execução no sistema, mostrando o uso de recursos e detalhes de cada 
+39. O que faz o comando "ps"? 
+especificada. 
+Pesquisa  por  padrões  em  arquivos,  exibindo  linhas  que  correspondem  a  uma  expressão  regular 
+38. O que é o comando "grep"? 
+espaço. 
+Mostra o uso de espaço de diretórios e arquivos no sistema, útil para identificar o que está ocupando mais 
+37. O que faz o comando "du"? 
+usado. 
+Exibe o uso de espaço em disco de todas as partições montadas no sistema, mostrando o espaço livre e 
+36. O que é o comando "df"? 
+É o ato de associar um sistema de arquivos a um ponto de montagem, tornando-o acessível no sistema. 
+35. O que é o processo de montagem no Linux? 
+e suportar múltiplos sistemas. 
+É o gerenciador de inicialização mais moderno e poderoso, utilizado para carregar sistemas operacionais 
+34. O que é o GRUB? 
+no boot. 
+É um antigo gerenciador de inicialização usado no Linux, responsável por carregar o sistema operacional 
+33. O que é o LILO? 
+qual iniciar. 
+É  um  método  de  instalar  dois  sistemas  operacionais  em  um  mesmo  computador,  permitindo  escolher 
+32. O que é o Dual Boot? 
+ 
+                                                                                                                                                                                                                                
+Aula 18
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (19) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+21
+ 
+53. O que faz o comando "wget"? 
+Permite acessar e controlar remotamente outro computador, usando uma conexão segura criptografada. 
+52. O que faz o comando "ssh"? 
+Gerencia regras de firewall no Linux, controlando o tráfego de entrada e saída da rede. 
+51. O que faz o comando "iptables"? 
+status da conexão. 
+Configura e exibe informações sobre as interfaces de rede do sistema, como IP, máscara de sub   -rede e 
+50. O que faz o comando "ifconfig"? 
+medir o tempo de resposta. 
+Verifica  a conectividade  de rede entre o computador e outro dispositivo, enviando pacotes ICMP para 
+49. O que faz o comando "ping"? 
+com segurança. 
+Copia arquivos entre diferentes computadores através da rede, usando o protocolo SSH para transferir 
+48. O que faz o comando "scp"? 
+Compacta arquivos, reduzindo seu tamanho, ou descompacta arquivos no formato gzip. 
+47. O que faz o comando "gzip"? 
+Compacta ou descompacta arquivos em formato tar, permitindo juntar múltiplos arquivos em um único. 
+46. O que faz o comando "tar"? 
+como Gnome e KDE. 
+É a interface visual que permite interação com o sistema operacional através de ícones, janelas e menus, 
+45. O que é um ambiente gráfico no Linux? 
+facilmente. 
+Gerencia  pacotes  no  Debian  e  suas  derivações,  permitindo  instalar,  atualizar  ou  remover  software 
+44. O que faz o comando "apt-get"? 
+atualizadas no sistema. 
+São coleções de software distribuídas de forma  empacotada, que podem ser instaladas, removidas ou 
+43. O que são pacotes no Linux? 
+sua senha. 
+Altera a senha de um usuário no Linux, permitindo que o administrador ou o próprio usuário modifiquem 
+ 
+                                                                                                                                                                                                                                
+Aula 18
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (20) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+22
+ 
+É o diretório que contém os arquivos de configuração do sistema e de programas instalados no Linux.  
+64. O que é o diretório /etc? 
+É o diretório pessoal do usuário root, o administrador do sistema, diferente do diretório raiz ("/"). 
+63. O que é o diretório /root? 
+Linux. 
+É o diretório onde ficam armazenados os arquivos e configurações pessoais de cada usuário no sistema 
+62. O que é o diretório /home? 
+Desmonta dispositivos de armazenamento ou sistemas de arquivos externos, liberando-os do sistema. 
+61. O que faz o comando "umount"? 
+acessíveis. 
+Conecta  dispositivos  de  armazenamento  ou  sistemas  de  arquivos  externos  ao  sistema,  tornando-os 
+60. O que faz o comando "mount"? 
+detalhadas. 
+É um sistema de arquivos avançado do Windows, com suporte a compressão, criptografia e permissões 
+59. O que é o sistema de arquivos NTFS? 
+arquivo e partição. 
+É  um  sistema  de  arquivos  compatível  com  diversas  plataformas,  mas  com  limitações  de  tamanho  de 
+58. O que é o sistema de arquivos FAT32? 
+É um dispositivo ou programa que acessa e utiliza serviços fornecidos por um servidor na rede. 
+57. O que é um cliente no Linux? 
+dispositivos. 
+É um sistema configurado para fornecer serviços de rede, como web, email ou banco de dados, a outros 
+56. O que é um servidor no Linux? 
+Imprime uma linha de texto no terminal ou envia a saída de um comando para outro lugar, como arquivos. 
+55. O que faz o comando "echo"? 
+programados. 
+É   um   agendador   de   tarefas   que   executa   comandos   ou   scripts   automaticamente   em   horários 
+54. O que é o cron no Linux? 
+Faz o download de arquivos da internet via linha de comando, suportando HTTP, HTTPS e FTP. 
+ 
+                                                                                                                                                                                                                                
+Aula 18
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (21) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+23
+ 
+Mostra o nome de usuário que está logado no sistema, útil para identificar a conta em uso no terminal. 
+75. O que faz o comando "whoami"? 
+Cria links simbólicos ou físicos entre arquivos e diretórios, permitindo acessá-los por diferentes caminhos. 
+74. O que faz o comando "ln"? 
+essenciais ao sistema. 
+Armazena  a  maioria  dos  programas  e  utilitários  de  sistema,  incluindo  bibliotecas  e  executáveis  não 
+73. O que é o diretório /usr? 
+proprietários. 
+É usado para instalar software adicional que não faz parte do sistema padrão, como pacotes de software 
+72. O que é o diretório /opt? 
+boot. 
+Contém os arquivos necessários para a  inicialização do sistema, incluindo o kernel e o gerenciador de 
+71. O que é o diretório /boot? 
+reinicialização. 
+Armazena  arquivos  temporários  criados  por  programas,  sendo  esvaziado  periodicamente  ou  a  cada 
+70. O que é o diretório /tmp? 
+administração. 
+Contém  informações  sobre  processos  em  execução  e  sobre  o  sistema,  útil  para  monitoramento  e 
+69. O que é o diretório /proc? 
+interfaces de rede. 
+Contém arquivos especiais que representam dispositivos de hardware no sistema, como discos rígidos e 
+68. O que é o diretório /dev? 
+Armazena dados variáveis, como logs do sistema, arquivos temporários e cache de programas no Linux. 
+67. O que é o diretório /var? 
+do sistema. 
+Contém comandos essenciais utilizados pelo administrador (root) para tarefas críticas de administração 
+66. O que é o diretório /sbin? 
+de manutenção. 
+Contém comandos essenciais e binários usados pelos usuários no sistema, disponíveis mesmo no modo 
+65. O que é o diretório /bin? 
+ 
+                                                                                                                                                                                                                                
+Aula 18
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (22) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+24
+ 
+ 
+ 
+ 
+                                                                                                                                                                                                                                
+Aula 18
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (23) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+25
+a) encontrar o arquivo * no diretório raiz.  
+ 
+Esse comando irá: 
+ 
+find / -name '*' 
+ 
+4.  (CESGRANRIO / BASA – 2018) Considere o seguinte comando do sistema operacional Linux:  
+ 
+e) curl. 
+d) touch. 
+c) cron. 
+b) timedatectl. 
+a) jobs. 
+ 
+alcançar esse objetivo, esse funcionário utilizou a funcionalidade do comando:  
+processo,  fazendo  esse  programa  ser  executado  automaticamente  de  forma  periódica.    Para 
+interna de executar esse programa de tempos em tempos, o funcionário de TI resolveu mudar o 
+repetia  em  todas  as  agências.  Percebendo  isso  como  um  sinal  de  que  havia  uma  demanda 
+computador servidor do banco, que  rodava o Linux SUSE. Descobriu, depois, que o mesmo se 
+tocava  no  celular  do  empregado,  e  que,  nesse  momento,  ele  executava  um  programa  no 
+banco  percebeu,  durante  sua  conversa  com  um  bancário,  que  a  cada  15  minutos,  um  alarme 
+3.  (CESGRANRIO  /  Banco  do  Brasil  –  2021)  Ao  visitar  uma  agência,  um  funcionário  de  TI  de  um 
+ 
+e) NTFS 
+d) HPFS 
+c) Ext4 
+b) FAT32 
+a) BtrFS 
+ 
+formatado no sistema de arquivos do tipo:  
+Linux SUSE SLES 15 SP2 para aquele que utiliza o Windows 10. Nesse caso, o pendrive deve ser 
+caminho  contrário  possa  ser  feito,  ou  seja,  transferir  arquivos  desse  computador  que  utiliza 
+sistema  operacional  Linux  SUSE  SLES  15  SP2.  Tal  formatação  deve  ser  feita  de  modo  que  o 
+10 precisa formatar um pendrive para transferir arquivos desse computador para um outro, com 
+2.  (CESGRANRIO / BB – 2023) O usuário de um computador com sistema operacional MS Windows 
+ 
+e) NTFS 
+d) HPFS 
+c) Ext4 
+b) FAT32 
+a) BtrFS 
+ 
+formatado no sistema de arquivos do tipo:  
+Linux SUSE SLES 15 SP2 para aquele que utiliza o Windows 10. Nesse caso, o pendrive deve ser 
+caminho  contrário  possa  ser  feito,  ou  seja,  transferir  arquivos  desse  computador  que  utiliza 
+sistema  operacional  Linux  SUSE  SLES  15  SP2.  Tal  formatação  deve  ser  feita  de  modo  que  o 
+10 precisa formatar um pendrive para transferir arquivos desse computador para um outro, com 
+1.  (CESGRANRIO / BB – 2023) O usuário de um computador com sistema operacional MS Windows 
+ 
+ISTA DE          UESTÕES          STRATÉGICAS
+L                Q                   E                            
+Aula 18
+Diego Carvalho
+----------------Page (24) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+26
+ 
+ 
+ 
+ 
+e) pwd 
+d) set 
+c) du 
+b) ls 
+a) ps 
+ 
+deve ser utilizado para obter esse pid?          ==2bbd1a==
+por meio do comando kill. Para isso, é necessário saber o pid desse processo. Qual comando 
+6.  (CESGRANRIO / PETROBRÁS  –  2011) Nos sistemas Linux, um processo pode ser interrompido 
+ 
+e) Android 
+d) Windows 
+c) Linux 
+b) iOS 
+a) Mac OS 
+ 
+e interface por linha de comando é o:  
+5.  (CESGRANRIO / BB – 2014) O sistema operacional cujas características são utilizar código aberto 
+ 
+e) recursivamente listar todas as pastas e arquivos visíveis ao usuário a partir do diretório raiz.. 
+d) listar apenas os arquivos no diretório raiz. 
+c) listar apenas os arquivos e as pastas no diretório raiz. 
+b) listar os atributos dos arquivos e das pastas no diretório raiz, com exceção dos nomes dos arquivos. 
+Aula 18
+Diego Carvalho
+----------------Page (25) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+27
+ 
+Aula 18
+Diego Carvalho
+----------------Page (26) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+28
+==2bbd1a==
+ 
+6.    LETRA A 
+5.    LETRA C 
+4.    LETRA E 
+3.    LETRA C 
+2.    LETRA B 
+1.    LETRA B 
+ 
+ABARITO
+G                   
+Aula 18
+Diego Carvalho
+----------------Page (27) Break----------------
+17771166784 - Danielle Roger
+www.estrategiaconcursos.com.br
+30
+Banco do Brasil (Escriturário - Agente Comercial) Passo Estratégico de Noções de Informática 
+29
+ 
+==2bbd1a==
+https://www.kernel.org/doc/. Acesso em: 24 set. 2024. 
+1.   THE    LINUX    FOUNDATION.    Linux    Documentation:    Official    Linux    Support.    Disponível    em: 
+EFERÊNCIAS    IBLIOGRÁFICAS
+R                    B                        
+ 
+                                                                                                                                                                                                                                
+Aula 18
+Diego Carvalho
+Aula 00 
+. Túlio Lages 
+----------------Page (28) Break----------------
+
+----------------Page (29) Break----------------

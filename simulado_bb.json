@@ -1,0 +1,119 @@
+{
+  "id": "bb-simulado-estrategia-70",
+  "titulo": "Simulado Completo - Banco do Brasil (Elite Banker)",
+  "duracao_minutos": 300,
+  "data_json": {
+    "disciplinas": [
+      {
+        "nome": "Língua Portuguesa",
+        "questoes": [
+          { "id": "port_01", "texto": "Considere o trecho a seguir: 'Embora a digitalização bancária traga inúmeros benefícios aos correntistas, como a agilidade e a disponibilidade 24 horas, há um desafio latente que as instituições não podem ignorar: a exclusão digital de parcelas mais vulneráveis da população.'\n\nDe acordo com a norma-padrão e o sentido do texto, a conjunção 'Embora' estabelece, entre as orações, uma relação de:", "alternativas": { "A": "Causa, visto que a digitalização gerou a exclusão digital.", "B": "Condição, pois apenas se houver digitalização haverá exclusão.", "C": "Concessão, indicando um contraste que não impede o fato principal.", "D": "Conclusão, resumindo os benefícios trazidos pela agilidade.", "E": "Proporção, pois quanto mais digitalização, maior a exclusão." }, "respostaCorreta": "C" },
+          { "id": "port_02", "texto": "Assinale a alternativa em que o uso do sinal indicativo de crase atende rigorosamente às exigências da norma-padrão da Língua Portuguesa:", "alternativas": { "A": "O cliente dirigiu-se à uma agência próxima para atualizar seu cadastro.", "B": "As novas taxas de juros aplicam-se à qualquer operação de crédito.", "C": "O gerente informou à diretoria sobre a falha no aplicativo móvel.", "D": "O pagamento do empréstimo foi realizado à prazo, sem acréscimos.", "E": "Ele estava disposto à colaborar com as investigações de fraude." }, "respostaCorreta": "C" },
+          { "id": "port_03", "texto": "A regência verbal é uma das exigências recorrentes na redação corporativa. Qual das frases abaixo está CORRETA quanto à regência do verbo assistir?", "alternativas": { "A": "O técnico de TI assistiu o sistema durante toda a madrugada.", "B": "Aos correntistas, assiste o direito de contestar cobranças indevidas.", "C": "O director assistiu o treinamento de segurança da informação.", "D": "O banco assistiu aos novos funcionários com um pacote de benefícios.", "E": "Assistimos um aumento considerável nas fraudes eletrônicas neste ano." }, "respostaCorreta": "B" },
+          { "id": "port_04", "texto": "Na elaboração de relatórios, a concordância verbal deve ser impecável. Assinale a alternativa que apresenta erro de concordância:", "alternativas": { "A": "Fazem três meses que o banco atualizou a política de senhas.", "B": "Havia vários clientes aguardando atendimento na fila do caixa.", "C": "Existem novos protocolos de segurança que devem ser seguidos.", "D": "Devem ocorrer mudanças significativas no quadro de diretores.", "E": "Trata-se de questões sigilosas que envolvem grandes corporações." }, "respostaCorreta": "A" },
+          { "id": "port_05", "texto": "Em relação à concordância nominal, a frase inteiramente correta é:", "alternativas": { "A": "Seguem anexo aos e-mails as planilhas financeiras do último trimestre.", "B": "A porta giratória da agência principal estava meio travada.", "C": "Elas mesmas enviaram a documentação para o setor de compliance.", "D": "É necessária muita cautela durante a aprovação de limites altos.", "E": "Havia bastantes reclamações sobre a lentidão no atendimento." }, "respostaCorreta": "C" },
+          { "id": "port_06", "texto": "Sobre o emprego da vírgula, marque a alternativa que justifica adequadamente a correção gramatical:", "alternativas": { "A": "O banco central, interveio no mercado para estabilizar o câmbio.", "B": "Os clientes, que possuem contas digitais, não pagam tarifa de manutenção.", "C": "Sempre que há falha sistêmica, o suporte técnico é acionado imediatamente.", "D": "Foi solicitado, ao novo gerente uma postura mais proativa com os clientes.", "E": "O Banco do Brasil, oferece crédito rural aos produtores parceiros." }, "respostaCorreta": "C" },
+          { "id": "port_07", "texto": "No que diz respeito à colocação pronominal, assinale a opção que desrespeita as regras cultas da Língua Portuguesa:", "alternativas": { "A": "Nunca se viu um avanço tecnológico tão rápido no setor bancário.", "B": "Me disseram que a agência fecharia mais cedo hoje.", "C": "Informar-lhe-emos sobre a liberação do seu limite em breve.", "D": "Espera-se que as taxas de juros sejam reduzidas na próxima reunião.", "E": "O cliente que nos procurou ontem já resolveu sua pendência." }, "respostaCorreta": "B" },
+          { "id": "port_08", "texto": "De acordo com o Novo Acordo Ortográfico da Língua Portuguesa, qual palavra está grafada CORRETAMENTE?", "alternativas": { "A": "Anti-fraude.", "B": "Micro-ondas.", "C": "Auto-atendimento.", "D": "Infra-estrutura.", "E": "Super-população." }, "respostaCorreta": "B" },
+          { "id": "port_09", "texto": "Leia a frase: 'O bancário deferiu o pedido de empréstimo, pois o cliente provou ser idôneo.'\nNa frase acima, a palavra 'deferiu' significa:", "alternativas": { "A": "Recusou ou negou o pedido.", "B": "Aprovou ou concedeu o pedido.", "C": "Analisou cuidadosamente o pedido.", "D": "Diferenciou o pedido dos demais.", "E": "Encaminhou o pedido para análise superior." }, "respostaCorreta": "B" },
+          { "id": "port_10", "texto": "A voz passiva sintética está corretamente empregada, com a devida concordância, em:", "alternativas": { "A": "Vende-se imóveis recuperados de leilão.", "B": "Precisa-se de novos analistas de sistemas corporativos.", "C": "Alugou-se, naquele bairro nobre, duas novas salas comerciais.", "D": "Anunciaram-se a nova taxa Selic no final da tarde.", "E": "Assiste-se a excelentes cenários econômicos neste semestre." }, "respostaCorreta": "B" }
+        ]
+      },
+      {
+        "nome": "Língua Inglesa",
+        "questoes": [
+          { "id": "ing_01", "texto": "According to the text, what is the main consequence of the shift to digital platforms?", "alternativas": { "A": "Customers are forced to visit brick-and-mortar branches more often.", "B": "Banks are no longer investing in physical security.", "C": "Financial institutions are now exposed to new vulnerabilities.", "D": "Mobile applications have become entirely obsolete.", "E": "Cybersecurity measures are becoming less important for clients." }, "respostaCorreta": "C" },
+          { "id": "ing_02", "texto": "In the sentence 'Although this shift offers unprecedented convenience...', the word 'Although' conveys an idea of:", "alternativas": { "A": "Addition.", "B": "Concession.", "C": "Result.", "D": "Condition.", "E": "Time." }, "respostaCorreta": "B" },
+          { "id": "ing_03", "texto": "Based on the text, the expression 'brick-and-mortar branches' refers to:", "alternativas": { "A": "Digital applications developed by the IT department.", "B": "Physical bank locations where customers can go in person.", "C": "Cybersecurity protocols that protect sensitive data.", "D": "Virtual currencies used in modern financial transactions.", "E": "The main servers located inside the bank's headquarters." }, "respostaCorreta": "B" },
+          { "id": "ing_04", "texto": "In the fragment '...it also exposes financial institutions...', the pronoun 'it' refers to:", "alternativas": { "A": "The banking sector.", "B": "Unprecedented convenience.", "C": "This shift to mobile applications and digital platforms.", "D": "Cybersecurity measures.", "E": "Clients' sensitive data." }, "respostaCorreta": "C" },
+          { "id": "ing_05", "texto": "Which of the following statements can be inferred from the text?", "alternativas": { "A": "Traditional branches will completely disappear in the next five years.", "B": "Banks do not care about the safety of their clients' data.", "C": "The convenience of digital banking comes with security trade-offs.", "D": "Customers prefer physical branches over mobile applications.", "E": "Cybersecurity investments are decreasing due to high costs." }, "respostaCorreta": "C" }
+        ]
+      },
+      {
+        "nome": "Matemática",
+        "questoes": [
+          { "id": "mat_01", "texto": "Um smartphone custava R$ 2.000,00. Aumento de 20% e depois 20% de desconto. Valor final?", "alternativas": { "A": "R$ 2.000,00", "B": "R$ 1.920,00", "C": "R$ 2.040,00", "D": "R$ 1.960,00", "E": "R$ 1.800,00" }, "respostaCorreta": "B" },
+          { "id": "mat_02", "texto": "4 servidores processam 100k transações em 5h. 6 servidores processam 150k em quanto tempo?", "alternativas": { "A": "4 horas", "B": "4h 30min", "C": "5 horas", "D": "6 horas", "E": "7h 30min" }, "respostaCorreta": "C" },
+          { "id": "mat_03", "texto": "R$ 180k divididos proporcionalmente a 2, 3 e 5 anos. Quanto o de 3 anos recebe?", "alternativas": { "A": "R$ 36k", "B": "R$ 45k", "C": "R$ 54k", "D": "R$ 60k", "E": "R$ 90k" }, "respostaCorreta": "C" },
+          { "id": "mat_04", "texto": "Média de 4 analistas é 30 anos. Entra um de 40 anos. Qual a nova média?", "alternativas": { "A": "31.5 anos", "B": "32 anos", "C": "33 anos", "D": "34 anos", "E": "35 anos" }, "respostaCorreta": "B" },
+          { "id": "mat_05", "texto": "Probabilidade de senha (1-100) ser múltiplo de 5 e 3 simultaneamente?", "alternativas": { "A": "5%", "B": "6%", "C": "8%", "D": "10%", "E": "15%" }, "respostaCorreta": "B" }
+        ]
+      },
+      {
+        "nome": "Atualidades do Mercado Financeiro",
+        "questoes": [
+          { "id": "atu_01", "texto": "Premissa central do Open Finance:", "alternativas": { "A": "Dados pertencem aos bancos.", "B": "Cliente é dono dos dados e autoriza compartilhamento.", "C": "Compartilhamento compulsório.", "D": "Fim das senhas.", "E": "Fintechs acessam sem autorização." }, "respostaCorreta": "B" },
+          { "id": "atu_02", "texto": "O Drex é uma CBDC, o que significa que:", "alternativas": { "A": "Varia como Bitcoin.", "B": "Minerado publicamente.", "C": "Representação digital da moeda oficial pelo BC.", "D": "Não serve para varejo.", "E": "Liquidação anônima." }, "respostaCorreta": "C" },
+          { "id": "atu_03", "texto": "Prática alinhada ao pilar 'S' (Social) do ESG:", "alternativas": { "A": "Redução de carbono.", "B": "Transparência no conselho.", "C": "Energia solar.", "D": "Políticas de diversidade e inclusão.", "E": "Anti-propina." }, "respostaCorreta": "D" },
+          { "id": "atu_04", "texto": "Sucesso das Fintechs no Brasil deve-se a:", "alternativas": { "A": "Monopólio.", "B": "Produtos desburocratizados e intuitivos.", "C": "Garantias físicas.", "D": "Agências físicas.", "E": "Foco em milionários." }, "respostaCorreta": "B" },
+          { "id": "atu_05", "texto": "Sobre inovações do Pix:", "alternativas": { "A": "Cobrado de PF.", "B": "Pix Saque e Troco permitem retirar espécie.", "C": "Fim de semana apenas.", "D": "Estorno automático.", "E": "Chave obrigatória para pagar." }, "respostaCorreta": "B" }
+        ]
+      },
+      {
+        "nome": "Matemática Financeira",
+        "questoes": [
+          { "id": "matfin_01", "texto": "Rendimento de 2% a.m. compostos. Taxa anual equivalente? (1.02^12 = 1.2682)", "alternativas": { "A": "24.00%", "B": "24.48%", "C": "26.00%", "D": "26.82%", "E": "28.12%" }, "respostaCorreta": "D" },
+          { "id": "matfin_02", "texto": "SAC R$ 300k, 100 meses, 1% a.m. Valor da 2ª prestação?", "alternativas": { "A": "R$ 6.000", "B": "R$ 5.970", "C": "R$ 5.940", "D": "R$ 3.000", "E": "R$ 2.970" }, "respostaCorreta": "B" },
+          { "id": "matfin_03", "texto": "Principal característica da Tabela Price comparada ao SAC:", "alternativas": { "A": "Juros constantes.", "B": "Amortização constante.", "C": "Prestações decrescentes.", "D": "Prestações iguais e amortização crescente.", "E": "Balão no final." }, "respostaCorreta": "D" },
+          { "id": "matfin_04", "texto": "R$ 10k a 5% a.a. compostos por 2 anos. Apenas juros?", "alternativas": { "A": "R$ 1.000", "B": "R$ 1.025", "C": "R$ 1.050", "D": "R$ 1.102,50", "E": "R$ 11.025" }, "respostaCorreta": "B" },
+          { "id": "matfin_05", "texto": "Antecipação de R$ 5k, 3 meses antes, 2% a.m. desconto comercial simples. Valor líquido?", "alternativas": { "A": "R$ 300", "B": "R$ 4.700", "C": "R$ 4.704", "D": "R$ 4.850", "E": "R$ 5.300" }, "respostaCorreta": "B" }
+        ]
+      },
+      {
+        "nome": "Conhecimentos Bancários",
+        "questoes": [
+          { "id": "cb_01", "texto": "Atribuição que NÃO é do CMN:", "alternativas": { "A": "Política monetária.", "B": "Meios de pagamento.", "C": "Emitir papel-moeda.", "D": "Disciplinar crédito.", "E": "Valor interno da moeda." }, "respostaCorreta": "C" },
+          { "id": "cb_02", "texto": "Compra/venda de títulos públicos pelo BC é:", "alternativas": { "A": "Compulsório.", "B": "Open Market.", "C": "Redesconto.", "D": "Controle de crédito.", "E": "Fixação cambial." }, "respostaCorreta": "B" },
+          { "id": "cb_03", "texto": "Jurisdição exclusiva da CVM:", "alternativas": { "A": "Crédito.", "B": "Câmbio.", "C": "Seguros.", "D": "Capitais.", "E": "Dívida primária." }, "respostaCorreta": "D" },
+          { "id": "cb_04", "texto": "NÃO tem cobertura do FGC:", "alternativas": { "A": "Poupança.", "B": "LCI.", "C": "LCA.", "D": "CDB.", "E": "Cotas de Fundos." }, "respostaCorreta": "E" },
+          { "id": "cb_05", "texto": "Fase da lavagem onde o dinheiro entra no sistema:", "alternativas": { "A": "Colocação.", "B": "Ocultação.", "C": "Integração.", "D": "Sonegação.", "E": "Evasão." }, "respostaCorreta": "A" },
+          { "id": "cb_06", "texto": "CDB é:", "alternativas": { "A": "Renda variável.", "B": "Título para captação a prazo.", "C": "Compulsório.", "D": "À vista.", "E": "Cota isenta." }, "respostaCorreta": "B" },
+          { "id": "cb_07", "texto": "PPE significa:", "alternativas": { "A": "Promotoras de Evasão.", "B": "Politicamente Expostas.", "C": "Passivos Pendentes.", "D": "Políticas Públicas.", "E": "Privadas de Exercício." }, "respostaCorreta": "B" },
+          { "id": "cb_08", "texto": "Autoriza funcionamento de câmbio:", "alternativas": { "A": "Receita.", "B": "Economia.", "C": "CAMEX.", "D": "BACEN.", "E": "CVM." }, "respostaCorreta": "D" },
+          { "id": "cb_09", "texto": "Rendimento poupança se Selic <= 8.5%:", "alternativas": { "A": "0.5% + TR.", "B": "70% Selic + TR.", "C": "100% Selic.", "D": "0.5% fixo.", "E": "100% CDI." }, "respostaCorreta": "B" },
+          { "id": "cb_10", "texto": "Prazo para comunicar COAF operação suspeita:", "alternativas": { "A": "Dia útil seguinte.", "B": "15 dias.", "C": "30 dias.", "D": "Imediato.", "E": "Final do ano." }, "respostaCorreta": "A" }
+        ]
+      },
+      {
+        "nome": "Informática",
+        "questoes": [
+          { "id": "info_01", "texto": "Malware que usa criptografia e pede resgate:", "alternativas": { "A": "Spyware.", "B": "Keylogger.", "C": "Ransomware.", "D": "Adware.", "E": "Worm." }, "respostaCorreta": "C" },
+          { "id": "info_02", "texto": "Modelo de nuvem com aplicação pronta (ex: Office 365):", "alternativas": { "A": "IaaS.", "B": "PaaS.", "C": "SaaS.", "D": "DaaS.", "E": "FaaS." }, "respostaCorreta": "C" },
+          { "id": "info_03", "texto": "Excel: somar se for 'Aprovado':", "alternativas": { "A": "SOMA.", "B": "SOMASE.", "C": "CONT.SE.", "D": "PROCV.", "E": "SE." }, "respostaCorreta": "B" },
+          { "id": "info_04", "texto": "Atalho 'Desfazer':", "alternativas": { "A": "Ctrl+Y.", "B": "Ctrl+Z.", "C": "Ctrl+X.", "D": "Ctrl+P.", "E": "Ctrl+S." }, "respostaCorreta": "B" },
+          { "id": "info_05", "texto": "Navegação anônima:", "alternativas": { "A": "Invisibilidade.", "B": "Bloqueia vírus.", "C": "Criptografia total.", "D": "Não salva histórico/cookies.", "E": "VPN nativa." }, "respostaCorreta": "D" },
+          { "id": "info_06", "texto": "HTTPS garante:", "alternativas": { "A": "HTTP.", "B": "FTP.", "C": "Criptografia.", "D": "SMTP.", "E": "Telnet." }, "respostaCorreta": "C" },
+          { "id": "info_07", "texto": "E-mail: destinatários ocultos:", "alternativas": { "A": "To.", "B": "Cc.", "C": "Cco.", "D": "Assunto.", "E": "Anexo." }, "respostaCorreta": "C" },
+          { "id": "info_08", "texto": "Ataque que induz revelar senhas:", "alternativas": { "A": "Backdoor.", "B": "Rootkit.", "C": "Phishing.", "D": "Defacement.", "E": "DDoS." }, "respostaCorreta": "C" },
+          { "id": "info_09", "texto": "Backup que copia alterados desde o último total:", "alternativas": { "A": "Diferencial.", "B": "Incremental.", "C": "Diário.", "D": "Cópia.", "E": "Total." }, "respostaCorreta": "A" },
+          { "id": "info_10", "texto": "Atalho Gerenciador de Tarefas:", "alternativas": { "A": "Alt+Del.", "B": "Win+E.", "C": "Ctrl+Shift+Esc.", "D": "Alt+F4.", "E": "Win+L." }, "respostaCorreta": "C" },
+          { "id": "info_11", "texto": "Software Livre (Linux):", "alternativas": { "A": "Gratuito sem suporte.", "B": "Código-fonte aberto.", "C": "Imune a vírus.", "D": "Sem updates.", "E": "Licença paga corporativa." }, "respostaCorreta": "B" },
+          { "id": "info_12", "texto": "Rede privada restrita funcionários:", "alternativas": { "A": "Extranet.", "B": "Dark Web.", "C": "Intranet.", "D": "WAN.", "E": "Deep Web." }, "respostaCorreta": "C" },
+          { "id": "info_13", "texto": "Referência absoluta Excel:", "alternativas": { "A": "#.", "B": "@.", "C": "%.", "D": "&.", "E": "$." }, "respostaCorreta": "E" },
+          { "id": "info_14", "texto": "Busca exata Google:", "alternativas": { "A": "[].", "B": "().", "C": "{}.", "D": "Aspas.", "E": "*." }, "respostaCorreta": "D" },
+          { "id": "info_15", "texto": "Baixa e-mail e remove do servidor:", "alternativas": { "A": "IMAP.", "B": "POP3.", "C": "SMTP.", "D": "HTTP.", "E": "FTP." }, "respostaCorreta": "B" }
+        ]
+      },
+      {
+        "nome": "Vendas e Negociação",
+        "questoes": [
+          { "id": "ven_01", "texto": "Serviço não pode ser tocado:", "alternativas": { "A": "Perecibilidade.", "B": "Inseparabilidade.", "C": "Intangibilidade.", "D": "Variabilidade.", "E": "Homogeneidade." }, "respostaCorreta": "C" },
+          { "id": "ven_02", "texto": "Vender seguro ao abrir conta:", "alternativas": { "A": "Up.", "B": "Cross-selling.", "C": "Inbound.", "D": "Guerrilha.", "E": "Segmentação." }, "respostaCorreta": "B" },
+          { "id": "ven_03", "texto": "Negociação com ganhos mútuos:", "alternativas": { "A": "Distributiva.", "B": "Acatadora.", "C": "Integrativa.", "D": "Evitativa.", "E": "Competitiva." }, "respostaCorreta": "C" },
+          { "id": "ven_04", "texto": "Condicionar empréstimo a seguro:", "alternativas": { "A": "Legal.", "B": "Cross.", "C": "Venda Casada.", "D": "PJ.", "E": "CMN." }, "respostaCorreta": "C" },
+          { "id": "ven_05", "texto": "Segmentação por renda:", "alternativas": { "A": "Geográfica.", "B": "Psicográfica.", "C": "Comportamental.", "D": "Demográfica.", "E": "Sociocultural." }, "respostaCorreta": "D" },
+          { "id": "ven_06", "texto": "Atendimento unificado em todos canais:", "alternativas": { "A": "Substituição.", "B": "Omnichannel.", "C": "Ouvidoria.", "D": "AI.", "E": "Separação." }, "respostaCorreta": "B" },
+          { "id": "ven_07", "texto": "NPS notas 9 e 10:", "alternativas": { "A": "Detratores.", "B": "Neutros.", "C": "Promotores.", "D": "Passivos.", "E": "Devedores." }, "respostaCorreta": "C" },
+          { "id": "ven_08", "texto": "Produção e consumo simultâneos em serviços:", "alternativas": { "A": "Perecível.", "B": "Incerteza.", "C": "Inseparabilidade.", "D": "Variação.", "E": "Vínculo." }, "respostaCorreta": "C" },
+          { "id": "ven_09", "texto": "Atendimento prioritário:", "alternativas": { "A": "Alta Renda.", "B": "Deficientes/Obesos.", "C": "Agendados.", "D": "Servidores.", "E": "Investidores." }, "respostaCorreta": "B" },
+          { "id": "ven_10", "texto": "Retenção com cartão:", "alternativas": { "A": "Isenção.", "B": "Juros.", "C": "Cashback/Relacionamento.", "D": "Consórcio.", "E": "Bloqueio." }, "respostaCorreta": "C" },
+          { "id": "ven_11", "texto": "Cliente irritado:", "alternativas": { "A": "Provar erro.", "B": "Escuta ativa.", "C": "Call center.", "D": "Contrato.", "E": "Ignorar." }, "respostaCorreta": "B" },
+          { "id": "ven_12", "texto": "Diversidade no Ética BB:", "alternativas": { "A": "Inegociável.", "B": "Recomendação.", "C": "Diretores.", "D": "Contratação.", "E": "Ricos." }, "respostaCorreta": "A" },
+          { "id": "ven_13", "texto": "Telemarketing receptivo:", "alternativas": { "A": "Ligação fria.", "B": "Cliente liga.", "C": "Robôs.", "D": "Cobrar.", "E": "PLD." }, "respostaCorreta": "B" },
+          { "id": "ven_14", "texto": "CRM serve para:", "alternativas": { "A": "Servidores.", "B": "Ponto.", "C": "Mapear histórico e personalizar.", "D": "Receita.", "E": "Trocar por IA." }, "respostaCorreta": "C" },
+          { "id": "ven_15", "texto": "Técnica bumerangue 'É muito caro':", "alternativas": { "A": "Realmente.", "B": "Não valoriza.", "C": "Qualidade.", "D": "É justamente por isso que você precisa para proteger o futuro.", "E": "Cancelar." }, "respostaCorreta": "D" }
+        ]
+      }
+    ]
+  }
+}

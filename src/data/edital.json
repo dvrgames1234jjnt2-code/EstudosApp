@@ -1,0 +1,60 @@
+{
+  "concurso": "Banco do Brasil S.A.",
+  "edital": "01 - 2022/001 BB",
+  "banca": "Fundação Cesgranrio",
+  "cargo": "Escriturário",
+  "nomes_relacionamento": ["Agente de Tecnologia", "Agente Comercial"],
+  "remuneracao_inicial": "R$ 3.622,23",
+  "jornada_trabalho": "30 horas semanais",
+  "requisito_basico": "Certificado de conclusão ou diploma de curso de nível médio expedido por instituição de ensino reconhecida pelo Ministério da Educação.",
+  "vantagens": [
+    "Participação nos lucros ou resultados",
+    "Vale-transporte",
+    "Auxílio-creche",
+    "Ajuda alimentação/refeição",
+    "Previdência complementar",
+    "Acesso à plano de saúde e odontológico básico",
+    "Programas de educação e capacitação",
+    "Possibilidade de ascensão profissional"
+  ],
+  "etapas": [
+    { "etapa": "1ª Etapa", "descricao": "Avaliação de Conhecimentos (provas objetivas)", "carater": "Eliminatório e Classificatório" },
+    { "etapa": "2ª Etapa", "descricao": "Prova de Redação", "carater": "Eliminatório" },
+    { "etapa": "3ª Etapa", "descricao": "Aferição da veracidade da autodeclaração prestada por candidatos(as) negros(as)", "carater": "Eliminatório" },
+    { "etapa": "4ª Etapa", "descricao": "Procedimentos Admissionais e Perícia Médica", "carater": "Eliminatório" }
+  ],
+  "conteudo_programatico": {
+    "conhecimentos_basicos": [
+      {
+        "materia": "Língua Portuguesa",
+        "topicos": ["Compreensão de textos", "Ortografia oficial", "Sintaxe", "Pontuação"]
+      },
+      {
+        "materia": "Língua Inglesa",
+        "topicos": ["Conhecimento de vocabulário fundamental", "Compreensão de textos"]
+      },
+      {
+        "materia": "Matemática",
+        "topicos": ["Números inteiros, racionais e reais", "Proporcionalidade", "Matemática Financeira básica"]
+      },
+      {
+        "materia": "Atualidades do Mercado Financeiro",
+        "topicos": ["Os bancos na Era Digital", "Internet banking", "Moedas digitais"]
+      }
+    ],
+    "conhecimentos_especificos_agente_tecnologia": [
+      {
+        "materia": "Probabilidade e Estatística",
+        "topicos": ["Noções de probabilidade", "Inferência estatística"]
+      },
+      {
+        "materia": "Conhecimentos Bancários",
+        "topicos": ["Sistema Financeiro Nacional", "Mercado de Câmbio"]
+      },
+      {
+        "materia": "Tecnologia da Informação",
+        "topicos": ["Lógica de programação", "Estrutura de dados", "Bancos de dados", "Sistemas Operacionais"]
+      }
+    ]
+  }
+}
