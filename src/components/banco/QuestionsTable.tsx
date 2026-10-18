@@ -52,6 +52,7 @@ export interface BancoQuestion {
   explicacao?: string;
   comentario?: string;
   "Comentário"?: string;
+  imagemEnunciado?: string;
 }
 
 interface UserAnswers {
