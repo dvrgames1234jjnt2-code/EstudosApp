@@ -44,6 +44,7 @@ export interface BancoQuestionComPath extends BancoQuestion {
   organizacao_path?: string;
   organizacao_nivel?: number;
   ID_Qconcursos?: string;
+  link?: string;
   Ano?: number;
 }
 
@@ -68,7 +69,7 @@ export function normalizarQuestao(row: any): BancoQuestionComPath {
     'Alternativa D': row['Alternativa D'] || row.alternativa_d || undefined,
     'Alternativa E': row['Alternativa E'] || row.alternativa_e || undefined,
     'Texto de apoio': row['Texto de apoio'] || row.texto_apoio || undefined,
-    perguntaProblema: row['Pergunta problema'] || row.pergunta_problema || row.perguntaProblema || undefined,
+    perguntaProblema: row['Pergunta problema'] !== undefined ? row['Pergunta problema'] : (row.pergunta_problema || row.perguntaProblema || undefined),
     respostaCorreta:  row.respostaCorreta || row.resposta_correta || row.Gabarito || row.gabarito || undefined,
     Gabarito:     row.Gabarito || row.gabarito || undefined,
     explicacao:   row['Comentário'] || row.Comentário || row.comentario || row.Comentario || row.explicacao || undefined,
@@ -80,6 +81,7 @@ export function normalizarQuestao(row: any): BancoQuestionComPath {
     organizacao_path:  row.organizacao_path  || undefined,
     organizacao_nivel: row.organizacao_nivel ?? undefined,
     ID_Qconcursos:     row.ID_Qconcursos     || undefined,
+    link:              row.link              || undefined,
     Ano:               row.Ano               ?? undefined,
     Duvida:            typeof row.Duvida === 'boolean' ? row.Duvida : undefined,
   };

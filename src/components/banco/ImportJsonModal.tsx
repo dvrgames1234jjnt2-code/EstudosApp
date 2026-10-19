@@ -27,6 +27,7 @@ interface QuestaoInput {
   Ordem?: number;
   Banca?: string;
   ID_Qconcursos?: string;
+  link?: string;
   Dificuldade?: string;
   Status?: string;
   Duvida?: boolean;
@@ -89,23 +90,45 @@ function avisoQuestao(q: QuestaoInput): string[] {
   return avisos;
 }
 
-/** Normaliza o JSON de entrada para o formato antigo (compatível com back) */
+/** Normaliza o JSON de entrada para o formato oficial */
 function normalizarInput(item: any): QuestaoInput {
+  const enunciado = (item.Enunciado || item.enunciado || item.texto || "").trim();
+
+  // Preserva o texto original de "Pergunta problema", sem resumir ou modificar
+  let perguntaProblema: string | undefined = undefined;
+  if (item["Pergunta problema"] !== undefined && item["Pergunta problema"] !== null) {
+    perguntaProblema = String(item["Pergunta problema"]);
+  } else if (item.pergunta_problema !== undefined && item.pergunta_problema !== null) {
+    perguntaProblema = String(item.pergunta_problema);
+  }
+
+  // Não duplicar o enunciado no campo Pergunta problema
+  if (perguntaProblema && perguntaProblema.trim() === enunciado) {
+    perguntaProblema = "";
+  }
+
+  // Campo link em minúsculas com URL completa (sem inventar URL)
+  let link: string | undefined = undefined;
+  if (item.link !== undefined && item.link !== null) {
+    link = String(item.link).trim();
+  }
+
   return {
     PROVA:         (item.PROVA || item.prova || "Importado").trim(),
-    Ano:           item.Ano    ? Number(item.Ano)    : undefined,
-    Ordem:         item.Ordem  ? Number(item.Ordem)  : undefined,
+    Ano:           item.Ano !== undefined && item.Ano !== null && item.Ano !== "" ? Number(item.Ano) : undefined,
+    Ordem:         item.Ordem !== undefined && item.Ordem !== null && item.Ordem !== "" ? Number(item.Ordem) : undefined,
     Banca:         item.Banca  || item.banca  || undefined,
     ID_Qconcursos: item.ID_Qconcursos ? String(item.ID_Qconcursos).trim() : undefined,
+    link,
     Dificuldade:   item.Dificuldade || item.dificuldade || undefined,
     Status:        item.Status  || item.status  || "Ativa",
     Duvida:        Boolean(item.Duvida ?? item.duvida ?? false),
     Caminho_Organizacao: Array.isArray(item.Caminho_Organizacao)
       ? item.Caminho_Organizacao.map((s: any) => String(s).trim()).filter(Boolean)
       : undefined,
-    "Texto de apoio":    item["Texto de apoio"]  || item.texto_apoio  || undefined,
-    Enunciado:           (item.Enunciado || item.enunciado || item.texto || "").trim(),
-    "Pergunta problema": item["Pergunta problema"] || item.pergunta_problema || undefined,
+    "Texto de apoio":    item["Texto de apoio"] !== undefined ? String(item["Texto de apoio"]) : (item.texto_apoio !== undefined ? String(item.texto_apoio) : undefined),
+    Enunciado:           enunciado,
+    "Pergunta problema": perguntaProblema,
     Imagens_Enunciado:   Array.isArray(item.Imagens_Enunciado)
       ? item.Imagens_Enunciado.filter(Boolean)
       : item.Imagem_Enunciado ? [item.Imagem_Enunciado] : [],
@@ -126,34 +149,41 @@ const SAMPLE_PROMPT = `Gere uma lista de questões no formato JSON oficial abaix
 
 [
   {
-    "PROVA": "Concurso Banco do Brasil",
-    "Ano": 2023,
+    "PROVA": "Concurso Câmara de São Gonçalo - RJ - Assistente Técnico Legislativo",
+    "Ano": 2022,
     "Ordem": 1,
-    "Banca": "Cesgranrio",
-    "ID_Qconcursos": "123456",
+    "Banca": "SELECON",
+    "ID_Qconcursos": "Q2408218",
+    "link": "https://www.qconcursos.com/questoes-de-concursos/questoes/eea8383ca35",
     "Dificuldade": "Média",
     "Status": "Ativa",
     "Duvida": false,
-    "Caminho_Organizacao": ["Conhecimentos Bancários", "Noções do Mercado de Capitais", "Underwriting"],
+    "Caminho_Organizacao": [
+      "Conhecimentos Bancários",
+      "Sistema Financeiro Nacional",
+      "ESTRUTURA DO SFN"
+    ],
     "Texto de apoio": "",
-    "Enunciado": "Enunciado completo da questão.",
-    "Pergunta problema": "",
+    "Enunciado": "Nos conceitos básicos de administração financeira, o Sistema Financeiro Nacional é dividido em dois subsistemas: normativo e operacional.",
+    "Pergunta problema": "Fazem parte do subsistema normativo e do subsistema operacional, respectivamente:",
     "Imagens_Enunciado": [],
-    "Alternativa A": "Primeira alternativa",
-    "Alternativa B": "Segunda alternativa",
-    "Alternativa C": "Terceira alternativa",
-    "Alternativa D": "Quarta alternativa",
-    "Alternativa E": "Quinta alternativa",
-    "Gabarito": "A",
+    "Alternativa A": "bancos comerciais e bancos múltiplos",
+    "Alternativa B": "BNDES e Conselho Monetário Nacional",
+    "Alternativa C": "Banco Central do Brasil e Caixa Econômica Federal",
+    "Alternativa D": "bancos de desenvolvimento e Comissão de Valores Mobiliários",
+    "Alternativa E": "",
+    "Gabarito": "C",
     "Comentário": "Explicação da resposta correta."
   }
 ]
 
 Regras:
 - Status deve ser: Ativa, Arquivada, Anulada ou Inativa.
-- Dificuldade deve ser: Fácil, Média ou Difícil.
-- Gabarito deve ser uma única letra: A, B, C, D ou E.
-- Caminho_Organizacao é uma lista de pastas do geral para o específico.
+- Dificuldade pode ser: Fácil, Média, Difícil ou vazia ("").
+- Gabarito deve ser uma única letra: A, B, C, D ou E (opcional para discursivas).
+- Caminho_Organizacao é uma lista hierárquica de pastas do geral para o específico.
+- link: URL completa da questão (em minúsculas).
+- Pergunta problema: pergunta específica complementar (não duplicar o enunciado).
 - id não deve ser incluído (gerado pelo banco).`;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -265,18 +295,19 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
           console.warn("Aviso ao resolver pasta da questão:", orgErr?.message || orgErr);
         }
 
-        // Monta o registro
+        // Monta o registro preservando tipos e valores originais
         const row: Record<string, any> = {
           PROVA:               overrideProva.trim() || q.PROVA,
           Ano:                 q.Ano               ?? null,
           Ordem:               q.Ordem             ?? null,
           Banca:               q.Banca             ?? null,
           ID_Qconcursos:       q.ID_Qconcursos     ?? null,
-          Dificuldade:         q.Dificuldade        ?? null,
-          Status:              q.Status             ?? "Ativa",
+          link:                q.link              !== undefined ? q.link : null,
+          Dificuldade:         q.Dificuldade       ? q.Dificuldade : null,
+          Status:              q.Status            ?? "Ativa",
           "Texto de apoio":    q["Texto de apoio"] ?? null,
           Enunciado:           q.Enunciado,
-          "Pergunta problema": q["Pergunta problema"] ?? null,
+          "Pergunta problema": q["Pergunta problema"] !== undefined ? q["Pergunta problema"] : null,
           // Primeira imagem em Imagem_Enunciado (compatibilidade com coluna TEXT atual)
           Imagem_Enunciado:    q.Imagens_Enunciado?.[0] ?? null,
           "Alternativa A":     q["Alternativa A"]  ?? null,
@@ -484,6 +515,20 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
                           <div className="flex items-center gap-1 text-[10px] text-slate-400">
                             <FolderTree size={11} className="text-blue-400 shrink-0" />
                             {qa.input.Caminho_Organizacao.join(" › ")}
+                          </div>
+                        ) : null}
+
+                        {/* Pergunta problema */}
+                        {qa.input["Pergunta problema"] ? (
+                          <div className="text-[10px] text-indigo-300/90 italic pl-2 border-l border-indigo-500/40">
+                            {qa.input["Pergunta problema"]}
+                          </div>
+                        ) : null}
+
+                        {/* Link */}
+                        {qa.input.link ? (
+                          <div className="text-[10px] text-slate-400 truncate font-mono">
+                            🔗 {qa.input.link}
                           </div>
                         ) : null}
 

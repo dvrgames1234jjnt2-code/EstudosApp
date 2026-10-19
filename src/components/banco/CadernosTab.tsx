@@ -414,11 +414,6 @@ function TreeNodeItem({
                     style={{ backgroundColor: catInfo?.textColor || "#c69238" }}
                     title={catInfo?.label}
                   />
-                  {q.title && (
-                    <span className="text-[11px] text-slate-400 truncate max-w-[320px]">
-                      — {q.perguntaProblema || q.title}
-                    </span>
-                  )}
                 </div>
 
                 {isAcerto && (

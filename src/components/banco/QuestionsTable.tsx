@@ -56,6 +56,7 @@ export interface BancoQuestion {
   // Campos da nova arquitetura (Etapa 1)
   Ano?: number;
   ID_Qconcursos?: string;
+  link?: string;
   organizacao_id?: string;
   Duvida?: boolean;
 }

@@ -190,7 +190,7 @@ export default function BancoPage() {
         "Alternativa D": row["Alternativa D"] || row.alternativa_d || undefined,
         "Alternativa E": row["Alternativa E"] || row.alternativa_e || undefined,
         "Texto de apoio": row["Texto de apoio"] || row.texto_apoio || undefined,
-        perguntaProblema: row["Pergunta problema"] || row.pergunta_problema || row.perguntaProblema || undefined,
+        perguntaProblema: row["Pergunta problema"] !== undefined ? row["Pergunta problema"] : (row.pergunta_problema || row.perguntaProblema || undefined),
         respostaCorreta: row.respostaCorreta || row.resposta_correta || row.Gabarito || row.gabarito || undefined,
         Gabarito: row.Gabarito || row.gabarito || undefined,
         explicacao: row["Comentário"] || row.Comentário || row.comentario || row.Comentario || row.explicacao || row.Explicacao || undefined,
@@ -198,6 +198,7 @@ export default function BancoPage() {
         imagemEnunciado: row.Imagem_Enunciado || row.imagemEnunciado || undefined,
         Ano: row.Ano ? Number(row.Ano) : undefined,
         ID_Qconcursos: row.ID_Qconcursos || undefined,
+        link: row.link || undefined,
         organizacao_id: row.organizacao_id || undefined,
         Duvida: typeof row.Duvida === "boolean" ? row.Duvida : undefined,
       }));

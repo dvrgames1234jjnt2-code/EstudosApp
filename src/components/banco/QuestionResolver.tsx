@@ -26,7 +26,8 @@ import {
   Flame,
   Volume2,
   FileText,
-  Printer
+  Printer,
+  ExternalLink
 } from "lucide-react";
 import { PrintSimuladoModal } from "./PrintSimuladoModal";
 
@@ -37,6 +38,8 @@ interface BancoQuestion {
   title: string;
   dificuldade?: string;
   prova?: string;
+  link?: string;
+  ID_Qconcursos?: string;
   "Alternativa A"?: string;
   "Alternativa B"?: string;
   "Alternativa C"?: string;
@@ -510,6 +513,18 @@ export default function QuestionResolver({
                   {question.dificuldade}
                 </span>
               )}
+              {question.link && (
+                <a
+                  href={question.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] font-medium text-blue-400 hover:text-blue-300 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5"
+                  title="Abrir página original da questão"
+                >
+                  <ExternalLink size={11} />
+                  {question.ID_Qconcursos ? `Qconcursos (${question.ID_Qconcursos})` : "Link da Questão"}
+                </a>
+              )}
               {textoApoio && (
                 <button
                   onClick={() => setShowTextoApoio(!showTextoApoio)}
@@ -554,7 +569,7 @@ export default function QuestionResolver({
             </div>
 
             {/* Pergunta-Problema */}
-            {question.perguntaProblema && (
+            {question.perguntaProblema && question.perguntaProblema.trim() && question.perguntaProblema.trim() !== question.title?.trim() && (
               <div className="text-[14px] sm:text-[15px] text-[#8E97A8] font-normal leading-relaxed mb-7 pl-4 border-l-[3px] border-white/[0.07]">
                 {formatQuestionText(question.perguntaProblema)}
               </div>
