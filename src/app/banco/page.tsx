@@ -1479,6 +1479,7 @@ export default function BancoPage() {
                   onToggleDuvida={handleToggleDuvida}
                   user={user}
                   onShowAuth={() => setShowAuthModal(true)}
+                  onRefreshQuestions={fetchQuestions}
                 />
               )}
             </motion.div>

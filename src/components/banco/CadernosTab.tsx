@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -25,9 +25,15 @@ import {
   Maximize2,
   BookMarked,
   LayoutGrid,
+  Plus,
+  FolderPlus,
+  GripVertical,
+  Layers,
+  Folder,
 } from "lucide-react";
 import type { BancoQuestion } from "./QuestionsTable";
 import QuestionResolver from "./QuestionResolver";
+import { supabase, supabasePublic } from "../../lib/supabase";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tipos & Categorias (Idêntico ao NotionQuestionTab)
@@ -58,6 +64,16 @@ export interface QuestionStats {
   timestamp: number;
 }
 
+export interface OrgNodeDB {
+  id: string;
+  nome: string;
+  tipo?: string | null;
+  parent_id?: string | null;
+  ordem?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 interface CadernosTabProps {
   questions: BancoQuestion[];
   userAnswers: Record<string, QuestionStats>;
@@ -67,25 +83,28 @@ interface CadernosTabProps {
   onToggleDuvida?: (questaoId: any) => Promise<void>;
   user: any;
   onShowAuth: () => void;
+  onRefreshQuestions?: () => void;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Estrutura hierárquica: Matéria -> Tópicos (Cadernos) -> Assuntos (Casos) -> Questões
+// Estrutura hierárquica: Matéria -> Caderno -> Caso -> Questões
 // ─────────────────────────────────────────────────────────────────────────────
 interface CasoGroup {
-  nome: string; // Assunto = "Caso"
+  id: string;
+  nome: string;
   questoes: BancoQuestion[];
 }
 
 interface CadernoItem {
   id: string;
-  nome: string; // Tópico = "Caderno"
+  nome: string;
   materia: string;
   casos: CasoGroup[];
   questoes: BancoQuestion[];
 }
 
 interface MateriaGroup {
+  id: string;
   nome: string;
   icone: string;
   cadernos: CadernoItem[];
@@ -106,6 +125,7 @@ const MATERIA_ICON_MAP: Record<string, string> = {
   "informatica": "💻",
   "atualidades": "🌐",
   "vendas e negociação": "🤝",
+  "vendas e negociações": "🤝",
   "vendas": "🤝",
   "atendimento": "🎧",
   "direito": "⚖️",
@@ -113,7 +133,7 @@ const MATERIA_ICON_MAP: Record<string, string> = {
 };
 
 function getMateriaIcon(materia: string): string {
-  const norm = materia.trim().toLowerCase();
+  const norm = (materia || "").trim().toLowerCase();
   for (const [key, icon] of Object.entries(MATERIA_ICON_MAP)) {
     if (norm.includes(key)) return icon;
   }
@@ -131,7 +151,7 @@ function resolveCategory(q: BancoQuestion): CategoryKey {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Componente: QuestaoBloquinho (Idêntico ao NotionQuestionTab)
+// Componente: QuestaoBloquinho (Modo Bloquinhos alternativo)
 // ─────────────────────────────────────────────────────────────────────────────
 function QuestaoBloquinho({
   q,
@@ -166,7 +186,7 @@ function QuestaoBloquinho({
   const pctColor = { green: "#4ade80", amber: "#fbbf24", red: "#f87171", neutral: "#64748b" }[tier];
   const barColor = { green: "#22c55e", amber: "#f59e0b", red: "#ef4444", neutral: "#475569" }[tier];
 
-  const topicText = q.tema || q.perguntaProblema || q.title || "";
+  const topicText = q.tema || q.perguntaProblema || "";
 
   return (
     <button
@@ -210,17 +230,20 @@ function QuestaoBloquinho({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Componente: QuestaoRowItem (Linha com design 100% igual ao Notion)
+// Componente: QuestaoRowItem (Exatamente o formato pedido: N. ≡ [ID] [●Dif] [→ Pasta] [Acertou/Errou])
+// Sem enunciado! Suporta arrastar e soltar (Drag and Drop)!
 // ─────────────────────────────────────────────────────────────────────────────
 function QuestaoRowItem({
   questao,
   numero,
+  casoNome,
   stats,
   isDuvida,
   onOpenResolver,
 }: {
   questao: BancoQuestion;
   numero: number;
+  casoNome: string;
   stats?: QuestionStats;
   isDuvida: boolean;
   onOpenResolver: () => void;
@@ -233,30 +256,38 @@ function QuestaoRowItem({
   const isErro = stats?.isCorrect === false;
   const isAcerto = stats?.isCorrect === true;
 
-  const diffBgClasses: Record<string, string> = {
-    faceis: "bg-[#0b1612]/60 hover:bg-[#0f1d18]",
-    lacuna: "bg-[#0b1612]/60 hover:bg-[#0f1d18]",
-    media: "bg-[#16120b]/60 hover:bg-[#1d180f]",
-    atencao: "bg-[#0b1216]/60 hover:bg-[#0f181d]",
-    dificil: "bg-[#160b0d]/60 hover:bg-[#1d0f11]",
-    ultrahard: "bg-[#120b16]/60 hover:bg-[#180f1d]",
-    bonus: "bg-[#120b16]/60 hover:bg-[#180f1d]",
-  };
-  const bgClass = diffBgClasses[catKey] || "hover:bg-white/[0.03]";
+  // Exibir ID_Qconcursos, Ordem ou ID
+  const displayId = (questao as any).ID_Qconcursos || (questao as any).Ordem || questao.id;
 
   return (
     <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("text/plain", String(questao.id));
+        e.dataTransfer.setData("questao_id", String(questao.id));
+        e.dataTransfer.effectAllowed = "move";
+      }}
       onClick={onOpenResolver}
-      className={`flex items-center gap-2 py-1 px-2.5 transition-colors duration-150 rounded-lg group cursor-pointer select-none ${bgClass}`}
+      className="flex items-center gap-2 py-1.5 px-2.5 transition-colors duration-150 rounded-lg group cursor-pointer select-none bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.04] hover:border-white/[0.10]"
     >
-      {/* Botão indicador */}
+      {/* Handle de arrastar */}
+      <span className="text-slate-600 group-hover:text-slate-400 cursor-grab shrink-0 p-0.5" title="Arraste para mover para outro caso ou caderno">
+        <GripVertical size={13} />
+      </span>
+
+      {/* Número da questão */}
+      <span className="text-[11px] font-normal text-slate-400 shrink-0 tabular-nums min-w-[20px]">
+        {numero}.
+      </span>
+
+      {/* Botão indicador Play */}
       <span className="text-slate-500 hover:text-slate-300 transition-colors w-4 h-4 flex items-center justify-center shrink-0">
         <Play size={10} className="fill-current text-slate-500 group-hover:text-indigo-400" />
       </span>
 
-      {/* Número da questão */}
-      <span className="text-[11px] font-normal text-slate-400 bg-white/[0.04] border border-white/[0.07] px-2 py-0.5 rounded-md shrink-0 tabular-nums">
-        {numero}
+      {/* ID_Qconcursos / Número da questão em âmbar */}
+      <span className="text-[11px] font-mono font-bold text-amber-400/90 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded shrink-0">
+        {displayId}
       </span>
 
       {/* Bolinha com cor da dificuldade */}
@@ -268,32 +299,33 @@ function QuestaoRowItem({
 
       {/* Pill com nome da categoria */}
       <span
-        className="text-[11px] font-normal px-2 py-0.5 rounded-md bg-black/20 border border-white/[0.06] shrink-0"
+        className="text-[10px] font-bold px-2 py-0.5 rounded bg-black/30 border border-white/[0.07] shrink-0"
         style={{ color: catColor }}
       >
         {catLabel}
       </span>
 
-      {/* Tópico / Enunciado resumido */}
-      <span className="text-[12px] sm:text-[13px] font-normal text-slate-300 leading-relaxed truncate ml-0.5 flex-1 min-w-0">
-        — {questao.perguntaProblema || questao.title}
+      {/* Pill com seta e nome da pasta/caso atual */}
+      <span className="text-[10px] text-slate-400 bg-white/[0.04] border border-white/[0.08] px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1 max-w-[240px]">
+        <span className="text-indigo-400">→</span>
+        <span className="truncate">{casoNome}</span>
       </span>
 
       {/* Indicador de Dúvida */}
       {isDuvida && (
-        <Flag size={11} className="fill-red-500 text-red-500 shrink-0 ml-1" />
+        <Flag size={11} className="fill-amber-400 text-amber-400 shrink-0 ml-1" />
       )}
 
-      {/* Indicador de Status Acerto / Erro */}
+      {/* Indicador de Status Acerto / Erro na direita */}
       {isErro && (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-rose-300 bg-rose-950/50 border border-rose-700/60 shrink-0 ml-auto">
-          <span className="w-2 h-2 rounded-full bg-rose-500 border border-rose-400/50 shrink-0 shadow-sm shadow-rose-500/50" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-rose-300 bg-rose-950/50 border border-rose-700/60 shrink-0 ml-auto">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 border border-rose-400/50 shrink-0 shadow-sm shadow-rose-500/50" />
           Errou
         </span>
       )}
       {isAcerto && (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-emerald-300 bg-emerald-950/50 border border-emerald-700/60 shrink-0 ml-auto">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 border border-emerald-400/50 shrink-0 shadow-sm shadow-emerald-500/50" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-emerald-300 bg-emerald-950/50 border border-emerald-700/60 shrink-0 ml-auto">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 border border-emerald-400/50 shrink-0 shadow-sm shadow-emerald-500/50" />
           Acertou
         </span>
       )}
@@ -302,7 +334,7 @@ function QuestaoRowItem({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Componente: CasoAccordion (Caso com Gabarito em timeline, bloquinhos e lista)
+// Componente: CasoAccordion (Caso / Subpasta que é Drop Target)
 // ─────────────────────────────────────────────────────────────────────────────
 function CasoAccordion({
   caso,
@@ -310,17 +342,18 @@ function CasoAccordion({
   userAnswers,
   duvidas,
   onOpenQuestion,
-  allCadernoQuestions,
+  onDropQuestion,
 }: {
   caso: CasoGroup;
   index: number;
   userAnswers: Record<string, QuestionStats>;
   duvidas: Set<string>;
   onOpenQuestion: (q: BancoQuestion, queue: BancoQuestion[]) => void;
-  allCadernoQuestions: BancoQuestion[];
+  onDropQuestion: (questaoId: string, targetCasoId: string) => void;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"bloquinhos" | "lista">("bloquinhos");
+  const [isOpen, setIsOpen] = useState(true);
+  const [viewMode, setViewMode] = useState<"lista" | "bloquinhos">("lista");
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const stats = useMemo(() => {
     let acertos = 0;
@@ -353,62 +386,76 @@ function CasoAccordion({
       : "border-slate-800 text-rose-400/90 bg-slate-900/60 font-medium";
 
   return (
-    <div className="relative flex flex-col gap-2">
-      {/* Botão do Caso */}
+    <div
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        setIsDragOver(true);
+      }}
+      onDragLeave={() => setIsDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        const qId = e.dataTransfer.getData("questao_id") || e.dataTransfer.getData("text/plain");
+        if (qId) {
+          onDropQuestion(qId, caso.id);
+        }
+      }}
+      className={`relative flex flex-col gap-2 rounded-xl transition-all ${
+        isDragOver ? "ring-2 ring-indigo-500 bg-indigo-500/10 p-1" : ""
+      }`}
+    >
+      {/* Botão do Caso Header */}
       <button
         onClick={() => setIsOpen(v => !v)}
-        className="relative z-10 w-full flex items-center gap-3 px-2.5 py-2 rounded-xl border border-white/[0.06] bg-[#111623] hover:border-white/[0.14] transition-all text-left group"
+        className={`relative z-10 w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border border-white/[0.06] bg-[#111623] hover:border-white/[0.14] transition-all text-left group ${
+          isDragOver ? "border-indigo-500" : ""
+        }`}
       >
-        <span className="w-7 h-7 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-sm shrink-0">
-          📁
-        </span>
-        <span className="flex-1 text-[11px] font-bold text-slate-200 truncate">
-          {index + 1}. {caso.nome || "Geral"}
-        </span>
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <span className="w-7 h-7 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-sm shrink-0">
+            📁
+          </span>
+          <span className="text-[12px] font-bold text-slate-200 truncate">
+            {index + 1}. {caso.nome || "Geral"}
+          </span>
+        </div>
 
         {/* Stats inline */}
-        <div className="flex items-center gap-1.5 text-[10px] shrink-0 tabular-nums">
-          <span className="text-slate-400">{stats.total} quest.</span>
+        <div className="flex items-center gap-2 text-[10px] shrink-0 tabular-nums">
+          <span className="text-slate-400 font-sans">{stats.total} quest.</span>
           <span className="text-emerald-400 flex items-center gap-0.5">
-            <Check size={10} />
+            <Check size={10} className="stroke-[2.5]" />
             {stats.acertos}
           </span>
           <span className="text-rose-400 flex items-center gap-0.5">
-            <X size={10} />
+            <X size={10} className="stroke-[2.5]" />
             {stats.erros}
           </span>
           <span className="text-amber-400 flex items-center gap-0.5">
             <Flag size={9} />
             {stats.duvidasCount}
           </span>
-          <span className={`px-1.5 py-0.5 rounded border text-[9px] ${aproveitamentoClasses}`}>
+          <span className={`px-1.5 py-0.5 rounded border text-[9px] font-bold ${aproveitamentoClasses}`}>
             {stats.pct === null ? "—" : `${stats.pct}%`}
           </span>
-        </div>
 
-        <ChevronDown
-          size={13}
-          className={`text-slate-500 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
-        />
+          <ChevronDown
+            size={13}
+            className={`text-slate-500 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          />
+        </div>
       </button>
 
       {/* Conteúdo do Caso expandido */}
       {isOpen && (
-        <div className="pl-9 pb-2 flex flex-col gap-2.5 animate-in fade-in duration-150">
-          {/* Alternador de exibição (Bloquinhos / Lista) */}
-          <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/[0.04]">
+        <div className="pl-6 pb-2 flex flex-col gap-2 animate-in fade-in duration-150">
+          {/* Alternador de exibição (Lista / Bloquinhos) */}
+          <div className="flex items-center justify-between gap-2 pt-1 pb-1">
             <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
-              Questões ({caso.questoes.length})
+              Questões no caso ({caso.questoes.length})
             </span>
             <div className="flex items-center gap-1 bg-black/30 p-0.5 rounded-lg border border-white/[0.05]">
-              <button
-                onClick={(e) => { e.stopPropagation(); setViewMode("bloquinhos"); }}
-                className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider transition-all ${
-                  viewMode === "bloquinhos" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
-                }`}
-              >
-                Bloquinhos
-              </button>
               <button
                 onClick={(e) => { e.stopPropagation(); setViewMode("lista"); }}
                 className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider transition-all ${
@@ -417,11 +464,38 @@ function CasoAccordion({
               >
                 Lista
               </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setViewMode("bloquinhos"); }}
+                className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider transition-all ${
+                  viewMode === "bloquinhos" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
+                }`}
+              >
+                Bloquinhos
+              </button>
             </div>
           </div>
 
-          {/* Modo Bloquinhos */}
-          {viewMode === "bloquinhos" ? (
+          {caso.questoes.length === 0 ? (
+            <div className="p-4 border border-dashed border-white/[0.08] rounded-xl text-center text-slate-500 text-xs">
+              Nenhuma questão neste caso. Arraste questões para cá.
+            </div>
+          ) : viewMode === "lista" ? (
+            /* Modo Lista de Linhas (ID em âmbar, sem enunciado, badge status) */
+            <div className="flex flex-col gap-1">
+              {caso.questoes.map((q, qIdx) => (
+                <QuestaoRowItem
+                  key={q.id}
+                  questao={q}
+                  numero={qIdx + 1}
+                  casoNome={caso.nome}
+                  stats={userAnswers[String(q.id)]}
+                  isDuvida={duvidas.has(String(q.id))}
+                  onOpenResolver={() => onOpenQuestion(q, caso.questoes)}
+                />
+              ))}
+            </div>
+          ) : (
+            /* Modo Bloquinhos */
             <div className="flex flex-wrap gap-1.5">
               {caso.questoes.map((q, qIdx) => (
                 <QuestaoBloquinho
@@ -434,20 +508,6 @@ function CasoAccordion({
                 />
               ))}
             </div>
-          ) : (
-            /* Modo Lista de Linhas */
-            <div className="flex flex-col gap-1">
-              {caso.questoes.map((q, qIdx) => (
-                <QuestaoRowItem
-                  key={q.id}
-                  questao={q}
-                  numero={qIdx + 1}
-                  stats={userAnswers[String(q.id)]}
-                  isDuvida={duvidas.has(String(q.id))}
-                  onOpenResolver={() => onOpenQuestion(q, caso.questoes)}
-                />
-              ))}
-            </div>
           )}
         </div>
       )}
@@ -456,135 +516,7 @@ function CasoAccordion({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Componente: CadernoCardItem (Card idêntico ao BlocoCard / NotionBlockRowItem)
-// ─────────────────────────────────────────────────────────────────────────────
-function CadernoCardItem({
-  caderno,
-  userAnswers,
-  duvidas,
-  onOpenQuestion,
-  onSelectDedicated,
-}: {
-  caderno: CadernoItem;
-  userAnswers: Record<string, QuestionStats>;
-  duvidas: Set<string>;
-  onOpenQuestion: (q: BancoQuestion, queue: BancoQuestion[]) => void;
-  onSelectDedicated: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-
-  const stats = useMemo(() => {
-    let acertos = 0;
-    let erros = 0;
-    let duvidasCount = 0;
-
-    caderno.questoes.forEach((q) => {
-      const st = userAnswers[String(q.id)];
-      if (st) {
-        if (st.isCorrect) acertos++;
-        else erros++;
-      }
-      if (duvidas.has(String(q.id))) duvidasCount++;
-    });
-
-    const total = caderno.questoes.length;
-    const respondidas = acertos + erros;
-    const pct = respondidas > 0 ? Math.round((acertos / respondidas) * 100) : null;
-
-    return { total, acertos, erros, duvidasCount, respondidas, pct };
-  }, [caderno.questoes, userAnswers, duvidas]);
-
-  const aproveitamentoClasses =
-    stats.pct === null
-      ? "border-slate-800 text-slate-500 bg-slate-900/60"
-      : stats.pct >= 70
-      ? "border-slate-800 text-emerald-400/90 bg-slate-900/60 font-medium"
-      : stats.pct >= 50
-      ? "border-slate-800 text-amber-400/90 bg-slate-900/60 font-medium"
-      : "border-slate-800 text-rose-400/90 bg-slate-900/60 font-medium";
-
-  return (
-    <div className="flex flex-col gap-1.5 p-2 sm:p-2.5 rounded-xl border transition-all bg-[#111623]/90 border-white/[0.06] hover:border-white/[0.12] shadow-sm">
-      {/* Header do Card */}
-      <div className="flex items-center justify-between gap-1.5 min-w-0 flex-nowrap whitespace-nowrap overflow-hidden">
-        <button
-          onClick={() => setOpen(v => !v)}
-          className="flex items-center gap-1.5 text-left transition-all flex-1 min-w-0 group flex-nowrap whitespace-nowrap overflow-hidden"
-        >
-          <span className="text-[9px] text-slate-500 w-3.5 h-3.5 flex items-center justify-center shrink-0 select-none">
-            {open ? "▼" : "▶"}
-          </span>
-          <span className="text-sm shrink-0 select-none">📝</span>
-          <div className="flex items-center gap-1.5 min-w-0 flex-nowrap whitespace-nowrap overflow-hidden">
-            <span className="text-[12px] sm:text-[13px] font-normal transition-colors truncate shrink-0 text-slate-400 group-hover:text-slate-200">
-              {caderno.nome}
-            </span>
-            <span className="text-[10px] text-indigo-400/70 font-bold uppercase tracking-wide truncate">
-              {caderno.materia}
-            </span>
-          </div>
-        </button>
-
-        {/* Stats compactas à direita */}
-        <div className="flex items-center gap-1.5 shrink-0 flex-nowrap whitespace-nowrap">
-          <span className="text-[10px] font-normal text-slate-400 font-sans">{stats.total} quest.</span>
-          <span className="text-emerald-400/90 flex items-center gap-0.5 font-sans" title="Total de acertos">
-            <Check size={11} className="text-emerald-400/80 stroke-[2]" />
-            {stats.acertos}
-          </span>
-          <span className="text-rose-400/90 flex items-center gap-0.5 font-sans" title="Total de erros">
-            <X size={11} className="text-rose-400/80 stroke-[2]" />
-            {stats.erros}
-          </span>
-          <span className="text-amber-400/90 flex items-center gap-0.5 font-sans" title="Em dúvida">
-            <Flag size={10} className="text-amber-400/80 fill-amber-400/10" />
-            {stats.duvidasCount}
-          </span>
-          <span className={`px-1.5 py-0.5 rounded border text-[10px] font-bold ${aproveitamentoClasses}`}>
-            {stats.pct === null ? "—" : `${stats.pct}%`}
-          </span>
-
-          <button
-            onClick={onSelectDedicated}
-            title="Abrir visão dedicada deste caderno"
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.03] text-slate-400 hover:text-indigo-300 hover:bg-white/[0.08] hover:border-white/[0.15] transition-all ml-1"
-          >
-            <ChevronRight size={13} />
-          </button>
-        </div>
-      </div>
-
-      {/* Seção Desempenho por Caso (Linha do tempo vertical idêntica ao Notion) */}
-      {open && (
-        <div className="flex flex-col gap-2 p-3 bg-[#0d1220] rounded-xl border border-white/[0.06] mt-1">
-          <h4 className="text-[11px] font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5 mb-1">
-            <LayoutGrid size={12} className="text-indigo-400" /> Desempenho por Caso
-          </h4>
-
-          <div className="relative flex flex-col gap-2 pl-1">
-            {/* Linha do tempo vertical conectando os casos */}
-            <div className="absolute left-[15px] top-4 bottom-4 w-px bg-white/[0.07]" />
-
-            {caderno.casos.map((caso, idx) => (
-              <CasoAccordion
-                key={caso.nome}
-                caso={caso}
-                index={idx}
-                userAnswers={userAnswers}
-                duvidas={duvidas}
-                onOpenQuestion={onOpenQuestion}
-                allCadernoQuestions={caderno.questoes}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Componente: CadernoDedicatedView (Tela focada no Caderno Selecionado)
+// Componente: CadernoDedicatedView (Tela focada no Caderno com timeline de Casos)
 // ─────────────────────────────────────────────────────────────────────────────
 function CadernoDedicatedView({
   caderno,
@@ -593,6 +525,8 @@ function CadernoDedicatedView({
   duvidas,
   onOpenQuestion,
   onTrainAll,
+  onDropQuestion,
+  onOpenNovaPastaModal,
 }: {
   caderno: CadernoItem;
   onBack: () => void;
@@ -600,6 +534,8 @@ function CadernoDedicatedView({
   duvidas: Set<string>;
   onOpenQuestion: (q: BancoQuestion, queue: BancoQuestion[]) => void;
   onTrainAll: () => void;
+  onDropQuestion: (questaoId: string, targetCasoId: string) => void;
+  onOpenNovaPastaModal: (parentCadernoId: string) => void;
 }) {
   const [filtroStatus, setFiltroStatus] = useState<"todas" | "erros" | "nao_feitas" | "duvidas">("todas");
 
@@ -686,7 +622,7 @@ function CadernoDedicatedView({
               <Flag size={10} /> {stats.duvidasCount}
             </span>
             <span
-              className={`px-1.5 py-0.2 rounded border text-[10px] font-bold ${
+              className={`px-1.5 py-0.5 rounded border text-[10px] font-bold ${
                 stats.pct === null
                   ? "text-slate-500 border-slate-800 bg-slate-900"
                   : stats.pct >= 70
@@ -701,6 +637,13 @@ function CadernoDedicatedView({
           </div>
 
           <button
+            onClick={() => onOpenNovaPastaModal(caderno.id)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-indigo-300 rounded-xl text-xs font-bold transition-all active:scale-95"
+          >
+            <FolderPlus size={13} /> Nova Subpasta / Caso
+          </button>
+
+          <button
             onClick={onTrainAll}
             className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95 shadow-md shadow-indigo-600/20"
           >
@@ -713,7 +656,7 @@ function CadernoDedicatedView({
       <div className="flex items-center justify-between gap-3 bg-[#101526] p-3 rounded-2xl border border-white/[0.06] flex-wrap">
         <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
           <Filter size={14} className="text-indigo-400" />
-          Filtrar casos e questões:
+          Filtrar questões:
         </span>
 
         <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] shrink-0 flex-wrap">
@@ -739,23 +682,24 @@ function CadernoDedicatedView({
       </div>
 
       {/* Lista de Casos do Caderno */}
-      <div className="flex flex-col gap-2 p-3 bg-[#0d1220] rounded-xl border border-white/[0.06]">
+      <div className="flex flex-col gap-3 p-4 bg-[#0d1220] rounded-xl border border-white/[0.06]">
         <h4 className="text-[11px] font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5 mb-1">
-          <LayoutGrid size={12} className="text-indigo-400" /> Desempenho por Caso
+          <LayoutGrid size={12} className="text-indigo-400" /> Desempenho por Caso (Subpastas)
         </h4>
 
-        <div className="relative flex flex-col gap-2 pl-1">
+        <div className="relative flex flex-col gap-3 pl-1">
+          {/* Linha do tempo vertical conectando os casos */}
           <div className="absolute left-[15px] top-4 bottom-4 w-px bg-white/[0.07]" />
 
           {casosFiltrados.map((caso, idx) => (
             <CasoAccordion
-              key={caso.nome}
+              key={caso.id}
               caso={caso}
               index={idx}
               userAnswers={userAnswers}
               duvidas={duvidas}
               onOpenQuestion={onOpenQuestion}
-              allCadernoQuestions={caderno.questoes}
+              onDropQuestion={onDropQuestion}
             />
           ))}
         </div>
@@ -765,7 +709,158 @@ function CadernoDedicatedView({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Componente Principal: CadernosTab (Design idêntico ao NotionQuestionTab)
+// Componente: ModalCriarPasta (Cria nós em organizacao_nos)
+// ─────────────────────────────────────────────────────────────────────────────
+function ModalCriarPasta({
+  isOpen,
+  onClose,
+  parentNodes,
+  defaultParentId,
+  onSuccess,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  parentNodes: { id: string; nome: string; nivel: string }[];
+  defaultParentId?: string;
+  onSuccess: () => void;
+}) {
+  const [nome, setNome] = useState("");
+  const [parentId, setParentId] = useState<string>(defaultParentId || "");
+  const [tipo, setTipo] = useState<"pasta" | "caderno" | "caso">("pasta");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    if (defaultParentId) {
+      setParentId(defaultParentId);
+    }
+  }, [defaultParentId]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nome.trim()) return;
+
+    setIsSubmitting(true);
+    setErrorMsg("");
+
+    try {
+      const payload: any = {
+        nome: nome.trim(),
+        parent_id: parentId ? parentId : null,
+        tipo: tipo,
+        ordem: 0,
+      };
+
+      // Tenta via supabasePublic primeiro
+      let res = await (supabasePublic.from("organizacao_nos") as any)
+        .insert(payload)
+        .select("*")
+        .single();
+
+      if (res.error && supabase) {
+        res = await (supabase.from("organizacao_nos") as any)
+          .insert(payload)
+          .select("*")
+          .single();
+      }
+
+      if (res.error) {
+        throw new Error(res.error.message || "Erro ao criar pasta no banco");
+      }
+
+      setNome("");
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Erro desconhecido ao criar pasta.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
+      <div className="relative w-full max-w-md bg-[#0d1220] border border-white/10 rounded-2xl shadow-2xl p-6 flex flex-col gap-4">
+        <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+          <div className="flex items-center gap-2">
+            <span className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+              <FolderPlus size={16} />
+            </span>
+            <h3 className="text-sm font-bold text-white">Criar Nova Pasta / Caderno</h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] text-slate-400 hover:text-white flex items-center justify-center transition-all"
+          >
+            <X size={14} />
+          </button>
+        </div>
+
+        {errorMsg && (
+          <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs text-rose-300">
+            {errorMsg}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Nome da Pasta *
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="Ex: Mercado de Capitais, Underwriting, etc."
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              className="bg-[#111623] border border-white/[0.10] rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 transition-all"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Pasta Pai (Hierarquia)
+            </label>
+            <select
+              value={parentId}
+              onChange={(e) => setParentId(e.target.value)}
+              className="bg-[#111623] border border-white/[0.10] rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition-all"
+            >
+              <option value="">(Raiz) Nova Matéria Principal</option>
+              {parentNodes.map((n) => (
+                <option key={n.id} value={n.id}>
+                  {n.nivel} {n.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/[0.08]">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-3.5 py-1.5 rounded-xl border border-white/[0.10] text-slate-400 hover:text-white text-xs font-semibold transition-all"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting || !nome.trim()}
+              className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/30"
+            >
+              {isSubmitting ? "Criando..." : "Criar Pasta"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Componente Principal: CadernosTab (Design 100% igual ao NotionQuestionTab)
 // ─────────────────────────────────────────────────────────────────────────────
 export default function CadernosTab({
   questions,
@@ -776,6 +871,7 @@ export default function CadernosTab({
   onToggleDuvida,
   user,
   onShowAuth,
+  onRefreshQuestions,
 }: CadernosTabProps) {
   const [selectedCaderno, setSelectedCaderno] = useState<CadernoItem | null>(null);
   const [cadernoFiltro, setCadernoFiltro] = useState("Todos");
@@ -783,79 +879,269 @@ export default function CadernosTab({
   const [statusFiltro, setStatusFiltro] = useState<"todas" | "erros" | "mais_erros" | "nao_feitas" | "duvidas">("todas");
   const [search, setSearch] = useState("");
 
+  // Estado dos nós de organização carregados do Supabase
+  const [dbNodes, setDbNodes] = useState<OrgNodeDB[]>([]);
+  const [isNovaPastaModalOpen, setIsNovaPastaModalOpen] = useState(false);
+  const [modalDefaultParentId, setModalDefaultParentId] = useState<string>("");
+
+  // Override local de organizacao_id para drag and drop instantâneo
+  const [orgOverrides, setOrgOverrides] = useState<Map<string, string>>(new Map());
+
   // Estado do Modal de Resolução (exatamente igual à Questão Ativa)
   const [modalQuestion, setModalQuestion] = useState<BancoQuestion | null>(null);
   const [modalQueue, setModalQueue] = useState<BancoQuestion[]>([]);
   const [modalIndex, setModalIndex] = useState(0);
   const [isSavingAnswer, setIsSavingAnswer] = useState(false);
 
-  // ── Agrupamento estruturado: Matéria -> Cadernos -> Casos -> Questões ─────
-  const { materiasAgrupadas, todosCadernos } = useMemo(() => {
-    const materiaMap = new Map<string, Map<string, Map<string, BancoQuestion[]>>>();
+  // ── 1. Carregar nós da hierarquia (organizacao_nos) ──
+  const carregarNos = useCallback(async () => {
+    try {
+      let res = await supabasePublic
+        .from("organizacao_nos")
+        .select("*")
+        .order("ordem", { ascending: true });
 
-    for (const q of questions) {
-      const materia = (q.materia || (q as any).Disciplina || (q as any).disciplina || "Geral").trim();
-      const rawTopico = ((q as any).topico || (q as any)["Tópico"] || q.tema || (q as any).PROVA || "Caderno Geral").trim();
-      const rawAssunto = ((q as any).assunto || (q as any)["Assunto"] || (q as any)["Pergunta problema"] || "Caso Geral").trim();
-
-      if (!materiaMap.has(materia)) materiaMap.set(materia, new Map());
-      const topicoMap = materiaMap.get(materia)!;
-
-      if (!topicoMap.has(rawTopico)) topicoMap.set(rawTopico, new Map());
-      const assuntoMap = topicoMap.get(rawTopico)!;
-
-      if (!assuntoMap.has(rawAssunto)) assuntoMap.set(rawAssunto, []);
-      assuntoMap.get(rawAssunto)!.push(q);
-    }
-
-    const materias: MateriaGroup[] = [];
-    const allCadernos: CadernoItem[] = [];
-
-    for (const [materiaNome, topicoMap] of materiaMap) {
-      const cadernos: CadernoItem[] = [];
-      let totalMateriaQuestoes = 0;
-
-      for (const [topicoNome, assuntoMap] of topicoMap) {
-        const casos: CasoGroup[] = [];
-        const topicoQuestoes: BancoQuestion[] = [];
-
-        for (const [assuntoNome, qs] of assuntoMap) {
-          casos.push({ nome: assuntoNome, questoes: qs });
-          topicoQuestoes.push(...qs);
-        }
-
-        casos.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-
-        const cadernoItem: CadernoItem = {
-          id: `${materiaNome}_${topicoNome}`,
-          nome: topicoNome,
-          materia: materiaNome,
-          casos,
-          questoes: topicoQuestoes,
-        };
-
-        cadernos.push(cadernoItem);
-        allCadernos.push(cadernoItem);
-        totalMateriaQuestoes += topicoQuestoes.length;
+      if (res.error && supabase) {
+        res = await supabase
+          .from("organizacao_nos")
+          .select("*")
+          .order("ordem", { ascending: true });
       }
 
-      cadernos.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+      if (!res.error && res.data) {
+        setDbNodes(res.data as OrgNodeDB[]);
+      }
+    } catch (e) {
+      console.warn("Aviso ao buscar organizacao_nos:", e);
+    }
+  }, []);
 
-      materias.push({
-        nome: materiaNome,
-        icone: getMateriaIcon(materiaNome),
-        cadernos,
-        totalQuestoes: totalMateriaQuestoes,
+  useEffect(() => {
+    carregarNos();
+  }, [carregarNos]);
+
+  // ── 2. Montar Estrutura Hierárquica a partir do DB e das questões ──
+  const { materiasAgrupadas, todosCadernos, parentOptions } = useMemo(() => {
+    // Mapa de nós por ID
+    const nodeMap = new Map<string, OrgNodeDB>();
+    dbNodes.forEach(n => nodeMap.set(String(n.id), n));
+
+    // Identificar nós raízes (Matérias)
+    const rootNodes = dbNodes.filter(n => !n.parent_id);
+    const childNodes = dbNodes.filter(n => !!n.parent_id);
+
+    // Estrutura em memória: Materia -> Caderno -> Caso -> BancoQuestion[]
+    interface InternalCaso { id: string; nome: string; questoes: BancoQuestion[] }
+    interface InternalCaderno { id: string; nome: string; materia: string; casosMap: Map<string, InternalCaso>; questoes: BancoQuestion[] }
+    interface InternalMateria { id: string; nome: string; icone: string; cadernosMap: Map<string, InternalCaderno>; totalQuestoes: number }
+
+    const materiasMap = new Map<string, InternalMateria>();
+
+    // Inicializa com as Matérias que já existem no DB
+    rootNodes.forEach(root => {
+      materiasMap.set(root.nome.trim().toLowerCase(), {
+        id: String(root.id),
+        nome: root.nome.trim(),
+        icone: getMateriaIcon(root.nome),
+        cadernosMap: new Map(),
+        totalQuestoes: 0,
+      });
+    });
+
+    // Inicializa os Cadernos que já existem no DB
+    childNodes.forEach(child => {
+      const parent = nodeMap.get(String(child.parent_id));
+      if (parent && !parent.parent_id) {
+        // Filho direto de raiz = Caderno
+        const mKey = parent.nome.trim().toLowerCase();
+        let m = materiasMap.get(mKey);
+        if (!m) {
+          m = {
+            id: String(parent.id),
+            nome: parent.nome.trim(),
+            icone: getMateriaIcon(parent.nome),
+            cadernosMap: new Map(),
+            totalQuestoes: 0,
+          };
+          materiasMap.set(mKey, m);
+        }
+        if (!m.cadernosMap.has(child.nome.trim().toLowerCase())) {
+          m.cadernosMap.set(child.nome.trim().toLowerCase(), {
+            id: String(child.id),
+            nome: child.nome.trim(),
+            materia: m.nome,
+            casosMap: new Map(),
+            questoes: [],
+          });
+        }
+      }
+    });
+
+    // Inicializa os Casos (netos de raiz) que já existem no DB
+    childNodes.forEach(subchild => {
+      const parentCaderno = nodeMap.get(String(subchild.parent_id));
+      if (parentCaderno && parentCaderno.parent_id) {
+        const rootMateria = nodeMap.get(String(parentCaderno.parent_id));
+        if (rootMateria) {
+          const mKey = rootMateria.nome.trim().toLowerCase();
+          const cKey = parentCaderno.nome.trim().toLowerCase();
+          const m = materiasMap.get(mKey);
+          if (m) {
+            const cad = m.cadernosMap.get(cKey);
+            if (cad) {
+              if (!cad.casosMap.has(subchild.nome.trim().toLowerCase())) {
+                cad.casosMap.set(subchild.nome.trim().toLowerCase(), {
+                  id: String(subchild.id),
+                  nome: subchild.nome.trim(),
+                  questoes: [],
+                });
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Mapear cada questão para seu nó correspondente
+    for (const q of questions) {
+      // Verifica se houve override de drag & drop
+      const effectiveOrgId = orgOverrides.get(String(q.id)) || (q as any).organizacao_id;
+
+      let resolvedMateria = (q.materia || (q as any).Disciplina || "Conhecimentos Bancários").trim();
+      let resolvedCaderno = ((q as any).topico || (q as any)["Tópico"] || q.tema || (q as any).PROVA || "Geral").trim();
+      let resolvedCaso = ((q as any).assunto || (q as any)["Assunto"] || (q as any)["Pergunta problema"] || "Geral").trim();
+      let resolvedCasoId = `caso_${resolvedCaso}`;
+
+      // Se a questão possui organizacao_id associada no DB
+      if (effectiveOrgId && nodeMap.has(String(effectiveOrgId))) {
+        const directNode = nodeMap.get(String(effectiveOrgId))!;
+        resolvedCasoId = String(directNode.id);
+
+        if (!directNode.parent_id) {
+          // Nó é raiz (Matéria)
+          resolvedMateria = directNode.nome;
+        } else {
+          const parentNode = nodeMap.get(String(directNode.parent_id));
+          if (parentNode && !parentNode.parent_id) {
+            // Nó é Caderno (filho direto de raiz)
+            resolvedMateria = parentNode.nome;
+            resolvedCaderno = directNode.nome;
+          } else if (parentNode && parentNode.parent_id) {
+            // Nó é Caso (neto de raiz)
+            const grandParentNode = nodeMap.get(String(parentNode.parent_id));
+            if (grandParentNode) {
+              resolvedMateria = grandParentNode.nome;
+            }
+            resolvedCaderno = parentNode.nome;
+            resolvedCaso = directNode.nome;
+          }
+        }
+      }
+
+      // Adiciona na hierarquia
+      const mKey = resolvedMateria.toLowerCase();
+      if (!materiasMap.has(mKey)) {
+        materiasMap.set(mKey, {
+          id: `materia_${mKey}`,
+          nome: resolvedMateria,
+          icone: getMateriaIcon(resolvedMateria),
+          cadernosMap: new Map(),
+          totalQuestoes: 0,
+        });
+      }
+      const mat = materiasMap.get(mKey)!;
+
+      const cKey = resolvedCaderno.toLowerCase();
+      if (!mat.cadernosMap.has(cKey)) {
+        mat.cadernosMap.set(cKey, {
+          id: `cad_${mKey}_${cKey}`,
+          nome: resolvedCaderno,
+          materia: mat.nome,
+          casosMap: new Map(),
+          questoes: [],
+        });
+      }
+      const cad = mat.cadernosMap.get(cKey)!;
+
+      const casoKey = resolvedCaso.toLowerCase();
+      if (!cad.casosMap.has(casoKey)) {
+        cad.casosMap.set(casoKey, {
+          id: resolvedCasoId,
+          nome: resolvedCaso,
+          questoes: [],
+        });
+      }
+      const caso = cad.casosMap.get(casoKey)!;
+
+      caso.questoes.push(q);
+      cad.questoes.push(q);
+      mat.totalQuestoes += 1;
+    }
+
+    // Converter para arrays planos e ordenar
+    const materiasList: MateriaGroup[] = [];
+    const cadernosList: CadernoItem[] = [];
+
+    for (const [, mat] of materiasMap) {
+      const cadList: CadernoItem[] = [];
+
+      for (const [, cad] of mat.cadernosMap) {
+        const casosList: CasoGroup[] = [];
+
+        for (const [, caso] of cad.casosMap) {
+          casosList.push({
+            id: caso.id,
+            nome: caso.nome,
+            questoes: caso.questoes,
+          });
+        }
+
+        casosList.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+
+        const cadItem: CadernoItem = {
+          id: cad.id,
+          nome: cad.nome,
+          materia: cad.materia,
+          casos: casosList,
+          questoes: cad.questoes,
+        };
+
+        cadList.push(cadItem);
+        cadernosList.push(cadItem);
+      }
+
+      cadList.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+
+      materiasList.push({
+        id: mat.id,
+        nome: mat.nome,
+        icone: mat.icone,
+        cadernos: cadList,
+        totalQuestoes: mat.totalQuestoes,
       });
     }
 
-    materias.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-    allCadernos.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+    materiasList.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+    cadernosList.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 
-    return { materiasAgrupadas: materias, todosCadernos: allCadernos };
-  }, [questions]);
+    // Lista de opções para criar pasta (select dropdown)
+    const options: { id: string; nome: string; nivel: string }[] = [];
+    rootNodes.forEach(rn => {
+      options.push({ id: String(rn.id), nome: rn.nome, nivel: "🏛️ [Matéria]" });
+      const cChildren = childNodes.filter(c => c.parent_id === rn.id);
+      cChildren.forEach(cn => {
+        options.push({ id: String(cn.id), nome: `${rn.nome} → ${cn.nome}`, nivel: "  📝 [Caderno]" });
+      });
+    });
 
-  // Lista de matérias para filtros
+    return {
+      materiasAgrupadas: materiasList,
+      todosCadernos: cadernosList,
+      parentOptions: options,
+    };
+  }, [dbNodes, questions, orgOverrides]);
+
+  // Lista de matérias para filtros em pills
   const materiasDisponiveis = useMemo(() => {
     return materiasAgrupadas.map(m => m.nome);
   }, [materiasAgrupadas]);
@@ -880,44 +1166,31 @@ export default function CadernosTab({
     };
   }, [userAnswers, duvidas]);
 
-  // Filtro de cadernos
-  const cadernosFiltrados = useMemo(() => {
-    let list = todosCadernos;
+  // ── Drag & Drop: Mover questão para novo nó ──
+  const handleDropQuestion = async (questaoId: string, targetNodeId: string) => {
+    if (!questaoId || !targetNodeId) return;
 
-    if (materiaFiltro !== "Todas") {
-      list = list.filter(c => c.materia === materiaFiltro);
+    // Atualiza estado local imediatamente (otimista)
+    setOrgOverrides(prev => {
+      const next = new Map(prev);
+      next.set(String(questaoId), targetNodeId);
+      return next;
+    });
+
+    // Se o targetNodeId for um ID de UUID real, grava no Supabase
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetNodeId)) {
+      try {
+        await supabasePublic
+          .from("questoes")
+          .update({ organizacao_id: targetNodeId })
+          .eq("id", Number(questaoId) || questaoId);
+      } catch (e) {
+        console.warn("Aviso ao persistir organizacao_id no banco:", e);
+      }
     }
+  };
 
-    if (cadernoFiltro !== "Todos") {
-      list = list.filter(c => c.nome === cadernoFiltro);
-    }
-
-    if (search.trim()) {
-      const term = search.toLowerCase();
-      list = list.filter(c =>
-        c.nome.toLowerCase().includes(term) ||
-        c.materia.toLowerCase().includes(term) ||
-        c.casos.some(a => a.nome.toLowerCase().includes(term))
-      );
-    }
-
-    if (statusFiltro !== "todas") {
-      list = list.filter(c => {
-        return c.questoes.some(q => {
-          const st = userAnswers[String(q.id)];
-          if (statusFiltro === "erros") return st && !st.isCorrect;
-          if (statusFiltro === "mais_erros") return st && st.errorCount > 0;
-          if (statusFiltro === "nao_feitas") return !st;
-          if (statusFiltro === "duvidas") return duvidas.has(String(q.id));
-          return true;
-        });
-      });
-    }
-
-    return list;
-  }, [todosCadernos, materiaFiltro, cadernoFiltro, search, statusFiltro, userAnswers, duvidas]);
-
-  // Manipulador de abertura de questão em modal
+  // Manipulador de abertura de questão em modal QuestionResolver
   const handleOpenQuestionInModal = useCallback((q: BancoQuestion, queue: BancoQuestion[]) => {
     if (!user) {
       onShowAuth();
@@ -956,7 +1229,7 @@ export default function CadernosTab({
     }
   };
 
-  // Se estiver na visão dedicada de um caderno
+  // ── Se estiver na visão dedicada de um Caderno Selecionado ──
   if (selectedCaderno) {
     return (
       <div className="flex flex-col gap-4 bg-[#080d1a] rounded-2xl border border-white/[0.06] p-4 sm:p-5 shadow-2xl relative overflow-hidden">
@@ -973,7 +1246,26 @@ export default function CadernosTab({
           onOpenQuestion={handleOpenQuestionInModal}
           onTrainAll={() => {
             if (!user) { onShowAuth(); return; }
-            handleOpenQuestionInModal(selectedCaderno.questoes[0], selectedCaderno.questoes);
+            if (selectedCaderno.questoes.length > 0) {
+              handleOpenQuestionInModal(selectedCaderno.questoes[0], selectedCaderno.questoes);
+            }
+          }}
+          onDropQuestion={handleDropQuestion}
+          onOpenNovaPastaModal={(parentCadernoId) => {
+            setModalDefaultParentId(parentCadernoId);
+            setIsNovaPastaModalOpen(true);
+          }}
+        />
+
+        {/* Modal de Criar Pasta */}
+        <ModalCriarPasta
+          isOpen={isNovaPastaModalOpen}
+          onClose={() => setIsNovaPastaModalOpen(false)}
+          parentNodes={parentOptions}
+          defaultParentId={modalDefaultParentId}
+          onSuccess={() => {
+            carregarNos();
+            if (onRefreshQuestions) onRefreshQuestions();
           }}
         />
 
@@ -1006,6 +1298,18 @@ export default function CadernosTab({
       </div>
     );
   }
+
+  // Filtragem de matérias
+  const materiasFiltradas = materiasAgrupadas.filter(m => {
+    if (materiaFiltro !== "Todas" && m.nome !== materiaFiltro) return false;
+    if (search.trim()) {
+      const term = search.toLowerCase();
+      const matchMateria = m.nome.toLowerCase().includes(term);
+      const matchCaderno = m.cadernos.some(c => c.nome.toLowerCase().includes(term));
+      if (!matchMateria && !matchCaderno) return false;
+    }
+    return true;
+  });
 
   return (
     <div className="flex flex-col gap-4 bg-[#080d1a] rounded-2xl border border-white/[0.06] p-4 sm:p-5 shadow-2xl relative overflow-hidden">
@@ -1066,6 +1370,18 @@ export default function CadernosTab({
             </div>
           )}
         </div>
+
+        {/* Botão + Nova Pasta / Caderno */}
+        <button
+          onClick={() => {
+            setModalDefaultParentId("");
+            setIsNovaPastaModalOpen(true);
+          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600/90 hover:bg-indigo-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/20 active:scale-95 ml-auto"
+        >
+          <FolderPlus size={13} />
+          <span>Nova Pasta / Caderno</span>
+        </button>
       </div>
 
       {/* ── Barra de Filtros e Busca (Idêntica ao Notion) ── */}
@@ -1152,7 +1468,7 @@ export default function CadernosTab({
               statusFiltro === "erros" ? "bg-rose-600 text-white shadow" : "text-rose-400/70 hover:text-rose-300"
             }`}
           >
-            🔴 Últs. Erros
+            🔴 Erros
           </button>
           <button
             onClick={() => setStatusFiltro("mais_erros")}
@@ -1181,8 +1497,8 @@ export default function CadernosTab({
         </div>
       </div>
 
-      {/* ── Lista de Cadernos (Blocos) ── */}
-      {cadernosFiltrados.length === 0 ? (
+      {/* ── LISTA DE MATÉRIAS E SEUS CADERNOS (Idêntico ao NotionQuestionTab) ── */}
+      {materiasFiltradas.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-center bg-[#101526]/80 border border-white/[0.06] rounded-2xl relative z-10">
           <BookOpen size={32} className="text-slate-700" />
           <p className="text-[12px] font-black text-slate-500 uppercase tracking-widest">
@@ -1201,19 +1517,187 @@ export default function CadernosTab({
           </button>
         </div>
       ) : (
-        <div className="flex flex-col gap-2 relative z-10">
-          {cadernosFiltrados.map((caderno) => (
-            <CadernoCardItem
-              key={caderno.id}
-              caderno={caderno}
-              userAnswers={userAnswers}
-              duvidas={duvidas}
-              onOpenQuestion={handleOpenQuestionInModal}
-              onSelectDedicated={() => setSelectedCaderno(caderno)}
-            />
-          ))}
+        <div className="flex flex-col gap-3 relative z-10">
+          {materiasFiltradas.map((mat) => {
+            // Calcular estatísticas da matéria
+            let mAcertos = 0;
+            let mErros = 0;
+            let mDuvidas = 0;
+
+            mat.cadernos.forEach(cad => {
+              cad.questoes.forEach(q => {
+                const st = userAnswers[String(q.id)];
+                if (st) {
+                  if (st.isCorrect) mAcertos++;
+                  else mErros++;
+                }
+                if (duvidas.has(String(q.id))) mDuvidas++;
+              });
+            });
+
+            const mTotal = mat.totalQuestoes;
+            const mRespondidas = mAcertos + mErros;
+            const mPct = mRespondidas > 0 ? Math.round((mAcertos / mRespondidas) * 100) : null;
+
+            const mAproveitamentoClasses =
+              mPct === null
+                ? "border-slate-800 text-slate-500 bg-slate-900/60"
+                : mPct >= 70
+                ? "border-slate-800 text-emerald-400/90 bg-slate-900/60 font-medium"
+                : mPct >= 50
+                ? "border-slate-800 text-amber-400/90 bg-slate-900/60 font-medium"
+                : "border-slate-800 text-rose-400/90 bg-slate-900/60 font-medium";
+
+            return (
+              <div
+                key={mat.id}
+                className="flex flex-col bg-[#101526]/80 border border-white/[0.06] rounded-xl p-2.5 sm:p-3 shadow-lg gap-2 transition-all hover:border-white/[0.10]"
+              >
+                {/* ── CABEÇALHO DA MATÉRIA (100% IGUAL AO NOTION) ── */}
+                <div className="flex items-center justify-between border-b border-white/[0.06] pb-2 px-1 flex-nowrap gap-2">
+                  <div className="flex items-center gap-2 min-w-0 flex-nowrap">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
+                    <span className="text-sm shrink-0">{mat.icone}</span>
+                    <h3 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider truncate">
+                      {mat.nome}
+                    </h3>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0 flex-nowrap whitespace-nowrap">
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] font-normal shrink-0 select-none flex-nowrap whitespace-nowrap">
+                      <span className="text-slate-400 font-sans">{mTotal} quest.</span>
+                      <span className="text-emerald-400/90 flex items-center gap-0.5 font-sans" title="Total de acertos na matéria">
+                        <Check size={11} className="text-emerald-400/80 stroke-[2]" />
+                        {mAcertos}
+                      </span>
+                      <span className="text-rose-400/90 flex items-center gap-0.5 font-sans" title="Total de erros na matéria">
+                        <X size={11} className="text-rose-400/80 stroke-[2]" />
+                        {mErros}
+                      </span>
+                      <span className="text-amber-400/90 flex items-center gap-0.5 font-sans" title="Total em dúvida na matéria">
+                        <Flag size={10} className="text-amber-400/80 fill-amber-400/10" />
+                        {mDuvidas}
+                      </span>
+                      <span className={`px-1.5 py-0.5 rounded border text-[9px] font-bold tabular-nums ${mAproveitamentoClasses}`}>
+                        {mPct === null ? "—" : `${mPct}%`}
+                      </span>
+                    </div>
+
+                    <span className="text-[9.5px] font-normal text-slate-400 font-mono bg-white/[0.03] px-2 py-0.5 rounded border border-white/[0.06] shrink-0">
+                      {mat.cadernos.length} caderno{mat.cadernos.length > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                </div>
+
+                {/* ── LISTA DE CADERNOS DENTRO DA MATÉRIA (Idêntico ao Notion) ── */}
+                <div className="flex flex-col gap-1.5">
+                  {mat.cadernos.map((caderno) => {
+                    // Estatísticas do caderno
+                    let cAcertos = 0;
+                    let cErros = 0;
+                    let cDuvidas = 0;
+
+                    caderno.questoes.forEach(q => {
+                      const st = userAnswers[String(q.id)];
+                      if (st) {
+                        if (st.isCorrect) cAcertos++;
+                        else cErros++;
+                      }
+                      if (duvidas.has(String(q.id))) cDuvidas++;
+                    });
+
+                    const cTotal = caderno.questoes.length;
+                    const cRespondidas = cAcertos + cErros;
+                    const cPct = cRespondidas > 0 ? Math.round((cAcertos / cRespondidas) * 100) : null;
+
+                    const cAproveitamentoClasses =
+                      cPct === null
+                        ? "border-slate-800 text-slate-500 bg-slate-900/60"
+                        : cPct >= 70
+                        ? "border-slate-800 text-emerald-400/90 bg-slate-900/60 font-medium"
+                        : cPct >= 50
+                        ? "border-slate-800 text-amber-400/90 bg-slate-900/60 font-medium"
+                        : "border-slate-800 text-rose-400/90 bg-slate-900/60 font-medium";
+
+                    return (
+                      <div
+                        key={caderno.id}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = "move";
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const qId = e.dataTransfer.getData("questao_id") || e.dataTransfer.getData("text/plain");
+                          if (qId) {
+                            handleDropQuestion(qId, caderno.id);
+                          }
+                        }}
+                        className="flex items-center justify-between gap-1.5 p-2 sm:p-2.5 rounded-xl border transition-all bg-[#111623]/90 border-white/[0.06] hover:border-white/[0.14] group cursor-pointer"
+                        onClick={() => setSelectedCaderno(caderno)}
+                      >
+                        {/* Lado Esquerdo: Ícone + Título */}
+                        <div className="flex items-center gap-2 min-w-0 flex-nowrap truncate flex-1">
+                          <span className="text-[10px] text-slate-500 w-3.5 h-3.5 flex items-center justify-center shrink-0">
+                            →
+                          </span>
+                          <span className="text-sm shrink-0">📝</span>
+                          <span className="text-[12px] sm:text-[13px] font-medium text-slate-300 group-hover:text-white truncate">
+                            {caderno.nome}
+                          </span>
+                        </div>
+
+                        {/* Lado Direito: Stats do Caderno + Botão Abrir */}
+                        <div className="flex items-center gap-2 shrink-0 flex-nowrap whitespace-nowrap">
+                          <span className="text-[10px] font-normal text-slate-400 font-sans">{cTotal} quest.</span>
+                          <span className="text-emerald-400/90 flex items-center gap-0.5 font-sans" title="Total de acertos">
+                            <Check size={11} className="text-emerald-400/80 stroke-[2]" />
+                            {cAcertos}
+                          </span>
+                          <span className="text-rose-400/90 flex items-center gap-0.5 font-sans" title="Total de erros">
+                            <X size={11} className="text-rose-400/80 stroke-[2]" />
+                            {cErros}
+                          </span>
+                          <span className="text-amber-400/90 flex items-center gap-0.5 font-sans" title="Em dúvida">
+                            <Flag size={10} className="text-amber-400/80 fill-amber-400/10" />
+                            {cDuvidas}
+                          </span>
+                          <span className={`px-1.5 py-0.5 rounded border text-[10px] font-bold ${cAproveitamentoClasses}`}>
+                            {cPct === null ? "—" : `${cPct}%`}
+                          </span>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedCaderno(caderno);
+                            }}
+                            title="Abrir visão dedicada deste caderno"
+                            className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.03] text-slate-400 hover:text-indigo-300 hover:bg-white/[0.08] hover:border-white/[0.15] transition-all ml-1"
+                          >
+                            <ChevronRight size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
+
+      {/* ── MODAL DE CRIAR NOVA PASTA / CADERNO ── */}
+      <ModalCriarPasta
+        isOpen={isNovaPastaModalOpen}
+        onClose={() => setIsNovaPastaModalOpen(false)}
+        parentNodes={parentOptions}
+        defaultParentId={modalDefaultParentId}
+        onSuccess={() => {
+          carregarNos();
+          if (onRefreshQuestions) onRefreshQuestions();
+        }}
+      />
 
       {/* ── MODAL DE RESOLUÇÃO FOCADA (IGUAL ABA QUESTÃO ATIVA) ── */}
       {modalQuestion && (
