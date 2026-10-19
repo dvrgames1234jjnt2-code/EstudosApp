@@ -195,6 +195,11 @@ export default function BancoPage() {
         Gabarito: row.Gabarito || row.gabarito || undefined,
         explicacao: row["Comentário"] || row.Comentário || row.comentario || row.Comentario || row.explicacao || row.Explicacao || undefined,
         created_at: row.created_at || undefined,
+        imagemEnunciado: row.Imagem_Enunciado || row.imagemEnunciado || undefined,
+        Ano: row.Ano ? Number(row.Ano) : undefined,
+        ID_Qconcursos: row.ID_Qconcursos || undefined,
+        organizacao_id: row.organizacao_id || undefined,
+        Duvida: typeof row.Duvida === "boolean" ? row.Duvida : undefined,
       }));
       setQuestions(normalized);
       // Inicializa a fila padrão com todas as questões para que o Desempenho funcione de imediato

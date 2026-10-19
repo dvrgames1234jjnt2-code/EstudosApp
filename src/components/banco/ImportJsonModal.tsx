@@ -1,20 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X,
-  FileJson,
-  Upload,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
-  Sparkles,
-  Copy,
-  Check,
-  FileText
+  X, FileJson, Upload, CheckCircle2, AlertCircle, Loader2,
+  Sparkles, Copy, Check, FileText, FolderTree, AlertTriangle,
+  Info,
 } from "lucide-react";
 import { supabasePublic } from "@/lib/supabase";
+import { resolverCaminhoOrg } from "@/lib/questionService";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tipos
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface ImportJsonModalProps {
   isOpen: boolean;
@@ -22,192 +20,298 @@ interface ImportJsonModalProps {
   onSuccess: () => void;
 }
 
-export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalProps) {
-  const [jsonText, setJsonText] = useState("");
-  const [overrideProva, setOverrideProva] = useState("");
-  const [parsedQuestions, setParsedQuestions] = useState<any[]>([]);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [isImporting, setIsImporting] = useState(false);
-  const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
-  const [successCount, setSuccessCount] = useState<number | null>(null);
-  const [copiedPrompt, setCopiedPrompt] = useState(false);
+/** Estrutura do JSON de entrada (formato oficial v2) */
+interface QuestaoInput {
+  PROVA: string;
+  Ano?: number;
+  Ordem?: number;
+  Banca?: string;
+  ID_Qconcursos?: string;
+  Dificuldade?: string;
+  Status?: string;
+  Duvida?: boolean;
+  Caminho_Organizacao?: string[];
+  "Texto de apoio"?: string;
+  Enunciado: string;
+  "Pergunta problema"?: string;
+  Imagens_Enunciado?: string[];
+  "Alternativa A"?: string;
+  "Alternativa B"?: string;
+  "Alternativa C"?: string;
+  "Alternativa D"?: string;
+  "Alternativa E"?: string;
+  Gabarito?: string;
+  "Comentário"?: string;
+}
 
-  // Exemplo de Prompt para a IA gerar no formato correto
-  const samplePrompt = `Gere uma lista de questões no formato JSON rigoroso.
-Cada objeto deve conter a seguinte estrutura:
+/** Resultado da análise de cada questão antes de importar */
+interface QuestaoAnalisada {
+  input: QuestaoInput;
+  erros: string[];
+  avisos: string[];
+  status: "nova" | "duplicata" | "erro";
+  duplicataId?: number;   // id da questão existente com mesmo ID_Qconcursos
+}
+
+/** Resultado geral da análise do lote */
+interface Analise {
+  questoes: QuestaoAnalisada[];
+  totalNova: number;
+  totalDuplicata: number;
+  totalErro: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+const STATUS_VALIDOS = ["Ativa", "Arquivada", "Anulada", "Inativa"];
+const DIFICULDADES_VALIDAS = ["Fácil", "Média", "Difícil"];
+
+function validarQuestao(q: QuestaoInput): string[] {
+  const erros: string[] = [];
+  if (!q.PROVA?.trim())      erros.push('Campo "PROVA" é obrigatório.');
+  if (!q.Enunciado?.trim())  erros.push('Campo "Enunciado" é obrigatório.');
+  if (q.Status && !STATUS_VALIDOS.includes(q.Status))
+    erros.push(`Status "${q.Status}" inválido. Use: ${STATUS_VALIDOS.join(", ")}.`);
+  if (q.Dificuldade && !DIFICULDADES_VALIDAS.includes(q.Dificuldade))
+    erros.push(`Dificuldade "${q.Dificuldade}" inválida. Use: ${DIFICULDADES_VALIDAS.join(", ")}.`);
+  if (q.Gabarito && !/^[A-Ea-e]$/.test(q.Gabarito.trim()))
+    erros.push(`Gabarito "${q.Gabarito}" inválido. Use A, B, C, D ou E.`);
+  return erros;
+}
+
+function avisoQuestao(q: QuestaoInput): string[] {
+  const avisos: string[] = [];
+  if (!q.Gabarito)               avisos.push("Gabarito ausente.");
+  if (!q["Alternativa A"])       avisos.push("Sem alternativas (questão discursiva?).");
+  if (!q.Caminho_Organizacao?.length) avisos.push("Sem Caminho_Organizacao — ficará sem pasta.");
+  return avisos;
+}
+
+/** Normaliza o JSON de entrada para o formato antigo (compatível com back) */
+function normalizarInput(item: any): QuestaoInput {
+  return {
+    PROVA:         (item.PROVA || item.prova || "Importado").trim(),
+    Ano:           item.Ano    ? Number(item.Ano)    : undefined,
+    Ordem:         item.Ordem  ? Number(item.Ordem)  : undefined,
+    Banca:         item.Banca  || item.banca  || undefined,
+    ID_Qconcursos: item.ID_Qconcursos ? String(item.ID_Qconcursos).trim() : undefined,
+    Dificuldade:   item.Dificuldade || item.dificuldade || undefined,
+    Status:        item.Status  || item.status  || "Ativa",
+    Duvida:        Boolean(item.Duvida ?? item.duvida ?? false),
+    Caminho_Organizacao: Array.isArray(item.Caminho_Organizacao)
+      ? item.Caminho_Organizacao.map((s: any) => String(s).trim()).filter(Boolean)
+      : undefined,
+    "Texto de apoio":    item["Texto de apoio"]  || item.texto_apoio  || undefined,
+    Enunciado:           (item.Enunciado || item.enunciado || item.texto || "").trim(),
+    "Pergunta problema": item["Pergunta problema"] || item.pergunta_problema || undefined,
+    Imagens_Enunciado:   Array.isArray(item.Imagens_Enunciado)
+      ? item.Imagens_Enunciado.filter(Boolean)
+      : item.Imagem_Enunciado ? [item.Imagem_Enunciado] : [],
+    "Alternativa A": item["Alternativa A"] || item.alternativa_a || undefined,
+    "Alternativa B": item["Alternativa B"] || item.alternativa_b || undefined,
+    "Alternativa C": item["Alternativa C"] || item.alternativa_c || undefined,
+    "Alternativa D": item["Alternativa D"] || item.alternativa_d || undefined,
+    "Alternativa E": item["Alternativa E"] || item.alternativa_e || undefined,
+    Gabarito:  item.Gabarito  ? String(item.Gabarito).trim().toUpperCase() : undefined,
+    "Comentário": item["Comentário"] || item.comentario || item.explicacao || undefined,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Prompt atualizado para IA
+// ─────────────────────────────────────────────────────────────────────────────
+const SAMPLE_PROMPT = `Gere uma lista de questões no formato JSON oficial abaixo.
 
 [
   {
-    "PROVA": "Nome da Prova ou Simulado",
+    "PROVA": "Concurso Banco do Brasil",
+    "Ano": 2023,
     "Ordem": 1,
-    "Banca": "Nome da Banca",
-    "Disciplina": "Nome da Disciplina",
-    "Materia": "Nome da Matéria",
-    "Tópico": "Nome do Tópico",
-    "Assunto": "Nome do Assunto",
+    "Banca": "Cesgranrio",
+    "ID_Qconcursos": "123456",
     "Dificuldade": "Média",
     "Status": "Ativa",
-    "Texto de apoio": "Texto longo de apoio ou leitura se houver (opcional)",
-    "Enunciado": "O texto que apresenta o contexto da questão...",
-    "Pergunta problema": "O que de fato a questão pede para responder",
-    "Imagem_Enunciado": "",
-    "Alternativa A": "Texto da alternativa A",
-    "Alternativa B": "Texto da alternativa B",
-    "Alternativa C": "Texto da alternativa C",
-    "Alternativa D": "Texto da alternativa D",
-    "Alternativa E": "Texto da alternativa E",
+    "Duvida": false,
+    "Caminho_Organizacao": ["Conhecimentos Bancários", "Noções do Mercado de Capitais", "Underwriting"],
+    "Texto de apoio": "",
+    "Enunciado": "Enunciado completo da questão.",
+    "Pergunta problema": "",
+    "Imagens_Enunciado": [],
+    "Alternativa A": "Primeira alternativa",
+    "Alternativa B": "Segunda alternativa",
+    "Alternativa C": "Terceira alternativa",
+    "Alternativa D": "Quarta alternativa",
+    "Alternativa E": "Quinta alternativa",
     "Gabarito": "A",
-    "Comentário": "Explicação detalhada da resolução"
+    "Comentário": "Explicação da resposta correta."
   }
-]`;
+]
+
+Regras:
+- Status deve ser: Ativa, Arquivada, Anulada ou Inativa.
+- Dificuldade deve ser: Fácil, Média ou Difícil.
+- Gabarito deve ser uma única letra: A, B, C, D ou E.
+- Caminho_Organizacao é uma lista de pastas do geral para o específico.
+- id não deve ser incluído (gerado pelo banco).`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Componente principal
+// ─────────────────────────────────────────────────────────────────────────────
+export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalProps) {
+  const [jsonText,       setJsonText]       = useState("");
+  const [analise,        setAnalise]        = useState<Analise | null>(null);
+  const [errorMsg,       setErrorMsg]       = useState("");
+  const [isAnalyzing,    setIsAnalyzing]    = useState(false);
+  const [isImporting,    setIsImporting]    = useState(false);
+  const [progress,       setProgress]       = useState<{ current: number; total: number } | null>(null);
+  const [successCount,   setSuccessCount]   = useState<number | null>(null);
+  const [copiedPrompt,   setCopiedPrompt]   = useState(false);
+  const [overrideProva,  setOverrideProva]  = useState("");
 
   const copyPrompt = () => {
-    navigator.clipboard.writeText(samplePrompt);
+    navigator.clipboard.writeText(SAMPLE_PROMPT);
     setCopiedPrompt(true);
     setTimeout(() => setCopiedPrompt(false), 2000);
   };
 
-  const handleTextChange = (val: string) => {
-    setJsonText(val);
+  // ── FASE 1: Parse + validação local + detecção de duplicatas ──────────────
+  const handleAnalisar = useCallback(async () => {
     setErrorMsg("");
+    setAnalise(null);
     setSuccessCount(null);
 
-    if (!val.trim()) {
-      setParsedQuestions([]);
+    let raw: any[];
+    try {
+      const parsed = JSON.parse(jsonText);
+      raw = Array.isArray(parsed) ? parsed : [parsed];
+    } catch (e: any) {
+      setErrorMsg("JSON inválido: " + e.message);
       return;
     }
 
+    if (raw.length === 0) { setErrorMsg("O JSON está vazio."); return; }
+    setIsAnalyzing(true);
+
     try {
-      const data = JSON.parse(val);
-      const list = Array.isArray(data) ? data : [data];
-      
-      const normalized = list.map((item, index) => {
+      const inputs: QuestaoInput[] = raw.map(normalizarInput);
+
+      // Coletar IDs_Qconcursos para checar duplicatas em lote
+      const idsQc = inputs
+        .map(q => q.ID_Qconcursos)
+        .filter((v): v is string => Boolean(v));
+
+      let duplicatasMap = new Map<string, number>(); // ID_Qconcursos → questoes.id
+      if (idsQc.length > 0) {
+        const { data: existing } = await supabasePublic
+          .from("questoes")
+          .select("id, \"ID_Qconcursos\"")
+          .in("\"ID_Qconcursos\"", idsQc);
+        for (const row of existing ?? []) {
+          if (row["ID_Qconcursos"]) duplicatasMap.set(String(row["ID_Qconcursos"]), row.id);
+        }
+      }
+
+      // Analisar cada questão
+      const questoesAnalisadas: QuestaoAnalisada[] = inputs.map(q => {
+        const erros  = validarQuestao(q);
+        const avisos = avisoQuestao(q);
+        const isDup  = q.ID_Qconcursos ? duplicatasMap.has(q.ID_Qconcursos) : false;
         return {
-          PROVA: item.PROVA || item.prova || "Simulado Importado",
-          Ordem: Number(item.Ordem || item.ordem || index + 1),
-          Banca: item.Banca || item.banca || "Geral",
-          Disciplina: item.Disciplina || item.disciplina || item.Materia || item.materia || "Geral",
-          Materia: item.Materia || item.materia || item.Disciplina || item.disciplina || "Geral",
-          Tópico: item.Tópico || item.topico || item.Topico || item.Assunto || item.assunto || "Geral",
-          Assunto: item.Assunto || item.assunto || item.Tópico || item.topico || "Geral",
-          Dificuldade: item.Dificuldade || item.dificuldade || "Média",
-          Status: item.Status || item.status || "Ativa",
-          "Texto de apoio": item["Texto de apoio"] || item.texto_apoio || item.TextoDeApoio || null,
-          Enunciado: item.Enunciado || item.enunciado || item.texto || "",
-          "Pergunta problema": item["Pergunta problema"] || item.pergunta_problema || item.PerguntaProblema || item.Pergunta || item.pergunta || "",
-          Imagem_Enunciado: item.Imagem_Enunciado || item.imagem_enunciado || null,
-          "Alternativa A": item["Alternativa A"] || item.alternativa_a || item.AlternativaA || "",
-          "Alternativa B": item["Alternativa B"] || item.alternativa_b || item.AlternativaB || "",
-          "Alternativa C": item["Alternativa C"] || item.alternativa_c || item.AlternativaC || "",
-          "Alternativa D": item["Alternativa D"] || item.alternativa_d || item.AlternativaD || "",
-          "Alternativa E": item["Alternativa E"] || item.alternativa_e || item.AlternativaE || "",
-          Gabarito: (item.Gabarito || item.gabarito || item.respostaCorreta || "A").toUpperCase().trim(),
-          Comentário: item.Comentário || item.comentario || item.explicacao || null,
+          input: q,
+          erros,
+          avisos,
+          status: erros.length > 0 ? "erro" : isDup ? "duplicata" : "nova",
+          duplicataId: isDup ? duplicatasMap.get(q.ID_Qconcursos!) : undefined,
         };
       });
 
-      setParsedQuestions(normalized);
-    } catch (err: any) {
-      setErrorMsg("JSON inválido: " + err.message);
-      setParsedQuestions([]);
+      setAnalise({
+        questoes:       questoesAnalisadas,
+        totalNova:      questoesAnalisadas.filter(q => q.status === "nova").length,
+        totalDuplicata: questoesAnalisadas.filter(q => q.status === "duplicata").length,
+        totalErro:      questoesAnalisadas.filter(q => q.status === "erro").length,
+      });
+    } catch (e: any) {
+      setErrorMsg("Erro durante a análise: " + e.message);
+    } finally {
+      setIsAnalyzing(false);
     }
-  };
+  }, [jsonText]);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const content = evt.target?.result as string;
-      if (content) {
-        handleTextChange(content);
-      }
-    };
-    reader.readAsText(file);
-  };
+  // ── FASE 2: Importação efetiva (apenas questões novas) ────────────────────
+  const handleImportar = useCallback(async () => {
+    if (!analise) return;
+    const paraImportar = analise.questoes.filter(q => q.status === "nova");
+    if (paraImportar.length === 0) return;
 
-  const handleImport = async () => {
-    if (parsedQuestions.length === 0) return;
     setIsImporting(true);
     setErrorMsg("");
-    setProgress({ current: 0, total: parsedQuestions.length });
+    setProgress({ current: 0, total: paraImportar.length });
+
+    const orgCache = new Map<string, string>();
+    let insertedTotal = 0;
 
     try {
-      // 1. Obter maior ID atual da tabela no Supabase para garantir sequencialidade do bigint
-      const { data: maxData, error: maxError } = await supabasePublic
-        .from("questoes")
-        .select("id")
-        .order("id", { ascending: false })
-        .limit(1);
-
-      if (maxError) {
-        console.warn("Aviso ao buscar MAX(id):", maxError.message);
-      }
-
-      let currentMaxId = 0;
-      if (maxData && maxData.length > 0 && maxData[0].id) {
-        currentMaxId = Number(maxData[0].id);
-      }
-
-      // 2. Preparar objetos a inserir
-      const rowsWithoutId = parsedQuestions.map((q) => ({
-        PROVA: overrideProva.trim() || q.PROVA,
-        Ordem: q.Ordem,
-        Banca: q.Banca,
-        Disciplina: q.Disciplina,
-        Materia: q.Materia,
-        Tópico: q.Tópico,
-        Assunto: q.Assunto,
-        Dificuldade: q.Dificuldade,
-        Status: q.Status,
-        "Texto de apoio": q["Texto de apoio"],
-        Enunciado: q.Enunciado,
-        "Pergunta problema": q["Pergunta problema"],
-        Imagem_Enunciado: q.Imagem_Enunciado,
-        "Alternativa A": q["Alternativa A"],
-        "Alternativa B": q["Alternativa B"],
-        "Alternativa C": q["Alternativa C"],
-        "Alternativa D": q["Alternativa D"],
-        "Alternativa E": q["Alternativa E"],
-        Gabarito: q.Gabarito,
-        Comentário: q.Comentário,
-      }));
-
-      // 3. Inserção em lotes (chunks) de 20 para evitar estouro de payload
-      const chunkSize = 20;
-      let insertedTotal = 0;
-
-      for (let i = 0; i < rowsWithoutId.length; i += chunkSize) {
-        const chunk = rowsWithoutId.slice(i, i + chunkSize);
-        
-        // Tenta primeiro sem o 'id' para a sequência IDENTITY do Postgres/Supabase gerar automaticamente
-        let { error: insertError } = await supabasePublic
-          .from("questoes")
-          .insert(chunk);
-
-        // Se a coluna 'id' não for IDENTITY/SERIAL e exigir ID manual (not-null sem default), tenta com ID manual
-        if (insertError && (insertError.message.includes("null value") || insertError.code === "23502")) {
-          const chunkWithId = chunk.map((row, idx) => ({
-            id: currentMaxId + i + idx + 1,
-            ...row,
-          }));
-          const resWithId = await supabasePublic
-            .from("questoes")
-            .insert(chunkWithId);
-          insertError = resWithId.error;
+      for (const { input: q } of paraImportar) {
+        // Resolve a pasta com proteção contra falhas de RLS
+        let orgId: string | null = null;
+        try {
+          if (q.Caminho_Organizacao?.length) {
+            orgId = await resolverCaminhoOrg(
+              overrideProva.trim() ? [overrideProva.trim(), ...(q.Caminho_Organizacao.slice(1))] : q.Caminho_Organizacao,
+              orgCache
+            );
+          }
+        } catch (orgErr: any) {
+          console.warn("Aviso ao resolver pasta:", orgErr?.message || orgErr);
         }
 
-        if (insertError) {
-          throw new Error(`Erro ao inserir lote (${i + 1}-${i + chunk.length}): ${insertError.message}`);
+        // Monta o registro
+        const row: Record<string, any> = {
+          PROVA:               overrideProva.trim() || q.PROVA,
+          Ano:                 q.Ano               ?? null,
+          Ordem:               q.Ordem             ?? null,
+          Banca:               q.Banca             ?? null,
+          ID_Qconcursos:       q.ID_Qconcursos     ?? null,
+          Dificuldade:         q.Dificuldade        ?? null,
+          Status:              q.Status             ?? "Ativa",
+          "Texto de apoio":    q["Texto de apoio"] ?? null,
+          Enunciado:           q.Enunciado,
+          "Pergunta problema": q["Pergunta problema"] ?? null,
+          // Primeira imagem em Imagem_Enunciado (compatibilidade com coluna TEXT atual)
+          Imagem_Enunciado:    q.Imagens_Enunciado?.[0] ?? null,
+          "Alternativa A":     q["Alternativa A"]  ?? null,
+          "Alternativa B":     q["Alternativa B"]  ?? null,
+          "Alternativa C":     q["Alternativa C"]  ?? null,
+          "Alternativa D":     q["Alternativa D"]  ?? null,
+          "Alternativa E":     q["Alternativa E"]  ?? null,
+          Gabarito:            q.Gabarito          ?? null,
+          "Comentário":        q["Comentário"]      ?? null,
+          Duvida:              q.Duvida            ?? false,
+          Materia:             q.Caminho_Organizacao?.[0] || q.Banca || "Geral",
+          organizacao_id:      orgId,
+        };
+
+        let insertRes = await supabasePublic.from("questoes").insert(row);
+        if (insertRes.error) {
+          // Fallback para cliente com sessão de auth se o público falhar
+          const { supabase } = await import("@/lib/supabase");
+          insertRes = await supabase.from("questoes").insert(row);
         }
 
-        insertedTotal += chunk.length;
-        setProgress({ current: insertedTotal, total: rowsWithoutId.length });
+        if (insertRes.error) {
+          throw new Error(`Questão "${q.Enunciado.slice(0, 40)}...": ${insertRes.error.message}`);
+        }
+
+        insertedTotal++;
+        setProgress({ current: insertedTotal, total: paraImportar.length });
       }
 
       setSuccessCount(insertedTotal);
       setJsonText("");
-      setParsedQuestions([]);
+      setAnalise(null);
       onSuccess();
     } catch (e: any) {
       setErrorMsg(e.message || "Erro durante a importação.");
@@ -215,9 +319,22 @@ Cada objeto deve conter a seguinte estrutura:
       setIsImporting(false);
       setProgress(null);
     }
+  }, [analise, overrideProva, onSuccess]);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const c = evt.target?.result as string;
+      if (c) { setJsonText(c); setAnalise(null); setErrorMsg(""); setSuccessCount(null); }
+    };
+    reader.readAsText(file);
   };
 
   if (!isOpen) return null;
+
+  const podeImportar = analise && analise.totalNova > 0 && !isImporting;
 
   return (
     <AnimatePresence>
@@ -228,7 +345,7 @@ Cada objeto deve conter a seguinte estrutura:
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           className="w-full max-w-4xl bg-[#0F172A] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col my-8"
         >
-          {/* Header */}
+          {/* ── Header ── */}
           <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
@@ -237,99 +354,182 @@ Cada objeto deve conter a seguinte estrutura:
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
                   Importar Questões via JSON
-                  <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                    Admin
-                  </span>
+                  <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">Admin</span>
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Cole o JSON gerado por IA para cadastrar em lote no Banco de Questões
+                  Valida, detecta duplicatas e organiza hierarquicamente antes de salvar.
                 </p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all"
-            >
+            <button onClick={onClose} className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all">
               <X size={16} />
             </button>
           </div>
 
-          {/* Body */}
-          <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
-            {/* Top Prompt Copy Banner */}
+          {/* ── Body ── */}
+          <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto custom-scrollbar">
+
+            {/* Prompt banner */}
             <div className="bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border border-blue-500/20 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <Sparkles className="w-5 h-5 text-blue-400 shrink-0" />
                 <div>
-                  <h4 className="text-xs font-bold text-blue-200">Precisa do modelo de prompt para a IA?</h4>
-                  <p className="text-[11px] text-slate-400">
-                    Copie a estrutura recomendada com todas as colunas da tabela de questões.
-                  </p>
+                  <h4 className="text-xs font-bold text-blue-200">Precisa do modelo para a IA?</h4>
+                  <p className="text-[11px] text-slate-400">Formato oficial com Caminho_Organizacao, Ano e Imagens_Enunciado.</p>
                 </div>
               </div>
-              <button
-                onClick={copyPrompt}
-                className="shrink-0 px-3 py-1.5 bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 rounded-lg text-xs font-bold text-blue-200 flex items-center gap-1.5 transition-all"
-              >
+              <button onClick={copyPrompt} className="shrink-0 px-3 py-1.5 bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 rounded-lg text-xs font-bold text-blue-200 flex items-center gap-1.5 transition-all">
                 {copiedPrompt ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-                {copiedPrompt ? "Copiado!" : "Copiar Prompt para IA"}
+                {copiedPrompt ? "Copiado!" : "Copiar Prompt"}
               </button>
             </div>
 
-            {/* Input Options & Override Prova */}
+            {/* Override PROVA + Upload */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Sobrescrever nome da Prova / Simulado (opcional)
+                  Sobrescrever PROVA (opcional)
                 </label>
                 <input
                   type="text"
-                  placeholder="Ex: Simulado 01 - Matemática Financeira 2026"
+                  placeholder="Ex: Simulado 01 — BB 2026"
                   value={overrideProva}
-                  onChange={(e) => setOverrideProva(e.target.value)}
+                  onChange={e => setOverrideProva(e.target.value)}
                   className="w-full px-3 py-2 bg-white/[0.04] border border-white/10 rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
                 />
               </div>
-
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Ou selecione arquivo JSON do computador
-                </label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Arquivo JSON</label>
                 <label className="w-full px-3 py-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 rounded-xl text-xs text-slate-300 cursor-pointer flex items-center justify-center gap-2 transition-all">
                   <Upload size={14} className="text-blue-400" />
                   <span>Escolher arquivo .json</span>
-                  <input
-                    type="file"
-                    accept=".json,application/json"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
+                  <input type="file" accept=".json,application/json" onChange={handleFileUpload} className="hidden" />
                 </label>
               </div>
             </div>
 
-            {/* JSON Textarea */}
+            {/* Textarea */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-semibold text-slate-300">
-                  Cole o código JSON abaixo:
-                </label>
-                {parsedQuestions.length > 0 && (
-                  <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                    <CheckCircle2 size={12} /> {parsedQuestions.length} {parsedQuestions.length === 1 ? "questão válida" : "questões válidas"}
-                  </span>
+                <label className="text-xs font-semibold text-slate-300">Cole o JSON abaixo:</label>
+                {jsonText.trim() && !analise && (
+                  <span className="text-[11px] text-slate-400">Clique em "Analisar" para validar</span>
                 )}
               </div>
               <textarea
-                rows={8}
+                rows={7}
                 value={jsonText}
-                onChange={(e) => handleTextChange(e.target.value)}
-                placeholder='[\n  {\n    "PROVA": "Simulado 01",\n    "Ordem": 1,\n    "Disciplina": "Português",\n    "Materia": "Português",\n    "Enunciado": "...",\n    "Pergunta problema": "...",\n    "Alternativa A": "...",\n    "Alternativa B": "...",\n    "Gabarito": "A"\n  }\n]'
+                onChange={e => { setJsonText(e.target.value); setAnalise(null); setErrorMsg(""); setSuccessCount(null); }}
+                placeholder={'[\n  {\n    "PROVA": "BB 2023",\n    "Enunciado": "...",\n    "Caminho_Organizacao": ["Matemática", "Juros"],\n    "Gabarito": "A"\n  }\n]'}
                 className="w-full p-3 bg-[#090D16] border border-white/10 rounded-xl text-xs font-mono text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 custom-scrollbar"
               />
             </div>
 
-            {/* Error feedback */}
+            {/* ── PAINEL DE ANÁLISE ── */}
+            <AnimatePresence>
+              {analise && (
+                <motion.div
+                  key="analise"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="space-y-3"
+                >
+                  {/* Resumo do lote */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
+                      <p className="text-2xl font-black text-emerald-400">{analise.totalNova}</p>
+                      <p className="text-[10px] text-emerald-300 font-semibold uppercase tracking-wider">Novas</p>
+                    </div>
+                    <div className={`rounded-xl border p-3 text-center ${analise.totalDuplicata > 0 ? "border-amber-500/20 bg-amber-500/5" : "border-white/5 bg-white/[0.02]"}`}>
+                      <p className={`text-2xl font-black ${analise.totalDuplicata > 0 ? "text-amber-400" : "text-slate-500"}`}>{analise.totalDuplicata}</p>
+                      <p className="text-[10px] text-amber-300/70 font-semibold uppercase tracking-wider">Duplicatas</p>
+                    </div>
+                    <div className={`rounded-xl border p-3 text-center ${analise.totalErro > 0 ? "border-rose-500/20 bg-rose-500/5" : "border-white/5 bg-white/[0.02]"}`}>
+                      <p className={`text-2xl font-black ${analise.totalErro > 0 ? "text-rose-400" : "text-slate-500"}`}>{analise.totalErro}</p>
+                      <p className="text-[10px] text-rose-300/70 font-semibold uppercase tracking-wider">Com Erro</p>
+                    </div>
+                  </div>
+
+                  {/* Lista de questões */}
+                  <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-1">
+                    {analise.questoes.map((qa, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-3 rounded-xl border text-xs space-y-1.5 ${
+                          qa.status === "erro"       ? "border-rose-500/25 bg-rose-500/5" :
+                          qa.status === "duplicata"  ? "border-amber-500/25 bg-amber-500/5" :
+                                                       "border-white/[0.06] bg-white/[0.02]"
+                        }`}
+                      >
+                        {/* Cabeçalho */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            {qa.status === "nova"       && <CheckCircle2  size={13} className="text-emerald-400 shrink-0" />}
+                            {qa.status === "duplicata"  && <AlertTriangle size={13} className="text-amber-400 shrink-0" />}
+                            {qa.status === "erro"       && <AlertCircle   size={13} className="text-rose-400 shrink-0" />}
+                            <span className="font-semibold text-slate-200 truncate">
+                              Q{idx + 1} — {qa.input.Enunciado.slice(0, 60)}{qa.input.Enunciado.length > 60 ? "…" : ""}
+                            </span>
+                          </div>
+                          <span className={`shrink-0 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full ${
+                            qa.status === "nova"      ? "bg-emerald-500/20 text-emerald-300" :
+                            qa.status === "duplicata" ? "bg-amber-500/20 text-amber-300"     :
+                                                        "bg-rose-500/20 text-rose-300"
+                          }`}>
+                            {qa.status === "nova"       ? "Nova"      :
+                             qa.status === "duplicata"  ? `Duplicata (id=${qa.duplicataId})` : "Erro"}
+                          </span>
+                        </div>
+
+                        {/* Caminho */}
+                        {qa.input.Caminho_Organizacao?.length ? (
+                          <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                            <FolderTree size={11} className="text-blue-400 shrink-0" />
+                            {qa.input.Caminho_Organizacao.join(" › ")}
+                          </div>
+                        ) : null}
+
+                        {/* Erros */}
+                        {qa.erros.map((e, i) => (
+                          <p key={i} className="text-[10px] text-rose-300 flex items-center gap-1">
+                            <AlertCircle size={10} /> {e}
+                          </p>
+                        ))}
+
+                        {/* Avisos */}
+                        {qa.avisos.map((a, i) => (
+                          <p key={i} className="text-[10px] text-amber-300/80 flex items-center gap-1">
+                            <Info size={10} /> {a}
+                          </p>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Info sobre duplicatas */}
+                  {analise.totalDuplicata > 0 && (
+                    <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 text-amber-200 text-[11px] flex items-start gap-2">
+                      <AlertTriangle size={14} className="shrink-0 mt-0.5 text-amber-400" />
+                      <span>
+                        <strong>{analise.totalDuplicata} questão(ões)</strong> já existem no banco (mesmo ID_Qconcursos) e <strong>não serão sobrescritas</strong>. Apenas as {analise.totalNova} novas serão importadas.
+                      </span>
+                    </div>
+                  )}
+
+                  {analise.totalErro > 0 && (
+                    <div className="p-3 rounded-xl bg-rose-500/5 border border-rose-500/20 text-rose-200 text-[11px] flex items-start gap-2">
+                      <AlertCircle size={14} className="shrink-0 mt-0.5 text-rose-400" />
+                      <span>
+                        <strong>{analise.totalErro} questão(ões)</strong> com erros de validação <strong>não serão importadas</strong>. Corrija o JSON e analise novamente.
+                      </span>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Erros gerais */}
             {errorMsg && (
               <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2">
                 <AlertCircle size={16} className="shrink-0 text-rose-400" />
@@ -337,54 +537,19 @@ Cada objeto deve conter a seguinte estrutura:
               </div>
             )}
 
-            {/* Success feedback */}
+            {/* Sucesso */}
             {successCount !== null && (
               <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center gap-3">
                 <CheckCircle2 size={20} className="shrink-0 text-emerald-400" />
                 <div>
-                  <p className="font-bold text-sm">Sucesso na importação!</p>
-                  <p>{successCount} questões foram inseridas no banco com IDs sequenciais gerados automaticamente.</p>
-                </div>
-              </div>
-            )}
-
-            {/* Preview Section */}
-            {parsedQuestions.length > 0 && (
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                  <FileText size={14} className="text-blue-400" /> Previa do Lote (primeiras questões):
-                </h4>
-                <div className="space-y-2 max-h-56 overflow-y-auto custom-scrollbar pr-1">
-                  {parsedQuestions.slice(0, 3).map((q, idx) => (
-                    <div key={idx} className="p-3 bg-white/[0.02] border border-white/5 rounded-xl text-xs space-y-1">
-                      <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium">
-                        <span className="text-blue-400 font-bold">
-                          {overrideProva.trim() || q.PROVA} (Ordem {q.Ordem})
-                        </span>
-                        <span className="bg-white/5 px-2 py-0.5 rounded text-slate-300">
-                          {q.Materia} • {q.Banca}
-                        </span>
-                      </div>
-                      <p className="text-slate-200 font-semibold line-clamp-2">
-                        {q.Enunciado || q["Pergunta problema"] || "Sem enunciado"}
-                      </p>
-                      <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-white/5">
-                        <span>A: {q["Alternativa A"]?.slice(0, 30)}...</span>
-                        <span className="font-bold text-emerald-400">Gabarito: {q.Gabarito}</span>
-                      </div>
-                    </div>
-                  ))}
-                  {parsedQuestions.length > 3 && (
-                    <p className="text-[11px] text-slate-500 italic text-center py-1">
-                      + mais {parsedQuestions.length - 3} questões na lista...
-                    </p>
-                  )}
+                  <p className="font-bold text-sm">Importação concluída!</p>
+                  <p>{successCount} questão(ões) inserida(s) e organizadas na hierarquia.</p>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Footer */}
+          {/* ── Footer ── */}
           <div className="px-6 py-4 border-t border-white/10 bg-white/[0.02] flex items-center justify-between">
             <div className="text-xs text-slate-400">
               {progress ? (
@@ -392,8 +557,12 @@ Cada objeto deve conter a seguinte estrutura:
                   <Loader2 size={14} className="animate-spin" />
                   Importando {progress.current} de {progress.total}...
                 </span>
+              ) : analise ? (
+                <span>
+                  {analise.totalNova} novas · {analise.totalDuplicata} ignoradas · {analise.totalErro} com erro
+                </span>
               ) : (
-                <span>{parsedQuestions.length} questões prontas para importar</span>
+                <span className="text-slate-500">Cole o JSON e clique em Analisar.</span>
               )}
             </div>
 
@@ -405,18 +574,41 @@ Cada objeto deve conter a seguinte estrutura:
               >
                 Cancelar
               </button>
-              <button
-                onClick={handleImport}
-                disabled={parsedQuestions.length === 0 || isImporting}
-                className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {isImporting ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <Upload size={14} />
-                )}
-                Confirmar Importação ({parsedQuestions.length})
-              </button>
+
+              {/* Botão Analisar — sempre visível quando há JSON e ainda não analisou */}
+              {!analise && (
+                <button
+                  onClick={handleAnalisar}
+                  disabled={!jsonText.trim() || isAnalyzing}
+                  className="px-5 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {isAnalyzing ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
+                  {isAnalyzing ? "Analisando..." : "Analisar JSON"}
+                </button>
+              )}
+
+              {/* Re-analisar */}
+              {analise && !isImporting && (
+                <button
+                  onClick={handleAnalisar}
+                  disabled={isAnalyzing}
+                  className="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all"
+                >
+                  <FileText size={13} /> Re-analisar
+                </button>
+              )}
+
+              {/* Confirmar Importação */}
+              {analise && (
+                <button
+                  onClick={handleImportar}
+                  disabled={!podeImportar}
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {isImporting ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                  {isImporting ? "Importando..." : `Confirmar (${analise.totalNova} novas)`}
+                </button>
+              )}
             </div>
           </div>
         </motion.div>

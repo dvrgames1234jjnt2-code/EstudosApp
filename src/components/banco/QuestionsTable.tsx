@@ -53,6 +53,11 @@ export interface BancoQuestion {
   comentario?: string;
   "Comentário"?: string;
   imagemEnunciado?: string;
+  // Campos da nova arquitetura (Etapa 1)
+  Ano?: number;
+  ID_Qconcursos?: string;
+  organizacao_id?: string;
+  Duvida?: boolean;
 }
 
 interface UserAnswers {
