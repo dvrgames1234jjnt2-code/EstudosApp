@@ -30,6 +30,8 @@ import {
   GripVertical,
   Layers,
   Folder,
+  FolderTree,
+  FileText,
 } from "lucide-react";
 import type { BancoQuestion } from "./QuestionsTable";
 import QuestionResolver from "./QuestionResolver";
@@ -87,8 +89,19 @@ interface CadernosTabProps {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Estrutura hierárquica: Matéria -> Caderno -> Caso -> Questões
+// Estrutura hierárquica em árvore
 // ─────────────────────────────────────────────────────────────────────────────
+interface HierarchyTreeNode {
+  id: string;
+  nome: string;
+  parent_id: string | null;
+  tipo?: string | null;
+  ordem?: number;
+  filhos: HierarchyTreeNode[];
+  questoes: BancoQuestion[];
+  totalDescendentesQuestoes: number;
+}
+
 interface CasoGroup {
   id: string;
   nome: string;
@@ -151,86 +164,7 @@ function resolveCategory(q: BancoQuestion): CategoryKey {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Componente: QuestaoBloquinho (Modo Bloquinhos alternativo)
-// ─────────────────────────────────────────────────────────────────────────────
-function QuestaoBloquinho({
-  q,
-  numero,
-  stats,
-  isDuvida,
-  onClick,
-}: {
-  q: BancoQuestion;
-  numero: number;
-  stats?: QuestionStats;
-  isDuvida: boolean;
-  onClick: () => void;
-}) {
-  const catKey = resolveCategory(q);
-  const catInfo = CATEGORIES.find(c => c.key === catKey);
-
-  const pct = stats && stats.totalAttempts > 0
-    ? Math.round((stats.correctCount / stats.totalAttempts) * 100)
-    : null;
-
-  const tier: "green" | "amber" | "red" | "neutral" =
-    pct === null ? "neutral" : pct >= 70 ? "green" : pct >= 40 ? "amber" : "red";
-
-  const tierClasses = {
-    green: "border-emerald-500/25 bg-emerald-500/[0.05] hover:bg-emerald-500/[0.09]",
-    amber: "border-amber-500/25 bg-amber-500/[0.05] hover:bg-amber-500/[0.09]",
-    red: "border-red-500/25 bg-red-500/[0.05] hover:bg-red-500/[0.09]",
-    neutral: "border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05]",
-  }[tier];
-
-  const pctColor = { green: "#4ade80", amber: "#fbbf24", red: "#f87171", neutral: "#64748b" }[tier];
-  const barColor = { green: "#22c55e", amber: "#f59e0b", red: "#ef4444", neutral: "#475569" }[tier];
-
-  const topicText = q.tema || q.perguntaProblema || "";
-
-  return (
-    <button
-      onClick={onClick}
-      title={topicText || `Questão ${numero}`}
-      className={`relative flex flex-col gap-1 p-2 rounded-lg border text-left transition-all shrink-0 w-[92px] ${tierClasses} active:scale-95`}
-    >
-      <div className="flex items-center justify-between gap-1">
-        <span className="text-[13px] font-black text-white leading-none">{numero}</span>
-        {catInfo && (
-          <span className="text-[8px] leading-none shrink-0" title={catInfo.label}>
-            {FACE_EMOJI[catKey]}
-          </span>
-        )}
-      </div>
-
-      {topicText && (
-        <span className="text-[8px] text-slate-500 truncate leading-tight">
-          — {topicText}
-        </span>
-      )}
-
-      {pct !== null ? (
-        <div className="flex flex-col gap-0.5 mt-0.5">
-          <span className="text-[8px] font-black tabular-nums" style={{ color: pctColor }}>
-            {pct}%
-          </span>
-          <div className="h-0.5 bg-white/[0.08] rounded-full overflow-hidden">
-            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: barColor }} />
-          </div>
-        </div>
-      ) : (
-        <span className="text-[8px] text-slate-700 italic mt-0.5">sem tentativa</span>
-      )}
-
-      {isDuvida && (
-        <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 border border-[#111623]" />
-      )}
-    </button>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Componente: QuestaoRowItem (Exatamente o formato pedido: N. ≡ [ID] [●Dif] [→ Pasta] [Acertou/Errou])
+// Componente: QuestaoRowItem (Exatamente: N. ≡ [ID] [●Dif] [→ Pasta] [Acertou/Errou])
 // Sem enunciado! Suporta arrastar e soltar (Drag and Drop)!
 // ─────────────────────────────────────────────────────────────────────────────
 function QuestaoRowItem({
@@ -271,7 +205,7 @@ function QuestaoRowItem({
       className="flex items-center gap-2 py-1.5 px-2.5 transition-colors duration-150 rounded-lg group cursor-pointer select-none bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.04] hover:border-white/[0.10]"
     >
       {/* Handle de arrastar */}
-      <span className="text-slate-600 group-hover:text-slate-400 cursor-grab shrink-0 p-0.5" title="Arraste para mover para outro caso ou caderno">
+      <span className="text-slate-600 group-hover:text-slate-400 cursor-grab shrink-0 p-0.5" title="Arraste para mover para outro caso ou pasta">
         <GripVertical size={13} />
       </span>
 
@@ -317,16 +251,16 @@ function QuestaoRowItem({
       )}
 
       {/* Indicador de Status Acerto / Erro na direita */}
-      {isErro && (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-rose-300 bg-rose-950/50 border border-rose-700/60 shrink-0 ml-auto">
-          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 border border-rose-400/50 shrink-0 shadow-sm shadow-rose-500/50" />
-          Errou
-        </span>
-      )}
       {isAcerto && (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-emerald-300 bg-emerald-950/50 border border-emerald-700/60 shrink-0 ml-auto">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 border border-emerald-400/50 shrink-0 shadow-sm shadow-emerald-500/50" />
           Acertou
+        </span>
+      )}
+      {isErro && (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-rose-300 bg-rose-950/50 border border-rose-700/60 shrink-0 ml-auto">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 border border-rose-400/50 shrink-0 shadow-sm shadow-rose-500/50" />
+          Errou
         </span>
       )}
     </div>
@@ -334,7 +268,180 @@ function QuestaoRowItem({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Componente: CasoAccordion (Caso / Subpasta que é Drop Target)
+// Componente: Árvore Recursiva de Pastas (Exatamente o print do usuário!)
+// 📁 Conhecimentos Bancários
+//     📁 Mercado de Capitais
+//         📁 Underwriting
+//             📄 123456
+// ─────────────────────────────────────────────────────────────────────────────
+function TreeNodeItem({
+  node,
+  depth = 0,
+  userAnswers,
+  duvidas,
+  onOpenQuestion,
+  onDropQuestion,
+  onAddSubfolder,
+}: {
+  node: HierarchyTreeNode;
+  depth?: number;
+  userAnswers: Record<string, QuestionStats>;
+  duvidas: Set<string>;
+  onOpenQuestion: (q: BancoQuestion, queue: BancoQuestion[]) => void;
+  onDropQuestion: (questaoId: string, targetNodeId: string) => void;
+  onAddSubfolder: (parentId: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(true);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const hasChildren = node.filhos.length > 0 || node.questoes.length > 0;
+
+  return (
+    <div className="flex flex-col select-none">
+      {/* Linha da Pasta */}
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+          setIsDragOver(true);
+        }}
+        onDragLeave={() => setIsDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragOver(false);
+          const qId = e.dataTransfer.getData("questao_id") || e.dataTransfer.getData("text/plain");
+          if (qId) {
+            onDropQuestion(qId, node.id);
+          }
+        }}
+        style={{ paddingLeft: `${depth * 20 + 8}px` }}
+        className={`flex items-center justify-between gap-2 py-1.5 pr-3 rounded-lg cursor-pointer transition-all group ${
+          isDragOver
+            ? "bg-indigo-600/20 border border-indigo-500 text-white"
+            : "hover:bg-white/[0.04] text-slate-300 hover:text-white"
+        }`}
+        onClick={() => setIsOpen(v => !v)}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen(v => !v);
+            }}
+            className="w-4 h-4 flex items-center justify-center text-slate-500 hover:text-slate-300 shrink-0"
+          >
+            {hasChildren ? (
+              <ChevronDown
+                size={13}
+                className={`transition-transform duration-150 ${isOpen ? "" : "-rotate-90"}`}
+              />
+            ) : (
+              <span className="w-2 h-2 rounded-full bg-slate-700 inline-block" />
+            )}
+          </button>
+
+          {/* Ícone de pasta dourada conforme a imagem do usuário */}
+          <span className="text-amber-400 text-sm shrink-0">📁</span>
+
+          <span className="text-[12px] font-semibold tracking-wide truncate">
+            {node.nome}
+          </span>
+
+          <span className="text-[10px] text-slate-500 font-mono">
+            ({node.questoes.length + node.totalDescendentesQuestoes})
+          </span>
+        </div>
+
+        {/* Botão de adicionar subpasta inline */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddSubfolder(node.id);
+          }}
+          title={`Adicionar subpasta dentro de "${node.nome}"`}
+          className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.06] rounded transition-all shrink-0"
+        >
+          <Plus size={12} />
+        </button>
+      </div>
+
+      {/* Filhos e Questões */}
+      {isOpen && (
+        <div className="flex flex-col">
+          {/* Subpastas */}
+          {node.filhos.map(filho => (
+            <TreeNodeItem
+              key={filho.id}
+              node={filho}
+              depth={depth + 1}
+              userAnswers={userAnswers}
+              duvidas={duvidas}
+              onOpenQuestion={onOpenQuestion}
+              onDropQuestion={onDropQuestion}
+              onAddSubfolder={onAddSubfolder}
+            />
+          ))}
+
+          {/* Questões diretamente vinculadas a este nó */}
+          {node.questoes.map((q, idx) => {
+            const displayId = (q as any).ID_Qconcursos || (q as any).Ordem || q.id;
+            const catKey = resolveCategory(q);
+            const catInfo = CATEGORIES.find(c => c.key === catKey);
+            const st = userAnswers[String(q.id)];
+            const isAcerto = st?.isCorrect === true;
+            const isErro = st?.isCorrect === false;
+
+            return (
+              <div
+                key={q.id}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData("text/plain", String(q.id));
+                  e.dataTransfer.setData("questao_id", String(q.id));
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onClick={() => onOpenQuestion(q, node.questoes)}
+                style={{ paddingLeft: `${(depth + 1) * 20 + 8}px` }}
+                className="flex items-center justify-between gap-2 py-1 pr-3 rounded-lg hover:bg-white/[0.04] cursor-pointer text-slate-300 hover:text-white transition-all group"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-slate-500 group-hover:text-slate-300 shrink-0">📄</span>
+                  <span className="text-[11px] font-mono font-bold text-amber-400/90 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.2 rounded shrink-0">
+                    {displayId}
+                  </span>
+                  <span
+                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                    style={{ backgroundColor: catInfo?.textColor || "#c69238" }}
+                    title={catInfo?.label}
+                  />
+                  {q.title && (
+                    <span className="text-[11px] text-slate-400 truncate max-w-[320px]">
+                      — {q.perguntaProblema || q.title}
+                    </span>
+                  )}
+                </div>
+
+                {isAcerto && (
+                  <span className="text-[9px] font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.2 rounded-full shrink-0">
+                    Acertou
+                  </span>
+                )}
+                {isErro && (
+                  <span className="text-[9px] font-bold text-rose-400 bg-rose-950/40 border border-rose-800/40 px-2 py-0.2 rounded-full shrink-0">
+                    Errou
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Componente: CasoAccordion (Caso / Subpasta que é Drop Target no modo Notion)
 // ─────────────────────────────────────────────────────────────────────────────
 function CasoAccordion({
   caso,
@@ -352,7 +459,6 @@ function CasoAccordion({
   onDropQuestion: (questaoId: string, targetCasoId: string) => void;
 }) {
   const [isOpen, setIsOpen] = useState(true);
-  const [viewMode, setViewMode] = useState<"lista" | "bloquinhos">("lista");
   const [isDragOver, setIsDragOver] = useState(false);
 
   const stats = useMemo(() => {
@@ -450,37 +556,11 @@ function CasoAccordion({
       {/* Conteúdo do Caso expandido */}
       {isOpen && (
         <div className="pl-6 pb-2 flex flex-col gap-2 animate-in fade-in duration-150">
-          {/* Alternador de exibição (Lista / Bloquinhos) */}
-          <div className="flex items-center justify-between gap-2 pt-1 pb-1">
-            <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
-              Questões no caso ({caso.questoes.length})
-            </span>
-            <div className="flex items-center gap-1 bg-black/30 p-0.5 rounded-lg border border-white/[0.05]">
-              <button
-                onClick={(e) => { e.stopPropagation(); setViewMode("lista"); }}
-                className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider transition-all ${
-                  viewMode === "lista" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
-                }`}
-              >
-                Lista
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setViewMode("bloquinhos"); }}
-                className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider transition-all ${
-                  viewMode === "bloquinhos" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
-                }`}
-              >
-                Bloquinhos
-              </button>
-            </div>
-          </div>
-
           {caso.questoes.length === 0 ? (
             <div className="p-4 border border-dashed border-white/[0.08] rounded-xl text-center text-slate-500 text-xs">
               Nenhuma questão neste caso. Arraste questões para cá.
             </div>
-          ) : viewMode === "lista" ? (
-            /* Modo Lista de Linhas (ID em âmbar, sem enunciado, badge status) */
+          ) : (
             <div className="flex flex-col gap-1">
               {caso.questoes.map((q, qIdx) => (
                 <QuestaoRowItem
@@ -491,20 +571,6 @@ function CasoAccordion({
                   stats={userAnswers[String(q.id)]}
                   isDuvida={duvidas.has(String(q.id))}
                   onOpenResolver={() => onOpenQuestion(q, caso.questoes)}
-                />
-              ))}
-            </div>
-          ) : (
-            /* Modo Bloquinhos */
-            <div className="flex flex-wrap gap-1.5">
-              {caso.questoes.map((q, qIdx) => (
-                <QuestaoBloquinho
-                  key={q.id}
-                  q={q}
-                  numero={qIdx + 1}
-                  stats={userAnswers[String(q.id)]}
-                  isDuvida={duvidas.has(String(q.id))}
-                  onClick={() => onOpenQuestion(q, caso.questoes)}
                 />
               ))}
             </div>
@@ -753,7 +819,7 @@ function ModalCriarPasta({
         ordem: 0,
       };
 
-      // Tenta via supabasePublic primeiro
+      // Gravação direta na tabela organizacao_nos com parent_id estruturado
       let res = await (supabasePublic.from("organizacao_nos") as any)
         .insert(payload)
         .select("*")
@@ -821,7 +887,7 @@ function ModalCriarPasta({
 
           <div className="flex flex-col gap-1.5">
             <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Pasta Pai (Hierarquia)
+              Pasta Pai (Hierarquia de Nós)
             </label>
             <select
               value={parentId}
@@ -860,7 +926,7 @@ function ModalCriarPasta({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Componente Principal: CadernosTab (Design 100% igual ao NotionQuestionTab)
+// Componente Principal: CadernosTab
 // ─────────────────────────────────────────────────────────────────────────────
 export default function CadernosTab({
   questions,
@@ -878,6 +944,9 @@ export default function CadernosTab({
   const [materiaFiltro, setMateriaFiltro] = useState("Todas");
   const [statusFiltro, setStatusFiltro] = useState<"todas" | "erros" | "mais_erros" | "nao_feitas" | "duvidas">("todas");
   const [search, setSearch] = useState("");
+
+  // Alternador de Visualização: "blocos" (Notion Cards) ou "arvore" (Tree Folder)
+  const [viewMode, setViewMode] = useState<"blocos" | "arvore">("blocos");
 
   // Estado dos nós de organização carregados do Supabase
   const [dbNodes, setDbNodes] = useState<OrgNodeDB[]>([]);
@@ -920,221 +989,211 @@ export default function CadernosTab({
     carregarNos();
   }, [carregarNos]);
 
-  // ── 2. Montar Estrutura Hierárquica a partir do DB e das questões ──
-  const { materiasAgrupadas, todosCadernos, parentOptions } = useMemo(() => {
-    // Mapa de nós por ID
-    const nodeMap = new Map<string, OrgNodeDB>();
-    dbNodes.forEach(n => nodeMap.set(String(n.id), n));
+  // ── 2. Montar Estrutura Hierárquica em Árvore Completa ──
+  const { treeRoots, materiasAgrupadas, todosCadernos, parentOptions } = useMemo(() => {
+    // Mapa de nós por ID (UUID)
+    const nodeMap = new Map<string, HierarchyTreeNode>();
 
-    // Identificar nós raízes (Matérias)
-    const rootNodes = dbNodes.filter(n => !n.parent_id);
-    const childNodes = dbNodes.filter(n => !!n.parent_id);
-
-    // Estrutura em memória: Materia -> Caderno -> Caso -> BancoQuestion[]
-    interface InternalCaso { id: string; nome: string; questoes: BancoQuestion[] }
-    interface InternalCaderno { id: string; nome: string; materia: string; casosMap: Map<string, InternalCaso>; questoes: BancoQuestion[] }
-    interface InternalMateria { id: string; nome: string; icone: string; cadernosMap: Map<string, InternalCaderno>; totalQuestoes: number }
-
-    const materiasMap = new Map<string, InternalMateria>();
-
-    // Inicializa com as Matérias que já existem no DB
-    rootNodes.forEach(root => {
-      materiasMap.set(root.nome.trim().toLowerCase(), {
-        id: String(root.id),
-        nome: root.nome.trim(),
-        icone: getMateriaIcon(root.nome),
-        cadernosMap: new Map(),
-        totalQuestoes: 0,
+    dbNodes.forEach(n => {
+      nodeMap.set(String(n.id), {
+        id: String(n.id),
+        nome: n.nome.trim(),
+        parent_id: n.parent_id ? String(n.parent_id) : null,
+        tipo: n.tipo,
+        ordem: n.ordem ?? 0,
+        filhos: [],
+        questoes: [],
+        totalDescendentesQuestoes: 0,
       });
     });
 
-    // Inicializa os Cadernos que já existem no DB
-    childNodes.forEach(child => {
-      const parent = nodeMap.get(String(child.parent_id));
-      if (parent && !parent.parent_id) {
-        // Filho direto de raiz = Caderno
-        const mKey = parent.nome.trim().toLowerCase();
-        let m = materiasMap.get(mKey);
-        if (!m) {
-          m = {
-            id: String(parent.id),
-            nome: parent.nome.trim(),
-            icone: getMateriaIcon(parent.nome),
-            cadernosMap: new Map(),
-            totalQuestoes: 0,
-          };
-          materiasMap.set(mKey, m);
-        }
-        if (!m.cadernosMap.has(child.nome.trim().toLowerCase())) {
-          m.cadernosMap.set(child.nome.trim().toLowerCase(), {
-            id: String(child.id),
-            nome: child.nome.trim(),
-            materia: m.nome,
-            casosMap: new Map(),
-            questoes: [],
-          });
-        }
+    // Função para subir a cadeia ancestral de qualquer nó
+    function getAncestry(nodeId: string): HierarchyTreeNode[] {
+      const chain: HierarchyTreeNode[] = [];
+      let cur = nodeMap.get(nodeId);
+      const visited = new Set<string>();
+      while (cur && !visited.has(cur.id)) {
+        visited.add(cur.id);
+        chain.unshift(cur);
+        cur = cur.parent_id ? nodeMap.get(cur.parent_id) : undefined;
       }
-    });
-
-    // Inicializa os Casos (netos de raiz) que já existem no DB
-    childNodes.forEach(subchild => {
-      const parentCaderno = nodeMap.get(String(subchild.parent_id));
-      if (parentCaderno && parentCaderno.parent_id) {
-        const rootMateria = nodeMap.get(String(parentCaderno.parent_id));
-        if (rootMateria) {
-          const mKey = rootMateria.nome.trim().toLowerCase();
-          const cKey = parentCaderno.nome.trim().toLowerCase();
-          const m = materiasMap.get(mKey);
-          if (m) {
-            const cad = m.cadernosMap.get(cKey);
-            if (cad) {
-              if (!cad.casosMap.has(subchild.nome.trim().toLowerCase())) {
-                cad.casosMap.set(subchild.nome.trim().toLowerCase(), {
-                  id: String(subchild.id),
-                  nome: subchild.nome.trim(),
-                  questoes: [],
-                });
-              }
-            }
-          }
-        }
-      }
-    });
-
-    // Mapear cada questão para seu nó correspondente
-    for (const q of questions) {
-      // Verifica se houve override de drag & drop
-      const effectiveOrgId = orgOverrides.get(String(q.id)) || (q as any).organizacao_id;
-
-      let resolvedMateria = (q.materia || (q as any).Disciplina || "Conhecimentos Bancários").trim();
-      let resolvedCaderno = ((q as any).topico || (q as any)["Tópico"] || q.tema || (q as any).PROVA || "Geral").trim();
-      let resolvedCaso = ((q as any).assunto || (q as any)["Assunto"] || (q as any)["Pergunta problema"] || "Geral").trim();
-      let resolvedCasoId = `caso_${resolvedCaso}`;
-
-      // Se a questão possui organizacao_id associada no DB
-      if (effectiveOrgId && nodeMap.has(String(effectiveOrgId))) {
-        const directNode = nodeMap.get(String(effectiveOrgId))!;
-        resolvedCasoId = String(directNode.id);
-
-        if (!directNode.parent_id) {
-          // Nó é raiz (Matéria)
-          resolvedMateria = directNode.nome;
-        } else {
-          const parentNode = nodeMap.get(String(directNode.parent_id));
-          if (parentNode && !parentNode.parent_id) {
-            // Nó é Caderno (filho direto de raiz)
-            resolvedMateria = parentNode.nome;
-            resolvedCaderno = directNode.nome;
-          } else if (parentNode && parentNode.parent_id) {
-            // Nó é Caso (neto de raiz)
-            const grandParentNode = nodeMap.get(String(parentNode.parent_id));
-            if (grandParentNode) {
-              resolvedMateria = grandParentNode.nome;
-            }
-            resolvedCaderno = parentNode.nome;
-            resolvedCaso = directNode.nome;
-          }
-        }
-      }
-
-      // Adiciona na hierarquia
-      const mKey = resolvedMateria.toLowerCase();
-      if (!materiasMap.has(mKey)) {
-        materiasMap.set(mKey, {
-          id: `materia_${mKey}`,
-          nome: resolvedMateria,
-          icone: getMateriaIcon(resolvedMateria),
-          cadernosMap: new Map(),
-          totalQuestoes: 0,
-        });
-      }
-      const mat = materiasMap.get(mKey)!;
-
-      const cKey = resolvedCaderno.toLowerCase();
-      if (!mat.cadernosMap.has(cKey)) {
-        mat.cadernosMap.set(cKey, {
-          id: `cad_${mKey}_${cKey}`,
-          nome: resolvedCaderno,
-          materia: mat.nome,
-          casosMap: new Map(),
-          questoes: [],
-        });
-      }
-      const cad = mat.cadernosMap.get(cKey)!;
-
-      const casoKey = resolvedCaso.toLowerCase();
-      if (!cad.casosMap.has(casoKey)) {
-        cad.casosMap.set(casoKey, {
-          id: resolvedCasoId,
-          nome: resolvedCaso,
-          questoes: [],
-        });
-      }
-      const caso = cad.casosMap.get(casoKey)!;
-
-      caso.questoes.push(q);
-      cad.questoes.push(q);
-      mat.totalQuestoes += 1;
+      return chain;
     }
 
-    // Converter para arrays planos e ordenar
+    // Vincular filhos aos pais para formar a árvore recursiva
+    const roots: HierarchyTreeNode[] = [];
+    nodeMap.forEach(node => {
+      if (node.parent_id && nodeMap.has(node.parent_id)) {
+        nodeMap.get(node.parent_id)!.filhos.push(node);
+      } else {
+        roots.push(node);
+      }
+    });
+
+    // Mapear cada questão para o nó final em organizacao_nos através de organizacao_id
+    const unlinkedQuestions: BancoQuestion[] = [];
+
+    questions.forEach(q => {
+      const effectiveOrgId = orgOverrides.get(String(q.id)) || (q as any).organizacao_id;
+      if (effectiveOrgId && nodeMap.has(String(effectiveOrgId))) {
+        // Encontra o nó final exato correspondente ao UUID
+        const targetNode = nodeMap.get(String(effectiveOrgId))!;
+        targetNode.questoes.push(q);
+      } else {
+        unlinkedQuestions.push(q);
+      }
+    });
+
+    // Se houver questões sem organizacao_id, agrupa em nós virtuais correspondentes à Matéria
+    unlinkedQuestions.forEach(q => {
+      const matName = (q.materia || (q as any).Disciplina || "Conhecimentos Bancários").trim();
+      let root = roots.find(r => r.nome.toLowerCase() === matName.toLowerCase());
+      if (!root) {
+        root = {
+          id: `root_virt_${matName.toLowerCase()}`,
+          nome: matName,
+          parent_id: null,
+          tipo: "materia",
+          ordem: 0,
+          filhos: [],
+          questoes: [],
+          totalDescendentesQuestoes: 0,
+        };
+        roots.push(root);
+        nodeMap.set(root.id, root);
+      }
+
+      const cadName = ((q as any).topico || (q as any)["Tópico"] || q.tema || (q as any).PROVA || "Geral").trim();
+      let cad = root.filhos.find(f => f.nome.toLowerCase() === cadName.toLowerCase());
+      if (!cad) {
+        cad = {
+          id: `cad_virt_${root.id}_${cadName.toLowerCase()}`,
+          nome: cadName,
+          parent_id: root.id,
+          tipo: "caderno",
+          ordem: 0,
+          filhos: [],
+          questoes: [],
+          totalDescendentesQuestoes: 0,
+        };
+        root.filhos.push(cad);
+        nodeMap.set(cad.id, cad);
+      }
+
+      const casoName = ((q as any).assunto || (q as any)["Assunto"] || (q as any)["Pergunta problema"] || "Geral").trim();
+      let caso = cad.filhos.find(f => f.nome.toLowerCase() === casoName.toLowerCase());
+      if (!caso) {
+        caso = {
+          id: `caso_virt_${cad.id}_${casoName.toLowerCase()}`,
+          nome: casoName,
+          parent_id: cad.id,
+          tipo: "caso",
+          ordem: 0,
+          filhos: [],
+          questoes: [],
+          totalDescendentesQuestoes: 0,
+        };
+        cad.filhos.push(caso);
+        nodeMap.set(caso.id, caso);
+      }
+
+      caso.questoes.push(q);
+    });
+
+    // Calcular contagem de descendentes recursivamente
+    function computeDescendants(node: HierarchyTreeNode): number {
+      let count = node.questoes.length;
+      for (const child of node.filhos) {
+        count += computeDescendants(child);
+      }
+      node.totalDescendentesQuestoes = count - node.questoes.length;
+      return count;
+    }
+    roots.forEach(r => computeDescendants(r));
+
+    // ── Converter a árvore em blocos Notion para o modo Cadernos ──
     const materiasList: MateriaGroup[] = [];
     const cadernosList: CadernoItem[] = [];
 
-    for (const [, mat] of materiasMap) {
+    roots.forEach(root => {
       const cadList: CadernoItem[] = [];
 
-      for (const [, cad] of mat.cadernosMap) {
+      // Cada filho direto da raiz é um Caderno
+      root.filhos.forEach(cadNode => {
         const casosList: CasoGroup[] = [];
+        const cadAllQuestions: BancoQuestion[] = [...cadNode.questoes];
 
-        for (const [, caso] of cad.casosMap) {
+        // Filhos do caderno são os Casos
+        if (cadNode.filhos.length > 0) {
+          cadNode.filhos.forEach(casoNode => {
+            const casoAllQuestions: BancoQuestion[] = [...casoNode.questoes];
+            // Coleta questões de sub-subpastas se houver
+            function collectSubQuestions(n: HierarchyTreeNode) {
+              for (const sub of n.filhos) {
+                casoAllQuestions.push(...sub.questoes);
+                collectSubQuestions(sub);
+              }
+            }
+            collectSubQuestions(casoNode);
+
+            casosList.push({
+              id: casoNode.id,
+              nome: casoNode.nome,
+              questoes: casoAllQuestions,
+            });
+            cadAllQuestions.push(...casoAllQuestions);
+          });
+        } else {
+          // Se o caderno não tem subpastas filhas, ele mesmo é um caso
           casosList.push({
-            id: caso.id,
-            nome: caso.nome,
-            questoes: caso.questoes,
+            id: cadNode.id,
+            nome: cadNode.nome,
+            questoes: cadNode.questoes,
           });
         }
 
         casosList.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 
         const cadItem: CadernoItem = {
-          id: cad.id,
-          nome: cad.nome,
-          materia: cad.materia,
+          id: cadNode.id,
+          nome: cadNode.nome,
+          materia: root.nome,
           casos: casosList,
-          questoes: cad.questoes,
+          questoes: cadAllQuestions,
         };
 
         cadList.push(cadItem);
         cadernosList.push(cadItem);
-      }
+      });
 
       cadList.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 
       materiasList.push({
-        id: mat.id,
-        nome: mat.nome,
-        icone: mat.icone,
+        id: root.id,
+        nome: root.nome,
+        icone: getMateriaIcon(root.nome),
         cadernos: cadList,
-        totalQuestoes: mat.totalQuestoes,
+        totalQuestoes: root.questoes.length + root.totalDescendentesQuestoes,
       });
-    }
+    });
 
     materiasList.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
     cadernosList.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 
-    // Lista de opções para criar pasta (select dropdown)
+    // Opções para o select de criar pasta
     const options: { id: string; nome: string; nivel: string }[] = [];
-    rootNodes.forEach(rn => {
-      options.push({ id: String(rn.id), nome: rn.nome, nivel: "🏛️ [Matéria]" });
-      const cChildren = childNodes.filter(c => c.parent_id === rn.id);
-      cChildren.forEach(cn => {
-        options.push({ id: String(cn.id), nome: `${rn.nome} → ${cn.nome}`, nivel: "  📝 [Caderno]" });
+    roots.forEach(rn => {
+      options.push({ id: rn.id, nome: rn.nome, nivel: "🏛️ [Matéria Raiz]" });
+      rn.filhos.forEach(cn => {
+        options.push({ id: cn.id, nome: `${rn.nome} → ${cn.nome}`, nivel: "  📁 [Subpasta / Caderno]" });
+        cn.filhos.forEach(sub => {
+          options.push({ id: sub.id, nome: `${rn.nome} → ${cn.nome} → ${sub.nome}`, nivel: "    📄 [Caso Folha]" });
+        });
       });
     });
 
     return {
+      treeRoots: roots,
       materiasAgrupadas: materiasList,
       todosCadernos: cadernosList,
       parentOptions: options,
@@ -1177,7 +1236,7 @@ export default function CadernosTab({
       return next;
     });
 
-    // Se o targetNodeId for um ID de UUID real, grava no Supabase
+    // Se o targetNodeId for um UUID real, persiste na coluna questoes.organizacao_id
     if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetNodeId)) {
       try {
         await supabasePublic
@@ -1371,17 +1430,44 @@ export default function CadernosTab({
           )}
         </div>
 
-        {/* Botão + Nova Pasta / Caderno */}
-        <button
-          onClick={() => {
-            setModalDefaultParentId("");
-            setIsNovaPastaModalOpen(true);
-          }}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600/90 hover:bg-indigo-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/20 active:scale-95 ml-auto"
-        >
-          <FolderPlus size={13} />
-          <span>Nova Pasta / Caderno</span>
-        </button>
+        {/* Alternador de Modo de Visualização (Notion Cards x Árvore) + Botão Nova Pasta */}
+        <div className="flex items-center gap-2 ml-auto flex-wrap">
+          <div className="flex items-center gap-1 bg-[#101526] p-0.5 rounded-xl border border-white/[0.08]">
+            <button
+              onClick={() => setViewMode("blocos")}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                viewMode === "blocos"
+                  ? "bg-indigo-600 text-white shadow"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <LayoutGrid size={12} />
+              <span>Cadernos Notion</span>
+            </button>
+            <button
+              onClick={() => setViewMode("arvore")}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                viewMode === "arvore"
+                  ? "bg-indigo-600 text-white shadow"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <FolderTree size={12} />
+              <span>Árvore de Pastas</span>
+            </button>
+          </div>
+
+          <button
+            onClick={() => {
+              setModalDefaultParentId("");
+              setIsNovaPastaModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600/90 hover:bg-indigo-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/20 active:scale-95"
+          >
+            <FolderPlus size={13} />
+            <span>Nova Pasta / Caderno</span>
+          </button>
+        </div>
       </div>
 
       {/* ── Barra de Filtros e Busca (Idêntica ao Notion) ── */}
@@ -1392,7 +1478,7 @@ export default function CadernosTab({
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
             <input
               type="text"
-              placeholder="Buscar caderno..."
+              placeholder="Buscar caderno ou pasta..."
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full bg-[#0d1220] border border-white/[0.08] rounded-xl pl-8 pr-7 py-1.5 text-[11px] text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/40 transition-all"
@@ -1497,194 +1583,226 @@ export default function CadernosTab({
         </div>
       </div>
 
-      {/* ── LISTA DE MATÉRIAS E SEUS CADERNOS (Idêntico ao NotionQuestionTab) ── */}
-      {materiasFiltradas.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-center bg-[#101526]/80 border border-white/[0.06] rounded-2xl relative z-10">
-          <BookOpen size={32} className="text-slate-700" />
-          <p className="text-[12px] font-black text-slate-500 uppercase tracking-widest">
-            Nenhum caderno encontrado
-          </p>
-          <button
-            onClick={() => {
-              setSearch("");
-              setMateriaFiltro("Todas");
-              setCadernoFiltro("Todos");
-              setStatusFiltro("todas");
-            }}
-            className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold"
-          >
-            Limpar filtros
-          </button>
+      {/* ── MODO 1: ÁRVORE HIERÁRQUICA COMPLETA (EXATAMENTE O PRINT DO USUÁRIO) ── */}
+      {viewMode === "arvore" ? (
+        <div className="flex flex-col gap-2 p-4 bg-[#0d1220] rounded-2xl border border-white/[0.08] relative z-10 shadow-2xl">
+          <div className="flex items-center justify-between border-b border-white/[0.06] pb-2 mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <span>📁</span> Estrutura Hierárquica de Pastas (organizacao_nos)
+            </span>
+            <span className="text-[10px] text-slate-500 italic">
+              Arraste e solte questões em qualquer pasta para alterar a vinculação
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            {treeRoots.map(rootNode => (
+              <TreeNodeItem
+                key={rootNode.id}
+                node={rootNode}
+                depth={0}
+                userAnswers={userAnswers}
+                duvidas={duvidas}
+                onOpenQuestion={handleOpenQuestionInModal}
+                onDropQuestion={handleDropQuestion}
+                onAddSubfolder={(parentId) => {
+                  setModalDefaultParentId(parentId);
+                  setIsNovaPastaModalOpen(true);
+                }}
+              />
+            ))}
+          </div>
         </div>
       ) : (
-        <div className="flex flex-col gap-3 relative z-10">
-          {materiasFiltradas.map((mat) => {
-            // Calcular estatísticas da matéria
-            let mAcertos = 0;
-            let mErros = 0;
-            let mDuvidas = 0;
+        /* ── MODO 2: LISTA DE MATÉRIAS E CADERNOS NOTION ── */
+        materiasFiltradas.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3 text-center bg-[#101526]/80 border border-white/[0.06] rounded-2xl relative z-10">
+            <BookOpen size={32} className="text-slate-700" />
+            <p className="text-[12px] font-black text-slate-500 uppercase tracking-widest">
+              Nenhum caderno encontrado
+            </p>
+            <button
+              onClick={() => {
+                setSearch("");
+                setMateriaFiltro("Todas");
+                setCadernoFiltro("Todos");
+                setStatusFiltro("todas");
+              }}
+              className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold"
+            >
+              Limpar filtros
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3 relative z-10">
+            {materiasFiltradas.map((mat) => {
+              // Calcular estatísticas da matéria
+              let mAcertos = 0;
+              let mErros = 0;
+              let mDuvidas = 0;
 
-            mat.cadernos.forEach(cad => {
-              cad.questoes.forEach(q => {
-                const st = userAnswers[String(q.id)];
-                if (st) {
-                  if (st.isCorrect) mAcertos++;
-                  else mErros++;
-                }
-                if (duvidas.has(String(q.id))) mDuvidas++;
+              mat.cadernos.forEach(cad => {
+                cad.questoes.forEach(q => {
+                  const st = userAnswers[String(q.id)];
+                  if (st) {
+                    if (st.isCorrect) mAcertos++;
+                    else mErros++;
+                  }
+                  if (duvidas.has(String(q.id))) mDuvidas++;
+                });
               });
-            });
 
-            const mTotal = mat.totalQuestoes;
-            const mRespondidas = mAcertos + mErros;
-            const mPct = mRespondidas > 0 ? Math.round((mAcertos / mRespondidas) * 100) : null;
+              const mTotal = mat.totalQuestoes;
+              const mRespondidas = mAcertos + mErros;
+              const mPct = mRespondidas > 0 ? Math.round((mAcertos / mRespondidas) * 100) : null;
 
-            const mAproveitamentoClasses =
-              mPct === null
-                ? "border-slate-800 text-slate-500 bg-slate-900/60"
-                : mPct >= 70
-                ? "border-slate-800 text-emerald-400/90 bg-slate-900/60 font-medium"
-                : mPct >= 50
-                ? "border-slate-800 text-amber-400/90 bg-slate-900/60 font-medium"
-                : "border-slate-800 text-rose-400/90 bg-slate-900/60 font-medium";
+              const mAproveitamentoClasses =
+                mPct === null
+                  ? "border-slate-800 text-slate-500 bg-slate-900/60"
+                  : mPct >= 70
+                  ? "border-slate-800 text-emerald-400/90 bg-slate-900/60 font-medium"
+                  : mPct >= 50
+                  ? "border-slate-800 text-amber-400/90 bg-slate-900/60 font-medium"
+                  : "border-slate-800 text-rose-400/90 bg-slate-900/60 font-medium";
 
-            return (
-              <div
-                key={mat.id}
-                className="flex flex-col bg-[#101526]/80 border border-white/[0.06] rounded-xl p-2.5 sm:p-3 shadow-lg gap-2 transition-all hover:border-white/[0.10]"
-              >
-                {/* ── CABEÇALHO DA MATÉRIA (100% IGUAL AO NOTION) ── */}
-                <div className="flex items-center justify-between border-b border-white/[0.06] pb-2 px-1 flex-nowrap gap-2">
-                  <div className="flex items-center gap-2 min-w-0 flex-nowrap">
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
-                    <span className="text-sm shrink-0">{mat.icone}</span>
-                    <h3 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider truncate">
-                      {mat.nome}
-                    </h3>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0 flex-nowrap whitespace-nowrap">
-                    <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] font-normal shrink-0 select-none flex-nowrap whitespace-nowrap">
-                      <span className="text-slate-400 font-sans">{mTotal} quest.</span>
-                      <span className="text-emerald-400/90 flex items-center gap-0.5 font-sans" title="Total de acertos na matéria">
-                        <Check size={11} className="text-emerald-400/80 stroke-[2]" />
-                        {mAcertos}
-                      </span>
-                      <span className="text-rose-400/90 flex items-center gap-0.5 font-sans" title="Total de erros na matéria">
-                        <X size={11} className="text-rose-400/80 stroke-[2]" />
-                        {mErros}
-                      </span>
-                      <span className="text-amber-400/90 flex items-center gap-0.5 font-sans" title="Total em dúvida na matéria">
-                        <Flag size={10} className="text-amber-400/80 fill-amber-400/10" />
-                        {mDuvidas}
-                      </span>
-                      <span className={`px-1.5 py-0.5 rounded border text-[9px] font-bold tabular-nums ${mAproveitamentoClasses}`}>
-                        {mPct === null ? "—" : `${mPct}%`}
-                      </span>
+              return (
+                <div
+                  key={mat.id}
+                  className="flex flex-col bg-[#101526]/80 border border-white/[0.06] rounded-xl p-2.5 sm:p-3 shadow-lg gap-2 transition-all hover:border-white/[0.10]"
+                >
+                  {/* ── CABEÇALHO DA MATÉRIA (100% IGUAL AO NOTION) ── */}
+                  <div className="flex items-center justify-between border-b border-white/[0.06] pb-2 px-1 flex-nowrap gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-nowrap">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
+                      <span className="text-sm shrink-0">{mat.icone}</span>
+                      <h3 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider truncate">
+                        {mat.nome}
+                      </h3>
                     </div>
 
-                    <span className="text-[9.5px] font-normal text-slate-400 font-mono bg-white/[0.03] px-2 py-0.5 rounded border border-white/[0.06] shrink-0">
-                      {mat.cadernos.length} caderno{mat.cadernos.length > 1 ? "s" : ""}
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0 flex-nowrap whitespace-nowrap">
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] font-normal shrink-0 select-none flex-nowrap whitespace-nowrap">
+                        <span className="text-slate-400 font-sans">{mTotal} quest.</span>
+                        <span className="text-emerald-400/90 flex items-center gap-0.5 font-sans" title="Total de acertos na matéria">
+                          <Check size={11} className="text-emerald-400/80 stroke-[2]" />
+                          {mAcertos}
+                        </span>
+                        <span className="text-rose-400/90 flex items-center gap-0.5 font-sans" title="Total de erros na matéria">
+                          <X size={11} className="text-rose-400/80 stroke-[2]" />
+                          {mErros}
+                        </span>
+                        <span className="text-amber-400/90 flex items-center gap-0.5 font-sans" title="Total em dúvida na matéria">
+                          <Flag size={10} className="text-amber-400/80 fill-amber-400/10" />
+                          {mDuvidas}
+                        </span>
+                        <span className={`px-1.5 py-0.5 rounded border text-[9px] font-bold tabular-nums ${mAproveitamentoClasses}`}>
+                          {mPct === null ? "—" : `${mPct}%`}
+                        </span>
+                      </div>
+
+                      <span className="text-[9.5px] font-normal text-slate-400 font-mono bg-white/[0.03] px-2 py-0.5 rounded border border-white/[0.06] shrink-0">
+                        {mat.cadernos.length} caderno{mat.cadernos.length > 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* ── LISTA DE CADERNOS DENTRO DA MATÉRIA (Idêntico ao Notion) ── */}
+                  <div className="flex flex-col gap-1.5">
+                    {mat.cadernos.map((caderno) => {
+                      // Estatísticas do caderno
+                      let cAcertos = 0;
+                      let cErros = 0;
+                      let cDuvidas = 0;
+
+                      caderno.questoes.forEach(q => {
+                        const st = userAnswers[String(q.id)];
+                        if (st) {
+                          if (st.isCorrect) cAcertos++;
+                          else cErros++;
+                        }
+                        if (duvidas.has(String(q.id))) cDuvidas++;
+                      });
+
+                      const cTotal = caderno.questoes.length;
+                      const cRespondidas = cAcertos + cErros;
+                      const cPct = cRespondidas > 0 ? Math.round((cAcertos / cRespondidas) * 100) : null;
+
+                      const cAproveitamentoClasses =
+                        cPct === null
+                          ? "border-slate-800 text-slate-500 bg-slate-900/60"
+                          : cPct >= 70
+                          ? "border-slate-800 text-emerald-400/90 bg-slate-900/60 font-medium"
+                          : cPct >= 50
+                          ? "border-slate-800 text-amber-400/90 bg-slate-900/60 font-medium"
+                          : "border-slate-800 text-rose-400/90 bg-slate-900/60 font-medium";
+
+                      return (
+                        <div
+                          key={caderno.id}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = "move";
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const qId = e.dataTransfer.getData("questao_id") || e.dataTransfer.getData("text/plain");
+                            if (qId) {
+                              handleDropQuestion(qId, caderno.id);
+                            }
+                          }}
+                          className="flex items-center justify-between gap-1.5 p-2 sm:p-2.5 rounded-xl border transition-all bg-[#111623]/90 border-white/[0.06] hover:border-white/[0.14] group cursor-pointer"
+                          onClick={() => setSelectedCaderno(caderno)}
+                        >
+                          {/* Lado Esquerdo: Ícone + Título */}
+                          <div className="flex items-center gap-2 min-w-0 flex-nowrap truncate flex-1">
+                            <span className="text-[10px] text-slate-500 w-3.5 h-3.5 flex items-center justify-center shrink-0">
+                              →
+                            </span>
+                            <span className="text-sm shrink-0">📝</span>
+                            <span className="text-[12px] sm:text-[13px] font-medium text-slate-300 group-hover:text-white truncate">
+                              {caderno.nome}
+                            </span>
+                          </div>
+
+                          {/* Lado Direito: Stats do Caderno + Botão Abrir */}
+                          <div className="flex items-center gap-2 shrink-0 flex-nowrap whitespace-nowrap">
+                            <span className="text-[10px] font-normal text-slate-400 font-sans">{cTotal} quest.</span>
+                            <span className="text-emerald-400/90 flex items-center gap-0.5 font-sans" title="Total de acertos">
+                              <Check size={11} className="text-emerald-400/80 stroke-[2]" />
+                              {cAcertos}
+                            </span>
+                            <span className="text-rose-400/90 flex items-center gap-0.5 font-sans" title="Total de erros">
+                              <X size={11} className="text-rose-400/80 stroke-[2]" />
+                              {cErros}
+                            </span>
+                            <span className="text-amber-400/90 flex items-center gap-0.5 font-sans" title="Em dúvida">
+                              <Flag size={10} className="text-amber-400/80 fill-amber-400/10" />
+                              {cDuvidas}
+                            </span>
+                            <span className={`px-1.5 py-0.5 rounded border text-[10px] font-bold ${cAproveitamentoClasses}`}>
+                              {cPct === null ? "—" : `${cPct}%`}
+                            </span>
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCaderno(caderno);
+                              }}
+                              title="Abrir visão dedicada deste caderno"
+                              className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.03] text-slate-400 hover:text-indigo-300 hover:bg-white/[0.08] hover:border-white/[0.15] transition-all ml-1"
+                            >
+                              <ChevronRight size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-
-                {/* ── LISTA DE CADERNOS DENTRO DA MATÉRIA (Idêntico ao Notion) ── */}
-                <div className="flex flex-col gap-1.5">
-                  {mat.cadernos.map((caderno) => {
-                    // Estatísticas do caderno
-                    let cAcertos = 0;
-                    let cErros = 0;
-                    let cDuvidas = 0;
-
-                    caderno.questoes.forEach(q => {
-                      const st = userAnswers[String(q.id)];
-                      if (st) {
-                        if (st.isCorrect) cAcertos++;
-                        else cErros++;
-                      }
-                      if (duvidas.has(String(q.id))) cDuvidas++;
-                    });
-
-                    const cTotal = caderno.questoes.length;
-                    const cRespondidas = cAcertos + cErros;
-                    const cPct = cRespondidas > 0 ? Math.round((cAcertos / cRespondidas) * 100) : null;
-
-                    const cAproveitamentoClasses =
-                      cPct === null
-                        ? "border-slate-800 text-slate-500 bg-slate-900/60"
-                        : cPct >= 70
-                        ? "border-slate-800 text-emerald-400/90 bg-slate-900/60 font-medium"
-                        : cPct >= 50
-                        ? "border-slate-800 text-amber-400/90 bg-slate-900/60 font-medium"
-                        : "border-slate-800 text-rose-400/90 bg-slate-900/60 font-medium";
-
-                    return (
-                      <div
-                        key={caderno.id}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          e.dataTransfer.dropEffect = "move";
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          const qId = e.dataTransfer.getData("questao_id") || e.dataTransfer.getData("text/plain");
-                          if (qId) {
-                            handleDropQuestion(qId, caderno.id);
-                          }
-                        }}
-                        className="flex items-center justify-between gap-1.5 p-2 sm:p-2.5 rounded-xl border transition-all bg-[#111623]/90 border-white/[0.06] hover:border-white/[0.14] group cursor-pointer"
-                        onClick={() => setSelectedCaderno(caderno)}
-                      >
-                        {/* Lado Esquerdo: Ícone + Título */}
-                        <div className="flex items-center gap-2 min-w-0 flex-nowrap truncate flex-1">
-                          <span className="text-[10px] text-slate-500 w-3.5 h-3.5 flex items-center justify-center shrink-0">
-                            →
-                          </span>
-                          <span className="text-sm shrink-0">📝</span>
-                          <span className="text-[12px] sm:text-[13px] font-medium text-slate-300 group-hover:text-white truncate">
-                            {caderno.nome}
-                          </span>
-                        </div>
-
-                        {/* Lado Direito: Stats do Caderno + Botão Abrir */}
-                        <div className="flex items-center gap-2 shrink-0 flex-nowrap whitespace-nowrap">
-                          <span className="text-[10px] font-normal text-slate-400 font-sans">{cTotal} quest.</span>
-                          <span className="text-emerald-400/90 flex items-center gap-0.5 font-sans" title="Total de acertos">
-                            <Check size={11} className="text-emerald-400/80 stroke-[2]" />
-                            {cAcertos}
-                          </span>
-                          <span className="text-rose-400/90 flex items-center gap-0.5 font-sans" title="Total de erros">
-                            <X size={11} className="text-rose-400/80 stroke-[2]" />
-                            {cErros}
-                          </span>
-                          <span className="text-amber-400/90 flex items-center gap-0.5 font-sans" title="Em dúvida">
-                            <Flag size={10} className="text-amber-400/80 fill-amber-400/10" />
-                            {cDuvidas}
-                          </span>
-                          <span className={`px-1.5 py-0.5 rounded border text-[10px] font-bold ${cAproveitamentoClasses}`}>
-                            {cPct === null ? "—" : `${cPct}%`}
-                          </span>
-
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedCaderno(caderno);
-                            }}
-                            title="Abrir visão dedicada deste caderno"
-                            className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.03] text-slate-400 hover:text-indigo-300 hover:bg-white/[0.08] hover:border-white/[0.15] transition-all ml-1"
-                          >
-                            <ChevronRight size={13} />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )
       )}
 
       {/* ── MODAL DE CRIAR NOVA PASTA / CADERNO ── */}

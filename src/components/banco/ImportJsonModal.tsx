@@ -258,14 +258,11 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
         // Resolve a pasta com proteção contra falhas de RLS
         let orgId: string | null = null;
         try {
-          if (q.Caminho_Organizacao?.length) {
-            orgId = await resolverCaminhoOrg(
-              overrideProva.trim() ? [overrideProva.trim(), ...(q.Caminho_Organizacao.slice(1))] : q.Caminho_Organizacao,
-              orgCache
-            );
+          if (q.Caminho_Organizacao && q.Caminho_Organizacao.length > 0) {
+            orgId = await resolverCaminhoOrg(q.Caminho_Organizacao, orgCache);
           }
         } catch (orgErr: any) {
-          console.warn("Aviso ao resolver pasta:", orgErr?.message || orgErr);
+          console.warn("Aviso ao resolver pasta da questão:", orgErr?.message || orgErr);
         }
 
         // Monta o registro
