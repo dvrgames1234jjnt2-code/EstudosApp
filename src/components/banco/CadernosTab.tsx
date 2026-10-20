@@ -1653,56 +1653,56 @@ export default function CadernosTab({
 
               const mAproveitamentoClasses =
                 mPct === null
-                  ? "border-slate-800 text-slate-500 bg-slate-900/60"
+                  ? "border-white/[0.04] text-slate-500 bg-white/[0.015]"
                   : mPct >= 70
-                  ? "border-slate-800 text-emerald-400/90 bg-slate-900/60 font-medium"
+                  ? "border-emerald-500/20 text-emerald-400/90 bg-emerald-500/5 font-light"
                   : mPct >= 50
-                  ? "border-slate-800 text-amber-400/90 bg-slate-900/60 font-medium"
-                  : "border-slate-800 text-rose-400/90 bg-slate-900/60 font-medium";
+                  ? "border-amber-500/20 text-amber-400/90 bg-amber-500/5 font-light"
+                  : "border-rose-500/20 text-rose-400/90 bg-rose-500/5 font-light";
 
               return (
                 <div
                   key={mat.id}
-                  className="flex flex-col bg-[#101526]/80 border border-white/[0.06] rounded-xl p-2.5 sm:p-3 shadow-lg gap-2 transition-all hover:border-white/[0.10]"
+                  className="flex flex-col bg-[#0b0f19]/85 border border-white/[0.04] rounded-xl p-2 sm:p-2.5 gap-1.5 transition-all hover:border-white/[0.08]"
                 >
-                  {/* ── CABEÇALHO DA MATÉRIA (100% IGUAL AO NOTION) ── */}
-                  <div className="flex items-center justify-between border-b border-white/[0.06] pb-2 px-1 flex-nowrap gap-2">
-                    <div className="flex items-center gap-2 min-w-0 flex-nowrap">
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
-                      <span className="text-sm shrink-0">{mat.icone}</span>
-                      <h3 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider truncate">
+                  {/* ── CABEÇALHO DA MATÉRIA (Compacto, sem negrito, letras finas e elegantes) ── */}
+                  <div className="flex items-center justify-between border-b border-white/[0.04] pb-1.5 px-1 flex-nowrap gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0 flex-nowrap">
+                      <span className="w-1 h-1 rounded-full bg-indigo-400/80 shrink-0" />
+                      <span className="text-xs shrink-0 opacity-80">{mat.icone}</span>
+                      <h3 className="text-[11px] font-normal text-slate-300 uppercase tracking-wider truncate">
                         {mat.nome}
                       </h3>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0 flex-nowrap whitespace-nowrap">
-                      <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] font-normal shrink-0 select-none flex-nowrap whitespace-nowrap">
-                        <span className="text-slate-400 font-sans">{mTotal} quest.</span>
-                        <span className="text-emerald-400/90 flex items-center gap-0.5 font-sans" title="Total de acertos na matéria">
-                          <Check size={11} className="text-emerald-400/80 stroke-[2]" />
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] font-light shrink-0 select-none flex-nowrap whitespace-nowrap tabular-nums">
+                        <span className="text-slate-500 font-light">{mTotal} quest.</span>
+                        <span className="text-emerald-400/80 flex items-center gap-0.5" title="Total de acertos na matéria">
+                          <Check size={9} className="stroke-[1.5]" />
                           {mAcertos}
                         </span>
-                        <span className="text-rose-400/90 flex items-center gap-0.5 font-sans" title="Total de erros na matéria">
-                          <X size={11} className="text-rose-400/80 stroke-[2]" />
+                        <span className="text-rose-400/80 flex items-center gap-0.5" title="Total de erros na matéria">
+                          <X size={9} className="stroke-[1.5]" />
                           {mErros}
                         </span>
-                        <span className="text-amber-400/90 flex items-center gap-0.5 font-sans" title="Total em dúvida na matéria">
-                          <Flag size={10} className="text-amber-400/80 fill-amber-400/10" />
+                        <span className="text-amber-400/80 flex items-center gap-0.5" title="Total em dúvida na matéria">
+                          <Flag size={8} />
                           {mDuvidas}
                         </span>
-                        <span className={`px-1.5 py-0.5 rounded border text-[9px] font-bold tabular-nums ${mAproveitamentoClasses}`}>
+                        <span className={`px-1.5 py-0.2 rounded border text-[9px] font-light tabular-nums ${mAproveitamentoClasses}`}>
                           {mPct === null ? "—" : `${mPct}%`}
                         </span>
                       </div>
 
-                      <span className="text-[9.5px] font-normal text-slate-400 font-mono bg-white/[0.03] px-2 py-0.5 rounded border border-white/[0.06] shrink-0">
+                      <span className="text-[9.5px] font-light text-slate-500 font-mono bg-white/[0.02] px-1.5 py-0.2 rounded border border-white/[0.04] shrink-0">
                         {mat.cadernos.length} caderno{mat.cadernos.length > 1 ? "s" : ""}
                       </span>
                     </div>
                   </div>
 
-                  {/* ── LISTA DE CADERNOS DENTRO DA MATÉRIA (Idêntico ao Notion) ── */}
-                  <div className="flex flex-col gap-1.5">
+                  {/* ── LISTA DE CADERNOS DENTRO DA MATÉRIA (Compacto e elegante) ── */}
+                  <div className="flex flex-col gap-1">
                     {mat.cadernos.map((caderno) => {
                       // Estatísticas do caderno
                       let cAcertos = 0;
@@ -1724,12 +1724,12 @@ export default function CadernosTab({
 
                       const cAproveitamentoClasses =
                         cPct === null
-                          ? "border-slate-800 text-slate-500 bg-slate-900/60"
+                          ? "border-white/[0.04] text-slate-500 bg-white/[0.015]"
                           : cPct >= 70
-                          ? "border-slate-800 text-emerald-400/90 bg-slate-900/60 font-medium"
+                          ? "border-emerald-500/20 text-emerald-400/90 bg-emerald-500/5 font-light"
                           : cPct >= 50
-                          ? "border-slate-800 text-amber-400/90 bg-slate-900/60 font-medium"
-                          : "border-slate-800 text-rose-400/90 bg-slate-900/60 font-medium";
+                          ? "border-amber-500/20 text-amber-400/90 bg-amber-500/5 font-light"
+                          : "border-rose-500/20 text-rose-400/90 bg-rose-500/5 font-light";
 
                       return (
                         <div
@@ -1745,49 +1745,45 @@ export default function CadernosTab({
                               handleDropQuestion(qId, caderno.id);
                             }
                           }}
-                          className="flex items-center justify-between gap-1.5 p-2 sm:p-2.5 rounded-xl border transition-all bg-[#111623]/90 border-white/[0.06] hover:border-white/[0.14] group cursor-pointer"
+                          className="flex items-center justify-between gap-1.5 py-1.5 px-2 rounded-lg border transition-all bg-[#0e1322]/80 border-white/[0.04] hover:bg-[#13192b] hover:border-white/[0.08] group cursor-pointer"
                           onClick={() => setSelectedCaderno(caderno)}
                         >
                           {/* Lado Esquerdo: Ícone + Título */}
                           <div className="flex items-center gap-2 min-w-0 flex-nowrap truncate flex-1">
-                            <span className="text-[10px] text-slate-500 w-3.5 h-3.5 flex items-center justify-center shrink-0">
+                            <span className="text-[10px] text-slate-600 group-hover:text-slate-400 w-3 h-3 flex items-center justify-center shrink-0">
                               →
                             </span>
-                            <span className="text-sm shrink-0">📝</span>
-                            <span className="text-[12px] sm:text-[13px] font-medium text-slate-300 group-hover:text-white truncate">
+                            <span className="text-xs shrink-0 opacity-75">📝</span>
+                            <span className="text-[11.5px] font-normal text-slate-300 tracking-wide group-hover:text-slate-100 truncate">
                               {caderno.nome}
                             </span>
                           </div>
 
                           {/* Lado Direito: Stats do Caderno + Botão Abrir */}
                           <div className="flex items-center gap-2 shrink-0 flex-nowrap whitespace-nowrap">
-                            <span className="text-[10px] font-normal text-slate-400 font-sans">{cTotal} quest.</span>
-                            <span className="text-emerald-400/90 flex items-center gap-0.5 font-sans" title="Total de acertos">
-                              <Check size={11} className="text-emerald-400/80 stroke-[2]" />
+                            <span className="text-[10px] font-light text-slate-500 tabular-nums">{cTotal} quest.</span>
+                            <span className="text-emerald-400/80 font-light flex items-center gap-0.5 text-[10px]" title="Total de acertos">
+                              <Check size={9} className="stroke-[1.5]" />
                               {cAcertos}
                             </span>
-                            <span className="text-rose-400/90 flex items-center gap-0.5 font-sans" title="Total de erros">
-                              <X size={11} className="text-rose-400/80 stroke-[2]" />
+                            <span className="text-rose-400/80 font-light flex items-center gap-0.5 text-[10px]" title="Total de erros">
+                              <X size={9} className="stroke-[1.5]" />
                               {cErros}
                             </span>
-                            <span className="text-amber-400/90 flex items-center gap-0.5 font-sans" title="Em dúvida">
-                              <Flag size={10} className="text-amber-400/80 fill-amber-400/10" />
+                            <span className="text-amber-400/80 font-light flex items-center gap-0.5 text-[10px]" title="Em dúvida">
+                              <Flag size={8} />
                               {cDuvidas}
                             </span>
-                            <span className={`px-1.5 py-0.5 rounded border text-[10px] font-bold ${cAproveitamentoClasses}`}>
+                            <span className={`px-1.5 py-0.2 rounded border text-[9px] font-light tabular-nums ${cAproveitamentoClasses}`}>
                               {cPct === null ? "—" : `${cPct}%`}
                             </span>
 
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedCaderno(caderno);
-                              }}
+                            <span
                               title="Abrir visão dedicada deste caderno"
-                              className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.03] text-slate-400 hover:text-indigo-300 hover:bg-white/[0.08] hover:border-white/[0.15] transition-all ml-1"
+                              className="w-5 h-5 flex items-center justify-center rounded border border-white/[0.05] bg-white/[0.02] text-slate-500 group-hover:text-slate-300 group-hover:border-white/[0.10] transition-all ml-0.5"
                             >
-                              <ChevronRight size={13} />
-                            </button>
+                              <ChevronRight size={11} />
+                            </span>
                           </div>
                         </div>
                       );
