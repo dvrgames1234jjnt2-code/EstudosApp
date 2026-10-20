@@ -72,7 +72,6 @@ const DIFICULDADES_VALIDAS = ["Fácil", "Média", "Difícil"];
 function validarQuestao(q: QuestaoInput): string[] {
   const erros: string[] = [];
   if (!q.PROVA?.trim())      erros.push('Campo "PROVA" é obrigatório.');
-  if (!q.Enunciado?.trim())  erros.push('Campo "Enunciado" é obrigatório.');
   if (q.Status && !STATUS_VALIDOS.includes(q.Status))
     erros.push(`Status "${q.Status}" inválido. Use: ${STATUS_VALIDOS.join(", ")}.`);
   if (q.Dificuldade && !DIFICULDADES_VALIDAS.includes(q.Dificuldade))
@@ -84,6 +83,9 @@ function validarQuestao(q: QuestaoInput): string[] {
 
 function avisoQuestao(q: QuestaoInput): string[] {
   const avisos: string[] = [];
+  if (!q.Enunciado?.trim() && !q["Pergunta problema"]?.trim() && !q.Imagens_Enunciado?.length) {
+    avisos.push("Sem enunciado, pergunta problema ou imagem.");
+  }
   if (!q.Gabarito)               avisos.push("Gabarito ausente.");
   if (!q["Alternativa A"])       avisos.push("Sem alternativas (questão discursiva?).");
   if (!q.Caminho_Organizacao?.length) avisos.push("Sem Caminho_Organizacao — ficará sem pasta.");
@@ -496,9 +498,15 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
                             {qa.status === "nova"       && <CheckCircle2  size={13} className="text-emerald-400 shrink-0" />}
                             {qa.status === "duplicata"  && <AlertTriangle size={13} className="text-amber-400 shrink-0" />}
                             {qa.status === "erro"       && <AlertCircle   size={13} className="text-rose-400 shrink-0" />}
-                            <span className="font-semibold text-slate-200 truncate">
-                              Q{idx + 1} — {qa.input.Enunciado.slice(0, 60)}{qa.input.Enunciado.length > 60 ? "…" : ""}
-                            </span>
+                            {(() => {
+                              const previewTexto = qa.input.Enunciado?.trim() || qa.input["Pergunta problema"]?.trim() || "";
+                              const idDisplay = qa.input.ID_Qconcursos || `Q${idx + 1}`;
+                              return (
+                                <span className="font-semibold text-slate-200 truncate">
+                                  {idDisplay}{previewTexto ? ` — ${previewTexto.slice(0, 60)}${previewTexto.length > 60 ? "…" : ""}` : ""}
+                                </span>
+                              );
+                            })()}
                           </div>
                           <span className={`shrink-0 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full ${
                             qa.status === "nova"      ? "bg-emerald-500/20 text-emerald-300" :

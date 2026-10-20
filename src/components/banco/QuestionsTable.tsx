@@ -498,7 +498,7 @@ function QuestionRow({ q, idx, getStatus, getDifficultyStyles, getDifficultyDot,
       </td>
       <td className="px-4 py-3.5">
         <p className="text-xs font-medium text-slate-400 leading-relaxed group-hover:text-blue-300 transition-colors line-clamp-2 max-w-[500px]">
-          {q.title}
+          {q.title || q.perguntaProblema || "Sem enunciado"}
         </p>
       </td>
       <td className="px-3 py-3.5 text-center w-[120px]">
@@ -551,7 +551,7 @@ function MobileQuestionRow({ q, onSelect, getStatus, getDifficultyStyles }: any)
       <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0">
           <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider">{q.materia}</span>
-          <p className="text-xs font-bold text-slate-200 leading-relaxed mt-0.5 line-clamp-2">{q.title}</p>
+          <p className="text-xs font-bold text-slate-200 leading-relaxed mt-0.5 line-clamp-2">{q.title || q.perguntaProblema || "Sem enunciado"}</p>
         </div>
       </div>
       <div className="flex items-center justify-between">

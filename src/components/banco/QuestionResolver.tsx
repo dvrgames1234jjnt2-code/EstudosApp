@@ -564,9 +564,11 @@ export default function QuestionResolver({
             )}
 
             {/* ── Enunciado ── */}
-            <div className="text-[14px] sm:text-[15px] font-normal text-[#8E97A8] leading-relaxed mb-5">
-              {formatQuestionText(question.title ?? '')}
-            </div>
+            {question.title && question.title.trim() && (
+              <div className="text-[14px] sm:text-[15px] font-normal text-[#8E97A8] leading-relaxed mb-5">
+                {formatQuestionText(question.title)}
+              </div>
+            )}
 
             {/* Pergunta-Problema */}
             {question.perguntaProblema && question.perguntaProblema.trim() && question.perguntaProblema.trim() !== question.title?.trim() && (
