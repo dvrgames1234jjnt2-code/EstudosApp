@@ -202,64 +202,64 @@ function QuestaoRowItem({
         e.dataTransfer.effectAllowed = "move";
       }}
       onClick={onOpenResolver}
-      className="flex items-center gap-2 py-1.5 px-2.5 transition-colors duration-150 rounded-lg group cursor-pointer select-none bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.04] hover:border-white/[0.10]"
+      className="flex items-center gap-2 py-1 px-2 transition-colors duration-150 rounded-md group cursor-pointer select-none bg-white/[0.015] hover:bg-white/[0.04] border border-white/[0.03] hover:border-white/[0.08]"
     >
       {/* Handle de arrastar */}
       <span className="text-slate-600 group-hover:text-slate-400 cursor-grab shrink-0 p-0.5" title="Arraste para mover para outro caso ou pasta">
-        <GripVertical size={13} />
+        <GripVertical size={12} />
       </span>
 
       {/* Número da questão */}
-      <span className="text-[11px] font-normal text-slate-400 shrink-0 tabular-nums min-w-[20px]">
+      <span className="text-[10.5px] font-light text-slate-500 shrink-0 tabular-nums min-w-[18px]">
         {numero}.
       </span>
 
       {/* Botão indicador Play */}
-      <span className="text-slate-500 hover:text-slate-300 transition-colors w-4 h-4 flex items-center justify-center shrink-0">
-        <Play size={10} className="fill-current text-slate-500 group-hover:text-indigo-400" />
+      <span className="text-slate-500 hover:text-slate-300 transition-colors w-3.5 h-3.5 flex items-center justify-center shrink-0">
+        <Play size={9} className="fill-current text-slate-500 group-hover:text-indigo-400" />
       </span>
 
       {/* ID_Qconcursos / Número da questão em âmbar */}
-      <span className="text-[11px] font-mono font-bold text-amber-400/90 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded shrink-0">
+      <span className="text-[10.5px] font-mono font-medium text-amber-400/90 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.2 rounded shrink-0">
         {displayId}
       </span>
 
       {/* Bolinha com cor da dificuldade */}
       <span
-        className="w-2 h-2 rounded-full shrink-0 select-none shadow-sm"
+        className="w-1.5 h-1.5 rounded-full shrink-0 select-none opacity-80"
         style={{ backgroundColor: catColor }}
         title={catLabel}
       />
 
       {/* Pill com nome da categoria */}
       <span
-        className="text-[10px] font-bold px-2 py-0.5 rounded bg-black/30 border border-white/[0.07] shrink-0"
+        className="text-[9.5px] font-light px-1.5 py-0.2 rounded bg-black/25 border border-white/[0.05] shrink-0"
         style={{ color: catColor }}
       >
         {catLabel}
       </span>
 
       {/* Pill com seta e nome da pasta/caso atual */}
-      <span className="text-[10px] text-slate-400 bg-white/[0.04] border border-white/[0.08] px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1 max-w-[240px]">
-        <span className="text-indigo-400">→</span>
+      <span className="text-[9.5px] font-light text-slate-400 bg-white/[0.03] border border-white/[0.06] px-1.5 py-0.2 rounded-md shrink-0 flex items-center gap-1 max-w-[240px]">
+        <span className="text-indigo-400/70">→</span>
         <span className="truncate">{casoNome}</span>
       </span>
 
       {/* Indicador de Dúvida */}
       {isDuvida && (
-        <Flag size={11} className="fill-amber-400 text-amber-400 shrink-0 ml-1" />
+        <Flag size={10} className="fill-amber-400/90 text-amber-400/90 shrink-0 ml-0.5" />
       )}
 
       {/* Indicador de Status Acerto / Erro na direita */}
       {isAcerto && (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-emerald-300 bg-emerald-950/50 border border-emerald-700/60 shrink-0 ml-auto">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 border border-emerald-400/50 shrink-0 shadow-sm shadow-emerald-500/50" />
+        <span className="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[9.5px] font-light text-emerald-300/90 bg-emerald-950/40 border border-emerald-800/40 shrink-0 ml-auto">
+          <span className="w-1 h-1 rounded-full bg-emerald-500 shrink-0" />
           Acertou
         </span>
       )}
       {isErro && (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold text-rose-300 bg-rose-950/50 border border-rose-700/60 shrink-0 ml-auto">
-          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 border border-rose-400/50 shrink-0 shadow-sm shadow-rose-500/50" />
+        <span className="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[9.5px] font-light text-rose-300/90 bg-rose-950/40 border border-rose-800/40 shrink-0 ml-auto">
+          <span className="w-1 h-1 rounded-full bg-rose-500 shrink-0" />
           Errou
         </span>
       )}
@@ -479,12 +479,12 @@ function CasoAccordion({
 
   const aproveitamentoClasses =
     stats.pct === null
-      ? "border-slate-800 text-slate-500 bg-slate-900/60"
+      ? "border-white/[0.04] text-slate-500 bg-white/[0.015]"
       : stats.pct >= 70
-      ? "border-slate-800 text-emerald-400/90 bg-slate-900/60 font-medium"
+      ? "border-emerald-500/20 text-emerald-400/90 bg-emerald-500/5"
       : stats.pct >= 50
-      ? "border-slate-800 text-amber-400/90 bg-slate-900/60 font-medium"
-      : "border-slate-800 text-rose-400/90 bg-slate-900/60 font-medium";
+      ? "border-amber-500/20 text-amber-400/90 bg-amber-500/5"
+      : "border-rose-500/20 text-rose-400/90 bg-rose-500/5";
 
   return (
     <div
@@ -502,61 +502,64 @@ function CasoAccordion({
           onDropQuestion(qId, caso.id);
         }
       }}
-      className={`relative flex flex-col gap-2 rounded-xl transition-all ${
-        isDragOver ? "ring-2 ring-indigo-500 bg-indigo-500/10 p-1" : ""
+      className={`relative flex flex-col gap-1 rounded-lg transition-all ${
+        isDragOver ? "ring-1 ring-indigo-500/60 bg-indigo-500/10 p-0.5" : ""
       }`}
     >
-      {/* Botão do Caso Header */}
+      {/* Botão do Caso Header - Compacto, sem negrito e elegante */}
       <button
         onClick={() => setIsOpen(v => !v)}
-        className={`relative z-10 w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border border-white/[0.06] bg-[#111623] hover:border-white/[0.14] transition-all text-left group ${
+        className={`relative z-10 w-full flex items-center justify-between gap-2.5 px-2.5 py-1.5 rounded-lg border border-white/[0.04] bg-[#0d1220]/80 hover:bg-[#121829] hover:border-white/[0.08] transition-all text-left group ${
           isDragOver ? "border-indigo-500" : ""
         }`}
       >
-        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-          <span className="w-7 h-7 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-sm shrink-0">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <span className="text-[12px] opacity-75 shrink-0 select-none">
             📁
           </span>
-          <span className="text-[12px] font-bold text-slate-200 truncate">
-            {index + 1}. {caso.nome || "Geral"}
+          <span className="text-[11.5px] font-normal text-slate-300 tracking-wide truncate group-hover:text-slate-100 transition-colors">
+            <span className="text-slate-500 font-light mr-1.5">{index + 1}.</span>
+            {caso.nome || "Geral"}
           </span>
         </div>
 
         {/* Stats inline */}
-        <div className="flex items-center gap-2 text-[10px] shrink-0 tabular-nums">
-          <span className="text-slate-400 font-sans">{stats.total} quest.</span>
-          <span className="text-emerald-400 flex items-center gap-0.5">
-            <Check size={10} className="stroke-[2.5]" />
+        <div className="flex items-center gap-2 text-[10px] shrink-0 tabular-nums font-light">
+          <span className="text-slate-500 font-light">{stats.total} quest.</span>
+          <span className="text-emerald-400/80 font-light flex items-center gap-0.5">
+            <Check size={9} className="stroke-[1.5]" />
             {stats.acertos}
           </span>
-          <span className="text-rose-400 flex items-center gap-0.5">
-            <X size={10} className="stroke-[2.5]" />
+          <span className="text-rose-400/80 font-light flex items-center gap-0.5">
+            <X size={9} className="stroke-[1.5]" />
             {stats.erros}
           </span>
-          <span className="text-amber-400 flex items-center gap-0.5">
-            <Flag size={9} />
-            {stats.duvidasCount}
-          </span>
-          <span className={`px-1.5 py-0.5 rounded border text-[9px] font-bold ${aproveitamentoClasses}`}>
+          {stats.duvidasCount > 0 && (
+            <span className="text-amber-400/80 font-light flex items-center gap-0.5">
+              <Flag size={8} />
+              {stats.duvidasCount}
+            </span>
+          )}
+          <span className={`px-1.5 py-0.2 rounded border text-[9px] font-light tabular-nums ${aproveitamentoClasses}`}>
             {stats.pct === null ? "—" : `${stats.pct}%`}
           </span>
 
           <ChevronDown
-            size={13}
-            className={`text-slate-500 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+            size={11}
+            className={`text-slate-500/70 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
           />
         </div>
       </button>
 
       {/* Conteúdo do Caso expandido */}
       {isOpen && (
-        <div className="pl-6 pb-2 flex flex-col gap-2 animate-in fade-in duration-150">
+        <div className="pl-4 pr-1 pb-1 flex flex-col gap-1 animate-in fade-in duration-150 border-l border-white/[0.05] ml-3.5 my-0.5">
           {caso.questoes.length === 0 ? (
-            <div className="p-4 border border-dashed border-white/[0.08] rounded-xl text-center text-slate-500 text-xs">
+            <div className="py-2 px-3 border border-dashed border-white/[0.05] rounded-md text-center text-slate-500 text-[11px] font-light">
               Nenhuma questão neste caso. Arraste questões para cá.
             </div>
           ) : (
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-0.5">
               {caso.questoes.map((q, qIdx) => (
                 <QuestaoRowItem
                   key={q.id}
@@ -742,16 +745,13 @@ function CadernoDedicatedView({
         </div>
       </div>
 
-      {/* Lista de Casos do Caderno */}
-      <div className="flex flex-col gap-3 p-4 bg-[#0d1220] rounded-xl border border-white/[0.06]">
-        <h4 className="text-[11px] font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5 mb-1">
-          <LayoutGrid size={12} className="text-indigo-400" /> Desempenho por Caso (Subpastas)
+      {/* Lista de Casos do Caderno - Compacto e elegante */}
+      <div className="flex flex-col gap-2 p-3 sm:p-3.5 bg-[#0a0e1a]/85 rounded-xl border border-white/[0.04]">
+        <h4 className="text-[10px] font-normal text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mb-0.5">
+          <LayoutGrid size={11} className="text-indigo-400/70" /> Desempenho por Caso (Subpastas)
         </h4>
 
-        <div className="relative flex flex-col gap-3 pl-1">
-          {/* Linha do tempo vertical conectando os casos */}
-          <div className="absolute left-[15px] top-4 bottom-4 w-px bg-white/[0.07]" />
-
+        <div className="relative flex flex-col gap-1">
           {casosFiltrados.map((caso, idx) => (
             <CasoAccordion
               key={caso.id}
