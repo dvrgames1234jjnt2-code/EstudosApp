@@ -28,6 +28,7 @@ import {
   X,
   BookMarked,
   Timer,
+  CheckCheck,
 } from "lucide-react";
 import { supabase, supabasePublic } from "../../lib/supabase";
 import { AuthModal } from "../../components/AuthModal";
@@ -39,6 +40,7 @@ import NotionQuestionTab from "../../components/banco/NotionQuestionTab";
 import CronometroTab from "../../components/banco/CronometroTab";
 import CadernosTab from "../../components/banco/CadernosTab";
 import { ModalEditarQuestao } from "../../components/banco/ModalEditarQuestao";
+import VerificadorIDsTab from "../../components/banco/VerificadorIDsTab";
 
 // ──────────────────────────────────────────────
 // Types
@@ -57,7 +59,7 @@ export interface QuestionStats {
 /** Mapa questao_id → stats (derivado do histórico completo) */
 type UserAnswers = Record<string, QuestionStats>;
 
-type ActiveTab = "banco" | "resolver" | "simulados" | "desempenho" | "fixacao" | "notion" | "cronometro" | "cadernos";
+type ActiveTab = "banco" | "resolver" | "simulados" | "desempenho" | "fixacao" | "notion" | "cronometro" | "cadernos" | "verificador";
 
 // ──────────────────────────────────────────────
 // Helpers
@@ -491,6 +493,7 @@ export default function BancoPage() {
             { id: "notion",     icon: <BookMarked size={13} />,     label: "Notion Question" },
             ...(isAdmin ? [{ id: "cronometro", icon: <Timer size={13} />, label: "Cronômetro" }] : []),
             ...(isAdmin ? [{ id: "cadernos", icon: <Layers size={13} />, label: "Cadernos" }] : []),
+            { id: "verificador", icon: <CheckCheck size={13} />, label: "Confrontar IDs" },
           ].map(tab => {
             const isSelected = activeTab === tab.id;
             const isDisabled = (tab.id === "resolver" && !selectedQuestion);
@@ -595,7 +598,7 @@ export default function BancoPage() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-6xl mx-auto px-4"
+              className="w-full max-w-[1750px] mx-auto px-2 sm:px-4"
             >
               <div className="w-full h-full min-h-[calc(100vh-200px)] flex flex-col">
                 <QuestionResolver
@@ -1506,6 +1509,30 @@ export default function BancoPage() {
                   isAdmin={isAdmin}
                 />
               )}
+            </motion.div>
+          )}
+
+          {/* ── VERIFICADOR / CONFRONTAR IDS ── */}
+          {activeTab === "verificador" && (
+            <motion.div
+              key="verificador"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-6xl mx-auto"
+            >
+              <VerificadorIDsTab
+                questions={questions}
+                isAdmin={isAdmin}
+                onSelectQuestion={(q) => {
+                  setSelectedQuestion(q);
+                  setResolverQueue([q]);
+                  setResolverIndex(0);
+                  setActiveTab("resolver");
+                }}
+                onEditQuestion={(q) => setEditingQuestion(q)}
+              />
             </motion.div>
           )}
 

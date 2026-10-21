@@ -28,7 +28,9 @@ import {
   FileText,
   Printer,
   ExternalLink,
-  Pencil
+  Pencil,
+  Columns2,
+  X
 } from "lucide-react";
 import { PrintSimuladoModal } from "./PrintSimuladoModal";
 
@@ -294,6 +296,14 @@ export default function QuestionResolver({
   const [strikethroughs, setStrikethroughs] = useState<Record<string, boolean>>({});
   const [showHistory, setShowHistory] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
+  const [splitView, setSplitView] = useState(false);
+
+  // URL para exibição integrada do Qconcursos
+  const targetQconcursosUrl =
+    question.link ||
+    (question.ID_Qconcursos
+      ? `https://www.qconcursos.com/questoes-de-concursos/questoes?q=${question.ID_Qconcursos}`
+      : null);
 
   // Reset state when question changes — always start fresh visually
   useEffect(() => {
@@ -412,6 +422,22 @@ export default function QuestionResolver({
           {/* Direita: ações */}
           <div className="flex flex-wrap items-center gap-2">
 
+            {/* Visualização Dividida / Qconcursos Lado a Lado */}
+            {targetQconcursosUrl && (
+              <button
+                onClick={() => setSplitView(!splitView)}
+                title={splitView ? "Fechar tela dividida" : "Ver Qconcursos lado a lado"}
+                className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-medium transition-all flex items-center gap-1.5 ${
+                  splitView
+                    ? "border-blue-500/40 bg-blue-500/20 text-blue-300 shadow-sm"
+                    : "border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <Columns2 size={13} />
+                <span className="hidden sm:inline">{splitView ? "Modo Padrão" : "Qconcursos Lado a Lado"}</span>
+              </button>
+            )}
+
             {/* Imprimir */}
             <button
               onClick={() => setShowPrintModal(true)}
@@ -491,9 +517,12 @@ export default function QuestionResolver({
           </div>
         </div>
 
-        {/* ── Scroll Area ── */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
-          <div className="max-w-3xl mx-auto">
+        {/* ── Content / Split View Container ── */}
+        <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4 overflow-hidden">
+
+          {/* Coluna Esquerda: Resolução da Questão */}
+          <div className={`flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1 ${splitView ? "w-full lg:w-1/2" : ""}`}>
+            <div className={splitView ? "w-full px-1" : "max-w-3xl mx-auto"}>
 
             {/* Barra de progresso fina */}
             <div className="h-0.5 bg-white/[0.05] rounded-full mb-5 overflow-hidden">
@@ -529,6 +558,20 @@ export default function QuestionResolver({
                   <ExternalLink size={11} />
                   {question.ID_Qconcursos ? `Qconcursos (${question.ID_Qconcursos})` : "Link da Questão"}
                 </a>
+              )}
+              {targetQconcursosUrl && (
+                <button
+                  onClick={() => setSplitView(!splitView)}
+                  className={`text-[11px] font-medium px-2.5 py-1 rounded-md border transition-all flex items-center gap-1.5 ${
+                    splitView
+                      ? "bg-blue-600/20 border-blue-500/30 text-blue-300"
+                      : "bg-white/[0.03] border-white/[0.06] text-slate-400 hover:text-blue-300 hover:bg-white/[0.06]"
+                  }`}
+                  title="Dividir a tela e exibir a página da questão lado a lado"
+                >
+                  <Columns2 size={11} />
+                  {splitView ? "Fechar Lado a Lado" : "Ver Lado a Lado"}
+                </button>
               )}
               {isAdmin && onEditQuestion && (
                 <button
@@ -800,6 +843,87 @@ export default function QuestionResolver({
 
           </div>{/* /max-w-3xl */}
         </div>{/* /scroll */}
+
+        {/* Coluna Direita: Qconcursos Lado a Lado */}
+        {splitView && targetQconcursosUrl && (
+          <div className="w-full lg:w-1/2 flex flex-col h-[560px] lg:h-full rounded-2xl border border-white/[0.08] bg-[#0c1220] overflow-hidden shadow-2xl shrink-0">
+            {/* Header da divisão */}
+            <div className="flex items-center justify-between px-3.5 py-2.5 bg-slate-900/90 border-b border-white/[0.08] shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                <span className="text-[11px] font-semibold text-slate-300 truncate">
+                  Qconcursos Integrado
+                </span>
+                {question.ID_Qconcursos && (
+                  <span className="text-[10px] text-blue-400 font-mono bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20 shrink-0">
+                    {question.ID_Qconcursos}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => {
+                    window.open(targetQconcursosUrl, "_blank", "width=780,height=900,left=800,top=50");
+                  }}
+                  title="Abrir em janela destacada lado a lado"
+                  className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all"
+                >
+                  <ExternalLink size={10} />
+                  <span className="hidden sm:inline">Janela Pop-up</span>
+                </button>
+                <a
+                  href={targetQconcursosUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Abrir em nova aba do navegador"
+                  className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition-all"
+                >
+                  <ExternalLink size={10} />
+                  <span className="hidden sm:inline">Nova Aba</span>
+                </a>
+                <button
+                  onClick={() => {
+                    const frame = document.getElementById("qconcursos-iframe") as HTMLIFrameElement;
+                    if (frame) frame.src = targetQconcursosUrl;
+                  }}
+                  title="Recarregar quadro"
+                  className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+                >
+                  <RotateCcw size={11} />
+                </button>
+                <button
+                  onClick={() => setSplitView(false)}
+                  title="Fechar visualização lado a lado"
+                  className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-white/[0.06] transition-all ml-1"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            </div>
+
+            {/* Dica amigável do iframe */}
+            <div className="px-3 py-1.5 bg-blue-950/30 border-b border-blue-500/10 flex items-center justify-between gap-2 text-[10px] text-slate-400">
+              <span className="truncate">
+                Dica: Se a página bloquear o carregamento interno, clique em <strong>Janela Pop-up</strong> acima para visualizá-la lado a lado.
+              </span>
+            </div>
+
+            {/* Iframe */}
+            <div className="flex-1 w-full bg-white relative">
+              <iframe
+                id="qconcursos-iframe"
+                key={targetQconcursosUrl}
+                src={targetQconcursosUrl}
+                className="w-full h-full border-0"
+                title="Qconcursos"
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
+              />
+            </div>
+          </div>
+        )}
+
+      </div>{/* /flex row split */}
 
       </div>{/* /flex col */}
 
