@@ -77,6 +77,7 @@ interface QuestionsTableProps {
   onFilteredQuestionsChange?: (filtered: BancoQuestion[]) => void;
   isAdmin?: boolean;
   onRefresh?: () => void;
+  onEdit?: (q: BancoQuestion) => void;
 }
 
 const CustomDropdown = ({ value, onChange, options }: any) => {
@@ -136,6 +137,7 @@ export default function QuestionsTable({
   onFilteredQuestionsChange,
   isAdmin,
   onRefresh,
+  onEdit,
 }: QuestionsTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [materiaFilter, setMateriaFilter] = useState('Todas');
@@ -389,6 +391,8 @@ export default function QuestionsTable({
                       getDifficultyStyles={getDifficultyStyles}
                       getDifficultyDot={getDifficultyDot}
                       onSelect={handleSelectQuestion}
+                      isAdmin={isAdmin}
+                      onEdit={onEdit}
                     />
                   ))
                 : materias
@@ -413,6 +417,8 @@ export default function QuestionsTable({
                               getDifficultyStyles={getDifficultyStyles}
                               getDifficultyDot={getDifficultyDot}
                               onSelect={handleSelectQuestion}
+                              isAdmin={isAdmin}
+                              onEdit={onEdit}
                             />
                           ))}
                         </React.Fragment>
@@ -431,6 +437,8 @@ export default function QuestionsTable({
               onSelect={handleSelectQuestion}
               getStatus={getStatus}
               getDifficultyStyles={getDifficultyStyles}
+              isAdmin={isAdmin}
+              onEdit={onEdit}
             />
           ))}
         </div>
@@ -470,7 +478,7 @@ export default function QuestionsTable({
 // ──────────────────────────────────────────────
 // Desktop Row
 // ──────────────────────────────────────────────
-function QuestionRow({ q, idx, getStatus, getDifficultyStyles, getDifficultyDot, onSelect }: any) {
+function QuestionRow({ q, idx, getStatus, getDifficultyStyles, getDifficultyDot, onSelect, isAdmin, onEdit }: any) {
   const status = getStatus(q.id);
 
   const statusCfg = (() => {
@@ -515,16 +523,27 @@ function QuestionRow({ q, idx, getStatus, getDifficultyStyles, getDifficultyDot,
         )}
       </td>
       <td className="px-4 py-3.5 text-right w-[130px]" onClick={e => e.stopPropagation()}>
-        <button
-          onClick={() => onSelect(q)}
-          className={`px-3 py-1.5 text-[10px] font-black rounded-lg uppercase tracking-wider transition-all flex items-center gap-1 ml-auto ${
-            status === 'Pendente'
-              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm active:scale-95'
-              : 'bg-white/[0.05] text-slate-300 hover:bg-white/[0.1] active:scale-95'
-          }`}
-        >
-          {status === 'Pendente' ? <><Play size={9} fill="currentColor" /> Responder</> : <><RotateCcw size={9} /> Refazer</>}
-        </button>
+        <div className="flex items-center justify-end gap-1.5">
+          {isAdmin && onEdit && (
+            <button
+              onClick={() => onEdit(q)}
+              title="Editar questão (Admin)"
+              className="p-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-amber-400 hover:bg-white/[0.08] transition-colors"
+            >
+              <Pencil size={11} />
+            </button>
+          )}
+          <button
+            onClick={() => onSelect(q)}
+            className={`px-3 py-1.5 text-[10px] font-black rounded-lg uppercase tracking-wider transition-all flex items-center gap-1 ${
+              status === 'Pendente'
+                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm active:scale-95'
+                : 'bg-white/[0.05] text-slate-300 hover:bg-white/[0.1] active:scale-95'
+            }`}
+          >
+            {status === 'Pendente' ? <><Play size={9} fill="currentColor" /> Responder</> : <><RotateCcw size={9} /> Refazer</>}
+          </button>
+        </div>
       </td>
     </tr>
   );
@@ -533,7 +552,7 @@ function QuestionRow({ q, idx, getStatus, getDifficultyStyles, getDifficultyDot,
 // ──────────────────────────────────────────────
 // Mobile Row
 // ──────────────────────────────────────────────
-function MobileQuestionRow({ q, onSelect, getStatus, getDifficultyStyles }: any) {
+function MobileQuestionRow({ q, onSelect, getStatus, getDifficultyStyles, isAdmin, onEdit }: any) {
   const status = getStatus(q.id);
   const statusCfg = (() => {
     switch (status) {
@@ -561,12 +580,23 @@ function MobileQuestionRow({ q, onSelect, getStatus, getDifficultyStyles }: any)
             {statusCfg.label}
           </span>
         </div>
-        <button
-          onClick={e => { e.stopPropagation(); onSelect(q); }}
-          className="px-3 py-1 bg-blue-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all"
-        >
-          {status === 'Pendente' ? 'Responder' : 'Refazer'}
-        </button>
+        <div className="flex items-center gap-2">
+          {isAdmin && onEdit && (
+            <button
+              onClick={e => { e.stopPropagation(); onEdit(q); }}
+              title="Editar questão (Admin)"
+              className="p-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-amber-400 transition-colors"
+            >
+              <Pencil size={11} />
+            </button>
+          )}
+          <button
+            onClick={e => { e.stopPropagation(); onSelect(q); }}
+            className="px-3 py-1 bg-blue-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all"
+          >
+            {status === 'Pendente' ? 'Responder' : 'Refazer'}
+          </button>
+        </div>
       </div>
     </div>
   );

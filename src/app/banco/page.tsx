@@ -38,6 +38,7 @@ import { PrintSimuladoModal } from "../../components/banco/PrintSimuladoModal";
 import NotionQuestionTab from "../../components/banco/NotionQuestionTab";
 import CronometroTab from "../../components/banco/CronometroTab";
 import CadernosTab from "../../components/banco/CadernosTab";
+import { ModalEditarQuestao } from "../../components/banco/ModalEditarQuestao";
 
 // ──────────────────────────────────────────────
 // Types
@@ -136,6 +137,24 @@ export default function BancoPage() {
   const [simuladoStatusFilter, setSimuladoStatusFilter] = useState<"todos" | "concluidos" | "em_andamento" | "nao_iniciados">("todos");
   const [simuladoFamiliaFilter, setSimuladoFamiliaFilter] = useState<string>("todas");
   const [isAdmin, setIsAdmin]       = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<BancoQuestion | null>(null);
+  const [orgNodes, setOrgNodes]     = useState<any[]>([]);
+
+  const fetchOrgNodes = useCallback(async () => {
+    try {
+      const { data } = await supabase
+        .from("organizacao_nos")
+        .select("*")
+        .order("ordem", { ascending: true });
+      if (data) setOrgNodes(data);
+    } catch (err) {
+      console.error("Erro ao carregar nós de organização:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOrgNodes();
+  }, [fetchOrgNodes]);
 
   useEffect(() => {
     if (!user?.email) { setIsAdmin(false); return; }
@@ -561,6 +580,7 @@ export default function BancoPage() {
                     onFilteredQuestionsChange={handleFilteredQuestionsChange}
                     isAdmin={isAdmin}
                     onRefresh={fetchQuestions}
+                    onEdit={(q) => setEditingQuestion(q)}
                   />
                 </>
               )}
@@ -594,6 +614,8 @@ export default function BancoPage() {
                   onBackToBank={() => setActiveTab("banco")}
                   isSaving={isSaving}
                   provasDisponiveis={provasDisponiveis}
+                  isAdmin={isAdmin}
+                  onEditQuestion={(q) => setEditingQuestion(q)}
                   onSelectProva={(provaName) => {
                     const newQueue = questions.filter(q => q.prova === provaName);
                     if (newQueue.length > 0) {
@@ -1481,6 +1503,7 @@ export default function BancoPage() {
                   user={user}
                   onShowAuth={() => setShowAuthModal(true)}
                   onRefreshQuestions={fetchQuestions}
+                  isAdmin={isAdmin}
                 />
               )}
             </motion.div>
@@ -1502,6 +1525,20 @@ export default function BancoPage() {
         title="SIMULADO BANCO DE QUESTÕES"
         subTitle="Estação de Treinamento — Todas as Questões"
       />
+
+      {editingQuestion && (
+        <ModalEditarQuestao
+          isOpen={!!editingQuestion}
+          onClose={() => setEditingQuestion(null)}
+          questao={editingQuestion}
+          orgNodes={orgNodes}
+          onSuccess={(updated) => {
+            fetchQuestions();
+            setSelectedQuestion(updated);
+            setResolverQueue(prev => prev.map(item => item.id === updated.id ? updated : item));
+          }}
+        />
+      )}
     </div>
   );
 }

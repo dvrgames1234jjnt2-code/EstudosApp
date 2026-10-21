@@ -27,7 +27,8 @@ import {
   Volume2,
   FileText,
   Printer,
-  ExternalLink
+  ExternalLink,
+  Pencil
 } from "lucide-react";
 import { PrintSimuladoModal } from "./PrintSimuladoModal";
 
@@ -72,6 +73,8 @@ interface QuestionResolverProps {
   isSaving: boolean;
   provasDisponiveis?: string[];
   onSelectProva?: (prova: string) => void;
+  isAdmin?: boolean;
+  onEditQuestion?: (q: BancoQuestion) => void;
 }
 
 export interface QuestionStats {
@@ -280,6 +283,8 @@ export default function QuestionResolver({
   onToggleDuvida,
   provasDisponiveis,
   onSelectProva,
+  isAdmin,
+  onEditQuestion,
 }: QuestionResolverProps) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState<boolean>(false);
@@ -524,6 +529,16 @@ export default function QuestionResolver({
                   <ExternalLink size={11} />
                   {question.ID_Qconcursos ? `Qconcursos (${question.ID_Qconcursos})` : "Link da Questão"}
                 </a>
+              )}
+              {isAdmin && onEditQuestion && (
+                <button
+                  onClick={() => onEditQuestion(question)}
+                  className="text-[11px] font-medium text-amber-400 hover:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5"
+                  title="Editar esta questão (Admin)"
+                >
+                  <Pencil size={11} />
+                  Editar Questão
+                </button>
               )}
               {textoApoio && (
                 <button

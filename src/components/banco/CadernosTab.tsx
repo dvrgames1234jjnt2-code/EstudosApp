@@ -32,10 +32,16 @@ import {
   Folder,
   FolderTree,
   FileText,
+  Pencil,
+  Trash2,
+  FolderInput,
 } from "lucide-react";
 import type { BancoQuestion } from "./QuestionsTable";
 import QuestionResolver from "./QuestionResolver";
 import { supabase, supabasePublic } from "../../lib/supabase";
+import { ModalEditarQuestao } from "./ModalEditarQuestao";
+import { ModalMoverQuestao } from "./ModalMoverQuestao";
+import { ModalRenomearPasta } from "./ModalRenomearPasta";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tipos & Categorias (Idêntico ao NotionQuestionTab)
@@ -86,6 +92,7 @@ interface CadernosTabProps {
   user: any;
   onShowAuth: () => void;
   onRefreshQuestions?: () => void;
+  isAdmin?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -174,6 +181,10 @@ function QuestaoRowItem({
   stats,
   isDuvida,
   onOpenResolver,
+  isAdmin,
+  onEdit,
+  onMove,
+  onDelete,
 }: {
   questao: BancoQuestion;
   numero: number;
@@ -181,6 +192,10 @@ function QuestaoRowItem({
   stats?: QuestionStats;
   isDuvida: boolean;
   onOpenResolver: () => void;
+  isAdmin?: boolean;
+  onEdit?: (q: BancoQuestion) => void;
+  onMove?: (q: BancoQuestion) => void;
+  onDelete?: (q: BancoQuestion) => void;
 }) {
   const catKey = resolveCategory(questao);
   const categoryInfo = CATEGORIES.find(c => c.key === catKey);
@@ -262,6 +277,39 @@ function QuestaoRowItem({
           <span className="w-1 h-1 rounded-full bg-rose-500 shrink-0" />
           Errou
         </span>
+      )}
+
+      {/* Ações de Administração: Mover, Editar, Excluir */}
+      {isAdmin && (
+        <div
+          className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0 select-none"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={() => onMove?.(questao)}
+            title="Mover para outro caso ou pasta"
+            className="p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.08] rounded transition-colors"
+          >
+            <FolderInput size={11} />
+          </button>
+          <button
+            type="button"
+            onClick={() => onEdit?.(questao)}
+            title="Editar questão"
+            className="p-1 text-slate-500 hover:text-amber-400 hover:bg-white/[0.08] rounded transition-colors"
+          >
+            <Pencil size={11} />
+          </button>
+          <button
+            type="button"
+            onClick={() => onDelete?.(questao)}
+            title="Excluir questão"
+            className="p-1 text-slate-500 hover:text-rose-400 hover:bg-white/[0.08] rounded transition-colors"
+          >
+            <Trash2 size={11} />
+          </button>
+        </div>
       )}
     </div>
   );
@@ -445,6 +493,13 @@ function CasoAccordion({
   duvidas,
   onOpenQuestion,
   onDropQuestion,
+  isAdmin,
+  onEditQuestao,
+  onMoveQuestao,
+  onDeleteQuestao,
+  onRenameCaso,
+  onAddSubfolder,
+  onDeleteCaso,
 }: {
   caso: CasoGroup;
   index: number;
@@ -452,6 +507,13 @@ function CasoAccordion({
   duvidas: Set<string>;
   onOpenQuestion: (q: BancoQuestion, queue: BancoQuestion[]) => void;
   onDropQuestion: (questaoId: string, targetCasoId: string) => void;
+  isAdmin?: boolean;
+  onEditQuestao?: (q: BancoQuestion) => void;
+  onMoveQuestao?: (q: BancoQuestion) => void;
+  onDeleteQuestao?: (q: BancoQuestion) => void;
+  onRenameCaso?: (casoId: string, currentNome: string) => void;
+  onAddSubfolder?: (casoId: string) => void;
+  onDeleteCaso?: (casoId: string, casoNome: string) => void;
 }) {
   const [isOpen, setIsOpen] = useState(true);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -544,6 +606,41 @@ function CasoAccordion({
             {stats.pct === null ? "—" : `${stats.pct}%`}
           </span>
 
+          {/* Ações de Admin no Caso */}
+          {isAdmin && (
+            <div
+              className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1 select-none"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => onAddSubfolder?.(caso.id)}
+                title="Adicionar subpasta neste caso"
+                className="p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.08] rounded transition-colors"
+              >
+                <FolderPlus size={11} />
+              </button>
+              <button
+                type="button"
+                onClick={() => onRenameCaso?.(caso.id, caso.nome)}
+                title="Renomear este caso"
+                className="p-1 text-slate-500 hover:text-amber-400 hover:bg-white/[0.08] rounded transition-colors"
+              >
+                <Pencil size={11} />
+              </button>
+              {caso.questoes.length === 0 && (
+                <button
+                  type="button"
+                  onClick={() => onDeleteCaso?.(caso.id, caso.nome)}
+                  title="Excluir este caso vazio"
+                  className="p-1 text-slate-500 hover:text-rose-400 hover:bg-white/[0.08] rounded transition-colors"
+                >
+                  <Trash2 size={11} />
+                </button>
+              )}
+            </div>
+          )}
+
           <ChevronDown
             size={11}
             className={`text-slate-500/70 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
@@ -569,6 +666,10 @@ function CasoAccordion({
                   stats={userAnswers[String(q.id)]}
                   isDuvida={duvidas.has(String(q.id))}
                   onOpenResolver={() => onOpenQuestion(q, caso.questoes)}
+                  isAdmin={isAdmin}
+                  onEdit={onEditQuestao}
+                  onMove={onMoveQuestao}
+                  onDelete={onDeleteQuestao}
                 />
               ))}
             </div>
@@ -591,6 +692,12 @@ function CadernoDedicatedView({
   onTrainAll,
   onDropQuestion,
   onOpenNovaPastaModal,
+  isAdmin,
+  onEditQuestao,
+  onMoveQuestao,
+  onDeleteQuestao,
+  onRenameCaso,
+  onDeleteCaso,
 }: {
   caderno: CadernoItem;
   onBack: () => void;
@@ -600,6 +707,12 @@ function CadernoDedicatedView({
   onTrainAll: () => void;
   onDropQuestion: (questaoId: string, targetCasoId: string) => void;
   onOpenNovaPastaModal: (parentCadernoId: string) => void;
+  isAdmin?: boolean;
+  onEditQuestao?: (q: BancoQuestion) => void;
+  onMoveQuestao?: (q: BancoQuestion) => void;
+  onDeleteQuestao?: (q: BancoQuestion) => void;
+  onRenameCaso?: (casoId: string, currentNome: string) => void;
+  onDeleteCaso?: (casoId: string, casoNome: string) => void;
 }) {
   const [filtroStatus, setFiltroStatus] = useState<"todas" | "erros" | "nao_feitas" | "duvidas">("todas");
 
@@ -761,6 +874,13 @@ function CadernoDedicatedView({
               duvidas={duvidas}
               onOpenQuestion={onOpenQuestion}
               onDropQuestion={onDropQuestion}
+              isAdmin={isAdmin}
+              onEditQuestao={onEditQuestao}
+              onMoveQuestao={onMoveQuestao}
+              onDeleteQuestao={onDeleteQuestao}
+              onRenameCaso={onRenameCaso}
+              onAddSubfolder={onOpenNovaPastaModal}
+              onDeleteCaso={onDeleteCaso}
             />
           ))}
         </div>
@@ -933,6 +1053,7 @@ export default function CadernosTab({
   user,
   onShowAuth,
   onRefreshQuestions,
+  isAdmin = false,
 }: CadernosTabProps) {
   const [selectedCaderno, setSelectedCaderno] = useState<CadernoItem | null>(null);
   const [cadernoFiltro, setCadernoFiltro] = useState("Todos");
@@ -950,6 +1071,18 @@ export default function CadernosTab({
 
   // Override local de organizacao_id para drag and drop instantâneo
   const [orgOverrides, setOrgOverrides] = useState<Map<string, string>>(new Map());
+
+  // Administração Avançada (Exclusivo Admin)
+  const [editingQuestao, setEditingQuestao] = useState<BancoQuestion | null>(null);
+  const [movingQuestaoIds, setMovingQuestaoIds] = useState<(string | number)[]>([]);
+  const [movingQuestaoLabel, setMovingQuestaoLabel] = useState<string>("");
+  const [renamingNode, setRenamingNode] = useState<{ id: string; nome: string } | null>(null);
+  const [toastMsg, setToastMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
+
+  const showToast = (text: string, type: "success" | "error" = "success") => {
+    setToastMsg({ text, type });
+    setTimeout(() => setToastMsg(null), 3500);
+  };
 
   // Estado do Modal de Resolução (exatamente igual à Questão Ativa)
   const [modalQuestion, setModalQuestion] = useState<BancoQuestion | null>(null);
@@ -983,6 +1116,92 @@ export default function CadernosTab({
   useEffect(() => {
     carregarNos();
   }, [carregarNos]);
+
+  // Handlers de Administração de Questões e Casos
+  const handleEditQuestao = useCallback((q: BancoQuestion) => {
+    if (!isAdmin) return;
+    setEditingQuestao(q);
+  }, [isAdmin]);
+
+  const handleEditSuccess = useCallback((updated: BancoQuestion) => {
+    showToast("Questão atualizada com sucesso!");
+    if (onRefreshQuestions) onRefreshQuestions();
+    if (modalQuestion && modalQuestion.id === updated.id) {
+      setModalQuestion(updated);
+    }
+  }, [onRefreshQuestions, modalQuestion]);
+
+  const handleOpenMoveModal = useCallback((q: BancoQuestion) => {
+    if (!isAdmin) return;
+    const label = (q as any).ID_Qconcursos || (q as any).Ordem ? `Q${(q as any).ID_Qconcursos || (q as any).Ordem}` : `Questão #${q.id}`;
+    setMovingQuestaoIds([q.id]);
+    setMovingQuestaoLabel(label);
+  }, [isAdmin]);
+
+  const handleMoveSuccess = useCallback((targetNodeId: string, targetNodeName: string) => {
+    setOrgOverrides(prev => {
+      const next = new Map(prev);
+      movingQuestaoIds.forEach(id => next.set(String(id), targetNodeId));
+      return next;
+    });
+    showToast(`Questão movida para "${targetNodeName}" com sucesso!`);
+    carregarNos();
+    if (onRefreshQuestions) onRefreshQuestions();
+  }, [movingQuestaoIds, carregarNos, onRefreshQuestions]);
+
+  const handleOpenRenameCaso = useCallback((casoId: string, currentNome: string) => {
+    if (!isAdmin) return;
+    setRenamingNode({ id: casoId, nome: currentNome });
+  }, [isAdmin]);
+
+  const handleRenameSuccess = useCallback((nodeId: string, newNome: string) => {
+    showToast(`Pasta renomeada para "${newNome}" com sucesso!`);
+    carregarNos();
+    if (onRefreshQuestions) onRefreshQuestions();
+  }, [carregarNos, onRefreshQuestions]);
+
+  const handleDeleteQuestao = useCallback(async (q: BancoQuestion) => {
+    if (!isAdmin) return;
+    const confirmDel = window.confirm(
+      `Deseja realmente excluir a questão #${q.id}${(q as any).ID_Qconcursos ? ` (${(q as any).ID_Qconcursos})` : ""}? Esta ação não pode ser desfeita.`
+    );
+    if (!confirmDel) return;
+
+    try {
+      let res = await supabase.from("questoes").delete().eq("id", q.id);
+      if (res.error) {
+        res = await supabasePublic.from("questoes").delete().eq("id", q.id);
+      }
+      if (res.error) throw new Error(res.error.message);
+
+      showToast("Questão excluída com sucesso!");
+      if (onRefreshQuestions) onRefreshQuestions();
+    } catch (e: any) {
+      console.error("Erro ao excluir questão:", e);
+      showToast(e.message || "Erro ao excluir questão.", "error");
+    }
+  }, [isAdmin, onRefreshQuestions]);
+
+  const handleDeleteCaso = useCallback(async (casoId: string, casoNome: string) => {
+    if (!isAdmin) return;
+    const confirmDel = window.confirm(`Deseja realmente excluir o caso/pasta "${casoNome}"?`);
+    if (!confirmDel) return;
+
+    try {
+      let res = await supabase.from("organizacao_nos").delete().eq("id", casoId);
+      if (res.error) {
+        res = await supabasePublic.from("organizacao_nos").delete().eq("id", casoId);
+      }
+      if (res.error) throw new Error(res.error.message);
+
+      showToast(`Caso "${casoNome}" excluído.`);
+      carregarNos();
+      if (onRefreshQuestions) onRefreshQuestions();
+    } catch (e: any) {
+      console.error("Erro ao excluir caso:", e);
+      showToast(e.message || "Erro ao excluir caso.", "error");
+    }
+  }, [isAdmin, carregarNos, onRefreshQuestions]);
 
   // ── 2. Montar Estrutura Hierárquica em Árvore Completa ──
   const { treeRoots, materiasAgrupadas, todosCadernos, parentOptions } = useMemo(() => {
@@ -1309,6 +1528,12 @@ export default function CadernosTab({
             setModalDefaultParentId(parentCadernoId);
             setIsNovaPastaModalOpen(true);
           }}
+          isAdmin={isAdmin}
+          onEditQuestao={handleEditQuestao}
+          onMoveQuestao={handleOpenMoveModal}
+          onDeleteQuestao={handleDeleteQuestao}
+          onRenameCaso={handleOpenRenameCaso}
+          onDeleteCaso={handleDeleteCaso}
         />
 
         {/* Modal de Criar Pasta */}
@@ -1345,8 +1570,61 @@ export default function CadernosTab({
                 onPrev={handleModalPrev}
                 onBackToBank={() => setModalQuestion(null)}
                 isSaving={isSavingAnswer}
+                isAdmin={isAdmin}
+                onEditQuestion={handleEditQuestao}
               />
             </div>
+          </div>
+        )}
+
+        {/* ── MODAIS DE ADMINISTRAÇÃO AVANÇADA NO CADERNO SELECIONADO ── */}
+        {isAdmin && (
+          <>
+            <ModalEditarQuestao
+              isOpen={!!editingQuestao}
+              onClose={() => setEditingQuestao(null)}
+              questao={editingQuestao}
+              orgNodes={dbNodes}
+              onSuccess={handleEditSuccess}
+            />
+
+            <ModalMoverQuestao
+              isOpen={movingQuestaoIds.length > 0}
+              onClose={() => {
+                setMovingQuestaoIds([]);
+                setMovingQuestaoLabel("");
+              }}
+              questaoIds={movingQuestaoIds}
+              questaoLabel={movingQuestaoLabel}
+              orgNodes={dbNodes}
+              onSuccess={handleMoveSuccess}
+            />
+
+            <ModalRenomearPasta
+              isOpen={!!renamingNode}
+              onClose={() => setRenamingNode(null)}
+              nodeId={renamingNode?.id || ""}
+              currentNome={renamingNode?.nome || ""}
+              onSuccess={handleRenameSuccess}
+            />
+          </>
+        )}
+
+        {/* Toast Notification */}
+        {toastMsg && (
+          <div
+            className={`fixed bottom-6 right-6 z-[120] flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-2xl border text-xs font-medium animate-in slide-in-from-bottom-3 duration-200 ${
+              toastMsg.type === "success"
+                ? "bg-[#0d1627] border-emerald-500/40 text-emerald-300"
+                : "bg-[#251016] border-rose-500/40 text-rose-300"
+            }`}
+          >
+            {toastMsg.type === "success" ? (
+              <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+            ) : (
+              <AlertCircle size={15} className="text-rose-400 shrink-0" />
+            )}
+            <span>{toastMsg.text}</span>
           </div>
         )}
       </div>
@@ -1784,6 +2062,32 @@ export default function CadernosTab({
                             >
                               <ChevronRight size={11} />
                             </span>
+
+                            {isAdmin && (
+                              <div
+                                className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-1 select-none"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenRenameCaso(caderno.id, caderno.nome)}
+                                  title="Renomear este caderno"
+                                  className="w-5 h-5 flex items-center justify-center rounded border border-white/[0.05] bg-white/[0.02] text-slate-500 hover:text-amber-300 hover:border-white/[0.12] transition-all"
+                                >
+                                  <Pencil size={10} />
+                                </button>
+                                {caderno.questoes.length === 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteCaso(caderno.id, caderno.nome)}
+                                    title="Excluir este caderno vazio"
+                                    className="w-5 h-5 flex items-center justify-center rounded border border-white/[0.05] bg-white/[0.02] text-slate-500 hover:text-rose-400 hover:border-white/[0.12] transition-all"
+                                  >
+                                    <Trash2 size={10} />
+                                  </button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -1830,8 +2134,61 @@ export default function CadernosTab({
               onPrev={handleModalPrev}
               onBackToBank={() => setModalQuestion(null)}
               isSaving={isSavingAnswer}
+              isAdmin={isAdmin}
+              onEditQuestion={handleEditQuestao}
             />
           </div>
+        </div>
+      )}
+
+      {/* ── MODAIS DE ADMINISTRAÇÃO AVANÇADA ── */}
+      {isAdmin && (
+        <>
+          <ModalEditarQuestao
+            isOpen={!!editingQuestao}
+            onClose={() => setEditingQuestao(null)}
+            questao={editingQuestao}
+            orgNodes={dbNodes}
+            onSuccess={handleEditSuccess}
+          />
+
+          <ModalMoverQuestao
+            isOpen={movingQuestaoIds.length > 0}
+            onClose={() => {
+              setMovingQuestaoIds([]);
+              setMovingQuestaoLabel("");
+            }}
+            questaoIds={movingQuestaoIds}
+            questaoLabel={movingQuestaoLabel}
+            orgNodes={dbNodes}
+            onSuccess={handleMoveSuccess}
+          />
+
+          <ModalRenomearPasta
+            isOpen={!!renamingNode}
+            onClose={() => setRenamingNode(null)}
+            nodeId={renamingNode?.id || ""}
+            currentNome={renamingNode?.nome || ""}
+            onSuccess={handleRenameSuccess}
+          />
+        </>
+      )}
+
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div
+          className={`fixed bottom-6 right-6 z-[120] flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-2xl border text-xs font-medium animate-in slide-in-from-bottom-3 duration-200 ${
+            toastMsg.type === "success"
+              ? "bg-[#0d1627] border-emerald-500/40 text-emerald-300"
+              : "bg-[#251016] border-rose-500/40 text-rose-300"
+          }`}
+        >
+          {toastMsg.type === "success" ? (
+            <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+          ) : (
+            <AlertCircle size={15} className="text-rose-400 shrink-0" />
+          )}
+          <span>{toastMsg.text}</span>
         </div>
       )}
     </div>
