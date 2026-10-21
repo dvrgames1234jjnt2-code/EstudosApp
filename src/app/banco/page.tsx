@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -301,11 +301,24 @@ export default function BancoPage() {
 
   // ── Selecionar questão ────────────────────
   const handleFilteredQuestionsChange = useCallback((filtered: BancoQuestion[]) => {
-    setFilteredQuestions(filtered);
-    // Só atualiza a fila do resolver se o usuário não estiver no resolver nesse momento
-    // (evita resetar índice enquanto está respondendo)
+    setFilteredQuestions(prev => {
+      if (
+        prev.length === filtered.length &&
+        prev[0]?.id === filtered[0]?.id &&
+        prev[prev.length - 1]?.id === filtered[filtered.length - 1]?.id
+      ) {
+        return prev;
+      }
+      return filtered;
+    });
     setResolverQueue(prev => {
-      // se a fila atual é igual ao total de questões ou igual ao filtro anterior, atualiza
+      if (
+        prev.length === filtered.length &&
+        prev[0]?.id === filtered[0]?.id &&
+        prev[prev.length - 1]?.id === filtered[filtered.length - 1]?.id
+      ) {
+        return prev;
+      }
       return filtered;
     });
   }, []);
@@ -407,14 +420,21 @@ export default function BancoPage() {
 
   // QuestionsTable usa { isCorrect, answer, timestamp } — extraímos da última resposta
   const tableAnswers: Record<string, { isCorrect: boolean; answer: string; timestamp: number }> =
-    Object.fromEntries(
-      Object.entries(userAnswers).map(([k, v]) => [
-        k,
-        { isCorrect: v.isCorrect, answer: v.lastAnswer, timestamp: v.timestamp },
-      ])
+    useMemo(
+      () =>
+        Object.fromEntries(
+          Object.entries(userAnswers).map(([k, v]) => [
+            k,
+            { isCorrect: v.isCorrect, answer: v.lastAnswer, timestamp: v.timestamp },
+          ])
+        ),
+      [userAnswers]
     );
 
-  const provasDisponiveis = Array.from(new Set(questions.map(q => q.prova).filter(Boolean))).sort() as string[];
+  const provasDisponiveis = useMemo(
+    () => Array.from(new Set(questions.map(q => q.prova).filter(Boolean))).sort() as string[],
+    [questions]
+  );
 
   // ──────────────────────────────────────────────
   // Render

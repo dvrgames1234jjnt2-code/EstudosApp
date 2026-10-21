@@ -915,6 +915,7 @@ export default function QuestionResolver({
                 id="qconcursos-iframe"
                 key={targetQconcursosUrl}
                 src={targetQconcursosUrl}
+                loading="lazy"
                 className="w-full h-full border-0"
                 title="Qconcursos"
                 sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"

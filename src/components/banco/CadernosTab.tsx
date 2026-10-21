@@ -339,7 +339,7 @@ function TreeNodeItem({
   onDropQuestion: (questaoId: string, targetNodeId: string) => void;
   onAddSubfolder: (parentId: string) => void;
 }) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(depth === 0);
   const [isDragOver, setIsDragOver] = useState(false);
 
   const hasChildren = node.filhos.length > 0 || node.questoes.length > 0;
@@ -515,7 +515,7 @@ function CasoAccordion({
   onAddSubfolder?: (casoId: string) => void;
   onDeleteCaso?: (casoId: string, casoNome: string) => void;
 }) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(index === 0);
   const [isDragOver, setIsDragOver] = useState(false);
 
   const stats = useMemo(() => {
@@ -1439,6 +1439,51 @@ export default function CadernosTab({
     };
   }, [userAnswers, duvidas]);
 
+  // Pré-computa estatísticas de matérias e cadernos com useMemo para performance fluida 60FPS
+  const { materiasStats, cadernosStats } = useMemo(() => {
+    const mStats = new Map<string, { acertos: number; erros: number; duvidas: number; pct: number | null }>();
+    const cStats = new Map<string, { acertos: number; erros: number; duvidas: number; pct: number | null }>();
+
+    materiasAgrupadas.forEach((mat) => {
+      let mAcertos = 0;
+      let mErros = 0;
+      let mDuvidas = 0;
+
+      mat.cadernos.forEach((cad) => {
+        let cAcertos = 0;
+        let cErros = 0;
+        let cDuvidas = 0;
+
+        cad.questoes.forEach((q) => {
+          const st = userAnswers[String(q.id)];
+          if (st) {
+            if (st.isCorrect) { cAcertos++; mAcertos++; }
+            else { cErros++; mErros++; }
+          }
+          if (duvidas.has(String(q.id))) { cDuvidas++; mDuvidas++; }
+        });
+
+        const cResp = cAcertos + cErros;
+        cStats.set(cad.id, {
+          acertos: cAcertos,
+          erros: cErros,
+          duvidas: cDuvidas,
+          pct: cResp > 0 ? Math.round((cAcertos / cResp) * 100) : null,
+        });
+      });
+
+      const mResp = mAcertos + mErros;
+      mStats.set(mat.id, {
+        acertos: mAcertos,
+        erros: mErros,
+        duvidas: mDuvidas,
+        pct: mResp > 0 ? Math.round((mAcertos / mResp) * 100) : null,
+      });
+    });
+
+    return { materiasStats: mStats, cadernosStats: cStats };
+  }, [materiasAgrupadas, userAnswers, duvidas]);
+
   // ── Drag & Drop: Mover questão para novo nó ──
   const handleDropQuestion = async (questaoId: string, targetNodeId: string) => {
     if (!questaoId || !targetNodeId) return;
@@ -1909,25 +1954,13 @@ export default function CadernosTab({
         ) : (
           <div className="flex flex-col gap-3 relative z-10">
             {materiasFiltradas.map((mat) => {
-              // Calcular estatísticas da matéria
-              let mAcertos = 0;
-              let mErros = 0;
-              let mDuvidas = 0;
-
-              mat.cadernos.forEach(cad => {
-                cad.questoes.forEach(q => {
-                  const st = userAnswers[String(q.id)];
-                  if (st) {
-                    if (st.isCorrect) mAcertos++;
-                    else mErros++;
-                  }
-                  if (duvidas.has(String(q.id))) mDuvidas++;
-                });
-              });
-
+              // Estatísticas pré-computadas da matéria (instantâneo)
+              const mStat = materiasStats.get(mat.id) || { acertos: 0, erros: 0, duvidas: 0, pct: null };
+              const mAcertos = mStat.acertos;
+              const mErros = mStat.erros;
+              const mDuvidas = mStat.duvidas;
+              const mPct = mStat.pct;
               const mTotal = mat.totalQuestoes;
-              const mRespondidas = mAcertos + mErros;
-              const mPct = mRespondidas > 0 ? Math.round((mAcertos / mRespondidas) * 100) : null;
 
               const mAproveitamentoClasses =
                 mPct === null
@@ -1982,23 +2015,13 @@ export default function CadernosTab({
                   {/* ── LISTA DE CADERNOS DENTRO DA MATÉRIA (Compacto e elegante) ── */}
                   <div className="flex flex-col gap-1">
                     {mat.cadernos.map((caderno) => {
-                      // Estatísticas do caderno
-                      let cAcertos = 0;
-                      let cErros = 0;
-                      let cDuvidas = 0;
-
-                      caderno.questoes.forEach(q => {
-                        const st = userAnswers[String(q.id)];
-                        if (st) {
-                          if (st.isCorrect) cAcertos++;
-                          else cErros++;
-                        }
-                        if (duvidas.has(String(q.id))) cDuvidas++;
-                      });
-
+                      // Estatísticas pré-computadas do caderno (instantâneo)
+                      const cStat = cadernosStats.get(caderno.id) || { acertos: 0, erros: 0, duvidas: 0, pct: null };
+                      const cAcertos = cStat.acertos;
+                      const cErros = cStat.erros;
+                      const cDuvidas = cStat.duvidas;
+                      const cPct = cStat.pct;
                       const cTotal = caderno.questoes.length;
-                      const cRespondidas = cAcertos + cErros;
-                      const cPct = cRespondidas > 0 ? Math.round((cAcertos / cRespondidas) * 100) : null;
 
                       const cAproveitamentoClasses =
                         cPct === null

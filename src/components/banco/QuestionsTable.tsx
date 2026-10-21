@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CheckCircle2,
@@ -22,6 +22,8 @@ import {
   Pencil,
   Calendar,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Printer,
   FileJson,
 } from 'lucide-react';
@@ -146,49 +148,70 @@ export default function QuestionsTable({
   const [viewMode, setViewMode] = useState<'list' | 'category'>('list');
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(40);
 
-  const getStatus = (id: any) => {
+  // Resetar página ao mudar filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, materiaFilter, provaFilter, statusFilter]);
+
+  const getStatus = useCallback((id: any) => {
     const answer = userAnswers[String(id)];
     if (answer) return answer.isCorrect ? 'Acertei' : 'Errei';
     return 'Pendente';
-  };
+  }, [userAnswers]);
 
   const norm = (s?: string) => (s || '').trim().toLowerCase();
 
-  const filteredQuestions = questions.filter(q => {
+  const filteredQuestions = useMemo(() => {
     const term = norm(searchTerm);
-    const matchesSearch =
-      !term ||
-      norm(q.title).includes(term) ||
-      norm(q.materia).includes(term) ||
-      norm(q.tema).includes(term) ||
-      String(q.id || "").includes(term);
+    return questions.filter(q => {
+      const matchesSearch =
+        !term ||
+        norm(q.title).includes(term) ||
+        norm(q.materia).includes(term) ||
+        norm(q.tema).includes(term) ||
+        String(q.id || "").includes(term);
 
-    const matchesMateria = materiaFilter === 'Todas' || norm(q.materia) === norm(materiaFilter);
-    const matchesProva = provaFilter === 'Todas' || norm(q.prova) === norm(provaFilter);
+      const matchesMateria = materiaFilter === 'Todas' || norm(q.materia) === norm(materiaFilter);
+      const matchesProva = provaFilter === 'Todas' || norm(q.prova) === norm(provaFilter);
 
-    const status = getStatus(q.id);
-    const matchesStatus =
-      statusFilter === 'Todos' ||
-      (statusFilter === 'Acertadas' && status === 'Acertei') ||
-      (statusFilter === 'Erradas' && status === 'Errei') ||
-      (statusFilter === 'Pendente' && status === 'Pendente');
+      const status = getStatus(q.id);
+      const matchesStatus =
+        statusFilter === 'Todos' ||
+        (statusFilter === 'Acertadas' && status === 'Acertei') ||
+        (statusFilter === 'Erradas' && status === 'Errei') ||
+        (statusFilter === 'Pendente' && status === 'Pendente');
 
-    return matchesSearch && matchesMateria && matchesProva && matchesStatus;
-  });
+      return matchesSearch && matchesMateria && matchesProva && matchesStatus;
+    });
+  }, [questions, searchTerm, materiaFilter, provaFilter, statusFilter, getStatus]);
 
-  // Notifica o componente pai sobre a lista filtrada sempre que os filtros mudarem
-  React.useEffect(() => {
-    if (onFilteredQuestionsChange) {
-      onFilteredQuestionsChange(filteredQuestions);
+  // Previne loop de renderização infinita checando assinatura do array
+  const prevFilterSig = useRef("");
+  useEffect(() => {
+    const sig = `${filteredQuestions.length}-${filteredQuestions[0]?.id || ''}-${filteredQuestions[filteredQuestions.length - 1]?.id || ''}`;
+    if (prevFilterSig.current !== sig) {
+      prevFilterSig.current = sig;
+      if (onFilteredQuestionsChange) {
+        onFilteredQuestionsChange(filteredQuestions);
+      }
     }
-  }, [searchTerm, materiaFilter, provaFilter, statusFilter, questions]);
+  }, [filteredQuestions, onFilteredQuestionsChange]);
 
-  // Stats (Dinâmicos conforme filtro)
+  // Paginação inteligente para renderização 60FPS sem travamento
+  const totalPages = Math.max(1, Math.ceil(filteredQuestions.length / pageSize));
+  const paginatedQuestions = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredQuestions.slice(start, start + pageSize);
+  }, [filteredQuestions, currentPage, pageSize]);
+
+  // Stats (Dinâmicos conforme filtro) memoizados
   const isFiltered = materiaFilter !== 'Todas' || provaFilter !== 'Todas' || statusFilter !== 'Todos' || searchTerm.trim() !== '';
   const currentTotal = filteredQuestions.length;
-  const answeredCount = filteredQuestions.filter(q => userAnswers[String(q.id)]).length;
-  const correctCount = filteredQuestions.filter(q => userAnswers[String(q.id)]?.isCorrect).length;
+  const answeredCount = useMemo(() => filteredQuestions.filter(q => userAnswers[String(q.id)]).length, [filteredQuestions, userAnswers]);
+  const correctCount = useMemo(() => filteredQuestions.filter(q => userAnswers[String(q.id)]?.isCorrect).length, [filteredQuestions, userAnswers]);
   const incorrectCount = answeredCount - correctCount;
   const rate = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
 
@@ -218,24 +241,24 @@ export default function QuestionsTable({
     }
   };
 
-  // Opções interdependentes: apenas exibe as opções válidas de acordo com os filtros ativos
-  const materias = Array.from(
+  // Opções interdependentes memoizadas
+  const materias = useMemo(() => Array.from(
     new Set(
       questions
         .filter(q => provaFilter === 'Todas' || norm(q.prova) === norm(provaFilter))
         .map(q => (q.materia || '').trim())
         .filter(Boolean)
     )
-  ).sort();
+  ).sort(), [questions, provaFilter]);
 
-  const provas = Array.from(
+  const provas = useMemo(() => Array.from(
     new Set(
       questions
         .filter(q => materiaFilter === 'Todas' || norm(q.materia) === norm(materiaFilter))
         .map(q => (q.prova || '').trim())
         .filter(Boolean)
     )
-  ).sort();
+  ).sort(), [questions, materiaFilter]);
 
   return (
     <div className="space-y-5">
@@ -382,11 +405,11 @@ export default function QuestionsTable({
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
               {viewMode === 'list'
-                ? filteredQuestions.map((q, idx) => (
+                ? paginatedQuestions.map((q, idx) => (
                     <QuestionRow
                       key={q.id}
                       q={q}
-                      idx={idx}
+                      idx={(currentPage - 1) * pageSize + idx}
                       getStatus={getStatus}
                       getDifficultyStyles={getDifficultyStyles}
                       getDifficultyDot={getDifficultyDot}
@@ -398,7 +421,7 @@ export default function QuestionsTable({
                 : materias
                     .filter(m => materiaFilter === 'Todas' || m === materiaFilter)
                     .map(materia => {
-                      const mqs = filteredQuestions.filter(q => q.materia === materia);
+                      const mqs = paginatedQuestions.filter(q => q.materia === materia);
                       if (mqs.length === 0) return null;
                       return (
                         <React.Fragment key={materia}>
@@ -412,7 +435,7 @@ export default function QuestionsTable({
                             <QuestionRow
                               key={q.id}
                               q={q}
-                              idx={idx}
+                              idx={(currentPage - 1) * pageSize + idx}
                               getStatus={getStatus}
                               getDifficultyStyles={getDifficultyStyles}
                               getDifficultyDot={getDifficultyDot}
@@ -430,7 +453,7 @@ export default function QuestionsTable({
 
         {/* Mobile */}
         <div className="md:hidden divide-y divide-white/[0.05]">
-          {filteredQuestions.map((q, idx) => (
+          {paginatedQuestions.map((q, idx) => (
             <MobileQuestionRow
               key={q.id || idx}
               q={q}
@@ -442,6 +465,39 @@ export default function QuestionsTable({
             />
           ))}
         </div>
+
+        {/* Paginação Ultrarrápida */}
+        {filteredQuestions.length > pageSize && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-white/[0.05] bg-white/[0.015]">
+            <div className="text-[11px] text-slate-400">
+              Mostrando <span className="text-white font-medium">{(currentPage - 1) * pageSize + 1}</span> a <span className="text-white font-medium">{Math.min(currentPage * pageSize, filteredQuestions.length)}</span> de <span className="text-white font-medium">{filteredQuestions.length}</span> questões
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-2.5 py-1 rounded-lg border border-white/[0.08] hover:bg-white/[0.05] disabled:opacity-30 disabled:cursor-not-allowed text-xs text-slate-300 transition-all flex items-center gap-1"
+              >
+                <ChevronLeft size={13} />
+                <span>Anterior</span>
+              </button>
+
+              <span className="text-[11px] font-mono px-2 text-slate-400">
+                Página {currentPage} de {totalPages}
+              </span>
+
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-2.5 py-1 rounded-lg border border-white/[0.08] hover:bg-white/[0.05] disabled:opacity-30 disabled:cursor-not-allowed text-xs text-slate-300 transition-all flex items-center gap-1"
+              >
+                <span>Próxima</span>
+                <ChevronRight size={13} />
+              </button>
+            </div>
+          </div>
+        )}
 
         {filteredQuestions.length === 0 && (
           <div className="py-20 text-center space-y-4">
