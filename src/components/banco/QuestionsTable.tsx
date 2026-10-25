@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CheckCircle2,
@@ -26,7 +26,11 @@ import {
   ChevronRight,
   Printer,
   FileJson,
+  X,
+  AlertTriangle,
+  Loader2,
 } from 'lucide-react';
+import { supabase, supabasePublic } from '../../lib/supabase';
 import { PrintSimuladoModal } from './PrintSimuladoModal';
 import { ImportJsonModal } from './ImportJsonModal';
 
@@ -141,6 +145,8 @@ export default function QuestionsTable({
   onRefresh,
   onEdit,
 }: QuestionsTableProps) {
+  // searchTerm tem input imediato (para UX responsiva) + valor debounced (para filtro pesado)
+  const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [materiaFilter, setMateriaFilter] = useState('Todas');
   const [provaFilter, setProvaFilter] = useState('Todas');
@@ -149,7 +155,27 @@ export default function QuestionsTable({
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(40);
+  const [pageSize] = useState(40);
+
+  // Seleção múltipla de questões
+  const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
+
+  // Exclusão de questões (Admin)
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [questionToDelete, setQuestionToDelete] = useState<BancoQuestion | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (text: string, type: 'success' | 'error' = 'success') => {
+    setToastMsg({ text, type });
+    setTimeout(() => setToastMsg(null), 3500);
+  };
+
+  // Debounce de 220ms no searchTerm para não filtrar 830 questões a cada keystroke
+  useEffect(() => {
+    const t = setTimeout(() => setSearchTerm(searchInput), 220);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   // Resetar página ao mudar filtros
   useEffect(() => {
@@ -217,6 +243,117 @@ export default function QuestionsTable({
 
   const handleSelectQuestion = (q: BancoQuestion) => {
     onSelect(q, filteredQuestions);
+  };
+
+  // Alternar seleção de uma questão
+  const toggleSelectOne = useCallback((id: string | number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  // Verificar se todas da página atual estão selecionadas
+  const isAllPageSelected = useMemo(() => {
+    if (paginatedQuestions.length === 0) return false;
+    return paginatedQuestions.every(q => selectedIds.has(q.id));
+  }, [paginatedQuestions, selectedIds]);
+
+  // Alternar seleção de todas da página atual
+  const toggleSelectAllPage = useCallback(() => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      const allSelected = paginatedQuestions.every(q => next.has(q.id));
+      if (allSelected) {
+        paginatedQuestions.forEach(q => next.delete(q.id));
+      } else {
+        paginatedQuestions.forEach(q => next.add(q.id));
+      }
+      return next;
+    });
+  }, [paginatedQuestions]);
+
+  // Limpar seleção
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
+  // Questões atualmente selecionadas
+  const selectedQuestionsList = useMemo(() => {
+    return questions.filter(q => selectedIds.has(q.id));
+  }, [questions, selectedIds]);
+
+  // Modal de impressão para questões selecionadas
+  const [showSelectedPrintModal, setShowSelectedPrintModal] = useState(false);
+
+  const handlePrintSelected = () => {
+    if (selectedQuestionsList.length === 0) return;
+    setShowSelectedPrintModal(true);
+  };
+
+  const handleResolveSelected = () => {
+    if (selectedQuestionsList.length === 0) return;
+    onGenerateTest(selectedQuestionsList);
+  };
+
+  // Abrir confirmação de exclusão individual
+  const handlePromptDeleteSingle = useCallback((q: BancoQuestion) => {
+    if (!isAdmin) return;
+    setQuestionToDelete(q);
+    setShowDeleteModal(true);
+  }, [isAdmin]);
+
+  // Abrir confirmação de exclusão em massa
+  const handlePromptDeleteBulk = () => {
+    if (!isAdmin || selectedIds.size === 0) return;
+    setQuestionToDelete(null);
+    setShowDeleteModal(true);
+  };
+
+  // Executar exclusão real no Supabase
+  const handleConfirmDelete = async () => {
+    if (!isAdmin) return;
+    setIsDeleting(true);
+
+    const idsToDelete: (string | number)[] = questionToDelete
+      ? [questionToDelete.id]
+      : Array.from(selectedIds);
+
+    try {
+      let res = await supabase.from('questoes').delete().in('id', idsToDelete);
+      
+      if (res.error) {
+        res = await supabasePublic.from('questoes').delete().in('id', idsToDelete);
+      }
+
+      if (res.error) {
+        throw new Error(res.error.message || 'Erro ao excluir questões do banco.');
+      }
+
+      showToast(
+        idsToDelete.length === 1
+          ? 'Questão excluída com sucesso!'
+          : `${idsToDelete.length} questões excluídas com sucesso!`,
+        'success'
+      );
+
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        idsToDelete.forEach(id => next.delete(id));
+        return next;
+      });
+      setShowDeleteModal(false);
+      setQuestionToDelete(null);
+
+      onRefresh?.();
+    } catch (err: any) {
+      console.error('Erro na exclusão:', err);
+      showToast(err.message || 'Falha ao excluir questão(ões). Verifique as permissões.', 'error');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const getDifficultyStyles = (diff?: string) => {
@@ -341,8 +478,8 @@ export default function QuestionsTable({
             type="text"
             placeholder="Pesquisar enunciados, temas ou matérias..."
             className="w-full pl-9 pr-4 py-2 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white placeholder:text-slate-600 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
           />
         </div>
 
@@ -395,12 +532,23 @@ export default function QuestionsTable({
           <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
               <tr className="bg-white/[0.02] border-b border-white/[0.05] text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                <th className="px-2 py-3.5 w-[50px] text-center">#</th>
+                <th className="px-3 py-3.5 w-[70px] text-center">
+                  <div className="flex items-center justify-center gap-1.5" onClick={e => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={isAllPageSelected}
+                      onChange={toggleSelectAllPage}
+                      title={isAllPageSelected ? "Desmarcar página" : "Selecionar todas as 40 questões desta página"}
+                      className="w-3.5 h-3.5 rounded bg-slate-900 border-white/20 text-blue-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600"
+                    />
+                    <span>#</span>
+                  </div>
+                </th>
                 <th className="px-4 py-3.5 w-[180px]">Matéria</th>
                 <th className="px-4 py-3.5">Enunciado</th>
                 <th className="px-3 py-3.5 w-[120px] text-center">Status</th>
                 <th className="px-4 py-3.5 w-[130px]">Simulado</th>
-                <th className="px-4 py-3.5 w-[130px] text-right">Ação</th>
+                <th className="px-4 py-3.5 w-[140px] text-right">Ação</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
@@ -416,6 +564,9 @@ export default function QuestionsTable({
                       onSelect={handleSelectQuestion}
                       isAdmin={isAdmin}
                       onEdit={onEdit}
+                      isSelected={selectedIds.has(q.id)}
+                      onToggleSelect={toggleSelectOne}
+                      onDelete={handlePromptDeleteSingle}
                     />
                   ))
                 : materias
@@ -442,6 +593,9 @@ export default function QuestionsTable({
                               onSelect={handleSelectQuestion}
                               isAdmin={isAdmin}
                               onEdit={onEdit}
+                              isSelected={selectedIds.has(q.id)}
+                              onToggleSelect={toggleSelectOne}
+                              onDelete={handlePromptDeleteSingle}
                             />
                           ))}
                         </React.Fragment>
@@ -462,6 +616,9 @@ export default function QuestionsTable({
               getDifficultyStyles={getDifficultyStyles}
               isAdmin={isAdmin}
               onEdit={onEdit}
+              isSelected={selectedIds.has(q.id)}
+              onToggleSelect={toggleSelectOne}
+              onDelete={handlePromptDeleteSingle}
             />
           ))}
         </div>
@@ -520,6 +677,15 @@ export default function QuestionsTable({
         subTitle={materiaFilter !== 'Todas' ? `Matéria: ${materiaFilter}` : "Questões Selecionadas para Treinamento"}
       />
 
+      {/* Modal de Impressão de Questões Selecionadas */}
+      <PrintSimuladoModal
+        isOpen={showSelectedPrintModal}
+        onClose={() => setShowSelectedPrintModal(false)}
+        questions={selectedQuestionsList}
+        title={`SIMULADO SELECIONADO (${selectedQuestionsList.length} QUESTÕES)`}
+        subTitle="Questões Selecionadas Manualmente no Banco de Questões"
+      />
+
       <ImportJsonModal
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
@@ -527,14 +693,175 @@ export default function QuestionsTable({
           onRefresh?.();
         }}
       />
+
+      {/* ── BARRA FLUTUANTE DE AÇÕES EM LOTE (SELEÇÃO MÚLTIPLA) ── */}
+      <AnimatePresence>
+        {selectedIds.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 25, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 25, scale: 0.95 }}
+            transition={{ duration: 0.18 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#0c1220]/95 border border-blue-500/30 shadow-[0_10px_35px_rgba(0,0,0,0.7)] rounded-2xl px-4 py-2.5 flex items-center gap-2.5 backdrop-blur-xl flex-wrap max-w-[95vw]"
+          >
+            <div className="flex items-center gap-2 pr-3 border-r border-white/10 text-xs font-bold text-white shrink-0">
+              <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+              <span>{selectedIds.size} selecionada{selectedIds.size > 1 ? 's' : ''}</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={clearSelection}
+              className="text-xs text-slate-400 hover:text-white px-2.5 py-1.5 rounded-xl hover:bg-white/[0.06] transition-all shrink-0"
+            >
+              Desmarcar
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePrintSelected}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.10] text-xs font-bold text-slate-200 border border-white/[0.08] transition-all shrink-0"
+              title="Imprimir simulado com as questões selecionadas"
+            >
+              <Printer size={13} />
+              <span>Imprimir</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleResolveSelected}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow transition-all shrink-0 active:scale-95"
+              title="Iniciar resolução com as questões selecionadas"
+            >
+              <Play size={12} fill="currentColor" />
+              <span>Resolver</span>
+            </button>
+
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={handlePromptDeleteBulk}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 text-xs font-bold transition-all ml-1 shrink-0 active:scale-95"
+                title="Excluir permanentemente todas as questões selecionadas (Admin)"
+              >
+                <Trash2 size={13} />
+                <span>Excluir</span>
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── MODAL DE CONFIRMAÇÃO DE EXCLUSÃO (ADMIN) ── */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-md bg-[#0c1220] border border-rose-500/30 rounded-2xl shadow-2xl p-6 flex flex-col gap-4 text-left"
+            >
+              <div className="flex items-start gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+                  <AlertTriangle size={20} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-bold text-white">
+                    {questionToDelete
+                      ? `Excluir Questão #${questionToDelete.id}?`
+                      : `Excluir ${selectedIds.size} Questões Selecionadas?`}
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                    Esta ação é <strong className="text-rose-400">permanente e irreversível</strong>. As questões serão removidas definitivamente do banco de dados Supabase.
+                  </p>
+                  {questionToDelete && (
+                    <div className="mt-2.5 p-2.5 bg-white/[0.02] border border-white/[0.06] rounded-xl text-[11px] text-slate-300 line-clamp-2">
+                      <span className="text-slate-500 font-mono">[{questionToDelete.materia}]</span> {questionToDelete.title || questionToDelete.perguntaProblema}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-white/[0.08]">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setQuestionToDelete(null);
+                  }}
+                  className="px-4 py-2 rounded-xl border border-white/[0.10] text-slate-400 hover:text-white text-xs font-semibold transition-all disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={handleConfirmDelete}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-rose-600/30 active:scale-95"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 size={13} className="animate-spin" />
+                      <span>Excluindo...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={13} />
+                      <span>Sim, Excluir Definitivamente</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── TOAST NOTIFICATION ── */}
+      <AnimatePresence>
+        {toastMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 15 }}
+            className={`fixed bottom-6 right-6 z-[110] flex items-center gap-2.5 px-4 py-2.5 rounded-xl shadow-2xl border text-xs font-medium ${
+              toastMsg.type === 'success'
+                ? 'bg-[#0b1628] border-emerald-500/40 text-emerald-300'
+                : 'bg-[#251016] border-rose-500/40 text-rose-300'
+            }`}
+          >
+            {toastMsg.type === 'success' ? (
+              <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+            ) : (
+              <XCircle size={15} className="text-rose-400 shrink-0" />
+            )}
+            <span>{toastMsg.text}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
 // ──────────────────────────────────────────────
-// Desktop Row
+// Desktop Row — memoizado para evitar re-render de todas as linhas
+// quando só uma questão muda de status
 // ──────────────────────────────────────────────
-function QuestionRow({ q, idx, getStatus, getDifficultyStyles, getDifficultyDot, onSelect, isAdmin, onEdit }: any) {
+const QuestionRow = memo(function QuestionRow({
+  q,
+  idx,
+  getStatus,
+  getDifficultyStyles,
+  getDifficultyDot,
+  onSelect,
+  isAdmin,
+  onEdit,
+  isSelected,
+  onToggleSelect,
+  onDelete,
+}: any) {
   const status = getStatus(q.id);
 
   const statusCfg = (() => {
@@ -548,9 +875,21 @@ function QuestionRow({ q, idx, getStatus, getDifficultyStyles, getDifficultyDot,
   return (
     <tr
       onClick={() => onSelect(q)}
-      className="group hover:bg-blue-500/5 transition-all duration-150 cursor-pointer"
+      className={`group transition-all duration-150 cursor-pointer ${
+        isSelected ? 'bg-blue-600/[0.08] hover:bg-blue-600/[0.12]' : 'hover:bg-blue-500/5'
+      }`}
     >
-      <td className="px-2 py-3.5 text-center text-xs font-semibold text-slate-500 w-[50px]">{idx + 1}</td>
+      <td className="px-3 py-3.5 text-center text-xs font-semibold text-slate-500 w-[70px]" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-center gap-2">
+          <input
+            type="checkbox"
+            checked={!!isSelected}
+            onChange={() => onToggleSelect?.(q.id)}
+            className="w-3.5 h-3.5 rounded bg-slate-900 border-white/20 text-blue-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600"
+          />
+          <span className="tabular-nums text-slate-500 font-normal">{idx + 1}</span>
+        </div>
+      </td>
       <td className="px-4 py-3.5 w-[180px]">
         <div className="flex flex-col gap-0.5">
           <span className="text-[11px] font-bold text-slate-200 truncate flex items-center gap-1.5 uppercase tracking-wide">
@@ -578,7 +917,7 @@ function QuestionRow({ q, idx, getStatus, getDifficultyStyles, getDifficultyDot,
           <span className="text-[10px] text-slate-600">—</span>
         )}
       </td>
-      <td className="px-4 py-3.5 text-right w-[130px]" onClick={e => e.stopPropagation()}>
+      <td className="px-4 py-3.5 text-right w-[140px]" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-end gap-1.5">
           {isAdmin && onEdit && (
             <button
@@ -587,6 +926,15 @@ function QuestionRow({ q, idx, getStatus, getDifficultyStyles, getDifficultyDot,
               className="p-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-amber-400 hover:bg-white/[0.08] transition-colors"
             >
               <Pencil size={11} />
+            </button>
+          )}
+          {isAdmin && onDelete && (
+            <button
+              onClick={() => onDelete(q)}
+              title="Excluir questão permanentemente (Admin)"
+              className="p-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-rose-400 hover:border-rose-500/30 hover:bg-rose-500/10 transition-colors"
+            >
+              <Trash2 size={11} />
             </button>
           )}
           <button
@@ -603,12 +951,22 @@ function QuestionRow({ q, idx, getStatus, getDifficultyStyles, getDifficultyDot,
       </td>
     </tr>
   );
-}
+});
 
 // ──────────────────────────────────────────────
-// Mobile Row
+// Mobile Row — memoizado
 // ──────────────────────────────────────────────
-function MobileQuestionRow({ q, onSelect, getStatus, getDifficultyStyles, isAdmin, onEdit }: any) {
+const MobileQuestionRow = memo(function MobileQuestionRow({
+  q,
+  onSelect,
+  getStatus,
+  getDifficultyStyles,
+  isAdmin,
+  onEdit,
+  isSelected,
+  onToggleSelect,
+  onDelete,
+}: any) {
   const status = getStatus(q.id);
   const statusCfg = (() => {
     switch (status) {
@@ -621,9 +979,19 @@ function MobileQuestionRow({ q, onSelect, getStatus, getDifficultyStyles, isAdmi
   return (
     <div
       onClick={() => onSelect(q)}
-      className="p-4 space-y-2.5 active:bg-white/[0.03] transition-colors"
+      className={`p-4 space-y-2.5 transition-colors ${
+        isSelected ? 'bg-blue-600/[0.08]' : 'active:bg-white/[0.03]'
+      }`}
     >
       <div className="flex items-start gap-3">
+        <div className="pt-0.5 shrink-0" onClick={e => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={!!isSelected}
+            onChange={() => onToggleSelect?.(q.id)}
+            className="w-4 h-4 rounded bg-slate-900 border-white/20 text-blue-500 focus:ring-0 cursor-pointer accent-blue-600"
+          />
+        </div>
         <div className="flex-1 min-w-0">
           <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider">{q.materia}</span>
           <p className="text-xs font-bold text-slate-200 leading-relaxed mt-0.5 line-clamp-2">{q.title || q.perguntaProblema || "Sem enunciado"}</p>
@@ -646,6 +1014,15 @@ function MobileQuestionRow({ q, onSelect, getStatus, getDifficultyStyles, isAdmi
               <Pencil size={11} />
             </button>
           )}
+          {isAdmin && onDelete && (
+            <button
+              onClick={e => { e.stopPropagation(); onDelete(q); }}
+              title="Excluir questão (Admin)"
+              className="p-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+            >
+              <Trash2 size={11} />
+            </button>
+          )}
           <button
             onClick={e => { e.stopPropagation(); onSelect(q); }}
             className="px-3 py-1 bg-blue-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all"
@@ -656,4 +1033,4 @@ function MobileQuestionRow({ q, onSelect, getStatus, getDifficultyStyles, isAdmi
       </div>
     </div>
   );
-}
+});

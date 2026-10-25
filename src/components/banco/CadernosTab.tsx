@@ -35,6 +35,7 @@ import {
   Pencil,
   Trash2,
   FolderInput,
+  Printer,
 } from "lucide-react";
 import type { BancoQuestion } from "./QuestionsTable";
 import QuestionResolver from "./QuestionResolver";
@@ -42,6 +43,7 @@ import { supabase, supabasePublic } from "../../lib/supabase";
 import { ModalEditarQuestao } from "./ModalEditarQuestao";
 import { ModalMoverQuestao } from "./ModalMoverQuestao";
 import { ModalRenomearPasta } from "./ModalRenomearPasta";
+import { PrintSimuladoModal } from "./PrintSimuladoModal";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tipos & Categorias (Idêntico ao NotionQuestionTab)
@@ -330,6 +332,7 @@ function TreeNodeItem({
   onOpenQuestion,
   onDropQuestion,
   onAddSubfolder,
+  onPrintNode,
 }: {
   node: HierarchyTreeNode;
   depth?: number;
@@ -338,6 +341,7 @@ function TreeNodeItem({
   onOpenQuestion: (q: BancoQuestion, queue: BancoQuestion[]) => void;
   onDropQuestion: (questaoId: string, targetNodeId: string) => void;
   onAddSubfolder: (parentId: string) => void;
+  onPrintNode?: (node: HierarchyTreeNode) => void;
 }) {
   const [isOpen, setIsOpen] = useState(depth === 0);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -400,17 +404,33 @@ function TreeNodeItem({
           </span>
         </div>
 
-        {/* Botão de adicionar subpasta inline */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddSubfolder(node.id);
-          }}
-          title={`Adicionar subpasta dentro de "${node.nome}"`}
-          className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.06] rounded transition-all shrink-0"
-        >
-          <Plus size={12} />
-        </button>
+        <div className="flex items-center gap-1">
+          {/* Botão de imprimir questões desta pasta/caso */}
+          {node.questoes.length + node.totalDescendentesQuestoes > 0 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onPrintNode?.(node);
+              }}
+              title={`Imprimir questões de "${node.nome}" (${node.questoes.length + node.totalDescendentesQuestoes})`}
+              className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.06] rounded transition-all shrink-0"
+            >
+              <Printer size={11} />
+            </button>
+          )}
+
+          {/* Botão de adicionar subpasta inline */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddSubfolder(node.id);
+            }}
+            title={`Adicionar subpasta dentro de "${node.nome}"`}
+            className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.06] rounded transition-all shrink-0"
+          >
+            <Plus size={12} />
+          </button>
+        </div>
       </div>
 
       {/* Filhos e Questões */}
@@ -427,6 +447,7 @@ function TreeNodeItem({
               onOpenQuestion={onOpenQuestion}
               onDropQuestion={onDropQuestion}
               onAddSubfolder={onAddSubfolder}
+              onPrintNode={onPrintNode}
             />
           ))}
 
@@ -500,6 +521,7 @@ function CasoAccordion({
   onRenameCaso,
   onAddSubfolder,
   onDeleteCaso,
+  onPrintCaso,
 }: {
   caso: CasoGroup;
   index: number;
@@ -514,6 +536,7 @@ function CasoAccordion({
   onRenameCaso?: (casoId: string, currentNome: string) => void;
   onAddSubfolder?: (casoId: string) => void;
   onDeleteCaso?: (casoId: string, casoNome: string) => void;
+  onPrintCaso?: (caso: CasoGroup) => void;
 }) {
   const [isOpen, setIsOpen] = useState(index === 0);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -641,6 +664,21 @@ function CasoAccordion({
             </div>
           )}
 
+          {/* Botão de Imprimir Questões do Caso */}
+          {caso.questoes.length > 0 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onPrintCaso?.(caso);
+              }}
+              title={`Imprimir ${caso.questoes.length} questões deste caso (${caso.nome})`}
+              className="p-1 text-slate-500 hover:text-indigo-300 hover:bg-white/[0.08] rounded transition-colors"
+            >
+              <Printer size={11} />
+            </button>
+          )}
+
           <ChevronDown
             size={11}
             className={`text-slate-500/70 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
@@ -698,6 +736,8 @@ function CadernoDedicatedView({
   onDeleteQuestao,
   onRenameCaso,
   onDeleteCaso,
+  onPrintCaderno,
+  onPrintCaso,
 }: {
   caderno: CadernoItem;
   onBack: () => void;
@@ -713,6 +753,8 @@ function CadernoDedicatedView({
   onDeleteQuestao?: (q: BancoQuestion) => void;
   onRenameCaso?: (casoId: string, currentNome: string) => void;
   onDeleteCaso?: (casoId: string, casoNome: string) => void;
+  onPrintCaderno?: (caderno: CadernoItem) => void;
+  onPrintCaso?: (caso: CasoGroup) => void;
 }) {
   const [filtroStatus, setFiltroStatus] = useState<"todas" | "erros" | "nao_feitas" | "duvidas">("todas");
 
@@ -820,6 +862,17 @@ function CadernoDedicatedView({
             <FolderPlus size={13} /> Nova Subpasta / Caso
           </button>
 
+          {caderno.questoes.length > 0 && (
+            <button
+              onClick={() => onPrintCaderno?.(caderno)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-200 hover:text-white rounded-xl text-xs font-bold transition-all active:scale-95"
+              title={`Imprimir todas as ${caderno.questoes.length} questões deste caderno`}
+            >
+              <Printer size={13} className="text-indigo-400" />
+              <span>Imprimir Caderno ({caderno.questoes.length})</span>
+            </button>
+          )}
+
           <button
             onClick={onTrainAll}
             className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95 shadow-md shadow-indigo-600/20"
@@ -881,6 +934,7 @@ function CadernoDedicatedView({
               onRenameCaso={onRenameCaso}
               onAddSubfolder={onOpenNovaPastaModal}
               onDeleteCaso={onDeleteCaso}
+              onPrintCaso={onPrintCaso}
             />
           ))}
         </div>
@@ -1089,6 +1143,55 @@ export default function CadernosTab({
   const [modalQueue, setModalQueue] = useState<BancoQuestion[]>([]);
   const [modalIndex, setModalIndex] = useState(0);
   const [isSavingAnswer, setIsSavingAnswer] = useState(false);
+
+  // Estado do Modal de Impressão de Cadernos e Casos (Banco de Questões)
+  const [printModalData, setPrintModalData] = useState<{
+    isOpen: boolean;
+    questions: BancoQuestion[];
+    title: string;
+    subTitle: string;
+  }>({
+    isOpen: false,
+    questions: [],
+    title: "",
+    subTitle: "",
+  });
+
+  const handlePrintCaderno = useCallback((cad: CadernoItem) => {
+    setPrintModalData({
+      isOpen: true,
+      questions: cad.questoes,
+      title: `CADERNO: ${cad.nome.toUpperCase()}`,
+      subTitle: `Matéria: ${cad.materia} • ${cad.casos.length} caso(s) • ${cad.questoes.length} questões`,
+    });
+  }, []);
+
+  const handlePrintCaso = useCallback((caso: CasoGroup) => {
+    setPrintModalData({
+      isOpen: true,
+      questions: caso.questoes,
+      title: `CASO: ${caso.nome.toUpperCase()}`,
+      subTitle: `Caderno / Tópico • ${caso.questoes.length} questões selecionadas`,
+    });
+  }, []);
+
+  const handlePrintNode = useCallback((node: HierarchyTreeNode) => {
+    const allNodeQuestions: BancoQuestion[] = [...node.questoes];
+    function collect(n: HierarchyTreeNode) {
+      for (const child of n.filhos) {
+        allNodeQuestions.push(...child.questoes);
+        collect(child);
+      }
+    }
+    collect(node);
+
+    setPrintModalData({
+      isOpen: true,
+      questions: allNodeQuestions,
+      title: `PASTA: ${node.nome.toUpperCase()}`,
+      subTitle: `Estrutura de Pastas do Banco • ${allNodeQuestions.length} questões`,
+    });
+  }, []);
 
   // ── 1. Carregar nós da hierarquia (organizacao_nos) ──
   const carregarNos = useCallback(async () => {
@@ -1579,6 +1682,8 @@ export default function CadernosTab({
           onDeleteQuestao={handleDeleteQuestao}
           onRenameCaso={handleOpenRenameCaso}
           onDeleteCaso={handleDeleteCaso}
+          onPrintCaderno={handlePrintCaderno}
+          onPrintCaso={handlePrintCaso}
         />
 
         {/* Modal de Criar Pasta */}
@@ -1654,6 +1759,15 @@ export default function CadernosTab({
             />
           </>
         )}
+
+        {/* Modal de Impressão de Cadernos e Casos */}
+        <PrintSimuladoModal
+          isOpen={printModalData.isOpen}
+          onClose={() => setPrintModalData(prev => ({ ...prev, isOpen: false }))}
+          questions={printModalData.questions}
+          title={printModalData.title}
+          subTitle={printModalData.subTitle}
+        />
 
         {/* Toast Notification */}
         {toastMsg && (
@@ -1927,6 +2041,7 @@ export default function CadernosTab({
                   setModalDefaultParentId(parentId);
                   setIsNovaPastaModalOpen(true);
                 }}
+                onPrintNode={handlePrintNode}
               />
             ))}
           </div>
