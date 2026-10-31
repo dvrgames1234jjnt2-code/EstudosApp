@@ -467,6 +467,15 @@ export default function BancoPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Botão Biblioteca 3D */}
+          <button
+            onClick={() => router.push("/biblioteca-3d")}
+            title="Abrir a Biblioteca 3D Interativa de Cadernos"
+            className="flex items-center gap-2 px-3.5 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-700/20 hover:from-amber-500/30 hover:to-amber-700/30 text-amber-300 border border-amber-500/30 rounded-xl text-[11px] font-bold uppercase tracking-wider shadow-lg shadow-amber-500/10 transition-all active:scale-95 shrink-0"
+          >
+            <Sparkles size={13} className="text-amber-400" /> Biblioteca 3D
+          </button>
+
           {/* Botão de Destaque Imprimir Simulado na Topbar */}
           <button
             onClick={() => setShowGlobalPrintModal(true)}
