@@ -284,7 +284,7 @@ function QuestaoRowItem({
       {/* Ações de Administração: Mover, Editar, Excluir */}
       {isAdmin && (
         <div
-          className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0 select-none"
+          className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity ml-2 shrink-0 select-none"
           onClick={(e) => e.stopPropagation()}
         >
           <button
@@ -535,7 +535,7 @@ function CasoAccordion({
   onDeleteQuestao?: (q: BancoQuestion) => void;
   onRenameCaso?: (casoId: string, currentNome: string) => void;
   onAddSubfolder?: (casoId: string) => void;
-  onDeleteCaso?: (casoId: string, casoNome: string) => void;
+  onDeleteCaso?: (casoId: string, casoNome: string, questoes?: BancoQuestion[]) => void;
   onPrintCaso?: (caso: CasoGroup) => void;
 }) {
   const [isOpen, setIsOpen] = useState(index === 0);
@@ -663,18 +663,16 @@ function CasoAccordion({
               >
                 <Pencil size={11} />
               </span>
-              {caso.questoes.length === 0 && (
-                <span
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => onDeleteCaso?.(caso.id, caso.nome)}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onDeleteCaso?.(caso.id, caso.nome); } }}
-                  title="Excluir este caso vazio"
-                  className="p-1 text-slate-500 hover:text-rose-400 hover:bg-white/[0.08] rounded transition-colors cursor-pointer inline-flex"
-                >
-                  <Trash2 size={11} />
-                </span>
-              )}
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={() => onDeleteCaso?.(caso.id, caso.nome, caso.questoes)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onDeleteCaso?.(caso.id, caso.nome, caso.questoes); } }}
+                title={caso.questoes.length > 0 ? `Excluir subpasta e suas ${caso.questoes.length} questões` : "Excluir esta subpasta/caso"}
+                className="p-1 text-slate-500 hover:text-rose-400 hover:bg-white/[0.08] rounded transition-colors cursor-pointer inline-flex"
+              >
+                <Trash2 size={11} />
+              </span>
             </div>
           )}
 
@@ -754,6 +752,7 @@ function CadernoDedicatedView({
   onDeleteCaso,
   onPrintCaderno,
   onPrintCaso,
+  onDeleteCaderno,
 }: {
   caderno: CadernoItem;
   onBack: () => void;
@@ -768,9 +767,10 @@ function CadernoDedicatedView({
   onMoveQuestao?: (q: BancoQuestion) => void;
   onDeleteQuestao?: (q: BancoQuestion) => void;
   onRenameCaso?: (casoId: string, currentNome: string) => void;
-  onDeleteCaso?: (casoId: string, casoNome: string) => void;
+  onDeleteCaso?: (casoId: string, casoNome: string, questoes?: BancoQuestion[]) => void;
   onPrintCaderno?: (caderno: CadernoItem) => void;
   onPrintCaso?: (caso: CasoGroup) => void;
+  onDeleteCaderno?: (caderno: CadernoItem) => void;
 }) {
   const [filtroStatus, setFiltroStatus] = useState<"todas" | "erros" | "nao_feitas" | "duvidas">("todas");
 
@@ -886,6 +886,17 @@ function CadernoDedicatedView({
             >
               <Printer size={13} className="text-indigo-400" />
               <span>Imprimir Caderno ({caderno.questoes.length})</span>
+            </button>
+          )}
+
+          {isAdmin && onDeleteCaderno && (
+            <button
+              onClick={() => onDeleteCaderno(caderno)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:text-rose-200 rounded-xl text-xs font-bold transition-all active:scale-95"
+              title="Excluir este caderno e todas as suas questões do banco de dados (Admin)"
+            >
+              <Trash2 size={13} className="text-rose-400" />
+              <span>Excluir Caderno</span>
             </button>
           )}
 
@@ -1301,17 +1312,35 @@ export default function CadernosTab({
     }
   }, [isAdmin, onRefreshQuestions]);
 
-  const handleDeleteCaso = useCallback(async (casoId: string, casoNome: string) => {
-    if (!isAdmin) return;
-    const confirmDel = window.confirm(`Deseja realmente excluir o caso/pasta "${casoNome}"?`);
+  const handleDeleteCaso = useCallback(async (casoId: string, casoNome: string, questoes?: BancoQuestion[]) => {
+    if (!isAdmin) {
+      showToast("Apenas administradores autorizados podem excluir casos.", "error");
+      return;
+    }
+    const qCount = questoes ? questoes.length : 0;
+    const confirmDel = window.confirm(
+      qCount > 0
+        ? `Atenção: Deseja realmente excluir a subpasta/caso "${casoNome}" e todas as suas ${qCount} questões?\n\nEsta ação é definitiva e não pode ser desfeita.`
+        : `Deseja realmente excluir a subpasta/caso "${casoNome}"?`
+    );
     if (!confirmDel) return;
 
     try {
-      let res = await supabase.from("organizacao_nos").delete().eq("id", casoId);
-      if (res.error) {
-        res = await supabasePublic.from("organizacao_nos").delete().eq("id", casoId);
+      if (qCount > 0 && questoes) {
+        const qIds = questoes.map(q => q.id);
+        let resQ = await supabase.from("questoes").delete().in("id", qIds);
+        if (resQ.error) {
+          resQ = await supabasePublic.from("questoes").delete().in("id", qIds);
+        }
+        if (resQ.error) throw new Error(`Erro ao excluir questões do caso: ${resQ.error.message}`);
       }
-      if (res.error) throw new Error(res.error.message);
+
+      if (!casoId.startsWith("caso_virt_")) {
+        let res = await supabase.from("organizacao_nos").delete().eq("id", casoId);
+        if (res.error) {
+          res = await supabasePublic.from("organizacao_nos").delete().eq("id", casoId);
+        }
+      }
 
       showToast(`Caso "${casoNome}" excluído.`);
       carregarNos();
@@ -1321,6 +1350,51 @@ export default function CadernosTab({
       showToast(e.message || "Erro ao excluir caso.", "error");
     }
   }, [isAdmin, carregarNos, onRefreshQuestions]);
+
+  const handleDeleteCaderno = useCallback(async (caderno: CadernoItem) => {
+    if (!isAdmin) {
+      showToast("Apenas administradores autorizados podem excluir cadernos.", "error");
+      return;
+    }
+
+    const qCount = caderno.questoes.length;
+    const confirmDel = window.confirm(
+      qCount > 0
+        ? `Atenção: Deseja realmente excluir o caderno "${caderno.nome}" e todas as suas ${qCount} questões do banco de dados?\n\nEsta ação é permanente e irreversível.`
+        : `Deseja realmente excluir o caderno "${caderno.nome}"?`
+    );
+    if (!confirmDel) return;
+
+    try {
+      // 1. Excluir todas as questões do caderno da tabela 'questoes'
+      if (qCount > 0) {
+        const qIds = caderno.questoes.map(q => q.id);
+        let resQ = await supabase.from("questoes").delete().in("id", qIds);
+        if (resQ.error) {
+          resQ = await supabasePublic.from("questoes").delete().in("id", qIds);
+        }
+        if (resQ.error) throw new Error(`Erro ao excluir questões do caderno: ${resQ.error.message}`);
+      }
+
+      // 2. Se o caderno tiver um nó correspondente em organizacao_nos, excluir
+      if (!caderno.id.startsWith("cad_virt_")) {
+        let resNode = await supabase.from("organizacao_nos").delete().eq("id", caderno.id);
+        if (resNode.error) {
+          resNode = await supabasePublic.from("organizacao_nos").delete().eq("id", caderno.id);
+        }
+      }
+
+      showToast(`Caderno "${caderno.nome}" excluído com sucesso!`);
+      if (selectedCaderno?.id === caderno.id) {
+        setSelectedCaderno(null);
+      }
+      carregarNos();
+      if (onRefreshQuestions) onRefreshQuestions();
+    } catch (e: any) {
+      console.error("Erro ao excluir caderno:", e);
+      showToast(e.message || "Erro ao excluir caderno.", "error");
+    }
+  }, [isAdmin, selectedCaderno, carregarNos, onRefreshQuestions]);
 
   // ── 2. Montar Estrutura Hierárquica em Árvore Completa ──
   const { treeRoots, materiasAgrupadas, todosCadernos, parentOptions } = useMemo(() => {
@@ -1700,6 +1774,7 @@ export default function CadernosTab({
           onDeleteCaso={handleDeleteCaso}
           onPrintCaderno={handlePrintCaderno}
           onPrintCaso={handlePrintCaso}
+          onDeleteCaderno={handleDeleteCaderno}
         />
 
         {/* Modal de Criar Pasta */}
@@ -2232,7 +2307,7 @@ export default function CadernosTab({
 
                             {isAdmin && (
                               <div
-                                className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-1 select-none"
+                                className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity ml-1 select-none"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <button
@@ -2243,16 +2318,14 @@ export default function CadernosTab({
                                 >
                                   <Pencil size={10} />
                                 </button>
-                                {caderno.questoes.length === 0 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteCaso(caderno.id, caderno.nome)}
-                                    title="Excluir este caderno vazio"
-                                    className="w-5 h-5 flex items-center justify-center rounded border border-white/[0.05] bg-white/[0.02] text-slate-500 hover:text-rose-400 hover:border-white/[0.12] transition-all"
-                                  >
-                                    <Trash2 size={10} />
-                                  </button>
-                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteCaderno(caderno)}
+                                  title={caderno.questoes.length > 0 ? `Excluir caderno e suas ${caderno.questoes.length} questões (Admin)` : "Excluir este caderno (Admin)"}
+                                  className="w-5 h-5 flex items-center justify-center rounded border border-white/[0.05] bg-white/[0.02] text-slate-500 hover:text-rose-400 hover:border-rose-500/30 hover:bg-rose-500/10 transition-all"
+                                >
+                                  <Trash2 size={10} />
+                                </button>
                               </div>
                             )}
                           </div>
