@@ -14,7 +14,9 @@ interface Book3DSceneProps {
   cadernos: Caderno3DItem[];
   selectedCaderno: Caderno3DItem | null;
   onSelectCaderno: (caderno: Caderno3DItem) => void;
+  onBookFullyOpened: (caderno: Caderno3DItem) => void;
   onHoverCaderno: (caderno: Caderno3DItem | null, mousePos?: { x: number; y: number }) => void;
+  isReaderOpen: boolean;
 }
 
 interface BookMeshObject {
@@ -27,15 +29,17 @@ interface BookMeshObject {
   targetScale: number;
   currentScale: number;
   targetRotY: number;
-  isOpening: boolean;
-  openProgress: number; // 0 (fechado) a 1 (totalmente aberto)
+  state: "floating" | "approaching" | "opening_cover" | "opened" | "closing_cover" | "returning";
+  animProgress: number; // 0 a 1
 }
 
 export default function Book3DScene({
   cadernos,
   selectedCaderno,
   onSelectCaderno,
+  onBookFullyOpened,
   onHoverCaderno,
+  isReaderOpen,
 }: Book3DSceneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -43,6 +47,7 @@ export default function Book3DScene({
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const booksRef = useRef<BookMeshObject[]>([]);
   const hoveredBookRef = useRef<BookMeshObject | null>(null);
+  const activeBookRef = useRef<BookMeshObject | null>(null);
   const mouseNormRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
   const animFrameRef = useRef<number | null>(null);
@@ -55,7 +60,7 @@ export default function Book3DScene({
   }, []);
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Inicialização Three.js Scene, Camera, Lights, Particles
+  // Inicialização Three.js
   // ─────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     const container = containerRef.current;
@@ -64,17 +69,14 @@ export default function Book3DScene({
     const width = container.clientWidth;
     const height = container.clientHeight;
 
-    // Cena
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x0a0c10, 0.045);
+    scene.fog = new THREE.FogExp2(0x07090e, 0.04);
     sceneRef.current = scene;
 
-    // Câmera
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
     camera.position.set(0, 0.5, 7.8);
     cameraRef.current = camera;
 
-    // Renderer
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
@@ -83,20 +85,18 @@ export default function Book3DScene({
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.2;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     rendererRef.current = renderer;
 
     container.appendChild(renderer.domElement);
 
-    // ── Iluminação da Biblioteca Acolhedora ─────────────────────────────────
-    // Luz ambiente morna (luz de abajur/estudo)
-    const ambientLight = new THREE.AmbientLight(0xffeedd, 1.2);
+    // Iluminação
+    const ambientLight = new THREE.AmbientLight(0xffeedd, 1.3);
     scene.add(ambientLight);
 
-    // Luz Direcional Principal (Spot quente vindo do alto à esquerda)
-    const dirLight = new THREE.DirectionalLight(0xffecc0, 2.4);
+    const dirLight = new THREE.DirectionalLight(0xffecc0, 2.5);
     dirLight.position.set(4, 7, 6);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 1024;
@@ -104,18 +104,16 @@ export default function Book3DScene({
     dirLight.shadow.bias = -0.0005;
     scene.add(dirLight);
 
-    // Luz de preenchimento azul suave (contraste sutil do fundo)
-    const rimLight = new THREE.DirectionalLight(0x406085, 1.1);
+    const rimLight = new THREE.DirectionalLight(0x406085, 1.2);
     rimLight.position.set(-6, 3, -4);
     scene.add(rimLight);
 
-    // Luz dinâmica pontual que segue sutilmente o cursor
-    const mousePointLight = new THREE.PointLight(0xffdf99, 1.5, 8);
+    const mousePointLight = new THREE.PointLight(0xffdf99, 1.8, 8);
     mousePointLight.position.set(0, 0, 5);
     scene.add(mousePointLight);
 
-    // ── Partículas Douradas Flutuantes (Poeira de Luz Mágica) ───────────────
-    const particleCount = 140;
+    // Partículas de poeira dourada
+    const particleCount = 130;
     const particleGeometry = new THREE.BufferGeometry();
     const particlePositions = new Float32Array(particleCount * 3);
     const particleSpeeds = new Float32Array(particleCount);
@@ -129,7 +127,6 @@ export default function Book3DScene({
 
     particleGeometry.setAttribute("position", new THREE.BufferAttribute(particlePositions, 3));
 
-    // Textura circular suave para partícula
     const pCanvas = document.createElement("canvas");
     pCanvas.width = 32;
     pCanvas.height = 32;
@@ -158,7 +155,7 @@ export default function Book3DScene({
     const particles = new THREE.Points(particleGeometry, particleMaterial);
     scene.add(particles);
 
-    // ── Redimensionamento de Janela ─────────────────────────────────────────
+    // Resize
     const handleResize = () => {
       if (!container || !renderer || !camera) return;
       const w = container.clientWidth;
@@ -170,27 +167,29 @@ export default function Book3DScene({
 
     window.addEventListener("resize", handleResize);
 
-    // ── Mouse Move para Raycasting e Iluminação Interativa ──────────────────
+    // Mouse Move & Raycaster
     const handleMouseMove = (e: MouseEvent) => {
+      if (activeBookRef.current) return;
+
       const rect = container.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
       mouseNormRef.current = { x, y };
 
-      // Move a luz suave para perto do cursor
       mousePointLight.position.x = x * 4;
       mousePointLight.position.y = y * 2.5;
 
-      // Executa raycasting
       raycasterRef.current.setFromCamera(new THREE.Vector2(x, y), camera);
       const interactiveMeshes: THREE.Object3D[] = [];
       booksRef.current.forEach((b) => {
-        b.group.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
-            (child as any)._bookRef = b;
-            interactiveMeshes.push(child);
-          }
-        });
+        if (b.state === "floating") {
+          b.group.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh) {
+              (child as any)._bookRef = b;
+              interactiveMeshes.push(child);
+            }
+          });
+        }
       });
 
       const intersects = raycasterRef.current.intersectObjects(interactiveMeshes, false);
@@ -217,11 +216,17 @@ export default function Book3DScene({
       }
     };
 
-    // ── Clique para Selecionar Livro ────────────────────────────────────────
+    // Clique no livro: inicia a aproximação cinematográfica
     const handleClick = () => {
-      if (hoveredBookRef.current) {
+      if (hoveredBookRef.current && !activeBookRef.current) {
         const book = hoveredBookRef.current;
-        book.isOpening = true;
+        activeBookRef.current = book;
+        hoveredBookRef.current = null;
+        container.style.cursor = "default";
+        onHoverCaderno(null);
+
+        book.state = "approaching";
+        book.animProgress = 0;
         onSelectCaderno(book.caderno);
       }
     };
@@ -229,13 +234,13 @@ export default function Book3DScene({
     container.addEventListener("mousemove", handleMouseMove);
     container.addEventListener("click", handleClick);
 
-    // ── Loop de Animação ────────────────────────────────────────────────────
+    // Loop de Animação Principal
     const animate = () => {
       animFrameRef.current = requestAnimationFrame(animate);
       const delta = clockRef.current.getDelta();
       const elapsedTime = clockRef.current.getElapsedTime();
 
-      // Anima partículas douradas subindo devagar
+      // Partículas
       const pPositions = particleGeometry.attributes.position.array as Float32Array;
       for (let i = 0; i < particleCount; i++) {
         pPositions[i * 3 + 1] += particleSpeeds[i] * delta * 0.4;
@@ -246,80 +251,143 @@ export default function Book3DScene({
       }
       particleGeometry.attributes.position.needsUpdate = true;
 
-      // Animação de cada livro
       booksRef.current.forEach((b) => {
         const isHovered = hoveredBookRef.current === b;
+        const isActive = activeBookRef.current === b;
 
-        // Se o livro está sendo aberto pelo clique
-        if (b.isOpening) {
-          b.openProgress = Math.min(1, b.openProgress + delta * 2.2);
+        // ── 1. ESTADO: APROXIMAÇÃO AO CENTRO ─────────────────────────────────
+        if (b.state === "approaching") {
+          b.animProgress = Math.min(1, b.animProgress + delta * 1.6);
+          const t = b.animProgress;
+          const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
-          // Aproxima do centro da câmera
-          b.group.position.lerp(new THREE.Vector3(0, 0, 3.2), delta * 4);
-          b.group.rotation.x = THREE.MathUtils.lerp(b.group.rotation.x, 0.1, delta * 4);
-          b.group.rotation.y = THREE.MathUtils.lerp(b.group.rotation.y, -0.2, delta * 4);
-          b.group.rotation.z = THREE.MathUtils.lerp(b.group.rotation.z, 0, delta * 4);
+          const targetPos = new THREE.Vector3(0, -0.05, 3.8);
+          b.group.position.lerpVectors(b.basePos, targetPos, ease);
 
-          // Roda a capa frontal (abertura de 140 graus)
-          const targetCoverAngle = -Math.PI * 0.75;
+          const targetRot = new THREE.Euler(0.08, -0.05, 0);
+          b.group.rotation.x = THREE.MathUtils.lerp(b.baseRot.x, targetRot.x, ease);
+          b.group.rotation.y = THREE.MathUtils.lerp(b.baseRot.y, targetRot.y, ease);
+          b.group.rotation.z = THREE.MathUtils.lerp(b.baseRot.z, targetRot.z, ease);
+
+          const targetScale = 1.35;
+          b.currentScale = THREE.MathUtils.lerp(1, targetScale, ease);
+          b.group.scale.set(b.currentScale, b.currentScale, b.currentScale);
+
+          if (b.animProgress >= 0.75) {
+            b.state = "opening_cover";
+          }
+        }
+
+        // ── 2. ESTADO: ABERTURA TRIDIMENSIONAL DA CAPA ───────────────────────
+        else if (b.state === "opening_cover") {
+          b.animProgress = Math.min(1, b.animProgress + delta * 2.2);
+
+          const targetCoverAngle = -Math.PI * 0.96;
           b.coverPivot.rotation.y = THREE.MathUtils.lerp(
             b.coverPivot.rotation.y,
             targetCoverAngle,
-            delta * 3.5
+            delta * 4.5
           );
-        } else {
-          // Flutuação contínua suave e orgânica
+
+          b.group.position.lerp(new THREE.Vector3(0, -0.05, 3.8), delta * 4);
+
+          if (b.coverPivot.rotation.y <= -Math.PI * 0.82) {
+            b.state = "opened";
+            onBookFullyOpened(b.caderno);
+          }
+        }
+
+        // ── 3. ESTADO: LIVRO ABERTO EM LEITURA ────────────────────────────────
+        else if (b.state === "opened") {
+          b.coverPivot.rotation.y = -Math.PI * 0.96;
+          b.group.position.set(0, -0.05, 3.8);
+        }
+
+        // ── 4. ESTADO: FECHAMENTO DA CAPA ─────────────────────────────────────
+        else if (b.state === "closing_cover") {
+          b.coverPivot.rotation.y = THREE.MathUtils.lerp(b.coverPivot.rotation.y, 0, delta * 6);
+
+          if (Math.abs(b.coverPivot.rotation.y) < 0.05) {
+            b.coverPivot.rotation.y = 0;
+            b.state = "returning";
+            b.animProgress = 0;
+          }
+        }
+
+        // ── 5. ESTADO: RETORNO À POSIÇÃO FLUTUANTE ───────────────────────────
+        else if (b.state === "returning") {
+          b.animProgress = Math.min(1, b.animProgress + delta * 1.8);
+          const ease = 1 - Math.pow(1 - b.animProgress, 3);
+
+          b.group.position.lerp(b.basePos, ease);
+          b.group.rotation.x = THREE.MathUtils.lerp(b.group.rotation.x, b.baseRot.x, ease);
+          b.group.rotation.y = THREE.MathUtils.lerp(b.group.rotation.y, b.baseRot.y, ease);
+          b.group.rotation.z = THREE.MathUtils.lerp(b.group.rotation.z, b.baseRot.z, ease);
+
+          b.currentScale = THREE.MathUtils.lerp(b.currentScale, 1, ease);
+          b.group.scale.set(b.currentScale, b.currentScale, b.currentScale);
+
+          if (b.animProgress >= 0.98) {
+            b.state = "floating";
+            b.animProgress = 0;
+            activeBookRef.current = null;
+          }
+        }
+
+        // ── 6. ESTADO: FLUTUAÇÃO ORGÂNICA NORMAL ──────────────────────────────
+        else {
           const motionFactor = prefersReducedMotion.current ? 0.15 : 1;
           const floatTime = elapsedTime * b.caderno.floatSpeed + b.caderno.floatOffset;
 
-          // Movimento vertical (senóide suave)
-          const targetY =
-            b.baseY +
-            Math.sin(floatTime) * b.caderno.floatAmplitude * motionFactor +
-            (isHovered ? 0.2 : 0);
-
-          b.group.position.y = THREE.MathUtils.lerp(b.group.position.y, targetY, delta * 3.5);
-
-          // Inclinações e oscilações de rotação naturais
-          const rotOscillationX = Math.cos(floatTime * 0.8) * 0.04 * motionFactor;
-          const rotOscillationZ = Math.sin(floatTime * 0.6) * 0.03 * motionFactor;
-
-          // Se estiver com hover, inclina na direção do cursor do mouse
-          if (isHovered) {
-            const tiltTargetX = b.baseRot.x - mouseNormRef.current.y * 0.25;
-            const tiltTargetY = b.baseRot.y + mouseNormRef.current.x * 0.35;
-            b.group.rotation.x = THREE.MathUtils.lerp(b.group.rotation.x, tiltTargetX, delta * 5);
-            b.group.rotation.y = THREE.MathUtils.lerp(b.group.rotation.y, tiltTargetY, delta * 5);
+          if (activeBookRef.current && !isActive) {
+            b.group.scale.lerp(new THREE.Vector3(0.7, 0.7, 0.7), delta * 3);
+            b.group.position.z = THREE.MathUtils.lerp(b.group.position.z, b.basePos.z - 2.5, delta * 2);
           } else {
-            b.group.rotation.x = THREE.MathUtils.lerp(
-              b.group.rotation.x,
-              b.baseRot.x + rotOscillationX,
+            const targetY =
+              b.baseY +
+              Math.sin(floatTime) * b.caderno.floatAmplitude * motionFactor +
+              (isHovered ? 0.2 : 0);
+
+            b.group.position.y = THREE.MathUtils.lerp(b.group.position.y, targetY, delta * 3.5);
+            b.group.position.z = THREE.MathUtils.lerp(b.group.position.z, b.basePos.z, delta * 3);
+
+            const rotOscillationX = Math.cos(floatTime * 0.8) * 0.04 * motionFactor;
+            const rotOscillationZ = Math.sin(floatTime * 0.6) * 0.03 * motionFactor;
+
+            if (isHovered) {
+              const tiltTargetX = b.baseRot.x - mouseNormRef.current.y * 0.25;
+              const tiltTargetY = b.baseRot.y + mouseNormRef.current.x * 0.35;
+              b.group.rotation.x = THREE.MathUtils.lerp(b.group.rotation.x, tiltTargetX, delta * 5);
+              b.group.rotation.y = THREE.MathUtils.lerp(b.group.rotation.y, tiltTargetY, delta * 5);
+            } else {
+              b.group.rotation.x = THREE.MathUtils.lerp(
+                b.group.rotation.x,
+                b.baseRot.x + rotOscillationX,
+                delta * 2.5
+              );
+              b.group.rotation.y = THREE.MathUtils.lerp(
+                b.group.rotation.y,
+                b.baseRot.y + Math.sin(floatTime * 0.5) * 0.05 * motionFactor,
+                delta * 2.5
+              );
+            }
+
+            b.group.rotation.z = THREE.MathUtils.lerp(
+              b.group.rotation.z,
+              b.baseRot.z + rotOscillationZ,
               delta * 2.5
             );
-            b.group.rotation.y = THREE.MathUtils.lerp(
-              b.group.rotation.y,
-              b.baseRot.y + Math.sin(floatTime * 0.5) * 0.05 * motionFactor,
-              delta * 2.5
-            );
+
+            b.currentScale = THREE.MathUtils.lerp(b.currentScale, b.targetScale, delta * 6);
+            b.group.scale.set(b.currentScale, b.currentScale, b.currentScale);
           }
 
-          b.group.rotation.z = THREE.MathUtils.lerp(
-            b.group.rotation.z,
-            b.baseRot.z + rotOscillationZ,
-            delta * 2.5
-          );
-
-          // Escala suave
-          b.currentScale = THREE.MathUtils.lerp(b.currentScale, b.targetScale, delta * 6);
-          b.group.scale.set(b.currentScale, b.currentScale, b.currentScale);
-
-          // Mantém a capa fechada quando em repouso
           b.coverPivot.rotation.y = THREE.MathUtils.lerp(b.coverPivot.rotation.y, 0, delta * 5);
         }
       });
 
-      // Suave movimento de câmera de acordo com o mouse (efeito parallax de profundidade)
-      if (camera && !prefersReducedMotion.current) {
+      // Câmera
+      if (camera && !prefersReducedMotion.current && !activeBookRef.current) {
         camera.position.x = THREE.MathUtils.lerp(
           camera.position.x,
           mouseNormRef.current.x * 0.45,
@@ -331,6 +399,10 @@ export default function Book3DScene({
           delta * 2
         );
         camera.lookAt(0, 0, 0);
+      } else if (camera && activeBookRef.current) {
+        camera.position.x = THREE.MathUtils.lerp(camera.position.x, 0, delta * 3);
+        camera.position.y = THREE.MathUtils.lerp(camera.position.y, 0.45, delta * 3);
+        camera.lookAt(0, 0, 3.8);
       }
 
       renderer.render(scene, camera);
@@ -338,7 +410,6 @@ export default function Book3DScene({
 
     animate();
 
-    // ── Limpeza ao Desmontar ────────────────────────────────────────────────
     return () => {
       window.removeEventListener("resize", handleResize);
       container.removeEventListener("mousemove", handleMouseMove);
@@ -348,7 +419,6 @@ export default function Book3DScene({
         cancelAnimationFrame(animFrameRef.current);
       }
 
-      // Dispose de geometrias e materiais
       booksRef.current.forEach((b) => {
         b.group.traverse((obj) => {
           if ((obj as THREE.Mesh).isMesh) {
@@ -374,16 +444,13 @@ export default function Book3DScene({
         }
       }
     };
-  }, [onHoverCaderno, onSelectCaderno]);
+  }, [onHoverCaderno, onSelectCaderno, onBookFullyOpened]);
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Montagem e Atualização dos Livros Tridimensionais
-  // ─────────────────────────────────────────────────────────────────────────────
+  // Montagem dos livros na cena
   useEffect(() => {
     const scene = sceneRef.current;
     if (!scene) return;
 
-    // Remove livros antigos da cena
     booksRef.current.forEach((b) => {
       scene.remove(b.group);
       b.group.traverse((obj) => {
@@ -402,15 +469,12 @@ export default function Book3DScene({
 
     const pageEdgesTexture = createPageEdgesTexture();
 
-    // Cria cada livro físico na cena
     cadernos.forEach((caderno, index) => {
       const palette = BOOK_PALETTES[index % BOOK_PALETTES.length];
       const qCount = caderno.questoes.length;
 
-      // Dimensões proporcionais
       const bookWidth = 1.35;
       const bookHeight = 1.95;
-      // Espessura proporcional às questões (mínimo 0.22, máximo 0.65)
       const bookThickness = Math.min(0.65, Math.max(0.22, qCount * 0.007 + 0.18));
       const coverThickness = 0.035;
 
@@ -418,11 +482,15 @@ export default function Book3DScene({
       bookGroup.position.set(...caderno.position);
       bookGroup.rotation.set(...caderno.rotation);
 
-      // Texturas dinâmicas em alta resolução
       const spineTexture = createSpineTexture(caderno.nome, caderno.materia, palette, qCount);
-      const frontCoverTexture = createFrontCoverTexture(caderno.nome, caderno.materia, palette, qCount);
+      const frontCoverTexture = createFrontCoverTexture(
+        caderno.nome,
+        caderno.materia,
+        palette,
+        qCount
+      );
 
-      // ── 1. Contracapa Traseira (Back Cover) ─────────────────────────────────
+      // Contracapa Traseira
       const backCoverGeo = new THREE.BoxGeometry(bookWidth, bookHeight, coverThickness);
       const backCoverMat = new THREE.MeshStandardMaterial({
         color: palette.bg,
@@ -435,7 +503,7 @@ export default function Book3DScene({
       backCoverMesh.receiveShadow = true;
       bookGroup.add(backCoverMesh);
 
-      // ── 2. Miolo de Páginas de Papel (Paper Core) ───────────────────────────
+      // Miolo de Páginas de Papel
       const pagesWidth = bookWidth - 0.07;
       const pagesHeight = bookHeight - 0.08;
       const pagesThickness = bookThickness - coverThickness * 2;
@@ -451,25 +519,22 @@ export default function Book3DScene({
         roughness: 0.95,
       });
 
-      // Mapeamento de materiais para cada face do miolo
-      // [right, left, top, bottom, front, back]
       const pagesMaterials = [
-        pagesEdgeMat, // right (borda visível externa)
-        pagesPlainMat, // left (junto à lombada)
-        pagesEdgeMat, // top
-        pagesEdgeMat, // bottom
-        pagesPlainMat, // front
-        pagesPlainMat, // back
+        pagesEdgeMat,
+        pagesPlainMat,
+        pagesEdgeMat,
+        pagesEdgeMat,
+        pagesPlainMat,
+        pagesPlainMat,
       ];
 
       const pagesMesh = new THREE.Mesh(pagesGeo, pagesMaterials);
-      // Desloca um pouco para a direita para dar margem à lombada
       pagesMesh.position.set(0.035, 0, 0);
       pagesMesh.castShadow = true;
       pagesMesh.receiveShadow = true;
       bookGroup.add(pagesMesh);
 
-      // ── 3. Lombada Curva (Spine) ───────────────────────────────────────────
+      // Lombada Curva
       const spineRadius = bookThickness / 2;
       const spineGeo = new THREE.CylinderGeometry(
         spineRadius,
@@ -487,20 +552,16 @@ export default function Book3DScene({
         metalness: 0.25,
       });
       const spineMesh = new THREE.Mesh(spineGeo, spineMat);
-      // Posiciona na lateral esquerda do livro
       spineMesh.position.set(-bookWidth / 2, 0, 0);
-      spineMesh.rotation.z = 0;
       spineMesh.castShadow = true;
       spineMesh.receiveShadow = true;
       bookGroup.add(spineMesh);
 
-      // ── 4. Capa Frontal Articulada (Front Cover Pivot) ─────────────────────
-      // Criamos um pivot no eixo da lombada (x = -bookWidth / 2) para permitir abrir o livro em 3D
+      // Capa Frontal Articulada
       const coverPivot = new THREE.Group();
       coverPivot.position.set(-bookWidth / 2, 0, bookThickness / 2);
 
       const frontCoverGeo = new THREE.BoxGeometry(bookWidth, bookHeight, coverThickness);
-      // Materiais da capa frontal: [right, left, top, bottom, front, back]
       const coverFrontMat = new THREE.MeshStandardMaterial({
         map: frontCoverTexture,
         roughness: 0.45,
@@ -512,16 +573,15 @@ export default function Book3DScene({
       });
 
       const frontCoverMaterials = [
-        backCoverMat, // right
-        backCoverMat, // left
-        backCoverMat, // top
-        backCoverMat, // bottom
-        coverFrontMat, // front (capa externa com arte e ouro)
-        coverInsideMat, // back (interior da capa)
+        backCoverMat,
+        backCoverMat,
+        backCoverMat,
+        backCoverMat,
+        coverFrontMat,
+        coverInsideMat,
       ];
 
       const frontCoverMesh = new THREE.Mesh(frontCoverGeo, frontCoverMaterials);
-      // Desloca para que a dobradiça fique na borda esquerda
       frontCoverMesh.position.set(bookWidth / 2, 0, coverThickness / 2);
       frontCoverMesh.castShadow = true;
       frontCoverMesh.receiveShadow = true;
@@ -541,23 +601,17 @@ export default function Book3DScene({
         targetScale: 1,
         currentScale: 1,
         targetRotY: caderno.rotation[1],
-        isOpening: false,
-        openProgress: 0,
+        state: "floating",
+        animProgress: 0,
       });
     });
   }, [cadernos]);
 
-  // Se o caderno selecionado mudar para null (usuário fechou o livro), reseta o livro 3D
+  // Se o leitor for fechado, fecha a capa e retorna para a biblioteca
   useEffect(() => {
-    if (!selectedCaderno) {
-      booksRef.current.forEach((b) => {
-        b.isOpening = false;
-        b.openProgress = 0;
-        b.targetScale = 1;
-        b.group.position.copy(b.basePos);
-        b.group.rotation.copy(b.baseRot);
-        b.coverPivot.rotation.y = 0;
-      });
+    if (!selectedCaderno && activeBookRef.current) {
+      const active = activeBookRef.current;
+      active.state = "closing_cover";
     }
   }, [selectedCaderno]);
 

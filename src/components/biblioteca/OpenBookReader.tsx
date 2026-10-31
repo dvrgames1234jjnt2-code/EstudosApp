@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
@@ -11,15 +11,12 @@ import {
   Flag,
   HelpCircle,
   X,
-  Sparkles,
   Volume2,
   VolumeX,
-  RotateCcw,
-  Layers,
   Folder,
+  Layers,
+  Sparkles,
   Award,
-  Bookmark,
-  Share2,
 } from "lucide-react";
 import type { BancoQuestion } from "../banco/QuestionsTable";
 import type { QuestionStats } from "../banco/CadernosTab";
@@ -35,35 +32,34 @@ interface OpenBookReaderProps {
   isAdmin?: boolean;
 }
 
-// Reproduz som sintetizado realista de folha de papel virando
+// Síntese de som realista de folhear papel usando Web Audio API
 function playPaperFlipSound() {
   try {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContextClass) return;
     const ctx = new AudioContextClass();
-    const bufferSize = ctx.sampleRate * 0.18; // 180ms
+    const duration = 0.22; // 220ms de fricção aveludada
+    const bufferSize = ctx.sampleRate * duration;
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
 
     for (let i = 0; i < bufferSize; i++) {
-      // Ruído suave simulando fricção de pergaminho
-      const decay = Math.pow(1 - i / bufferSize, 1.8);
-      data[i] = (Math.random() * 2 - 1) * decay * 0.08;
+      const decay = Math.pow(1 - i / bufferSize, 1.6);
+      data[i] = (Math.random() * 2 - 1) * decay * 0.09;
     }
 
     const noise = ctx.createBufferSource();
     noise.buffer = buffer;
 
-    // Filtro passa-banda para dar timbre aveludado de papel grosso
     const filter = ctx.createBiquadFilter();
     filter.type = "bandpass";
-    filter.frequency.setValueAtTime(800, ctx.currentTime);
-    filter.frequency.exponentialRampToValueAtTime(1400, ctx.currentTime + 0.15);
-    filter.Q.setValueAtTime(1.2, ctx.currentTime);
+    filter.frequency.setValueAtTime(700, ctx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(1500, ctx.currentTime + 0.16);
+    filter.Q.setValueAtTime(1.4, ctx.currentTime);
 
     const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.5, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.18);
+    gain.gain.setValueAtTime(0.55, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
 
     noise.connect(filter);
     filter.connect(gain);
@@ -71,7 +67,7 @@ function playPaperFlipSound() {
 
     noise.start();
   } catch (e) {
-    // Ignora se bloqueado por autoplay policy
+    // Silencia se bloqueado por autoplay policy
   }
 }
 
@@ -84,12 +80,12 @@ export default function OpenBookReader({
   onToggleDuvida,
   isAdmin,
 }: OpenBookReaderProps) {
-  // Filtro de caso selecionado
+  // Filtros
   const [selectedCasoId, setSelectedCasoId] = useState<string>("todos");
   const [filterMode, setFilterMode] = useState<"todos" | "erros" | "duvidas" | "pendentes">("todos");
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  // Lista de questões filtradas para navegar no livro
+  // Lista de questões filtradas
   const filteredQuestions = useMemo(() => {
     let list = caderno.questoes;
     if (selectedCasoId !== "todos") {
@@ -108,25 +104,24 @@ export default function OpenBookReader({
     return list;
   }, [caderno, selectedCasoId, filterMode, userAnswers, duvidas]);
 
-  // Índice da questão atual
+  // Índice da página / questão atual
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Garante que o índice fique dentro do range
-  useEffect(() => {
-    if (currentIndex >= filteredQuestions.length && filteredQuestions.length > 0) {
-      setCurrentIndex(0);
-    }
-  }, [filteredQuestions.length, currentIndex]);
+  // Estados de folheamento 3D
+  const [flipDirection, setFlipDirection] = useState<"next" | "prev" | null>(null);
+  const [flipProgress, setFlipProgress] = useState(0); // 0 a 1
+  const [isEdgeHovered, setIsEdgeHovered] = useState<"right" | "left" | null>(null);
 
-  const currentQuestion: BancoQuestion | undefined = filteredQuestions[currentIndex];
+  // Questão atual e questão anterior/próxima durante a virada
+  const currentQuestion = filteredQuestions[currentIndex];
+  const nextQuestion = filteredQuestions[currentIndex + 1];
+  const prevQuestion = filteredQuestions[currentIndex - 1];
 
-  // Estado de resposta da questão atual
+  // Interação de resposta
   const [selectedAlternative, setSelectedAlternative] = useState<string | null>(null);
   const [showExplanation, setShowExplanation] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [isFlipping, setIsFlipping] = useState<"next" | "prev" | null>(null);
 
-  // Reseta seleção ao mudar de questão
   useEffect(() => {
     setSelectedAlternative(null);
     setShowExplanation(false);
@@ -152,49 +147,82 @@ export default function OpenBookReader({
     return { acertos, erros, respondidas, taxa, totalDuvidas };
   }, [caderno.questoes, userAnswers, duvidas]);
 
-  // Status da questão atual
   const currentStats = currentQuestion ? userAnswers[String(currentQuestion.id)] : undefined;
   const isCurrentDuvida = currentQuestion ? duvidas.has(String(currentQuestion.id)) : false;
 
-  // Letra correta da questão
   const correctLetter = useMemo(() => {
     if (!currentQuestion) return "";
     const g = (currentQuestion.respostaCorreta || currentQuestion.Gabarito || "").trim().toUpperCase();
     return g.charAt(0);
   }, [currentQuestion]);
 
-  // Navegação de páginas com efeito de folhear
-  const goToNextPage = useCallback(() => {
-    if (currentIndex < filteredQuestions.length - 1 && !isFlipping) {
-      setIsFlipping("next");
+  // ── Folheamento 3D Avançar ──────────────────────────────────────────────────
+  const flipToNext = useCallback(() => {
+    if (currentIndex < filteredQuestions.length - 1 && !flipDirection) {
+      setFlipDirection("next");
       if (soundEnabled) playPaperFlipSound();
-      setTimeout(() => {
-        setCurrentIndex((prev) => prev + 1);
-        setIsFlipping(null);
-      }, 260);
-    }
-  }, [currentIndex, filteredQuestions.length, isFlipping, soundEnabled]);
 
-  const goToPrevPage = useCallback(() => {
-    if (currentIndex > 0 && !isFlipping) {
-      setIsFlipping("prev");
+      // Executa animação contínua da folha
+      let start: number | null = null;
+      const duration = 460; // 460ms de folheamento elegante
+
+      const step = (timestamp: number) => {
+        if (!start) start = timestamp;
+        const progress = Math.min(1, (timestamp - start) / duration);
+        // Easing bezier de papel
+        const eased = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+        setFlipProgress(eased);
+
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        } else {
+          setCurrentIndex((prev) => prev + 1);
+          setFlipDirection(null);
+          setFlipProgress(0);
+        }
+      };
+
+      requestAnimationFrame(step);
+    }
+  }, [currentIndex, filteredQuestions.length, flipDirection, soundEnabled]);
+
+  // ── Folheamento 3D Voltar ───────────────────────────────────────────────────
+  const flipToPrev = useCallback(() => {
+    if (currentIndex > 0 && !flipDirection) {
+      setFlipDirection("prev");
       if (soundEnabled) playPaperFlipSound();
-      setTimeout(() => {
-        setCurrentIndex((prev) => prev - 1);
-        setIsFlipping(null);
-      }, 260);
-    }
-  }, [currentIndex, isFlipping, soundEnabled]);
 
-  // Atalhos de teclado (Setas Esquerda / Direita e teclas A, B, C, D, E)
+      let start: number | null = null;
+      const duration = 460;
+
+      const step = (timestamp: number) => {
+        if (!start) start = timestamp;
+        const progress = Math.min(1, (timestamp - start) / duration);
+        const eased = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+        setFlipProgress(eased);
+
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        } else {
+          setCurrentIndex((prev) => prev - 1);
+          setFlipDirection(null);
+          setFlipProgress(0);
+        }
+      };
+
+      requestAnimationFrame(step);
+    }
+  }, [currentIndex, flipDirection, soundEnabled]);
+
+  // ── Atalhos de Teclado ──────────────────────────────────────────────────────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       if (e.key === "ArrowRight") {
-        goToNextPage();
+        flipToNext();
       } else if (e.key === "ArrowLeft") {
-        goToPrevPage();
+        flipToPrev();
       } else if (e.key === "Escape") {
         onClose();
       } else if (["a", "b", "c", "d", "e", "A", "B", "C", "D", "E"].includes(e.key)) {
@@ -206,9 +234,9 @@ export default function OpenBookReader({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [goToNextPage, goToPrevPage, onClose, currentStats]);
+  }, [flipToNext, flipToPrev, onClose, currentStats]);
 
-  // Responder a questão
+  // ── Responder Questão ───────────────────────────────────────────────────────
   const handleConfirmAnswer = async (altLetter: string) => {
     if (!currentQuestion || isSubmitting) return;
     setIsSubmitting(true);
@@ -223,7 +251,6 @@ export default function OpenBookReader({
     }
   };
 
-  // Alternativas disponíveis na questão
   const alternatives = useMemo(() => {
     if (!currentQuestion) return [];
     const list: { letter: string; text: string }[] = [];
@@ -239,107 +266,139 @@ export default function OpenBookReader({
     return list;
   }, [currentQuestion]);
 
+  // Espessura dinâmica de folhas sobrepostas nas laterais do livro
+  const totalCount = Math.max(1, filteredQuestions.length);
+  const leftStackRatio = currentIndex / totalCount;
+  const rightStackRatio = (totalCount - currentIndex) / totalCount;
+
+  const leftStackPx = Math.round(3 + leftStackRatio * 18);
+  const rightStackPx = Math.round(3 + rightStackRatio * 18);
+
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-6 bg-black/85 backdrop-blur-md select-none overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-black/80 backdrop-blur-md select-none overflow-hidden"
     >
-      {/* ── BARRA SUPERIOR DE CONTROLES DO LEITOR ───────────────────────────── */}
-      <div className="absolute top-3 left-4 right-4 z-50 flex items-center justify-between text-amber-100/90 pointer-events-auto">
+      {/* ── BARRA DE CONTROLES NO TOPO ──────────────────────────────────────── */}
+      <div className="absolute top-3 left-4 right-4 z-50 flex items-center justify-between text-amber-100/90">
         <div className="flex items-center gap-3">
           <button
             onClick={onClose}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-stone-900/80 hover:bg-stone-800 text-stone-300 hover:text-white border border-stone-700/60 shadow-lg transition-all text-xs"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-stone-900/90 hover:bg-stone-800 text-stone-300 hover:text-white border border-stone-700/60 shadow-lg transition-all text-xs"
           >
             <ChevronLeft size={14} />
-            <span>Voltar à Biblioteca</span>
+            <span>Fechar Livro</span>
           </button>
 
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-md bg-stone-900/60 border border-stone-700/40 text-xs">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-md bg-stone-900/70 border border-stone-700/40 text-xs">
             <span className="text-amber-400 font-serif">✦ {caderno.materia}</span>
             <span className="text-stone-500">/</span>
-            <span className="text-stone-300 truncate max-w-[200px]">{caderno.nome}</span>
+            <span className="text-stone-300 truncate max-w-[220px]">{caderno.nome}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Som de papel */}
           <button
             onClick={() => setSoundEnabled((v) => !v)}
-            title={soundEnabled ? "Desativar som de virar folha" : "Ativar som de virar folha"}
-            className="p-1.5 rounded-lg bg-stone-900/80 hover:bg-stone-800 text-stone-400 hover:text-amber-300 border border-stone-700/50 shadow transition-all"
+            title={soundEnabled ? "Desativar som de virar papel" : "Ativar som de virar papel"}
+            className="p-1.5 rounded-lg bg-stone-900/90 hover:bg-stone-800 text-stone-400 hover:text-amber-300 border border-stone-700/50 shadow transition-all"
           >
             {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
 
-          {/* Fechar */}
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg bg-stone-900/80 hover:bg-rose-900/50 text-stone-400 hover:text-rose-300 border border-stone-700/50 shadow transition-all"
-            title="Fechar Livro"
+            className="p-1.5 rounded-lg bg-stone-900/90 hover:bg-rose-900/60 text-stone-400 hover:text-rose-300 border border-stone-700/50 shadow transition-all"
+            title="Fechar Livro e Voltar"
           >
             <X size={16} />
           </button>
         </div>
       </div>
 
-      {/* ── O LIVRO ABERTO EM 3D REALISTA (TWO-PAGE SPREAD) ────────────────── */}
+      {/* ── CENÁRIO TRIDIMENSIONAL DO LIVRO ABERTO ──────────────────────────── */}
       <div
         className="relative w-full max-w-6xl h-[86vh] flex items-center justify-center"
-        style={{ perspective: "2200px" }}
+        style={{ perspective: "2600px" }}
       >
-        {/* Capa de Couro Subjacente do Livro (Borda saliente e costura) */}
+        {/* Capa de Couro Externa do Livro com Espessura e Cantoneiras Douradas */}
         <div
-          className="absolute inset-0 rounded-2xl shadow-[0_30px_90px_rgba(0,0,0,0.9)] -z-10"
+          className="absolute inset-0 rounded-2xl shadow-[0_35px_100px_rgba(0,0,0,0.95)] -z-10"
           style={{
             backgroundColor: caderno.coverColor || "#1b281f",
             backgroundImage:
-              "radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.06), rgba(0,0,0,0.7))",
-            border: "6px solid #141a16",
+              "radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.08), rgba(0,0,0,0.85))",
+            border: "8px solid #141a16",
             boxShadow:
-              "0 20px 60px -10px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(212, 175, 55, 0.25) inset",
+              "0 25px 70px -10px rgba(0, 0, 0, 0.95), 0 0 0 1.5px rgba(212, 175, 55, 0.3) inset",
           }}
         />
 
-        {/* Fita de Cetim Marcadora de Livro (Bookmark Ribbon) */}
+        {/* Fita de Cetim Marcadora de Página (Bookmark Ribbon) */}
         <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-28 pointer-events-none z-40 transition-all duration-300"
+          className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-32 pointer-events-none z-40 transition-all duration-300"
           style={{
-            background: "linear-gradient(to right, #8a1523, #b82333, #8a1523)",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
-            borderBottom: "10px solid transparent",
-            borderLeft: "12px solid #8a1523",
-            borderRight: "12px solid #8a1523",
+            background: "linear-gradient(to right, #80121f, #b31f2f, #80121f)",
+            boxShadow: "0 6px 14px rgba(0,0,0,0.6)",
+            borderBottom: "12px solid transparent",
+            borderLeft: "12px solid #80121f",
+            borderRight: "12px solid #80121f",
           }}
         />
 
-        {/* Miolo Duplo de Páginas em Papel Creme */}
+        {/* Bloco Lateral de Folhas Empilhadas à Esquerda (Páginas já lidas) */}
         <div
-          className="relative w-[96%] h-[94%] flex rounded-lg overflow-hidden"
+          className="absolute left-3 top-6 bottom-6 rounded-l-md pointer-events-none z-0 transition-all duration-300"
+          style={{
+            width: `${leftStackPx}px`,
+            background:
+              "repeating-linear-gradient(to right, #e2d7bd, #e2d7bd 1px, #f2ecdc 1px, #f2ecdc 2px)",
+            boxShadow: "inset 4px 0 8px rgba(60,40,20,0.25)",
+            borderLeft: "1px solid #c8bc9f",
+          }}
+        />
+
+        {/* Bloco Lateral de Folhas Empilhadas à Direita (Páginas restantes) */}
+        <div
+          className="absolute right-3 top-6 bottom-6 rounded-r-md pointer-events-none z-0 transition-all duration-300"
+          style={{
+            width: `${rightStackPx}px`,
+            background:
+              "repeating-linear-gradient(to left, #e2d7bd, #e2d7bd 1px, #f2ecdc 1px, #f2ecdc 2px)",
+            boxShadow: "inset -4px 0 8px rgba(60,40,20,0.25)",
+            borderRight: "1px solid #c8bc9f",
+          }}
+        />
+
+        {/* ── MIOLO DO LIVRO COM DUAS PÁGINAS EM ARCO 3D ──────────────────────── */}
+        <div
+          className="relative w-[95%] h-[93%] flex rounded-lg overflow-hidden"
           style={{
             transformStyle: "preserve-3d",
-            boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
+            boxShadow: "0 12px 45px rgba(0,0,0,0.6)",
           }}
         >
           {/* ═════════════════════════════════════════════════════════════════ */}
-          {/* PÁGINA ESQUERDA (VERSO) — Sumário, Casos & Progresso              */}
+          {/* PÁGINA ESQUERDA (VERSO)                                           */}
           {/* ═════════════════════════════════════════════════════════════════ */}
           <div
             className="w-1/2 h-full flex flex-col p-6 md:p-8 bg-[#faf7ee] text-stone-800 relative border-r border-amber-900/10 overflow-y-auto"
             style={{
               backgroundImage:
-                "linear-gradient(to right, #ece3cb 0%, #faf7ee 12%, #fbf9f3 85%, #ece4d0 100%)",
-              boxShadow: "inset 18px 0 25px -10px rgba(80, 50, 20, 0.15)",
+                "linear-gradient(to right, #eae0c8 0%, #faf7ee 10%, #fcfbf6 88%, #ece4cf 100%)",
+              boxShadow: "inset 20px 0 30px -10px rgba(70, 45, 15, 0.18)",
+              transformOrigin: "right center",
+              transform: "rotateY(3deg)",
             }}
           >
             {/* Cabeçalho da Página Esquerda */}
             <div className="flex items-center justify-between pb-3 border-b border-stone-300/80 mb-4">
               <div>
                 <span className="text-[10px] font-serif uppercase tracking-widest text-amber-900/70 font-semibold">
-                  Índice & Progresso
+                  Caderno de Estudos
                 </span>
                 <h2 className="font-serif text-lg font-bold text-stone-900 leading-tight">
                   {caderno.nome}
@@ -355,7 +414,7 @@ export default function OpenBookReader({
               </div>
             </div>
 
-            {/* Painel de Estatísticas da Página */}
+            {/* Painel Estatístico */}
             <div className="grid grid-cols-4 gap-2 mb-4 p-2.5 rounded-lg bg-stone-200/50 border border-stone-300/60 text-center font-serif text-xs">
               <div className="p-1">
                 <span className="block text-[10px] text-stone-500 uppercase">Total</span>
@@ -375,13 +434,13 @@ export default function OpenBookReader({
               </div>
             </div>
 
-            {/* Seletor de Casos (Subtópicos do Caderno) */}
+            {/* Seletor de Casos */}
             <div className="mb-4">
               <label className="text-[11px] font-serif text-stone-600 font-semibold mb-1.5 flex items-center gap-1.5">
                 <Folder size={12} className="text-amber-800" />
                 <span>Casos & Capítulos:</span>
               </label>
-              <div className="flex flex-col gap-1 max-h-36 overflow-y-auto pr-1">
+              <div className="flex flex-col gap-1 max-h-32 overflow-y-auto pr-1">
                 <button
                   onClick={() => {
                     setSelectedCasoId("todos");
@@ -393,7 +452,7 @@ export default function OpenBookReader({
                       : "hover:bg-stone-200/60 text-stone-700"
                   }`}
                 >
-                  <span className="truncate">Todos os Casos do Caderno</span>
+                  <span className="truncate">Todos os Casos</span>
                   <span className="text-[10px] text-stone-500">{caderno.questoes.length}</span>
                 </button>
 
@@ -446,10 +505,10 @@ export default function OpenBookReader({
               </div>
             </div>
 
-            {/* Minigrid de Navegação Rápida entre Questões */}
+            {/* Minigrid de Questões */}
             <div className="flex-1 overflow-y-auto">
               <span className="text-[10px] font-serif text-stone-500 uppercase block mb-1">
-                Questões ({filteredQuestions.length}):
+                Folhas de Questões ({filteredQuestions.length}):
               </span>
               <div className="grid grid-cols-6 sm:grid-cols-8 gap-1.5">
                 {filteredQuestions.map((q, idx) => {
@@ -489,57 +548,83 @@ export default function OpenBookReader({
             {/* Rodapé da Página Esquerda */}
             <div className="pt-3 border-t border-stone-300/80 text-[10px] text-stone-500 font-serif flex items-center justify-between mt-auto">
               <span>Biblioteca de Estudos 3D</span>
-              <span className="font-mono">Página {currentIndex * 2 + 1}</span>
+              <span className="font-mono">Pág. {currentIndex * 2 + 1}</span>
             </div>
           </div>
 
           {/* ═════════════════════════════════════════════════════════════════ */}
-          {/* VINCO CENTRAL DO LIVRO (Lombada com sombras e costura)           */}
+          {/* LOMBADA CENTRAL DO LIVRO (Costura & Sombra Gutter)                */}
           {/* ═════════════════════════════════════════════════════════════════ */}
           <div
-            className="w-8 shrink-0 h-full relative z-30 pointer-events-none"
+            className="w-10 shrink-0 h-full relative z-30 pointer-events-none"
             style={{
               background:
-                "linear-gradient(to right, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.04) 35%, rgba(0,0,0,0.01) 50%, rgba(0,0,0,0.04) 65%, rgba(0,0,0,0.28) 100%)",
-              boxShadow: "inset 0 0 15px rgba(0,0,0,0.35)",
+                "linear-gradient(to right, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.06) 35%, rgba(0,0,0,0.01) 50%, rgba(0,0,0,0.06) 65%, rgba(0,0,0,0.32) 100%)",
+              boxShadow: "inset 0 0 18px rgba(0,0,0,0.4)",
             }}
           >
-            {/* Linha vertical sutil da dobra do livro */}
-            <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[1px] bg-amber-950/20" />
+            <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[1.5px] bg-amber-950/25" />
           </div>
 
           {/* ═════════════════════════════════════════════════════════════════ */}
-          {/* PÁGINA DIREITA (RETO) — Questão Ativa, Alternativas & Gabarito    */}
+          {/* PÁGINA DIREITA (RETO) COM ANIMAÇÃO DE FOLHEAMENTO 3D              */}
           {/* ═════════════════════════════════════════════════════════════════ */}
           <div
+            onMouseEnter={() => setIsEdgeHovered("right")}
+            onMouseLeave={() => setIsEdgeHovered(null)}
             className="w-1/2 h-full flex flex-col p-6 md:p-8 bg-[#faf7ee] text-stone-800 relative border-l border-amber-900/10 overflow-y-auto"
             style={{
               backgroundImage:
-                "linear-gradient(to left, #ece3cb 0%, #faf7ee 12%, #fbf9f3 85%, #ece4d0 100%)",
-              boxShadow: "inset -18px 0 25px -10px rgba(80, 50, 20, 0.15)",
+                "linear-gradient(to left, #eae0c8 0%, #faf7ee 10%, #fcfbf6 88%, #ece4cf 100%)",
+              boxShadow: "inset -20px 0 30px -10px rgba(70, 45, 15, 0.18)",
+              transformOrigin: "left center",
+              transform: "rotateY(-3deg)",
             }}
           >
-            {/* Folha de animação de virada 3D */}
-            <AnimatePresence>
-              {isFlipping && (
-                <motion.div
-                  initial={{
-                    rotateY: isFlipping === "next" ? 0 : -90,
-                    opacity: 0.95,
-                  }}
-                  animate={{
-                    rotateY: isFlipping === "next" ? -90 : 0,
-                    opacity: 0.3,
-                  }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.25, ease: "easeInOut" }}
-                  className="absolute inset-0 z-40 bg-[#f4ebd0] pointer-events-none shadow-2xl origin-left"
+            {/* ── FOLHA TRIDIMENSIONAL QUE VIRA (PAGE FLIP REALISTA) ──────── */}
+            {flipDirection && (
+              <div
+                className="absolute inset-0 z-40 pointer-events-none origin-left overflow-hidden"
+                style={{
+                  transform:
+                    flipDirection === "next"
+                      ? `rotateY(${-flipProgress * 180}deg)`
+                      : `rotateY(${(-1 + flipProgress) * 180}deg)`,
+                  transformStyle: "preserve-3d",
+                  boxShadow:
+                    flipProgress > 0.1 && flipProgress < 0.9
+                      ? "30px 0 60px rgba(0,0,0,0.45)"
+                      : "none",
+                  background:
+                    "linear-gradient(to right, #ece3cb 0%, #faf7ee 30%, #fcfbf6 90%, #eae0c8 100%)",
+                }}
+              >
+                {/* Sombra Dinâmica na Folha enquanto ela dobra */}
+                <div
+                  className="absolute inset-0"
                   style={{
-                    boxShadow: "inset 30px 0 50px rgba(0,0,0,0.3)",
+                    background: `rgba(40, 25, 10, ${Math.sin(flipProgress * Math.PI) * 0.35})`,
                   }}
                 />
-              )}
-            </AnimatePresence>
+              </div>
+            )}
+
+            {/* ── PEEL CURL NO HOVER DO CANTO INFERIOR DIREITO ────────────── */}
+            {isEdgeHovered === "right" && !flipDirection && currentIndex < filteredQuestions.length - 1 && (
+              <div
+                onClick={flipToNext}
+                className="absolute bottom-2 right-2 w-14 h-14 cursor-pointer z-30 flex items-end justify-end p-2 transition-transform duration-200"
+                style={{
+                  clipPath: "polygon(100% 0, 0 100%, 100% 100%)",
+                  background: "linear-gradient(135deg, rgba(200, 180, 140, 0.6), #faf7ee)",
+                  boxShadow: "-4px -4px 12px rgba(0,0,0,0.2)",
+                  transform: "translateZ(8px) scale(1.05)",
+                }}
+                title="Clique para virar para a próxima página"
+              >
+                <ChevronRight size={14} className="text-amber-900" />
+              </div>
+            )}
 
             {currentQuestion ? (
               <div className="flex flex-col h-full">
@@ -561,7 +646,6 @@ export default function OpenBookReader({
                     )}
                   </div>
 
-                  {/* Botão de Dúvida */}
                   <button
                     onClick={() => onToggleDuvida(currentQuestion.id)}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-serif transition-all ${
@@ -578,7 +662,6 @@ export default function OpenBookReader({
 
                 {/* Área Rolável do Enunciado e Alternativas */}
                 <div className="flex-1 overflow-y-auto pr-2 space-y-4">
-                  {/* Texto de Apoio se houver */}
                   {(currentQuestion["Texto de apoio"] || currentQuestion.perguntaProblema) && (
                     <div className="p-3 rounded-lg bg-amber-50/70 border border-amber-200/60 font-serif text-xs text-stone-700 leading-relaxed italic">
                       <p className="whitespace-pre-line">
@@ -587,7 +670,6 @@ export default function OpenBookReader({
                     </div>
                   )}
 
-                  {/* Imagem do enunciado se houver */}
                   {currentQuestion.imagemEnunciado && (
                     <div className="my-2 rounded border border-stone-300 overflow-hidden max-h-48 flex justify-center bg-white">
                       <img
@@ -598,12 +680,11 @@ export default function OpenBookReader({
                     </div>
                   )}
 
-                  {/* Enunciado Principal */}
                   <div className="font-serif text-[13.5px] leading-relaxed text-stone-900">
                     <p className="whitespace-pre-line font-medium">{currentQuestion.title}</p>
                   </div>
 
-                  {/* Lista de Alternativas A, B, C, D, E */}
+                  {/* Alternativas A, B, C, D, E */}
                   <div className="space-y-2 pt-2">
                     {alternatives.map((alt) => {
                       const isSelected = selectedAlternative === alt.letter;
@@ -660,7 +741,7 @@ export default function OpenBookReader({
                     })}
                   </div>
 
-                  {/* Feedback de Acerto / Erro e Comentário Pedagógico */}
+                  {/* Feedback e Comentário Pedagógico */}
                   {currentStats && (
                     <div className="pt-3">
                       <div
@@ -678,7 +759,7 @@ export default function OpenBookReader({
                           )}
                           <span className="font-serif font-bold text-xs">
                             {currentStats.isCorrect
-                              ? "Parabéns! Resposta Correta."
+                              ? "Resposta Correta!"
                               : `Incorreto. Gabarito oficial: Letra ${correctLetter}`}
                           </span>
                         </div>
@@ -693,7 +774,6 @@ export default function OpenBookReader({
                         )}
                       </div>
 
-                      {/* Caixa de Comentário / Justificativa */}
                       {showExplanation && currentQuestion.explicacao && (
                         <div className="mt-2.5 p-3 rounded-lg bg-amber-50/90 border border-amber-300/80 font-serif text-xs text-stone-800 leading-relaxed">
                           <span className="block font-bold text-amber-900 mb-1">
@@ -706,11 +786,11 @@ export default function OpenBookReader({
                   )}
                 </div>
 
-                {/* Rodapé com Navegação de Folhas do Livro */}
+                {/* Rodapé com Botões de Folhear */}
                 <div className="pt-3 border-t border-stone-300/80 flex items-center justify-between mt-auto">
                   <button
-                    onClick={goToPrevPage}
-                    disabled={currentIndex === 0 || isFlipping !== null}
+                    onClick={flipToPrev}
+                    disabled={currentIndex === 0 || flipDirection !== null}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-200/80 hover:bg-stone-300 text-stone-800 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-serif transition-all"
                   >
                     <ChevronLeft size={14} />
@@ -718,12 +798,12 @@ export default function OpenBookReader({
                   </button>
 
                   <span className="text-[10px] text-stone-500 font-mono">
-                    Página {currentIndex * 2 + 2}
+                    Pág. {currentIndex * 2 + 2}
                   </span>
 
                   <button
-                    onClick={goToNextPage}
-                    disabled={currentIndex === filteredQuestions.length - 1 || isFlipping !== null}
+                    onClick={flipToNext}
+                    disabled={currentIndex === filteredQuestions.length - 1 || flipDirection !== null}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-900/15 hover:bg-amber-900/25 text-amber-950 font-serif font-medium disabled:opacity-40 disabled:cursor-not-allowed text-xs transition-all border border-amber-900/20"
                   >
                     <span>Próxima Pág.</span>
@@ -738,7 +818,7 @@ export default function OpenBookReader({
                   Nenhuma questão encontrada
                 </h3>
                 <p className="text-xs font-serif text-stone-500 max-w-xs">
-                  Não há questões correspondentes ao filtro atual selecionado neste caso.
+                  Não há questões correspondentes ao filtro atual neste caderno.
                 </p>
                 <button
                   onClick={() => {

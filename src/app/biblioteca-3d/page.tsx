@@ -43,6 +43,7 @@ export default function Biblioteca3DPage() {
   const [hoveredCaderno, setHoveredCaderno] = useState<Caderno3DItem | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
   const [selectedCaderno, setSelectedCaderno] = useState<Caderno3DItem | null>(null);
+  const [isReading, setIsReading] = useState<boolean>(false);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 1. Autenticação e Verificação de Admin
@@ -424,7 +425,13 @@ export default function Biblioteca3DPage() {
         <Book3DScene
           cadernos={filteredCadernos}
           selectedCaderno={selectedCaderno}
-          onSelectCaderno={(cad) => setSelectedCaderno(cad)}
+          isReaderOpen={isReading}
+          onSelectCaderno={(cad) => {
+            setSelectedCaderno(cad);
+          }}
+          onBookFullyOpened={(cad) => {
+            setIsReading(true);
+          }}
           onHoverCaderno={(cad, pos) => {
             setHoveredCaderno(cad);
             if (pos) setHoverPos(pos);
@@ -474,14 +481,17 @@ export default function Biblioteca3DPage() {
         )}
       </AnimatePresence>
 
-      {/* ── LEITOR DE LIVRO ABERTO 3D (QUANDO UM LIVRO É CLICADO) ──────────── */}
+      {/* ── LEITOR DE LIVRO ABERTO 3D COM FOLHEAMENTO REALISTA ──────────────── */}
       <AnimatePresence>
-        {selectedCaderno && (
+        {selectedCaderno && isReading && (
           <OpenBookReader
             caderno={selectedCaderno}
             userAnswers={userAnswers}
             duvidas={duvidas}
-            onClose={() => setSelectedCaderno(null)}
+            onClose={() => {
+              setIsReading(false);
+              setSelectedCaderno(null);
+            }}
             onAnswer={handleAnswerQuestion}
             onToggleDuvida={handleToggleDuvida}
             isAdmin={isAdmin}
