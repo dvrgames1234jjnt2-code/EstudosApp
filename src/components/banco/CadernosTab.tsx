@@ -1918,116 +1918,129 @@ export default function CadernosTab({
         </div>
       </div>
 
-      {/* ── Barra de Filtros e Busca (Idêntica ao Notion) ── */}
-      <div className="flex items-center gap-3 flex-wrap justify-between bg-[#101526] p-3 rounded-2xl border border-white/[0.08] relative z-10 shadow-xl">
-        <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
-          {/* Busca */}
-          <div className="relative min-w-[160px] max-w-[200px]">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
-            <input
-              type="text"
-              placeholder="Buscar caderno ou pasta..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full bg-[#0d1220] border border-white/[0.08] rounded-xl pl-8 pr-7 py-1.5 text-[11px] text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/40 transition-all"
-            />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
-              >
-                <X size={12} />
-              </button>
-            )}
-          </div>
+      {/* ── Barra Superior de Controles e Filtros ── */}
+      <div className="flex flex-col gap-2.5 bg-[#0d1222]/95 backdrop-blur-md p-3 rounded-2xl border border-white/[0.08] relative z-10 shadow-xl">
+        {/* Linha 1: Controles de Busca, Caderno e Filtro de Status */}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5 flex-wrap flex-1 min-w-[260px]">
+            {/* Campo de Busca */}
+            <div className="relative w-full sm:w-56">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Buscar caderno ou pasta..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full bg-[#070b14] border border-white/[0.08] hover:border-white/[0.16] rounded-xl pl-8 pr-7 py-1.5 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50 transition-all font-normal"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
 
-          {/* Select de Cadernos */}
-          <div className="flex items-center gap-1.5 bg-[#0d1220] border border-white/[0.08] hover:border-white/[0.18] px-3 py-1.5 rounded-xl transition-all">
-            <BookMarked size={13} className="text-indigo-400 shrink-0" />
-            <select
-              value={cadernoFiltro}
-              onChange={e => {
-                const val = e.target.value;
-                setCadernoFiltro(val);
-                if (val !== "Todos") {
-                  const found = todosCadernos.find(c => c.nome === val);
-                  if (found) setSelectedCaderno(found);
-                }
-              }}
-              className="bg-[#0d1220] text-slate-200 text-[11px] font-bold focus:outline-none cursor-pointer border-none min-w-[140px] max-w-[220px]"
-              style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}
-            >
-              <option value="Todos" className="bg-[#0d1220] text-slate-200 py-1">
-                Todos os Cadernos ({todosCadernos.length})
-              </option>
-              {todosCadernos.map(c => (
-                <option key={c.id} value={c.nome} className="bg-[#0d1220] text-slate-200 py-1">
-                  {c.nome} ({c.materia})
+            {/* Select Dropdown de Cadernos */}
+            <div className="flex items-center gap-1.5 bg-[#070b14] border border-white/[0.08] hover:border-white/[0.16] px-2.5 py-1.5 rounded-xl transition-all">
+              <BookMarked size={13} className="text-indigo-400 shrink-0" />
+              <select
+                value={cadernoFiltro}
+                onChange={e => {
+                  const val = e.target.value;
+                  setCadernoFiltro(val);
+                  if (val !== "Todos") {
+                    const found = todosCadernos.find(c => c.nome === val);
+                    if (found) setSelectedCaderno(found);
+                  }
+                }}
+                className="bg-transparent text-slate-200 text-xs font-medium focus:outline-none cursor-pointer border-none max-w-[220px] truncate"
+                style={{ backgroundColor: "#070b14", color: "#e2e8f0" }}
+              >
+                <option value="Todos" className="bg-[#0d1222] text-slate-200">
+                  Todos os Cadernos ({todosCadernos.length})
                 </option>
-              ))}
-            </select>
+                {todosCadernos.map(c => (
+                  <option key={c.id} value={c.nome} className="bg-[#0d1222] text-slate-200">
+                    {c.nome} ({c.materia})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          {/* Filtro por Matéria em Pills */}
-          <div className="flex items-center gap-1 flex-wrap">
-            {["Todas", ...materiasDisponiveis].map(m => (
-              <button
-                key={m}
-                onClick={() => setMateriaFiltro(m)}
-                className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all ${
-                  materiaFiltro === m
-                    ? "bg-indigo-600 border-indigo-500 text-white shadow-sm"
-                    : "bg-[#0d1220] border-white/[0.07] text-slate-400 hover:text-slate-200 hover:border-white/[0.15]"
-                }`}
-              >
-                {m}
-              </button>
-            ))}
+          {/* Segmented Control de Status */}
+          <div className="flex items-center gap-1 bg-[#070b14] p-1 rounded-xl border border-white/[0.08] shrink-0 flex-wrap">
+            <button
+              onClick={() => setStatusFiltro("todas")}
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                statusFiltro === "todas" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              Todas
+            </button>
+            <button
+              onClick={() => setStatusFiltro("erros")}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                statusFiltro === "erros" ? "bg-rose-500/20 text-rose-300 border border-rose-500/30 shadow-sm" : "text-slate-400 hover:text-rose-300"
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+              <span>Erros</span>
+            </button>
+            <button
+              onClick={() => setStatusFiltro("mais_erros")}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                statusFiltro === "mais_erros" ? "bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm" : "text-slate-400 hover:text-amber-300"
+              }`}
+            >
+              <Flame size={12} className="text-amber-400 shrink-0" />
+              <span>Mais Erros</span>
+            </button>
+            <button
+              onClick={() => setStatusFiltro("nao_feitas")}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                statusFiltro === "nao_feitas" ? "bg-purple-500/20 text-purple-300 border border-purple-500/30 shadow-sm" : "text-slate-400 hover:text-purple-300"
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full border border-purple-400 shrink-0" />
+              <span>Não Feitas</span>
+            </button>
+            <button
+              onClick={() => setStatusFiltro("duvidas")}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                statusFiltro === "duvidas" ? "bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm" : "text-slate-400 hover:text-amber-300"
+              }`}
+            >
+              <Flag size={11} className="text-amber-400 fill-amber-400/20 shrink-0" />
+              <span>Dúvidas</span>
+            </button>
           </div>
         </div>
 
-        {/* Filtro por Status */}
-        <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] shrink-0 flex-wrap">
-          <button
-            onClick={() => setStatusFiltro("todas")}
-            className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-              statusFiltro === "todas" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            Todas
-          </button>
-          <button
-            onClick={() => setStatusFiltro("erros")}
-            className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-              statusFiltro === "erros" ? "bg-rose-600 text-white shadow" : "text-rose-400/70 hover:text-rose-300"
-            }`}
-          >
-            🔴 Erros
-          </button>
-          <button
-            onClick={() => setStatusFiltro("mais_erros")}
-            className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-              statusFiltro === "mais_erros" ? "bg-amber-600 text-white shadow" : "text-amber-400/70 hover:text-amber-300"
-            }`}
-          >
-            🔥 Mais Erros
-          </button>
-          <button
-            onClick={() => setStatusFiltro("nao_feitas")}
-            className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-              statusFiltro === "nao_feitas" ? "bg-purple-600 text-white shadow" : "text-purple-400/70 hover:text-purple-300"
-            }`}
-          >
-            ⭕ Não Feitas
-          </button>
-          <button
-            onClick={() => setStatusFiltro("duvidas")}
-            className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-              statusFiltro === "duvidas" ? "bg-amber-500 text-white shadow" : "text-amber-400/70 hover:text-amber-300"
-            }`}
-          >
-            ⚑ Dúvidas
-          </button>
+        {/* Linha 2: Chips de Matéria em Linha Horizontal Suave com Scroll (Nunca quebra em 5 linhas feias) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pt-1.5 pb-0.5 border-t border-white/[0.04]">
+          <span className="text-[10.5px] font-medium text-slate-500 uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
+            <Filter size={10} /> Matéria:
+          </span>
+          {["Todas", ...materiasDisponiveis].map(m => {
+            const isSelected = materiaFiltro === m;
+            return (
+              <button
+                key={m}
+                onClick={() => setMateriaFiltro(m)}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition-all shrink-0 flex items-center gap-1.5 ${
+                  isSelected
+                    ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-sm"
+                    : "bg-[#070b14]/70 text-slate-400 hover:text-slate-200 border border-white/[0.05] hover:border-white/[0.12]"
+                }`}
+              >
+                <span>{m}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
