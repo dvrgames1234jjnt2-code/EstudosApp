@@ -591,10 +591,18 @@ function CasoAccordion({
         isDragOver ? "ring-1 ring-indigo-500/60 bg-indigo-500/10 p-0.5" : ""
       }`}
     >
-      {/* Botão do Caso Header - Compacto, sem negrito e elegante */}
-      <button
+      {/* Header do Caso - Compacto, sem negrito e elegante */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setIsOpen(v => !v)}
-        className={`relative z-10 w-full flex items-center justify-between gap-2.5 px-2.5 py-1.5 rounded-lg border border-white/[0.04] bg-[#0d1220]/80 hover:bg-[#121829] hover:border-white/[0.08] transition-all text-left group ${
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setIsOpen(v => !v);
+          }
+        }}
+        className={`relative z-10 w-full flex items-center justify-between gap-2.5 px-2.5 py-1.5 rounded-lg border border-white/[0.04] bg-[#0d1220]/80 hover:bg-[#121829] hover:border-white/[0.08] transition-all text-left cursor-pointer select-none group ${
           isDragOver ? "border-indigo-500" : ""
         }`}
       >
@@ -684,7 +692,7 @@ function CasoAccordion({
             className={`text-slate-500/70 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
           />
         </div>
-      </button>
+      </div>
 
       {/* Conteúdo do Caso expandido */}
       {isOpen && (
