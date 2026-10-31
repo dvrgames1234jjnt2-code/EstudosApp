@@ -643,48 +643,56 @@ function CasoAccordion({
               className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1 select-none"
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                type="button"
+              <span
+                role="button"
+                tabIndex={0}
                 onClick={() => onAddSubfolder?.(caso.id)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onAddSubfolder?.(caso.id); } }}
                 title="Adicionar subpasta neste caso"
-                className="p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.08] rounded transition-colors"
+                className="p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.08] rounded transition-colors cursor-pointer inline-flex"
               >
                 <FolderPlus size={11} />
-              </button>
-              <button
-                type="button"
+              </span>
+              <span
+                role="button"
+                tabIndex={0}
                 onClick={() => onRenameCaso?.(caso.id, caso.nome)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onRenameCaso?.(caso.id, caso.nome); } }}
                 title="Renomear este caso"
-                className="p-1 text-slate-500 hover:text-amber-400 hover:bg-white/[0.08] rounded transition-colors"
+                className="p-1 text-slate-500 hover:text-amber-400 hover:bg-white/[0.08] rounded transition-colors cursor-pointer inline-flex"
               >
                 <Pencil size={11} />
-              </button>
+              </span>
               {caso.questoes.length === 0 && (
-                <button
-                  type="button"
+                <span
+                  role="button"
+                  tabIndex={0}
                   onClick={() => onDeleteCaso?.(caso.id, caso.nome)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onDeleteCaso?.(caso.id, caso.nome); } }}
                   title="Excluir este caso vazio"
-                  className="p-1 text-slate-500 hover:text-rose-400 hover:bg-white/[0.08] rounded transition-colors"
+                  className="p-1 text-slate-500 hover:text-rose-400 hover:bg-white/[0.08] rounded transition-colors cursor-pointer inline-flex"
                 >
                   <Trash2 size={11} />
-                </button>
+                </span>
               )}
             </div>
           )}
 
-          {/* Botão de Imprimir Questões do Caso */}
+          {/* Imprimir Questões do Caso */}
           {caso.questoes.length > 0 && (
-            <button
-              type="button"
+            <span
+              role="button"
+              tabIndex={0}
               onClick={(e) => {
                 e.stopPropagation();
                 onPrintCaso?.(caso);
               }}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onPrintCaso?.(caso); } }}
               title={`Imprimir ${caso.questoes.length} questões deste caso (${caso.nome})`}
-              className="p-1 text-slate-500 hover:text-indigo-300 hover:bg-white/[0.08] rounded transition-colors"
+              className="p-1 text-slate-500 hover:text-indigo-300 hover:bg-white/[0.08] rounded transition-colors cursor-pointer inline-flex"
             >
               <Printer size={11} />
-            </button>
+            </span>
           )}
 
           <ChevronDown
