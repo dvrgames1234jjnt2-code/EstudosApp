@@ -262,26 +262,42 @@ export default function BancoPage() {
     }
   }, []);
 
-  // ── Toggle dúvida ─────────────────────────
+  // ── Toggle dúvida (estritamente por usuário na tabela pública `duvidas`) ────
   const handleToggleDuvida = useCallback(async (questaoId: any) => {
-    if (!user) return;
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
     const key = String(questaoId);
+    const numId = Number(questaoId);
     const isMarked = duvidas.has(key);
-    // Optimistic update
+
+    // Atualização otimista na interface do usuário
     setDuvidas(prev => {
       const next = new Set(prev);
       if (isMarked) next.delete(key); else next.add(key);
       return next;
     });
+
     try {
       if (isMarked) {
-        await supabase.from("duvidas").delete().eq("user_id", user.id).eq("questao_id", key);
+        // Remove da tabela `duvidas` do usuário logado
+        let res = await supabase.from("duvidas").delete().eq("user_id", user.id).eq("questao_id", key);
+        if (res.error && !isNaN(numId)) {
+          await supabase.from("duvidas").delete().eq("user_id", user.id).eq("questao_id", numId);
+        }
       } else {
-        await supabase.from("duvidas").insert({ user_id: user.id, questao_id: key });
+        // Insere na tabela `duvidas` do usuário logado
+        const payloadId = !isNaN(numId) ? numId : key;
+        const res = await supabase.from("duvidas").insert({ user_id: user.id, questao_id: payloadId });
+        if (res.error) {
+          // Fallback se a coluna for do tipo text
+          await supabase.from("duvidas").insert({ user_id: user.id, questao_id: key });
+        }
       }
     } catch (err: any) {
-      console.error("Erro ao salvar dúvida:", err.message);
-      // Revert on error
+      console.error("Erro ao salvar dúvida do usuário:", err.message);
+      // Reverte em caso de erro
       setDuvidas(prev => {
         const next = new Set(prev);
         if (isMarked) next.add(key); else next.delete(key);
@@ -467,15 +483,6 @@ export default function BancoPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Botão Biblioteca 3D */}
-          <button
-            onClick={() => router.push("/biblioteca-3d")}
-            title="Abrir a Biblioteca 3D Interativa de Cadernos"
-            className="flex items-center gap-2 px-3.5 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-700/20 hover:from-amber-500/30 hover:to-amber-700/30 text-amber-300 border border-amber-500/30 rounded-xl text-[11px] font-bold uppercase tracking-wider shadow-lg shadow-amber-500/10 transition-all active:scale-95 shrink-0"
-          >
-            <Sparkles size={13} className="text-amber-400" /> Biblioteca 3D
-          </button>
-
           {/* Botão de Destaque Imprimir Simulado na Topbar */}
           <button
             onClick={() => setShowGlobalPrintModal(true)}
@@ -519,8 +526,8 @@ export default function BancoPage() {
             { id: "resolver",   icon: <Layers size={13} />,         label: "Questão Ativa", badge: selectedQuestion ? "●" : null },
             { id: "simulados",  icon: <ClipboardList size={13} />,  label: "Simulados", count: provasDisponiveis.length },
             { id: "desempenho", icon: <BarChart3 size={13} />,      label: "Desempenho", badge: resolverQueue.length > 0 ? "●" : null },
+            { id: "cronometro", icon: <Timer size={13} />,          label: "Cronômetro" },
             { id: "notion",     icon: <BookMarked size={13} />,     label: "Notion Question" },
-            ...(isAdmin ? [{ id: "cronometro", icon: <Timer size={13} />, label: "Cronômetro" }] : []),
             ...(isAdmin ? [{ id: "cadernos", icon: <Layers size={13} />, label: "Cadernos" }] : []),
             { id: "verificador", icon: <CheckCheck size={13} />, label: "Confrontar IDs" },
           ].map(tab => {
@@ -607,6 +614,8 @@ export default function BancoPage() {
                   <QuestionsTable
                     questions={questions}
                     userAnswers={tableAnswers}
+                    duvidas={duvidas}
+                    onToggleDuvida={handleToggleDuvida}
                     onSelect={handleSelectQuestion}
                     onGenerateTest={handleGenerateTest}
                     onFilteredQuestionsChange={handleFilteredQuestionsChange}
@@ -1485,8 +1494,8 @@ export default function BancoPage() {
             </motion.div>
           )}
 
-          {/* ── CRONÔMETRO (ADMIN APENAS) ── */}
-          {activeTab === "cronometro" && isAdmin && (
+          {/* ── CRONÔMETRO DE ESTUDOS ── */}
+          {activeTab === "cronometro" && (
             <motion.div
               key="cronometro"
               initial={{ opacity: 0, y: 8 }}

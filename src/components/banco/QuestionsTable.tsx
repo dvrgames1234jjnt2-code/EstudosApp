@@ -29,6 +29,7 @@ import {
   X,
   AlertTriangle,
   Loader2,
+  Flag,
 } from 'lucide-react';
 import { supabase, supabasePublic } from '../../lib/supabase';
 import { PrintSimuladoModal } from './PrintSimuladoModal';
@@ -78,6 +79,8 @@ interface UserAnswers {
 interface QuestionsTableProps {
   questions: BancoQuestion[];
   userAnswers: UserAnswers;
+  duvidas?: Set<string>;
+  onToggleDuvida?: (questaoId: string | number) => void;
   onSelect: (q: BancoQuestion, filtered?: BancoQuestion[]) => void;
   onGenerateTest: (questions: BancoQuestion[]) => void;
   onFilteredQuestionsChange?: (filtered: BancoQuestion[]) => void;
@@ -138,6 +141,8 @@ const CustomDropdown = ({ value, onChange, options }: any) => {
 export default function QuestionsTable({
   questions,
   userAnswers,
+  duvidas,
+  onToggleDuvida,
   onSelect,
   onGenerateTest,
   onFilteredQuestionsChange,
@@ -204,15 +209,17 @@ export default function QuestionsTable({
       const matchesProva = provaFilter === 'Todas' || norm(q.prova) === norm(provaFilter);
 
       const status = getStatus(q.id);
+      const isDuv = duvidas ? duvidas.has(String(q.id)) : false;
       const matchesStatus =
         statusFilter === 'Todos' ||
+        (statusFilter === 'Duvidas' && isDuv) ||
         (statusFilter === 'Acertadas' && status === 'Acertei') ||
         (statusFilter === 'Erradas' && status === 'Errei') ||
         (statusFilter === 'Pendente' && status === 'Pendente');
 
       return matchesSearch && matchesMateria && matchesProva && matchesStatus;
     });
-  }, [questions, searchTerm, materiaFilter, provaFilter, statusFilter, getStatus]);
+  }, [questions, searchTerm, materiaFilter, provaFilter, statusFilter, getStatus, duvidas]);
 
   // Previne loop de renderização infinita checando assinatura do array
   const prevFilterSig = useRef("");
@@ -500,6 +507,7 @@ export default function QuestionsTable({
               onChange: setStatusFilter,
               options: [
                 { value: 'Todos', label: 'Status: Tudo' },
+                { value: 'Duvidas', label: 'Status: Com Dúvida 🚩' },
                 { value: 'Acertadas', label: 'Acertadas' },
                 { value: 'Erradas', label: 'Erradas' },
                 { value: 'Pendente', label: 'Pendentes' },
@@ -567,6 +575,8 @@ export default function QuestionsTable({
                       isSelected={selectedIds.has(q.id)}
                       onToggleSelect={toggleSelectOne}
                       onDelete={handlePromptDeleteSingle}
+                      isDuvida={duvidas?.has(String(q.id))}
+                      onToggleDuvida={onToggleDuvida}
                     />
                   ))
                 : materias
@@ -596,6 +606,8 @@ export default function QuestionsTable({
                               isSelected={selectedIds.has(q.id)}
                               onToggleSelect={toggleSelectOne}
                               onDelete={handlePromptDeleteSingle}
+                              isDuvida={duvidas?.has(String(q.id))}
+                              onToggleDuvida={onToggleDuvida}
                             />
                           ))}
                         </React.Fragment>
@@ -619,6 +631,8 @@ export default function QuestionsTable({
               isSelected={selectedIds.has(q.id)}
               onToggleSelect={toggleSelectOne}
               onDelete={handlePromptDeleteSingle}
+              isDuvida={duvidas?.has(String(q.id))}
+              onToggleDuvida={onToggleDuvida}
             />
           ))}
         </div>
@@ -861,6 +875,8 @@ const QuestionRow = memo(function QuestionRow({
   isSelected,
   onToggleSelect,
   onDelete,
+  isDuvida,
+  onToggleDuvida,
 }: any) {
   const status = getStatus(q.id);
 
@@ -904,11 +920,30 @@ const QuestionRow = memo(function QuestionRow({
           {q.title || q.perguntaProblema || "Sem enunciado"}
         </p>
       </td>
-      <td className="px-3 py-3.5 text-center w-[120px]">
-        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusCfg.bg}`}>
-          <span className={`w-1 h-1 rounded-full ${statusCfg.dot}`} />
-          {statusCfg.label}
-        </span>
+      <td className="px-3 py-3.5 text-center w-[130px]">
+        <div className="flex items-center justify-center gap-1.5">
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusCfg.bg}`}>
+            <span className={`w-1 h-1 rounded-full ${statusCfg.dot}`} />
+            {statusCfg.label}
+          </span>
+          {onToggleDuvida && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleDuvida(q.id);
+              }}
+              title={isDuvida ? "Em Dúvida (Clique para desmarcar)" : "Marcar dúvida nesta questão"}
+              className={`p-1 rounded-md transition-all ${
+                isDuvida
+                  ? "text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/30"
+                  : "text-slate-600 hover:text-slate-400 opacity-40 hover:opacity-100"
+              }`}
+            >
+              <Flag size={11} className={isDuvida ? "fill-amber-400" : ""} />
+            </button>
+          )}
+        </div>
       </td>
       <td className="px-4 py-3.5 w-[130px]">
         {q.prova ? (
@@ -966,6 +1001,8 @@ const MobileQuestionRow = memo(function MobileQuestionRow({
   isSelected,
   onToggleSelect,
   onDelete,
+  isDuvida,
+  onToggleDuvida,
 }: any) {
   const status = getStatus(q.id);
   const statusCfg = (() => {
@@ -1003,6 +1040,21 @@ const MobileQuestionRow = memo(function MobileQuestionRow({
             <span className={`w-1 h-1 rounded-full ${statusCfg.dot}`} />
             {statusCfg.label}
           </span>
+          {onToggleDuvida && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleDuvida(q.id);
+              }}
+              title={isDuvida ? "Em Dúvida" : "Marcar Dúvida"}
+              className={`p-1 rounded text-xs transition-colors ${
+                isDuvida ? "text-amber-400 bg-amber-400/10" : "text-slate-500 hover:text-slate-400"
+              }`}
+            >
+              <Flag size={11} className={isDuvida ? "fill-amber-400" : ""} />
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {isAdmin && onEdit && (

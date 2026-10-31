@@ -319,7 +319,6 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
           "Alternativa E":     q["Alternativa E"]  ?? null,
           Gabarito:            q.Gabarito          ?? null,
           "Comentário":        q["Comentário"]      ?? null,
-          Duvida:              q.Duvida            ?? false,
           Materia:             q.Caminho_Organizacao?.[0] || q.Banca || "Geral",
           organizacao_id:      orgId,
         };
