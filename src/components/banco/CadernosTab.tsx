@@ -522,6 +522,8 @@ function CasoAccordion({
   onAddSubfolder,
   onDeleteCaso,
   onPrintCaso,
+  onMoverCaso,
+  cadernos,
 }: {
   caso: CasoGroup;
   index: number;
@@ -537,9 +539,13 @@ function CasoAccordion({
   onAddSubfolder?: (casoId: string) => void;
   onDeleteCaso?: (casoId: string, casoNome: string, questoes?: BancoQuestion[]) => void;
   onPrintCaso?: (caso: CasoGroup) => void;
+  onMoverCaso?: (casoId: string, casoNome: string, novoCadernoId: string) => Promise<void>;
+  cadernos?: CadernoItem[];
 }) {
   const [isOpen, setIsOpen] = useState(index === 0);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [showMoverDropdown, setShowMoverDropdown] = useState(false);
+  const [movingCaso, setMovingCaso] = useState(false);
 
   const stats = useMemo(() => {
     let acertos = 0;
@@ -663,6 +669,44 @@ function CasoAccordion({
               >
                 <Pencil size={11} />
               </span>
+              {/* Mover caso para outro caderno */}
+              {onMoverCaso && cadernos && cadernos.length > 0 && (
+                <span className="relative inline-flex">
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setShowMoverDropdown(v => !v)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowMoverDropdown(v => !v); } }}
+                    title="Mover este caso para outro caderno"
+                    className="p-1 text-slate-500 hover:text-indigo-300 hover:bg-white/[0.08] rounded transition-colors cursor-pointer inline-flex"
+                  >
+                    <FolderInput size={11} />
+                  </span>
+                  {showMoverDropdown && (
+                    <div className="absolute top-6 right-0 z-50 min-w-[200px] bg-[#0d1222] border border-white/[0.12] rounded-xl shadow-2xl p-1.5 flex flex-col gap-0.5">
+                      <p className="text-[9px] text-slate-500 uppercase tracking-wider px-2 pb-1 border-b border-white/[0.06] font-bold">Mover para caderno:</p>
+                      {cadernos.map(c => (
+                        <button
+                          key={c.id}
+                          disabled={movingCaso}
+                          onClick={async () => {
+                            setMovingCaso(true);
+                            try {
+                              await onMoverCaso(caso.id, caso.nome, c.id);
+                            } finally {
+                              setMovingCaso(false);
+                              setShowMoverDropdown(false);
+                            }
+                          }}
+                          className="text-left px-2.5 py-1.5 rounded-lg text-[10px] text-slate-300 hover:bg-indigo-500/20 hover:text-indigo-200 transition-colors truncate disabled:opacity-50"
+                        >
+                          📝 {c.nome}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </span>
+              )}
               <span
                 role="button"
                 tabIndex={0}
@@ -753,6 +797,8 @@ function CadernoDedicatedView({
   onPrintCaderno,
   onPrintCaso,
   onDeleteCaderno,
+  onMoverCaso,
+  todosCadernos,
 }: {
   caderno: CadernoItem;
   onBack: () => void;
@@ -771,6 +817,8 @@ function CadernoDedicatedView({
   onPrintCaderno?: (caderno: CadernoItem) => void;
   onPrintCaso?: (caso: CasoGroup) => void;
   onDeleteCaderno?: (caderno: CadernoItem) => void;
+  onMoverCaso?: (casoId: string, casoNome: string, novoCadernoId: string) => Promise<void>;
+  todosCadernos?: CadernoItem[];
 }) {
   const [filtroStatus, setFiltroStatus] = useState<"todas" | "erros" | "nao_feitas" | "duvidas">("todas");
 
@@ -962,6 +1010,8 @@ function CadernoDedicatedView({
               onAddSubfolder={onOpenNovaPastaModal}
               onDeleteCaso={onDeleteCaso}
               onPrintCaso={onPrintCaso}
+              onMoverCaso={onMoverCaso}
+              cadernos={todosCadernos?.filter(c => c.id !== caderno.id)}
             />
           ))}
         </div>
@@ -1443,12 +1493,29 @@ export default function CadernosTab({
 
       // 2. Se o caderno tiver um nó correspondente em organizacao_nos, excluir nó e nós filhos
       if (!caderno.id.startsWith("cad_virt_")) {
-        try {
-          await supabase.from("organizacao_nos").delete().eq("parent_id", caderno.id);
-        } catch (_) {}
-        let resNode = await supabase.from("organizacao_nos").delete().eq("id", caderno.id);
-        if (resNode.error) {
-          resNode = await supabasePublic.from("organizacao_nos").delete().eq("id", caderno.id);
+        // Primeiro, excluir nós filhos (casos/subpastas do caderno)
+        const { error: errFilhos } = await supabase
+          .from("organizacao_nos")
+          .delete()
+          .eq("parent_id", caderno.id);
+        if (errFilhos) {
+          console.warn("Aviso ao excluir filhos do caderno:", errFilhos.message);
+        }
+
+        // Depois, excluir o próprio nó do caderno
+        const { error: errNo } = await supabase
+          .from("organizacao_nos")
+          .delete()
+          .eq("id", caderno.id);
+        if (errNo) {
+          // Tenta via supabasePublic como fallback
+          const { error: errPublic } = await supabasePublic
+            .from("organizacao_nos")
+            .delete()
+            .eq("id", caderno.id);
+          if (errPublic) {
+            throw new Error(`Erro ao excluir nó: ${errPublic.message} (code: ${errPublic.code})`);
+          }
         }
       }
 
@@ -1463,6 +1530,31 @@ export default function CadernosTab({
       showToast(e.message || "Erro ao excluir caderno.", "error");
     }
   }, [isAdminState, selectedCaderno, deleteQuestionsPermanently, carregarNos, onRefreshQuestions]);
+
+  // ── Mover caso (subpasta) de um caderno para outro ──
+  const handleMoverCaso = useCallback(async (casoId: string, casoNome: string, novoCadernoId: string) => {
+    if (!isAdminState) {
+      showToast("Apenas administradores podem mover casos.", "error");
+      return;
+    }
+    if (casoId.startsWith("caso_virt_")) {
+      showToast("Casos virtuais não podem ser movidos.", "error");
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from("organizacao_nos")
+        .update({ parent_id: novoCadernoId })
+        .eq("id", casoId);
+      if (error) throw error;
+      showToast(`Caso "${casoNome}" movido com sucesso!`);
+      await carregarNos();
+      if (onRefreshQuestions) onRefreshQuestions();
+    } catch (e: any) {
+      console.error("Erro ao mover caso:", e);
+      showToast(e.message || "Erro ao mover caso.", "error");
+    }
+  }, [isAdminState, carregarNos, onRefreshQuestions]);
 
   // ── 2. Montar Estrutura Hierárquica em Árvore Completa ──
   const { treeRoots, materiasAgrupadas, todosCadernos, parentOptions } = useMemo(() => {
@@ -1843,6 +1935,8 @@ export default function CadernosTab({
           onPrintCaderno={handlePrintCaderno}
           onPrintCaso={handlePrintCaso}
           onDeleteCaderno={handleDeleteCaderno}
+          onMoverCaso={handleMoverCaso}
+          todosCadernos={todosCadernos}
         />
 
         {/* Modal de Criar Pasta */}
@@ -2287,18 +2381,19 @@ export default function CadernosTab({
                   key={mat.id}
                   className="flex flex-col bg-[#0b0f19]/85 border border-white/[0.04] rounded-xl p-2 sm:p-2.5 gap-1.5 transition-all hover:border-white/[0.08]"
                 >
-                  {/* ── CABEÇALHO DA MATÉRIA (Alternante recolhível com Chevron) ── */}
-                  <div
+                  {/* ── CABEÇALHO DA MATÉRIA (botão de recolher/expandir) ── */}
+                  <button
+                    type="button"
                     onClick={() => toggleRecolherMateria(mat.id)}
-                    className={`flex items-center justify-between pb-1.5 px-1.5 flex-nowrap gap-2 cursor-pointer select-none rounded-lg hover:bg-white/[0.03] transition-colors ${
+                    className={`w-full flex items-center justify-between pb-1.5 px-1.5 flex-nowrap gap-2 cursor-pointer select-none rounded-lg hover:bg-white/[0.05] active:bg-white/[0.08] transition-colors text-left ${
                       isRecolhido ? "" : "border-b border-white/[0.04]"
                     }`}
-                    title={isRecolhido ? `Clique para expandir ${mat.cadernos.length} cadernos` : "Clique para recolher cadernos"}
+                    title={isRecolhido ? `Expandir ${mat.cadernos.length} cadernos` : "Recolher cadernos"}
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-nowrap">
                       <ChevronDown
                         size={12}
-                        className={`text-slate-400 transition-transform duration-200 shrink-0 ${
+                        className={`transition-transform duration-200 shrink-0 ${
                           isRecolhido ? "-rotate-90 text-slate-500" : "rotate-0 text-indigo-400"
                         }`}
                       />
@@ -2312,15 +2407,15 @@ export default function CadernosTab({
                     <div className="flex items-center gap-2 shrink-0 flex-nowrap whitespace-nowrap">
                       <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] font-light shrink-0 select-none flex-nowrap whitespace-nowrap tabular-nums">
                         <span className="text-slate-500 font-light">{mTotal} quest.</span>
-                        <span className="text-emerald-400/80 flex items-center gap-0.5" title="Total de acertos na matéria">
+                        <span className="text-emerald-400/80 flex items-center gap-0.5">
                           <Check size={9} className="stroke-[1.5]" />
                           {mAcertos}
                         </span>
-                        <span className="text-rose-400/80 flex items-center gap-0.5" title="Total de erros na matéria">
+                        <span className="text-rose-400/80 flex items-center gap-0.5">
                           <X size={9} className="stroke-[1.5]" />
                           {mErros}
                         </span>
-                        <span className="text-amber-400/80 flex items-center gap-0.5" title="Total em dúvida na matéria">
+                        <span className="text-amber-400/80 flex items-center gap-0.5">
                           <Flag size={8} />
                           {mDuvidas}
                         </span>
@@ -2333,7 +2428,7 @@ export default function CadernosTab({
                         {mat.cadernos.length} caderno{mat.cadernos.length > 1 ? "s" : ""}
                       </span>
                     </div>
-                  </div>
+                  </button>
 
                   {/* ── LISTA DE CADERNOS DENTRO DA MATÉRIA (Exibe quando não recolhido) ── */}
                   {!isRecolhido && (
