@@ -1192,13 +1192,11 @@ export default function CadernosTab({
   const [statusFiltro, setStatusFiltro] = useState<"todas" | "erros" | "mais_erros" | "nao_feitas" | "duvidas">("todas");
   const [search, setSearch] = useState("");
 
-  // Alternante de matérias (recolher/expandir lista de cadernos)
-  // Inicia com todas recolhidas — o usuário abre as que quer
-  const [materiasRecolhidas, setMateriasRecolhidas] = useState<Set<string>>(new Set());
-  const materiasRecolhidasInicializadas = React.useRef(false);
+  // Alternante de matérias: guarda quais estão ABERTAS (Set vazio = todas fechadas por padrão)
+  const [materiasAbertas, setMateriasAbertas] = useState<Set<string>>(new Set());
 
   const toggleRecolherMateria = useCallback((materiaId: string) => {
-    setMateriasRecolhidas(prev => {
+    setMateriasAbertas(prev => {
       const next = new Set(prev);
       if (next.has(materiaId)) {
         next.delete(materiaId);
@@ -1434,6 +1432,74 @@ export default function CadernosTab({
     }
   }, [isAdminState, deleteQuestionsPermanently, onRefreshQuestions]);
 
+  // Exclusão recursiva de nós em organizacao_nos (folhas primeiro para não violar parent_id_fkey)
+  const deleteOrgNodeHierarchy = useCallback(async (rootNodeId: string) => {
+    if (!rootNodeId || rootNodeId.startsWith("cad_virt_") || rootNodeId.startsWith("caso_virt_") || rootNodeId.startsWith("root_virt_")) {
+      return;
+    }
+
+    // Busca nós atuais de organizacao_nos para garantir hierarquia fresca
+    let allNodes: { id: string | number; parent_id?: string | number | null }[] = [];
+    try {
+      const res = await supabase.from("organizacao_nos").select("id, parent_id");
+      if (res.data) allNodes = res.data;
+    } catch (_) {
+      allNodes = dbNodes;
+    }
+    if (!allNodes || allNodes.length === 0) allNodes = dbNodes;
+
+    // Mapa de pai -> filhos
+    const childrenMap = new Map<string, string[]>();
+    allNodes.forEach(n => {
+      if (n.parent_id) {
+        const pid = String(n.parent_id);
+        if (!childrenMap.has(pid)) childrenMap.set(pid, []);
+        childrenMap.get(pid)!.push(String(n.id));
+      }
+    });
+
+    // Coleta pós-ordem (folhas primeiro, depois pais, até o rootNodeId)
+    const orderedIds: string[] = [];
+    const visited = new Set<string>();
+
+    function traversePostOrder(currId: string) {
+      if (visited.has(currId)) return;
+      visited.add(currId);
+      const kids = childrenMap.get(currId) || [];
+      for (const kid of kids) {
+        traversePostOrder(kid);
+      }
+      orderedIds.push(currId);
+    }
+
+    traversePostOrder(rootNodeId);
+
+    // 1. Exclui questões vinculadas a qualquer um desses nós em `questoes.organizacao_id`
+    try {
+      const { data: linkedQuestions } = await supabase
+        .from("questoes")
+        .select("id")
+        .in("organizacao_id", orderedIds);
+      if (linkedQuestions && linkedQuestions.length > 0) {
+        await deleteQuestionsPermanently(linkedQuestions.map(q => q.id));
+      }
+    } catch (err) {
+      console.warn("Aviso ao buscar questões associadas aos nós:", err);
+    }
+
+    // 2. Deleta os nós de organizacao_nos em ordem estrita de folhas primeiro
+    for (const nodeId of orderedIds) {
+      let res = await supabase.from("organizacao_nos").delete().eq("id", nodeId);
+      if (res.error) {
+        res = await supabasePublic.from("organizacao_nos").delete().eq("id", nodeId);
+      }
+      if (res.error) {
+        console.error(`Erro ao excluir nó ${nodeId}:`, res.error);
+        throw new Error(`Erro ao excluir nó: ${res.error.message} (code: ${res.error.code})`);
+      }
+    }
+  }, [dbNodes, deleteQuestionsPermanently]);
+
   const handleDeleteCaso = useCallback(async (casoId: string, casoNome: string, questoes?: BancoQuestion[]) => {
     if (!isAdminState) {
       showToast("Apenas administradores autorizados podem excluir casos.", "error");
@@ -1453,15 +1519,7 @@ export default function CadernosTab({
         await deleteQuestionsPermanently(qIds);
       }
 
-      if (!casoId.startsWith("caso_virt_")) {
-        try {
-          await supabase.from("organizacao_nos").delete().eq("parent_id", casoId);
-        } catch (_) {}
-        let res = await supabase.from("organizacao_nos").delete().eq("id", casoId);
-        if (res.error) {
-          await supabasePublic.from("organizacao_nos").delete().eq("id", casoId);
-        }
-      }
+      await deleteOrgNodeHierarchy(casoId);
 
       showToast(`Caso "${casoNome}" excluído.`);
       await carregarNos();
@@ -1470,7 +1528,7 @@ export default function CadernosTab({
       console.error("Erro ao excluir caso:", e);
       showToast(e.message || "Erro ao excluir caso.", "error");
     }
-  }, [isAdminState, deleteQuestionsPermanently, carregarNos, onRefreshQuestions]);
+  }, [isAdminState, deleteQuestionsPermanently, deleteOrgNodeHierarchy, carregarNos, onRefreshQuestions]);
 
   const handleDeleteCaderno = useCallback(async (caderno: CadernoItem) => {
     if (!isAdminState) {
@@ -1493,33 +1551,8 @@ export default function CadernosTab({
         await deleteQuestionsPermanently(qIds);
       }
 
-      // 2. Se o caderno tiver um nó correspondente em organizacao_nos, excluir nó e nós filhos
-      if (!caderno.id.startsWith("cad_virt_")) {
-        // Primeiro, excluir nós filhos (casos/subpastas do caderno)
-        const { error: errFilhos } = await supabase
-          .from("organizacao_nos")
-          .delete()
-          .eq("parent_id", caderno.id);
-        if (errFilhos) {
-          console.warn("Aviso ao excluir filhos do caderno:", errFilhos.message);
-        }
-
-        // Depois, excluir o próprio nó do caderno
-        const { error: errNo } = await supabase
-          .from("organizacao_nos")
-          .delete()
-          .eq("id", caderno.id);
-        if (errNo) {
-          // Tenta via supabasePublic como fallback
-          const { error: errPublic } = await supabasePublic
-            .from("organizacao_nos")
-            .delete()
-            .eq("id", caderno.id);
-          if (errPublic) {
-            throw new Error(`Erro ao excluir nó: ${errPublic.message} (code: ${errPublic.code})`);
-          }
-        }
-      }
+      // 2. Excluir nós de organizacao_nos recursivamente (folhas primeiro, depois o caderno)
+      await deleteOrgNodeHierarchy(caderno.id);
 
       showToast(`Caderno "${caderno.nome}" excluído com sucesso!`);
       if (selectedCaderno?.id === caderno.id) {
@@ -1531,7 +1564,7 @@ export default function CadernosTab({
       console.error("Erro ao excluir caderno:", e);
       showToast(e.message || "Erro ao excluir caderno.", "error");
     }
-  }, [isAdminState, selectedCaderno, deleteQuestionsPermanently, carregarNos, onRefreshQuestions]);
+  }, [isAdminState, selectedCaderno, deleteQuestionsPermanently, deleteOrgNodeHierarchy, carregarNos, onRefreshQuestions]);
 
   // ── Mover caso (subpasta) de um caderno para outro ──
   const handleMoverCaso = useCallback(async (casoId: string, casoNome: string, novoCadernoId: string) => {
@@ -1772,14 +1805,6 @@ export default function CadernosTab({
   // Lista de matérias para filtros em pills
   const materiasDisponiveis = useMemo(() => {
     return materiasAgrupadas.map(m => m.nome);
-  }, [materiasAgrupadas]);
-
-  // Inicializa todas as matérias como recolhidas na primeira carga
-  useEffect(() => {
-    if (!materiasRecolhidasInicializadas.current && materiasAgrupadas.length > 0) {
-      materiasRecolhidasInicializadas.current = true;
-      setMateriasRecolhidas(new Set(materiasAgrupadas.map(m => m.id)));
-    }
   }, [materiasAgrupadas]);
 
   // Estatísticas globais do usuário
@@ -2131,7 +2156,7 @@ export default function CadernosTab({
             <div className="flex items-center gap-1 bg-[#101526] p-0.5 rounded-xl border border-white/[0.08]">
               <button
                 type="button"
-                onClick={() => setMateriasRecolhidas(new Set(materiasAgrupadas.map(m => m.id)))}
+                onClick={() => setMateriasAbertas(new Set())}
                 title="Recolher todos os cadernos das matérias"
                 className="px-2 py-1 text-[10px] text-slate-400 hover:text-white rounded-lg transition-colors flex items-center gap-1"
               >
@@ -2140,7 +2165,7 @@ export default function CadernosTab({
               </button>
               <button
                 type="button"
-                onClick={() => setMateriasRecolhidas(new Set())}
+                onClick={() => setMateriasAbertas(new Set(materiasAgrupadas.map(m => m.id)))}
                 title="Expandir todos os cadernos das matérias"
                 className="px-2 py-1 text-[10px] text-slate-400 hover:text-white rounded-lg transition-colors flex items-center gap-1"
               >
@@ -2375,7 +2400,7 @@ export default function CadernosTab({
               const mDuvidas = mStat.duvidas;
               const mPct = mStat.pct;
               const mTotal = mat.totalQuestoes;
-              const isRecolhido = materiasRecolhidas.has(mat.id);
+              const isRecolhido = !materiasAbertas.has(mat.id);
 
               const mAproveitamentoClasses =
                 mPct === null
