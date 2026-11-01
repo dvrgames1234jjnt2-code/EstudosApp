@@ -1193,7 +1193,9 @@ export default function CadernosTab({
   const [search, setSearch] = useState("");
 
   // Alternante de matérias (recolher/expandir lista de cadernos)
+  // Inicia com todas recolhidas — o usuário abre as que quer
   const [materiasRecolhidas, setMateriasRecolhidas] = useState<Set<string>>(new Set());
+  const materiasRecolhidasInicializadas = React.useRef(false);
 
   const toggleRecolherMateria = useCallback((materiaId: string) => {
     setMateriasRecolhidas(prev => {
@@ -1770,6 +1772,14 @@ export default function CadernosTab({
   // Lista de matérias para filtros em pills
   const materiasDisponiveis = useMemo(() => {
     return materiasAgrupadas.map(m => m.nome);
+  }, [materiasAgrupadas]);
+
+  // Inicializa todas as matérias como recolhidas na primeira carga
+  useEffect(() => {
+    if (!materiasRecolhidasInicializadas.current && materiasAgrupadas.length > 0) {
+      materiasRecolhidasInicializadas.current = true;
+      setMateriasRecolhidas(new Set(materiasAgrupadas.map(m => m.id)));
+    }
   }, [materiasAgrupadas]);
 
   // Estatísticas globais do usuário
@@ -2465,49 +2475,47 @@ export default function CadernosTab({
                               handleDropQuestion(qId, caderno.id);
                             }
                           }}
-                          className="flex items-center justify-between gap-1.5 py-1.5 px-2 rounded-lg border transition-all bg-[#0e1322]/80 border-white/[0.04] hover:bg-[#13192b] hover:border-white/[0.08] group cursor-pointer"
+                          className="flex items-center gap-2 py-1.5 px-2 rounded-lg border transition-all bg-[#0e1322]/80 border-white/[0.04] hover:bg-[#13192b] hover:border-white/[0.08] group cursor-pointer"
                           onClick={() => setSelectedCaderno(caderno)}
                         >
-                          {/* Lado Esquerdo: Ícone + Título */}
-                          <div className="flex items-center gap-2 min-w-0 flex-nowrap truncate flex-1">
-                            <span className="text-[10px] text-slate-600 group-hover:text-slate-400 w-3 h-3 flex items-center justify-center shrink-0">
-                              →
-                            </span>
-                            <span className="text-xs shrink-0 opacity-75">📝</span>
-                            <span className="text-[11.5px] font-normal text-slate-300 tracking-wide group-hover:text-slate-100 truncate">
-                              {caderno.nome}
-                            </span>
-                          </div>
+                          {/* Ícone + Título (sem flex-1 — ocupa só o necessário) */}
+                          <span className="text-[10px] text-slate-600 group-hover:text-slate-400 shrink-0">→</span>
+                          <span className="text-xs shrink-0 opacity-75">📝</span>
+                          <span className="text-[11.5px] font-normal text-slate-300 tracking-wide group-hover:text-slate-100 truncate min-w-0 max-w-[180px] sm:max-w-[260px]">
+                            {caderno.nome}
+                          </span>
 
-                          {/* Lado Direito: Stats do Caderno + Botão Abrir */}
-                          <div className="flex items-center gap-2 shrink-0 flex-nowrap whitespace-nowrap">
-                            <span className="text-[10px] font-light text-slate-500 tabular-nums">{cTotal} quest.</span>
-                            <span className="text-emerald-400/80 font-light flex items-center gap-0.5 text-[10px]" title="Total de acertos">
-                              <Check size={9} className="stroke-[1.5]" />
-                              {cAcertos}
+                          {/* Stats imediatamente após o nome */}
+                          <div className="flex items-center gap-1.5 flex-nowrap whitespace-nowrap shrink-0 ml-1">
+                            <span className="text-[10px] font-light text-slate-500 tabular-nums">{cTotal}</span>
+                            <span className="text-emerald-400/80 font-light flex items-center gap-0.5 text-[10px]" title="Acertos">
+                              <Check size={9} className="stroke-[1.5]" />{cAcertos}
                             </span>
-                            <span className="text-rose-400/80 font-light flex items-center gap-0.5 text-[10px]" title="Total de erros">
-                              <X size={9} className="stroke-[1.5]" />
-                              {cErros}
+                            <span className="text-rose-400/80 font-light flex items-center gap-0.5 text-[10px]" title="Erros">
+                              <X size={9} className="stroke-[1.5]" />{cErros}
                             </span>
-                            <span className="text-amber-400/80 font-light flex items-center gap-0.5 text-[10px]" title="Em dúvida">
-                              <Flag size={8} />
-                              {cDuvidas}
-                            </span>
+                            {cDuvidas > 0 && (
+                              <span className="text-amber-400/80 font-light flex items-center gap-0.5 text-[10px]" title="Dúvidas">
+                                <Flag size={8} />{cDuvidas}
+                              </span>
+                            )}
                             <span className={`px-1.5 py-0.2 rounded border text-[9px] font-light tabular-nums ${cAproveitamentoClasses}`}>
                               {cPct === null ? "—" : `${cPct}%`}
                             </span>
+                          </div>
 
+                          {/* Spacer + botão abrir + admin buttons alinhados à direita */}
+                          <div className="flex items-center gap-1 ml-auto shrink-0">
                             <span
                               title="Abrir visão dedicada deste caderno"
-                              className="w-5 h-5 flex items-center justify-center rounded border border-white/[0.05] bg-white/[0.02] text-slate-500 group-hover:text-slate-300 group-hover:border-white/[0.10] transition-all ml-0.5"
+                              className="w-5 h-5 flex items-center justify-center rounded border border-white/[0.05] bg-white/[0.02] text-slate-500 group-hover:text-slate-300 group-hover:border-white/[0.10] transition-all"
                             >
                               <ChevronRight size={11} />
                             </span>
 
                             {isAdminState && (
                               <div
-                                className="flex items-center gap-1 ml-1 select-none shrink-0"
+                                className="flex items-center gap-1 select-none shrink-0"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <button
