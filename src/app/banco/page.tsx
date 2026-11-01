@@ -27,7 +27,6 @@ import {
   Filter,
   X,
   BookMarked,
-  Timer,
   CheckCheck,
 } from "lucide-react";
 import { supabase, supabasePublic } from "../../lib/supabase";
@@ -37,7 +36,6 @@ import QuestionResolver from "../../components/banco/QuestionResolver";
 import FixationDashboardView from "../../components/fixacao/FixationDashboardView";
 import { PrintSimuladoModal } from "../../components/banco/PrintSimuladoModal";
 import NotionQuestionTab from "../../components/banco/NotionQuestionTab";
-import CronometroTab from "../../components/banco/CronometroTab";
 import CadernosTab from "../../components/banco/CadernosTab";
 import { ModalEditarQuestao } from "../../components/banco/ModalEditarQuestao";
 import VerificadorIDsTab from "../../components/banco/VerificadorIDsTab";
@@ -59,7 +57,7 @@ export interface QuestionStats {
 /** Mapa questao_id → stats (derivado do histórico completo) */
 type UserAnswers = Record<string, QuestionStats>;
 
-type ActiveTab = "banco" | "resolver" | "simulados" | "desempenho" | "fixacao" | "notion" | "cronometro" | "cadernos" | "verificador";
+type ActiveTab = "banco" | "resolver" | "simulados" | "desempenho" | "fixacao" | "notion" | "cadernos" | "verificador";
 
 // ──────────────────────────────────────────────
 // Helpers
@@ -526,7 +524,6 @@ export default function BancoPage() {
             { id: "resolver",   icon: <Layers size={13} />,         label: "Questão Ativa", badge: selectedQuestion ? "●" : null },
             { id: "simulados",  icon: <ClipboardList size={13} />,  label: "Simulados", count: provasDisponiveis.length },
             { id: "desempenho", icon: <BarChart3 size={13} />,      label: "Desempenho", badge: resolverQueue.length > 0 ? "●" : null },
-            { id: "cronometro", icon: <Timer size={13} />,          label: "Cronômetro" },
             { id: "notion",     icon: <BookMarked size={13} />,     label: "Notion Question" },
             ...(isAdmin ? [{ id: "cadernos", icon: <Layers size={13} />, label: "Cadernos" }] : []),
             { id: "verificador", icon: <CheckCheck size={13} />, label: "Confrontar IDs" },
@@ -1494,21 +1491,7 @@ export default function BancoPage() {
             </motion.div>
           )}
 
-          {/* ── CRONÔMETRO DE ESTUDOS ── */}
-          {activeTab === "cronometro" && (
-            <motion.div
-              key="cronometro"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-            >
-              <CronometroTab 
-                user={user} 
-                materiasDisponiveis={[...new Set(questions.map(q => q.materia).filter(Boolean))]} 
-              />
-            </motion.div>
-          )}
+
 
           {/* ── CADERNOS (ADMIN APENAS) ── */}
           {activeTab === "cadernos" && isAdmin && (

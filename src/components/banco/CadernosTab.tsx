@@ -1142,6 +1142,30 @@ export default function CadernosTab({
   const [statusFiltro, setStatusFiltro] = useState<"todas" | "erros" | "mais_erros" | "nao_feitas" | "duvidas">("todas");
   const [search, setSearch] = useState("");
 
+  // Permissão de Administrador resiliente (prop + fallback direto em notion_blocks_admins)
+  const [isAdminState, setIsAdminState] = useState<boolean>(!!isAdmin);
+
+  useEffect(() => {
+    setIsAdminState(!!isAdmin);
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (isAdminState) return;
+    if (!user?.email) return;
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("notion_blocks_admins")
+          .select("email")
+          .ilike("email", user.email)
+          .maybeSingle();
+        if (data) setIsAdminState(true);
+      } catch (err) {
+        // silencioso
+      }
+    })();
+  }, [user?.email, isAdminState]);
+
   // Alternador de Visualização: "blocos" (Notion Cards) ou "arvore" (Tree Folder)
   const [viewMode, setViewMode] = useState<"blocos" | "arvore">("blocos");
 
@@ -1249,9 +1273,9 @@ export default function CadernosTab({
 
   // Handlers de Administração de Questões e Casos
   const handleEditQuestao = useCallback((q: BancoQuestion) => {
-    if (!isAdmin) return;
+    if (!isAdminState) return;
     setEditingQuestao(q);
-  }, [isAdmin]);
+  }, [isAdminState]);
 
   const handleEditSuccess = useCallback((updated: BancoQuestion) => {
     showToast("Questão atualizada com sucesso!");
@@ -1262,11 +1286,11 @@ export default function CadernosTab({
   }, [onRefreshQuestions, modalQuestion]);
 
   const handleOpenMoveModal = useCallback((q: BancoQuestion) => {
-    if (!isAdmin) return;
+    if (!isAdminState) return;
     const label = (q as any).ID_Qconcursos || (q as any).Ordem ? `Q${(q as any).ID_Qconcursos || (q as any).Ordem}` : `Questão #${q.id}`;
     setMovingQuestaoIds([q.id]);
     setMovingQuestaoLabel(label);
-  }, [isAdmin]);
+  }, [isAdminState]);
 
   const handleMoveSuccess = useCallback((targetNodeId: string, targetNodeName: string) => {
     setOrgOverrides(prev => {
@@ -1280,9 +1304,9 @@ export default function CadernosTab({
   }, [movingQuestaoIds, carregarNos, onRefreshQuestions]);
 
   const handleOpenRenameCaso = useCallback((casoId: string, currentNome: string) => {
-    if (!isAdmin) return;
+    if (!isAdminState) return;
     setRenamingNode({ id: casoId, nome: currentNome });
-  }, [isAdmin]);
+  }, [isAdminState]);
 
   const handleRenameSuccess = useCallback((nodeId: string, newNome: string) => {
     showToast(`Pasta renomeada para "${newNome}" com sucesso!`);
@@ -1290,30 +1314,61 @@ export default function CadernosTab({
     if (onRefreshQuestions) onRefreshQuestions();
   }, [carregarNos, onRefreshQuestions]);
 
+  // Exclusão definitiva de questões em lotes seguros, limpando FKs (duvidas e historico_respostas)
+  const deleteQuestionsPermanently = useCallback(async (qIds: (string | number)[]) => {
+    if (!qIds || qIds.length === 0) return;
+    const CHUNK_SIZE = 30; // Chunks seguros para URL e PostgREST
+    for (let i = 0; i < qIds.length; i += CHUNK_SIZE) {
+      const chunk = qIds.slice(i, i + CHUNK_SIZE);
+
+      // 1. Limpa registros órfãos na tabela pública `duvidas`
+      try {
+        await supabase.from("duvidas").delete().in("questao_id", chunk);
+      } catch (err) {
+        console.warn("Aviso ao limpar duvidas associadas:", err);
+      }
+
+      // 2. Limpa registros órfãos na tabela pública `historico_respostas`
+      try {
+        await supabase.from("historico_respostas").delete().in("questao_id", chunk);
+      } catch (err) {
+        console.warn("Aviso ao limpar historico_respostas associado:", err);
+      }
+
+      // 3. Exclui da tabela `questoes`
+      let resQ = await supabase.from("questoes").delete().in("id", chunk);
+      if (resQ.error) {
+        resQ = await supabasePublic.from("questoes").delete().in("id", chunk);
+      }
+      if (resQ.error) {
+        console.error("Erro ao excluir questoes do banco:", resQ.error);
+        throw new Error(`Falha ao excluir questões do banco: ${resQ.error.message}`);
+      }
+    }
+  }, []);
+
   const handleDeleteQuestao = useCallback(async (q: BancoQuestion) => {
-    if (!isAdmin) return;
+    if (!isAdminState) {
+      showToast("Apenas administradores autorizados podem excluir questões.", "error");
+      return;
+    }
     const confirmDel = window.confirm(
       `Deseja realmente excluir a questão #${q.id}${(q as any).ID_Qconcursos ? ` (${(q as any).ID_Qconcursos})` : ""}? Esta ação não pode ser desfeita.`
     );
     if (!confirmDel) return;
 
     try {
-      let res = await supabase.from("questoes").delete().eq("id", q.id);
-      if (res.error) {
-        res = await supabasePublic.from("questoes").delete().eq("id", q.id);
-      }
-      if (res.error) throw new Error(res.error.message);
-
+      await deleteQuestionsPermanently([q.id]);
       showToast("Questão excluída com sucesso!");
       if (onRefreshQuestions) onRefreshQuestions();
     } catch (e: any) {
       console.error("Erro ao excluir questão:", e);
       showToast(e.message || "Erro ao excluir questão.", "error");
     }
-  }, [isAdmin, onRefreshQuestions]);
+  }, [isAdminState, deleteQuestionsPermanently, onRefreshQuestions]);
 
   const handleDeleteCaso = useCallback(async (casoId: string, casoNome: string, questoes?: BancoQuestion[]) => {
-    if (!isAdmin) {
+    if (!isAdminState) {
       showToast("Apenas administradores autorizados podem excluir casos.", "error");
       return;
     }
@@ -1328,31 +1383,30 @@ export default function CadernosTab({
     try {
       if (qCount > 0 && questoes) {
         const qIds = questoes.map(q => q.id);
-        let resQ = await supabase.from("questoes").delete().in("id", qIds);
-        if (resQ.error) {
-          resQ = await supabasePublic.from("questoes").delete().in("id", qIds);
-        }
-        if (resQ.error) throw new Error(`Erro ao excluir questões do caso: ${resQ.error.message}`);
+        await deleteQuestionsPermanently(qIds);
       }
 
       if (!casoId.startsWith("caso_virt_")) {
+        try {
+          await supabase.from("organizacao_nos").delete().eq("parent_id", casoId);
+        } catch (_) {}
         let res = await supabase.from("organizacao_nos").delete().eq("id", casoId);
         if (res.error) {
-          res = await supabasePublic.from("organizacao_nos").delete().eq("id", casoId);
+          await supabasePublic.from("organizacao_nos").delete().eq("id", casoId);
         }
       }
 
       showToast(`Caso "${casoNome}" excluído.`);
-      carregarNos();
+      await carregarNos();
       if (onRefreshQuestions) onRefreshQuestions();
     } catch (e: any) {
       console.error("Erro ao excluir caso:", e);
       showToast(e.message || "Erro ao excluir caso.", "error");
     }
-  }, [isAdmin, carregarNos, onRefreshQuestions]);
+  }, [isAdminState, deleteQuestionsPermanently, carregarNos, onRefreshQuestions]);
 
   const handleDeleteCaderno = useCallback(async (caderno: CadernoItem) => {
-    if (!isAdmin) {
+    if (!isAdminState) {
       showToast("Apenas administradores autorizados podem excluir cadernos.", "error");
       return;
     }
@@ -1360,24 +1414,23 @@ export default function CadernosTab({
     const qCount = caderno.questoes.length;
     const confirmDel = window.confirm(
       qCount > 0
-        ? `Atenção: Deseja realmente excluir o caderno "${caderno.nome}" e todas as suas ${qCount} questões do banco de dados?\n\nEsta ação é permanente e irreversível.`
+        ? `Atenção: Deseja realmente excluir o caderno "${caderno.nome}" e todas as suas ${qCount} questões do banco de dados?\n\nEsta ação removerá permanentemente as questões associadas.`
         : `Deseja realmente excluir o caderno "${caderno.nome}"?`
     );
     if (!confirmDel) return;
 
     try {
-      // 1. Excluir todas as questões do caderno da tabela 'questoes'
+      // 1. Excluir todas as questões do caderno da tabela 'questoes' de forma segura
       if (qCount > 0) {
         const qIds = caderno.questoes.map(q => q.id);
-        let resQ = await supabase.from("questoes").delete().in("id", qIds);
-        if (resQ.error) {
-          resQ = await supabasePublic.from("questoes").delete().in("id", qIds);
-        }
-        if (resQ.error) throw new Error(`Erro ao excluir questões do caderno: ${resQ.error.message}`);
+        await deleteQuestionsPermanently(qIds);
       }
 
-      // 2. Se o caderno tiver um nó correspondente em organizacao_nos, excluir
+      // 2. Se o caderno tiver um nó correspondente em organizacao_nos, excluir nó e nós filhos
       if (!caderno.id.startsWith("cad_virt_")) {
+        try {
+          await supabase.from("organizacao_nos").delete().eq("parent_id", caderno.id);
+        } catch (_) {}
         let resNode = await supabase.from("organizacao_nos").delete().eq("id", caderno.id);
         if (resNode.error) {
           resNode = await supabasePublic.from("organizacao_nos").delete().eq("id", caderno.id);
@@ -1388,13 +1441,13 @@ export default function CadernosTab({
       if (selectedCaderno?.id === caderno.id) {
         setSelectedCaderno(null);
       }
-      carregarNos();
+      await carregarNos();
       if (onRefreshQuestions) onRefreshQuestions();
     } catch (e: any) {
       console.error("Erro ao excluir caderno:", e);
       showToast(e.message || "Erro ao excluir caderno.", "error");
     }
-  }, [isAdmin, selectedCaderno, carregarNos, onRefreshQuestions]);
+  }, [isAdminState, selectedCaderno, deleteQuestionsPermanently, carregarNos, onRefreshQuestions]);
 
   // ── 2. Montar Estrutura Hierárquica em Árvore Completa ──
   const { treeRoots, materiasAgrupadas, todosCadernos, parentOptions } = useMemo(() => {
@@ -1766,7 +1819,7 @@ export default function CadernosTab({
             setModalDefaultParentId(parentCadernoId);
             setIsNovaPastaModalOpen(true);
           }}
-          isAdmin={isAdmin}
+          isAdmin={isAdminState}
           onEditQuestao={handleEditQuestao}
           onMoveQuestao={handleOpenMoveModal}
           onDeleteQuestao={handleDeleteQuestao}
@@ -1811,7 +1864,7 @@ export default function CadernosTab({
                 onPrev={handleModalPrev}
                 onBackToBank={() => setModalQuestion(null)}
                 isSaving={isSavingAnswer}
-                isAdmin={isAdmin}
+                isAdmin={isAdminState}
                 onEditQuestion={handleEditQuestao}
               />
             </div>
@@ -1819,7 +1872,7 @@ export default function CadernosTab({
         )}
 
         {/* ── MODAIS DE ADMINISTRAÇÃO AVANÇADA NO CADERNO SELECIONADO ── */}
-        {isAdmin && (
+        {isAdminState && (
           <>
             <ModalEditarQuestao
               isOpen={!!editingQuestao}
@@ -2095,9 +2148,9 @@ export default function CadernosTab({
           </div>
         </div>
 
-        {/* Linha 2: Chips de Matéria em Linha Horizontal Suave com Scroll (Nunca quebra em 5 linhas feias) */}
-        <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pt-1.5 pb-0.5 border-t border-white/[0.04]">
-          <span className="text-[10.5px] font-medium text-slate-500 uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
+        {/* Linha 2: Chips de Matéria em Linha Horizontal Suave com Scroll (NUNCA quebra em várias linhas) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pt-2 pb-1 border-t border-white/[0.04] flex-nowrap whitespace-nowrap scroll-smooth">
+          <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
             <Filter size={10} /> Matéria:
           </span>
           {["Todas", ...materiasDisponiveis].map(m => {
@@ -2106,7 +2159,7 @@ export default function CadernosTab({
               <button
                 key={m}
                 onClick={() => setMateriaFiltro(m)}
-                className={`px-3 py-1 rounded-lg text-xs font-medium transition-all shrink-0 flex items-center gap-1.5 ${
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-normal transition-all shrink-0 flex items-center gap-1.5 ${
                   isSelected
                     ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-sm"
                     : "bg-[#070b14]/70 text-slate-400 hover:text-slate-200 border border-white/[0.05] hover:border-white/[0.12]"
@@ -2305,16 +2358,16 @@ export default function CadernosTab({
                               <ChevronRight size={11} />
                             </span>
 
-                            {isAdmin && (
+                            {isAdminState && (
                               <div
-                                className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity ml-1 select-none"
+                                className="flex items-center gap-1 ml-1 select-none shrink-0"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <button
                                   type="button"
                                   onClick={() => handleOpenRenameCaso(caderno.id, caderno.nome)}
-                                  title="Renomear este caderno"
-                                  className="w-5 h-5 flex items-center justify-center rounded border border-white/[0.05] bg-white/[0.02] text-slate-500 hover:text-amber-300 hover:border-white/[0.12] transition-all"
+                                  title="Renomear este caderno (Admin)"
+                                  className="w-5 h-5 flex items-center justify-center rounded border border-white/[0.08] bg-white/[0.04] text-slate-400 hover:text-amber-300 hover:border-amber-500/30 hover:bg-amber-500/10 transition-all cursor-pointer"
                                 >
                                   <Pencil size={10} />
                                 </button>
@@ -2322,7 +2375,7 @@ export default function CadernosTab({
                                   type="button"
                                   onClick={() => handleDeleteCaderno(caderno)}
                                   title={caderno.questoes.length > 0 ? `Excluir caderno e suas ${caderno.questoes.length} questões (Admin)` : "Excluir este caderno (Admin)"}
-                                  className="w-5 h-5 flex items-center justify-center rounded border border-white/[0.05] bg-white/[0.02] text-slate-500 hover:text-rose-400 hover:border-rose-500/30 hover:bg-rose-500/10 transition-all"
+                                  className="w-5 h-5 flex items-center justify-center rounded border border-rose-500/25 bg-rose-500/10 text-rose-400 hover:text-rose-100 hover:border-rose-500/50 hover:bg-rose-500/25 transition-all cursor-pointer shadow-sm"
                                 >
                                   <Trash2 size={10} />
                                 </button>
@@ -2374,7 +2427,7 @@ export default function CadernosTab({
               onPrev={handleModalPrev}
               onBackToBank={() => setModalQuestion(null)}
               isSaving={isSavingAnswer}
-              isAdmin={isAdmin}
+              isAdmin={isAdminState}
               onEditQuestion={handleEditQuestao}
             />
           </div>
@@ -2382,7 +2435,7 @@ export default function CadernosTab({
       )}
 
       {/* ── MODAIS DE ADMINISTRAÇÃO AVANÇADA ── */}
-      {isAdmin && (
+      {isAdminState && (
         <>
           <ModalEditarQuestao
             isOpen={!!editingQuestao}

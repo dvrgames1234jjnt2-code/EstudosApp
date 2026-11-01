@@ -9,7 +9,6 @@ import {
   ClipboardList,
   BarChart3,
   BookMarked,
-  Timer,
   X,
   ChevronRight,
 } from "lucide-react";
@@ -101,19 +100,7 @@ export function AppSidebarNav({
       textColor: "text-purple-400",
       disabled: false,
     },
-    ...(isAdmin
-      ? [
-          {
-            id: "cronometro",
-            label: "Cronômetro",
-            description: "Painel de tempo (Admin)",
-            icon: Timer,
-            color: "from-rose-600 to-pink-600",
-            textColor: "text-rose-400",
-            disabled: false,
-          },
-        ]
-      : []),
+
   ];
 
   return (
