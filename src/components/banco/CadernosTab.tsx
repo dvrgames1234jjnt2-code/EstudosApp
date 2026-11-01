@@ -1142,6 +1142,21 @@ export default function CadernosTab({
   const [statusFiltro, setStatusFiltro] = useState<"todas" | "erros" | "mais_erros" | "nao_feitas" | "duvidas">("todas");
   const [search, setSearch] = useState("");
 
+  // Alternante de matérias (recolher/expandir lista de cadernos)
+  const [materiasRecolhidas, setMateriasRecolhidas] = useState<Set<string>>(new Set());
+
+  const toggleRecolherMateria = useCallback((materiaId: string) => {
+    setMateriasRecolhidas(prev => {
+      const next = new Set(prev);
+      if (next.has(materiaId)) {
+        next.delete(materiaId);
+      } else {
+        next.add(materiaId);
+      }
+      return next;
+    });
+  }, []);
+
   // Permissão de Administrador resiliente (prop + fallback direto em notion_blocks_admins)
   const [isAdminState, setIsAdminState] = useState<boolean>(!!isAdmin);
 
@@ -2006,8 +2021,31 @@ export default function CadernosTab({
           )}
         </div>
 
-        {/* Alternador de Modo de Visualização (Notion Cards x Árvore) + Botão Nova Pasta */}
+        {/* Alternador de Modo de Visualização (Notion Cards x Árvore) + Alternante Recolher/Expandir + Botão Nova Pasta */}
         <div className="flex items-center gap-2 ml-auto flex-wrap">
+          {viewMode === "blocos" && (
+            <div className="flex items-center gap-1 bg-[#101526] p-0.5 rounded-xl border border-white/[0.08]">
+              <button
+                type="button"
+                onClick={() => setMateriasRecolhidas(new Set(materiasAgrupadas.map(m => m.id)))}
+                title="Recolher todos os cadernos das matérias"
+                className="px-2 py-1 text-[10px] text-slate-400 hover:text-white rounded-lg transition-colors flex items-center gap-1"
+              >
+                <ChevronRight size={11} />
+                <span>Recolher</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMateriasRecolhidas(new Set())}
+                title="Expandir todos os cadernos das matérias"
+                className="px-2 py-1 text-[10px] text-slate-400 hover:text-white rounded-lg transition-colors flex items-center gap-1"
+              >
+                <ChevronDown size={11} />
+                <span>Expandir</span>
+              </button>
+            </div>
+          )}
+
           <div className="flex items-center gap-1 bg-[#101526] p-0.5 rounded-xl border border-white/[0.08]">
             <button
               onClick={() => setViewMode("blocos")}
@@ -2233,6 +2271,7 @@ export default function CadernosTab({
               const mDuvidas = mStat.duvidas;
               const mPct = mStat.pct;
               const mTotal = mat.totalQuestoes;
+              const isRecolhido = materiasRecolhidas.has(mat.id);
 
               const mAproveitamentoClasses =
                 mPct === null
@@ -2248,9 +2287,21 @@ export default function CadernosTab({
                   key={mat.id}
                   className="flex flex-col bg-[#0b0f19]/85 border border-white/[0.04] rounded-xl p-2 sm:p-2.5 gap-1.5 transition-all hover:border-white/[0.08]"
                 >
-                  {/* ── CABEÇALHO DA MATÉRIA (Compacto, sem negrito, letras finas e elegantes) ── */}
-                  <div className="flex items-center justify-between border-b border-white/[0.04] pb-1.5 px-1 flex-nowrap gap-2">
-                    <div className="flex items-center gap-1.5 min-w-0 flex-nowrap">
+                  {/* ── CABEÇALHO DA MATÉRIA (Alternante recolhível com Chevron) ── */}
+                  <div
+                    onClick={() => toggleRecolherMateria(mat.id)}
+                    className={`flex items-center justify-between pb-1.5 px-1.5 flex-nowrap gap-2 cursor-pointer select-none rounded-lg hover:bg-white/[0.03] transition-colors ${
+                      isRecolhido ? "" : "border-b border-white/[0.04]"
+                    }`}
+                    title={isRecolhido ? `Clique para expandir ${mat.cadernos.length} cadernos` : "Clique para recolher cadernos"}
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-nowrap">
+                      <ChevronDown
+                        size={12}
+                        className={`text-slate-400 transition-transform duration-200 shrink-0 ${
+                          isRecolhido ? "-rotate-90 text-slate-500" : "rotate-0 text-indigo-400"
+                        }`}
+                      />
                       <span className="w-1 h-1 rounded-full bg-indigo-400/80 shrink-0" />
                       <span className="text-xs shrink-0 opacity-80">{mat.icone}</span>
                       <h3 className="text-[11px] font-normal text-slate-300 uppercase tracking-wider truncate">
@@ -2284,9 +2335,10 @@ export default function CadernosTab({
                     </div>
                   </div>
 
-                  {/* ── LISTA DE CADERNOS DENTRO DA MATÉRIA (Compacto e elegante) ── */}
-                  <div className="flex flex-col gap-1">
-                    {mat.cadernos.map((caderno) => {
+                  {/* ── LISTA DE CADERNOS DENTRO DA MATÉRIA (Exibe quando não recolhido) ── */}
+                  {!isRecolhido && (
+                    <div className="flex flex-col gap-1 mt-0.5">
+                      {mat.cadernos.map((caderno) => {
                       // Estatísticas pré-computadas do caderno (instantâneo)
                       const cStat = cadernosStats.get(caderno.id) || { acertos: 0, erros: 0, duvidas: 0, pct: null };
                       const cAcertos = cStat.acertos;
@@ -2386,6 +2438,7 @@ export default function CadernosTab({
                       );
                     })}
                   </div>
+                )}
                 </div>
               );
             })}
