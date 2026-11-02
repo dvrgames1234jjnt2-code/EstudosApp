@@ -394,19 +394,19 @@ export default function QuestionResolver({
   const isWrong = showFeedback && selectedOption !== gabarito;
 
   return (
-    <div className="flex flex-col h-full min-h-0 w-full bg-[#0b0f19]/80 rounded-[2rem] border border-white/[0.04] p-5 sm:p-7 relative overflow-x-hidden">
+    <div className="flex flex-col h-full min-h-0 w-full bg-[#0b0d12] rounded-xl border border-white/[0.08] p-2.5 sm:p-3 relative overflow-x-hidden">
 
       <div className="w-full flex flex-col flex-1 min-h-0">
 
         {/* ── Top bar: progresso + navegação ── */}
-        <div className="flex items-center justify-between gap-3 mb-4 shrink-0 pb-3 border-b border-white/[0.05]">
+        <div className="flex items-center justify-between gap-2 mb-3 shrink-0 px-2 pb-2.5 border-b border-white/[0.08]">
 
           {/* Esquerda: voltar + número + prova */}
-          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
             <button onClick={onBackToBank} className="text-slate-600 hover:text-white transition-colors p-1">
               <ArrowLeft size={17} />
             </button>
-            <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-xs font-bold text-blue-300 shrink-0">
+            <div className="w-8 h-8 rounded-md bg-emerald-400/10 border border-emerald-300/20 flex items-center justify-center text-xs font-medium text-emerald-200 shrink-0">
               {questionIndex + 1}
             </div>
             <div>
@@ -420,23 +420,7 @@ export default function QuestionResolver({
           </div>
 
           {/* Direita: ações */}
-          <div className="flex flex-wrap items-center gap-2">
-
-            {/* Visualização Dividida / Qconcursos Lado a Lado */}
-            {targetQconcursosUrl && (
-              <button
-                onClick={() => setSplitView(!splitView)}
-                title={splitView ? "Fechar tela dividida" : "Ver Qconcursos lado a lado"}
-                className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-medium transition-all flex items-center gap-1.5 ${
-                  splitView
-                    ? "border-blue-500/40 bg-blue-500/20 text-blue-300 shadow-sm"
-                    : "border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <Columns2 size={13} />
-                <span className="hidden sm:inline">{splitView ? "Modo Padrão" : "Qconcursos Lado a Lado"}</span>
-              </button>
-            )}
+            <div className="flex flex-wrap items-center gap-1.5">
 
             {/* Imprimir */}
             <button
@@ -522,18 +506,18 @@ export default function QuestionResolver({
 
           {/* Coluna Esquerda: Resolução da Questão */}
           <div className={`flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1 ${splitView ? "w-full lg:w-1/2" : ""}`}>
-            <div className={splitView ? "w-full px-1" : "max-w-3xl mx-auto"}>
+            <div className={`${splitView ? "w-full" : "max-w-3xl mx-auto"} rounded-xl border border-white/[0.07] bg-[#101319] p-3 sm:p-4`}>
 
             {/* Barra de progresso fina */}
-            <div className="h-0.5 bg-white/[0.05] rounded-full mb-5 overflow-hidden">
+            <div className="h-0.5 bg-white/[0.06] rounded-full mb-2 overflow-hidden">
               <div
-                className="h-full bg-blue-500/60 rounded-full transition-all duration-500"
+                className="h-full bg-emerald-300/70 rounded-full transition-all duration-500"
                 style={{ width: `${totalQuestions > 0 ? ((questionIndex + 1) / totalQuestions) * 100 : 0}%` }}
               />
             </div>
 
             {/* Metadata chips */}
-            <div className="flex flex-wrap items-center gap-2 mb-5">
+            <div className="flex flex-wrap items-center gap-1.5 mb-4 pb-3 border-b border-white/[0.07]">
               <span className="text-[11px] font-normal text-slate-500 bg-white/[0.04] border border-white/[0.07] px-2.5 py-1 rounded-md">
                 {question.materia || "Geral"}
               </span>
@@ -558,20 +542,6 @@ export default function QuestionResolver({
                   <ExternalLink size={11} />
                   {question.ID_Qconcursos ? `Qconcursos (${question.ID_Qconcursos})` : "Link da Questão"}
                 </a>
-              )}
-              {targetQconcursosUrl && (
-                <button
-                  onClick={() => setSplitView(!splitView)}
-                  className={`text-[11px] font-medium px-2.5 py-1 rounded-md border transition-all flex items-center gap-1.5 ${
-                    splitView
-                      ? "bg-blue-600/20 border-blue-500/30 text-blue-300"
-                      : "bg-white/[0.03] border-white/[0.06] text-slate-400 hover:text-blue-300 hover:bg-white/[0.06]"
-                  }`}
-                  title="Dividir a tela e exibir a página da questão lado a lado"
-                >
-                  <Columns2 size={11} />
-                  {splitView ? "Fechar Lado a Lado" : "Ver Lado a Lado"}
-                </button>
               )}
               {isAdmin && onEditQuestion && (
                 <button
@@ -623,14 +593,14 @@ export default function QuestionResolver({
 
             {/* ── Enunciado ── */}
             {question.title && question.title.trim() && (
-              <div className="text-[14px] sm:text-[15px] font-normal text-[#8E97A8] leading-relaxed mb-5">
+              <div className="text-xs sm:text-[13px] font-normal text-slate-200/75 leading-5 mb-2">
                 {formatQuestionText(question.title)}
               </div>
             )}
 
             {/* Pergunta-Problema */}
             {question.perguntaProblema && question.perguntaProblema.trim() && question.perguntaProblema.trim() !== question.title?.trim() && (
-              <div className="text-[14px] sm:text-[15px] text-[#8E97A8] font-normal leading-relaxed mb-7 pl-4 border-l-[3px] border-white/[0.07]">
+              <div className="text-xs sm:text-[13px] text-slate-200/75 font-normal leading-5 mb-2.5 pl-2.5 border-l border-white/15">
                 {formatQuestionText(question.perguntaProblema)}
               </div>
             )}
@@ -665,24 +635,24 @@ export default function QuestionResolver({
             <motion.div
               animate={isShaking ? { x: [0, -10, 10, -6, 6, -2, 2, 0] } : { x: 0 }}
               transition={{ duration: 0.45 }}
-              className="space-y-2"
+              className="overflow-hidden rounded-lg border border-white/[0.07]"
             >
               {hasAlternativas ? LETTERS.filter(l => alternativas[l]).map(letter => {
                 const text = alternativas[letter];
                 const isSelected = selectedOption === letter;
                 const isCorrectAnswer = gabarito === letter;
 
-                let cardCls = "border-white/[0.07] bg-transparent hover:bg-white/[0.03] hover:border-white/[0.14] cursor-pointer";
-                let badgeCls = "border-white/[0.14] text-slate-500 bg-transparent";
-                let textCls = "text-[#8E97A8]";
+                let cardCls = "bg-[#11161e] border-transparent hover:bg-[#1a2029] cursor-pointer";
+                let badgeCls = "border-white/[0.10] text-slate-400/80 bg-black/10";
+                let textCls = "text-slate-200/75";
 
                 if (showFeedback) {
                   if (isCorrectAnswer) {
-                    cardCls = "border-emerald-500/40 bg-emerald-500/[0.07] cursor-default";
-                    badgeCls = "border-emerald-400/60 text-emerald-300 bg-emerald-500/10";
-                    textCls = "text-emerald-200";
+                      cardCls = "border-transparent bg-emerald-300/[0.08] cursor-default";
+                    badgeCls = "border-emerald-300/40 text-emerald-200 bg-emerald-300/[0.08]";
+                    textCls = "text-emerald-100/90";
                   } else if (isSelected && !isCorrectAnswer) {
-                    cardCls = "border-rose-500/40 bg-rose-500/[0.07] opacity-90 cursor-default";
+                      cardCls = "border-transparent bg-rose-500/[0.08] opacity-90 cursor-default";
                     badgeCls = "border-rose-400/60 text-rose-300 bg-rose-500/10";
                     textCls = "text-rose-200";
                   } else {
@@ -691,8 +661,8 @@ export default function QuestionResolver({
                     textCls = "text-slate-500";
                   }
                 } else if (isSelected) {
-                  cardCls = "border-blue-500/50 bg-blue-500/[0.08] cursor-pointer";
-                  badgeCls = "border-blue-400/60 text-blue-300 bg-blue-500/10";
+                  cardCls = "border-transparent bg-emerald-300/[0.09] cursor-pointer";
+                  badgeCls = "border-emerald-300/40 text-emerald-200 bg-emerald-300/[0.08]";
                   textCls = "text-[#E8F0FE]";
                 }
 
@@ -701,17 +671,17 @@ export default function QuestionResolver({
                     key={letter}
                     onClick={() => handleSelect(letter)}
                     disabled={showFeedback}
-                    className={`w-full flex items-start gap-3.5 px-4 py-3.5 rounded-xl text-left transition-all duration-150 border outline-none group ${
+                    className={`w-full flex items-start gap-2.5 px-3 py-2.5 min-h-11 rounded-none text-left transition-colors duration-150 border-b border-white/[0.06] outline-none group ${
                       strikethroughs[letter] ? "opacity-30" : ""
                     } ${cardCls}`}
                   >
                     {/* Badge circular */}
-                    <div className={`w-8 h-8 rounded-full border flex items-center justify-center shrink-0 text-[12px] font-normal transition-all mt-0.5 ${badgeCls}`}>
+                    <div className={`w-6 h-6 rounded-sm border flex items-center justify-center shrink-0 text-[10px] font-normal transition-all mt-0.5 ${badgeCls}`}>
                       {letter}
                     </div>
 
                     {/* Texto */}
-                      <span className={`text-[13.5px] leading-relaxed flex-1 font-normal transition-colors pt-1 ${
+                      <span className={`text-xs leading-[1.15rem] flex-1 font-normal transition-colors pt-0.5 ${
                         strikethroughs[letter] ? "line-through text-slate-700" : textCls
                       }`}>
                       {formatQuestionText(text)}
@@ -748,7 +718,7 @@ export default function QuestionResolver({
             </motion.div>
 
             {/* ── Botões de Ação ── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-5 pb-2 mt-4 border-t border-white/[0.05]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 pb-1 mt-3 border-t border-white/[0.05]">
               <label
                 onClick={() => onToggleDuvida?.(question.id)}
                 className="flex items-center gap-2 cursor-pointer group select-none"
@@ -776,7 +746,7 @@ export default function QuestionResolver({
                   <button
                     onClick={handleConfirm}
                     disabled={isSaving || !selectedOption}
-                    className={`px-6 py-2.5 rounded-lg text-[13px] font-semibold transition-all ${
+                    className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${
                       selectedOption
                         ? "bg-blue-600 hover:bg-blue-500 text-white active:scale-95"
                         : "bg-white/[0.04] text-slate-600 border border-white/[0.05] cursor-not-allowed"
@@ -788,14 +758,14 @@ export default function QuestionResolver({
 
                 <button
                   onClick={() => setShowFeedback(!showFeedback)}
-                  className="px-4 py-2.5 rounded-lg border border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200 text-[13px] font-medium transition-all"
+                  className="px-3 py-2 rounded-lg border border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200 text-xs font-medium transition-all"
                 >
                   {showFeedback ? "Ocultar gabarito" : "Ver gabarito"}
                 </button>
 
                 <button
                   onClick={() => setShowComment(!showComment)}
-                  className={`px-4 py-2.5 rounded-lg border text-[13px] font-medium transition-all flex items-center gap-2 ${
+                  className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all flex items-center gap-2 ${
                     showComment
                       ? "border-purple-500/30 bg-purple-500/10 text-purple-300"
                       : "border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200"
