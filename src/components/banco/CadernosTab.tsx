@@ -221,8 +221,8 @@ function QuestaoRowItem({
       onClick={onOpenResolver}
       className="flex items-center gap-2 py-1 px-2 transition-colors duration-150 rounded-md group cursor-pointer select-none bg-white/[0.015] hover:bg-white/[0.04] border border-white/[0.03] hover:border-white/[0.08]"
     >
-      {/* Handle de arrastar */}
-      <span className="text-slate-600 group-hover:text-slate-400 cursor-grab shrink-0 p-0.5" title="Arraste para mover para outro caso ou pasta">
+      {/* Handle de arrastar (oculto no mobile) */}
+      <span className="hidden sm:inline-flex text-slate-600 group-hover:text-slate-400 cursor-grab shrink-0 p-0.5" title="Arraste para mover para outro caso ou pasta">
         <GripVertical size={12} />
       </span>
 
@@ -256,8 +256,8 @@ function QuestaoRowItem({
         {catLabel}
       </span>
 
-      {/* Pill com seta e nome da pasta/caso atual */}
-      <span className="text-[9.5px] font-light text-slate-400 bg-white/[0.03] border border-white/[0.06] px-1.5 py-0.2 rounded-md shrink-0 flex items-center gap-1 max-w-[240px]">
+      {/* Pill com seta e nome da pasta/caso atual (oculto no mobile para poupar espaço) */}
+      <span className="hidden sm:inline-flex text-[9.5px] font-light text-slate-400 bg-white/[0.03] border border-white/[0.06] px-1.5 py-0.2 rounded-md shrink-0 items-center gap-1 max-w-[240px]">
         <span className="text-indigo-400/70">→</span>
         <span className="truncate">{casoNome}</span>
       </span>
@@ -269,47 +269,47 @@ function QuestaoRowItem({
 
       {/* Indicador de Status Acerto / Erro na direita */}
       {isAcerto && (
-        <span className="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[9.5px] font-light text-emerald-300/90 bg-emerald-950/40 border border-emerald-800/40 shrink-0 ml-auto">
+        <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.2 rounded-full text-[9px] sm:text-[9.5px] font-light text-emerald-300/90 bg-emerald-950/40 border border-emerald-800/40 shrink-0 ml-auto">
           <span className="w-1 h-1 rounded-full bg-emerald-500 shrink-0" />
           Acertou
         </span>
       )}
       {isErro && (
-        <span className="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[9.5px] font-light text-rose-300/90 bg-rose-950/40 border border-rose-800/40 shrink-0 ml-auto">
+        <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.2 rounded-full text-[9px] sm:text-[9.5px] font-light text-rose-300/90 bg-rose-950/40 border border-rose-800/40 shrink-0 ml-auto">
           <span className="w-1 h-1 rounded-full bg-rose-500 shrink-0" />
           Errou
         </span>
       )}
 
-      {/* Ações de Administração: Mover, Editar, Excluir */}
+      {/* Ações de Administração: Mover, Editar, Excluir (visíveis para toque no mobile) */}
       {isAdmin && (
         <div
-          className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity ml-2 shrink-0 select-none"
+          className="flex items-center gap-0.5 opacity-90 sm:opacity-60 sm:group-hover:opacity-100 transition-opacity ml-1 sm:ml-2 shrink-0 select-none"
           onClick={(e) => e.stopPropagation()}
         >
           <button
             type="button"
             onClick={() => onMove?.(questao)}
             title="Mover para outro caso ou pasta"
-            className="p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.08] rounded transition-colors"
+            className="p-1 sm:p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.08] active:bg-white/[0.12] rounded transition-colors"
           >
-            <FolderInput size={11} />
+            <FolderInput size={12} />
           </button>
           <button
             type="button"
             onClick={() => onEdit?.(questao)}
             title="Editar questão"
-            className="p-1 text-slate-500 hover:text-amber-400 hover:bg-white/[0.08] rounded transition-colors"
+            className="p-1 sm:p-1 text-slate-500 hover:text-amber-400 hover:bg-white/[0.08] active:bg-white/[0.12] rounded transition-colors"
           >
-            <Pencil size={11} />
+            <Pencil size={12} />
           </button>
           <button
             type="button"
             onClick={() => onDelete?.(questao)}
             title="Excluir questão"
-            className="p-1 text-slate-500 hover:text-rose-400 hover:bg-white/[0.08] rounded transition-colors"
+            className="p-1 sm:p-1 text-slate-500 hover:text-rose-400 hover:bg-white/[0.08] active:bg-white/[0.12] rounded transition-colors"
           >
-            <Trash2 size={11} />
+            <Trash2 size={12} />
           </button>
         </div>
       )}
@@ -623,8 +623,8 @@ function CasoAccordion({
         </div>
 
         {/* Stats inline */}
-        <div className="flex items-center gap-2 text-[10px] shrink-0 tabular-nums font-light">
-          <span className="text-slate-500 font-light">{stats.total} quest.</span>
+        <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] shrink-0 tabular-nums font-light">
+          <span className="text-slate-500 font-light">{stats.total} <span className="hidden sm:inline">quest.</span><span className="sm:hidden">q.</span></span>
           <span className="text-emerald-400/80 font-light flex items-center gap-0.5">
             <Check size={9} className="stroke-[1.5]" />
             {stats.acertos}
@@ -646,7 +646,7 @@ function CasoAccordion({
           {/* Ações de Admin no Caso */}
           {isAdmin && (
             <div
-              className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1 select-none"
+              className="flex items-center gap-0.5 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0 ml-1 select-none"
               onClick={(e) => e.stopPropagation()}
             >
               <span
@@ -655,9 +655,9 @@ function CasoAccordion({
                 onClick={() => onAddSubfolder?.(caso.id)}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onAddSubfolder?.(caso.id); } }}
                 title="Adicionar subpasta neste caso"
-                className="p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.08] rounded transition-colors cursor-pointer inline-flex"
+                className="p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.08] active:bg-white/[0.12] rounded transition-colors cursor-pointer inline-flex"
               >
-                <FolderPlus size={11} />
+                <FolderPlus size={12} />
               </span>
               <span
                 role="button"
@@ -665,9 +665,9 @@ function CasoAccordion({
                 onClick={() => onRenameCaso?.(caso.id, caso.nome)}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onRenameCaso?.(caso.id, caso.nome); } }}
                 title="Renomear este caso"
-                className="p-1 text-slate-500 hover:text-amber-400 hover:bg-white/[0.08] rounded transition-colors cursor-pointer inline-flex"
+                className="p-1 text-slate-500 hover:text-amber-400 hover:bg-white/[0.08] active:bg-white/[0.12] rounded transition-colors cursor-pointer inline-flex"
               >
-                <Pencil size={11} />
+                <Pencil size={12} />
               </span>
               {/* Mover caso para outro caderno */}
               {onMoverCaso && cadernos && cadernos.length > 0 && (
@@ -678,31 +678,33 @@ function CasoAccordion({
                     onClick={() => setShowMoverDropdown(v => !v)}
                     onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowMoverDropdown(v => !v); } }}
                     title="Mover este caso para outro caderno"
-                    className="p-1 text-slate-500 hover:text-indigo-300 hover:bg-white/[0.08] rounded transition-colors cursor-pointer inline-flex"
+                    className="p-1 text-slate-500 hover:text-indigo-300 hover:bg-white/[0.08] active:bg-white/[0.12] rounded transition-colors cursor-pointer inline-flex"
                   >
-                    <FolderInput size={11} />
+                    <FolderInput size={12} />
                   </span>
                   {showMoverDropdown && (
-                    <div className="absolute top-6 right-0 z-50 min-w-[200px] bg-[#0d1222] border border-white/[0.12] rounded-xl shadow-2xl p-1.5 flex flex-col gap-0.5">
+                    <div className="absolute top-6 right-0 z-50 min-w-[200px] max-w-[calc(100vw-40px)] bg-[#0d1222] border border-white/[0.12] rounded-xl shadow-2xl p-1.5 flex flex-col gap-0.5">
                       <p className="text-[9px] text-slate-500 uppercase tracking-wider px-2 pb-1 border-b border-white/[0.06] font-bold">Mover para caderno:</p>
-                      {cadernos.map(c => (
-                        <button
-                          key={c.id}
-                          disabled={movingCaso}
-                          onClick={async () => {
-                            setMovingCaso(true);
-                            try {
-                              await onMoverCaso(caso.id, caso.nome, c.id);
-                            } finally {
-                              setMovingCaso(false);
-                              setShowMoverDropdown(false);
-                            }
-                          }}
-                          className="text-left px-2.5 py-1.5 rounded-lg text-[10px] text-slate-300 hover:bg-indigo-500/20 hover:text-indigo-200 transition-colors truncate disabled:opacity-50"
-                        >
-                          📝 {c.nome}
-                        </button>
-                      ))}
+                      <div className="max-h-48 overflow-y-auto custom-scrollbar flex flex-col gap-0.5">
+                        {cadernos.map(c => (
+                          <button
+                            key={c.id}
+                            disabled={movingCaso}
+                            onClick={async () => {
+                              setMovingCaso(true);
+                              try {
+                                await onMoverCaso(caso.id, caso.nome, c.id);
+                              } finally {
+                                setMovingCaso(false);
+                                setShowMoverDropdown(false);
+                              }
+                            }}
+                            className="text-left px-2.5 py-1.5 rounded-lg text-[10px] text-slate-300 hover:bg-indigo-500/20 hover:text-indigo-200 transition-colors truncate disabled:opacity-50"
+                          >
+                            📝 {c.nome}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </span>
@@ -713,9 +715,9 @@ function CasoAccordion({
                 onClick={() => onDeleteCaso?.(caso.id, caso.nome, caso.questoes)}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onDeleteCaso?.(caso.id, caso.nome, caso.questoes); } }}
                 title={caso.questoes.length > 0 ? `Excluir subpasta e suas ${caso.questoes.length} questões` : "Excluir esta subpasta/caso"}
-                className="p-1 text-slate-500 hover:text-rose-400 hover:bg-white/[0.08] rounded transition-colors cursor-pointer inline-flex"
+                className="p-1 text-slate-500 hover:text-rose-400 hover:bg-white/[0.08] active:bg-white/[0.12] rounded transition-colors cursor-pointer inline-flex"
               >
-                <Trash2 size={11} />
+                <Trash2 size={12} />
               </span>
             </div>
           )}
@@ -862,31 +864,31 @@ function CadernoDedicatedView({
   }, [caderno.casos, filtroStatus, userAnswers, duvidas]);
 
   return (
-    <div className="flex flex-col gap-4 animate-in fade-in duration-200">
+    <div className="flex flex-col gap-3 sm:gap-4 animate-in fade-in duration-200">
       {/* Topo da Visão Dedicada */}
-        <div className="flex items-center justify-between gap-3 bg-[#101526] p-3.5 sm:p-4 rounded-2xl border border-white/[0.08] shadow-xl flex-wrap">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-[#101526] p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-white/[0.08] shadow-xl">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
           <button
             onClick={onBack}
             title="Voltar aos Cadernos"
             aria-label="Voltar aos Cadernos"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-white/[0.06] hover:text-white transition-colors shrink-0"
+            className="flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-white/[0.06] active:bg-white/[0.10] hover:text-white transition-colors shrink-0"
           >
-            <ChevronLeft size={15} className="text-indigo-400" />
+            <ChevronLeft size={18} className="text-indigo-400" />
           </button>
 
           <div className="h-5 w-px bg-white/10 hidden sm:block" />
 
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-lg shrink-0">📝</span>
-            <div className="flex flex-col min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="text-base sm:text-lg shrink-0">📝</span>
+            <div className="flex flex-col min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <h3 className="text-sm sm:text-base font-bold text-white break-words">{caderno.nome}</h3>
-                <span className="text-[10px] font-bold text-indigo-400/90 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md shrink-0 uppercase">
+                <span className="text-[9px] sm:text-[10px] font-bold text-indigo-400/90 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md shrink-0 uppercase">
                   {caderno.materia}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 truncate">
+              <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">
                 {caderno.casos.length} caso(s) · {caderno.questoes.length} questões
               </p>
             </div>
@@ -894,10 +896,10 @@ function CadernoDedicatedView({
         </div>
 
         {/* Ações do caderno */}
-        <div className="flex items-center gap-3 ml-auto flex-wrap">
+        <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
           <button
             onClick={onTrainAll}
-            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95 shadow-md shadow-indigo-600/20"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95 shadow-md shadow-indigo-600/20"
           >
             <Play size={12} /> Resolver Caderno
           </button>
@@ -905,16 +907,15 @@ function CadernoDedicatedView({
       </div>
 
       {/* Barra de Filtro de Casos */}
-      <div className="flex items-center justify-between gap-3 bg-[#101526] p-3 rounded-2xl border border-white/[0.06] flex-wrap">
-        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
-          <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Status do caderno</span>
-          <div className="flex items-center gap-2 text-[11px] font-mono tabular-nums">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3 bg-[#101526] p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-white/[0.06]">
+        <div className="flex items-center justify-between sm:justify-start gap-2.5 w-full sm:w-auto">
+          <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-mono tabular-nums overflow-x-auto custom-scrollbar flex-nowrap py-0.5">
             <span className="text-slate-400">{stats.total} quest.</span>
             <span className="text-emerald-400 flex items-center gap-0.5" title="Acertos"><Check size={11} />{stats.acertos}</span>
             <span className="text-rose-400 flex items-center gap-0.5" title="Erros"><X size={11} />{stats.erros}</span>
             <span className="text-amber-400 flex items-center gap-0.5" title="Dúvidas"><Flag size={10} />{stats.duvidasCount}</span>
             <span
-              className={`px-1.5 py-0.5 rounded border text-[10px] ${
+              className={`px-1.5 py-0.5 rounded border text-[9px] sm:text-[10px] ${
                 stats.pct === null
                   ? "text-slate-500 border-white/[0.08] bg-white/[0.02]"
                   : stats.pct >= 70
@@ -927,71 +928,71 @@ function CadernoDedicatedView({
               {stats.pct === null ? "—" : `${stats.pct}%`}
             </span>
           </div>
-        </div>
 
-        <div className="relative flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setIsActionsOpen(open => !open)}
-            aria-label="Mais ações do caderno"
-            aria-expanded={isActionsOpen}
-            title="Mais ações"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-[#0d1220] text-slate-300 hover:bg-white/[0.08] hover:text-white transition-colors"
-          >
-            <MoreVertical size={16} />
-          </button>
+          <div className="relative flex items-center shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsActionsOpen(open => !open)}
+              aria-label="Mais ações do caderno"
+              aria-expanded={isActionsOpen}
+              title="Mais ações"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-[#0d1220] text-slate-300 hover:bg-white/[0.08] active:bg-white/[0.12] hover:text-white transition-colors"
+            >
+              <MoreVertical size={16} />
+            </button>
 
-          {isActionsOpen && (
-            <div className="absolute left-0 top-full z-30 mt-1 flex w-60 flex-col rounded-xl border border-white/[0.10] bg-[#111827] p-1 shadow-xl">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsActionsOpen(false);
-                  onOpenNovaPastaModal(caderno.id);
-                }}
-                className="flex items-center gap-2 whitespace-nowrap rounded-lg px-2.5 py-2 text-left text-xs text-slate-300 hover:bg-white/[0.06] hover:text-white"
-              >
-                <FolderPlus size={13} className="text-indigo-300" /> Nova Subpasta / Caso
-              </button>
-              {caderno.questoes.length > 0 && (
+            {isActionsOpen && (
+              <div className="absolute right-0 sm:left-0 sm:right-auto top-full z-30 mt-1 flex w-60 max-w-[calc(100vw-32px)] flex-col rounded-xl border border-white/[0.10] bg-[#111827] p-1 shadow-2xl">
                 <button
                   type="button"
                   onClick={() => {
                     setIsActionsOpen(false);
-                    onPrintCaderno?.(caderno);
+                    onOpenNovaPastaModal(caderno.id);
                   }}
-                  className="flex items-center gap-2 whitespace-nowrap rounded-lg px-2.5 py-2 text-left text-xs text-slate-300 hover:bg-white/[0.06] hover:text-white"
+                  className="flex items-center gap-2 whitespace-nowrap rounded-lg px-2.5 py-2.5 sm:py-2 text-left text-xs text-slate-300 hover:bg-white/[0.06] hover:text-white"
                 >
-                  <Printer size={13} className="text-indigo-400" /> Imprimir Caderno ({caderno.questoes.length})
+                  <FolderPlus size={14} className="text-indigo-300" /> Nova Subpasta / Caso
                 </button>
-              )}
-              {isAdmin && onDeleteCaderno && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsActionsOpen(false);
-                    onDeleteCaderno(caderno);
-                  }}
-                  className="flex items-center gap-2 whitespace-nowrap rounded-lg px-2.5 py-2 text-left text-xs text-rose-300 hover:bg-rose-500/10 hover:text-rose-200"
-                >
-                  <Trash2 size={13} /> Excluir Caderno
-                </button>
-              )}
-            </div>
-          )}
+                {caderno.questoes.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsActionsOpen(false);
+                      onPrintCaderno?.(caderno);
+                    }}
+                    className="flex items-center gap-2 whitespace-nowrap rounded-lg px-2.5 py-2.5 sm:py-2 text-left text-xs text-slate-300 hover:bg-white/[0.06] hover:text-white"
+                  >
+                    <Printer size={14} className="text-indigo-400" /> Imprimir Caderno ({caderno.questoes.length})
+                  </button>
+                )}
+                {isAdmin && onDeleteCaderno && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsActionsOpen(false);
+                      onDeleteCaderno(caderno);
+                    }}
+                    className="flex items-center gap-2 whitespace-nowrap rounded-lg px-2.5 py-2.5 sm:py-2 text-left text-xs text-rose-300 hover:bg-rose-500/10 hover:text-rose-200"
+                  >
+                    <Trash2 size={14} /> Excluir Caderno
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="ml-auto flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] shrink-0 flex-wrap">
+        <div className="w-full sm:w-auto sm:ml-auto flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] overflow-x-auto custom-scrollbar flex-nowrap">
           {[
             { id: "todas", label: "Todas" },
-            { id: "erros", label: "🔴 Com Erros" },
+            { id: "erros", label: "🔴 Erros" },
             { id: "nao_feitas", label: "⭕ Pendentes" },
             { id: "duvidas", label: "⚑ Dúvidas" },
           ].map((st) => (
             <button
               key={st.id}
               onClick={() => setFiltroStatus(st.id as any)}
-              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+              className={`px-2.5 sm:px-3 py-1 rounded-lg text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider transition-all whitespace-nowrap shrink-0 ${
                 filtroStatus === st.id
                   ? "bg-indigo-600 text-white shadow"
                   : "text-slate-400 hover:text-slate-200"
@@ -1110,8 +1111,8 @@ function ModalCriarPasta({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
-      <div className="relative w-full max-w-md bg-[#0d1220] border border-white/10 rounded-2xl shadow-2xl p-6 flex flex-col gap-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4 overflow-y-auto animate-in fade-in">
+      <div className="relative w-full max-w-md bg-[#0d1220] border border-white/10 rounded-2xl shadow-2xl p-4 sm:p-6 flex flex-col gap-4 my-auto">
         <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
           <div className="flex items-center gap-2">
             <span className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
@@ -2005,8 +2006,8 @@ export default function CadernosTab({
 
         {/* Modal QuestionResolver */}
         {modalQuestion && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-2 sm:p-4 md:p-6 overflow-y-auto">
-            <div className="relative w-full max-w-6xl max-h-[96vh] bg-[#0c101c] border border-white/10 rounded-2xl shadow-2xl overflow-y-auto custom-scrollbar p-4 sm:p-8 flex flex-col">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-1.5 sm:p-4 md:p-6 overflow-y-auto">
+            <div className="relative w-full max-w-6xl max-h-[98vh] sm:max-h-[96vh] bg-[#0c101c] border border-white/10 rounded-xl sm:rounded-2xl shadow-2xl overflow-y-auto custom-scrollbar p-2.5 sm:p-6 md:p-8 flex flex-col my-auto">
               <QuestionResolver
                 question={modalQueue[modalIndex] || modalQuestion}
                 questionIndex={modalIndex}
@@ -2113,37 +2114,37 @@ export default function CadernosTab({
       <div className="absolute top-0 right-1/4 w-80 h-80 bg-indigo-600/[0.02] blur-[120px] rounded-full pointer-events-none" />
 
       {/* ── Toolbar Superior Ultra-Compacta ── */}
-      <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-white/[0.07] relative z-10">
-        <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.07] relative z-10">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
               <BookMarked size={14} className="text-indigo-400" />
             </div>
-            <h2 className="text-base font-semibold text-slate-100 tracking-tight">Cadernos de Questões</h2>
+            <h2 className="text-sm sm:text-base font-semibold text-slate-100 tracking-tight">Cadernos de Questões</h2>
           </div>
 
           {user && (
-            <div className="flex items-center gap-1.5 pl-2 border-l border-white/10 flex-wrap">
+            <div className="flex items-center gap-1.5 pl-0 sm:pl-2 sm:border-l sm:border-white/10 w-full sm:w-auto overflow-x-auto custom-scrollbar flex-nowrap py-1">
               {/* Total de questões */}
-              <span className="text-[11px] font-normal text-slate-300 flex items-center gap-1 bg-white/[0.03] border border-white/[0.07] px-2.5 py-1 rounded-lg" title="Total de questões cadastradas">
+              <span className="text-[10px] sm:text-[11px] font-normal text-slate-300 flex items-center gap-1 bg-white/[0.03] border border-white/[0.07] px-2 sm:px-2.5 py-1 rounded-lg shrink-0" title="Total de questões cadastradas">
                 <BookMarked size={11} className="text-indigo-400/80" />
-                <span className="text-indigo-300 font-bold">{questions.length} questões</span>
+                <span className="text-indigo-300 font-bold">{questions.length} quest.</span>
               </span>
 
               {/* Acertos */}
-              <span className="text-[11px] font-normal text-slate-300 flex items-center gap-1 bg-white/[0.03] border border-white/[0.07] px-2.5 py-1 rounded-lg" title="Total de acertos">
+              <span className="text-[10px] sm:text-[11px] font-normal text-slate-300 flex items-center gap-1 bg-white/[0.03] border border-white/[0.07] px-2 sm:px-2.5 py-1 rounded-lg shrink-0" title="Total de acertos">
                 <Check size={11} className="text-emerald-400/80 stroke-[2]" />
                 <span className="text-emerald-400/90 font-medium">{acertadasCount} acertos</span>
               </span>
 
               {/* Erros */}
-              <span className="text-[11px] font-normal text-slate-300 flex items-center gap-1 bg-white/[0.03] border border-white/[0.07] px-2.5 py-1 rounded-lg" title="Total de erros">
+              <span className="text-[10px] sm:text-[11px] font-normal text-slate-300 flex items-center gap-1 bg-white/[0.03] border border-white/[0.07] px-2 sm:px-2.5 py-1 rounded-lg shrink-0" title="Total de erros">
                 <X size={11} className="text-rose-400/80 stroke-[2]" />
                 <span className="text-rose-400/90 font-medium">{erradasCount} erros</span>
               </span>
 
               {/* Dúvidas */}
-              <span className="text-[11px] font-normal text-slate-300 flex items-center gap-1 bg-white/[0.03] border border-white/[0.07] px-2.5 py-1 rounded-lg" title="Em dúvida">
+              <span className="text-[10px] sm:text-[11px] font-normal text-slate-300 flex items-center gap-1 bg-white/[0.03] border border-white/[0.07] px-2 sm:px-2.5 py-1 rounded-lg shrink-0" title="Em dúvida">
                 <Flag size={11} className="text-amber-400/80 fill-amber-400/10" />
                 <span className="text-amber-400/90 font-medium">{duvidasCount} dúvidas</span>
               </span>
@@ -2151,7 +2152,7 @@ export default function CadernosTab({
               {/* Aproveitamento */}
               {respondidasTotal > 0 && (
                 <span
-                  className={`text-[11px] font-medium px-2.5 py-1 rounded-lg border bg-white/[0.03] border-white/[0.07] ${
+                  className={`text-[10px] sm:text-[11px] font-medium px-2 sm:px-2.5 py-1 rounded-lg border bg-white/[0.03] border-white/[0.07] shrink-0 ${
                     taxaAcertoGlobal >= 70
                       ? "text-emerald-400/90"
                       : taxaAcertoGlobal >= 50
@@ -2168,7 +2169,7 @@ export default function CadernosTab({
         </div>
 
         {/* Alternador de Modo de Visualização (Notion Cards x Árvore) + Alternante Recolher/Expandir + Botão Nova Pasta */}
-        <div className="flex items-center gap-2 ml-auto flex-wrap">
+        <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 w-full sm:w-auto sm:ml-auto flex-wrap">
           {viewMode === "blocos" && (
             <div className="flex items-center gap-1 bg-[#101526] p-0.5 rounded-xl border border-white/[0.08]">
               <button
@@ -2195,25 +2196,25 @@ export default function CadernosTab({
           <div className="flex items-center gap-1 bg-[#101526] p-0.5 rounded-xl border border-white/[0.08]">
             <button
               onClick={() => setViewMode("blocos")}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
                 viewMode === "blocos"
                   ? "bg-indigo-600 text-white shadow"
                   : "text-slate-400 hover:text-white"
               }`}
             >
               <LayoutGrid size={12} />
-              <span>Cadernos Notion</span>
+              <span>Notion</span>
             </button>
             <button
               onClick={() => setViewMode("arvore")}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
                 viewMode === "arvore"
                   ? "bg-indigo-600 text-white shadow"
                   : "text-slate-400 hover:text-white"
               }`}
             >
               <FolderTree size={12} />
-              <span>Árvore de Pastas</span>
+              <span>Árvore</span>
             </button>
           </div>
 
@@ -2222,21 +2223,22 @@ export default function CadernosTab({
               setModalDefaultParentId("");
               setIsNovaPastaModalOpen(true);
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600/90 hover:bg-indigo-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/20 active:scale-95"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-indigo-600/90 hover:bg-indigo-600 active:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/20 active:scale-95 ml-auto sm:ml-0"
           >
             <FolderPlus size={13} />
-            <span>Nova Pasta / Caderno</span>
+            <span className="hidden sm:inline">Nova Pasta / Caderno</span>
+            <span className="sm:hidden">Nova Pasta</span>
           </button>
         </div>
       </div>
 
       {/* ── Barra Superior de Controles e Filtros ── */}
-      <div className="flex flex-col gap-3 bg-[#0d1220] p-3 rounded-xl border border-white/[0.07] relative z-10">
+      <div className="flex flex-col gap-2.5 sm:gap-3 bg-[#0d1220] p-2.5 sm:p-3 rounded-xl border border-white/[0.07] relative z-10">
         {/* Linha 1: Controles de Busca, Caderno e Filtro de Status */}
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2.5 flex-wrap flex-1 min-w-[260px]">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 flex-1">
             {/* Campo de Busca */}
-          <div className="relative w-full sm:w-64">
+            <div className="relative w-full sm:w-60">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
               <input
                 type="text"
@@ -2256,7 +2258,7 @@ export default function CadernosTab({
             </div>
 
             {/* Select Dropdown de Cadernos */}
-            <div className="flex items-center gap-1.5 bg-[#070b14] border border-white/[0.08] hover:border-white/[0.16] px-2.5 py-1.5 rounded-xl transition-all">
+            <div className="flex items-center gap-1.5 bg-[#070b14] border border-white/[0.08] hover:border-white/[0.16] px-2.5 py-1.5 rounded-xl transition-all w-full sm:w-auto">
               <BookMarked size={13} className="text-indigo-400 shrink-0" />
               <select
                 value={cadernoFiltro}
@@ -2268,7 +2270,7 @@ export default function CadernosTab({
                     if (found) setSelectedCaderno(found);
                   }
                 }}
-                className="bg-transparent text-slate-200 text-xs font-medium focus:outline-none cursor-pointer border-none max-w-[220px] truncate"
+                className="bg-transparent text-slate-200 text-xs font-medium focus:outline-none cursor-pointer border-none w-full sm:max-w-[200px] truncate"
                 style={{ backgroundColor: "#070b14", color: "#e2e8f0" }}
               >
                 <option value="Todos" className="bg-[#0d1222] text-slate-200">
@@ -2283,11 +2285,11 @@ export default function CadernosTab({
             </div>
           </div>
 
-          {/* Segmented Control de Status */}
-          <div className="flex items-center gap-1 bg-[#070b14] p-1 rounded-xl border border-white/[0.08] shrink-0 flex-wrap">
+          {/* Segmented Control de Status com scroll horizontal touch no mobile */}
+          <div className="flex items-center gap-1 bg-[#070b14] p-1 rounded-xl border border-white/[0.08] overflow-x-auto custom-scrollbar flex-nowrap shrink-0">
             <button
               onClick={() => setStatusFiltro("todas")}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+              className={`px-2.5 sm:px-3 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap shrink-0 ${
                 statusFiltro === "todas" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-400 hover:text-slate-200"
               }`}
             >
@@ -2295,7 +2297,7 @@ export default function CadernosTab({
             </button>
             <button
               onClick={() => setStatusFiltro("erros")}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+              className={`flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap shrink-0 ${
                 statusFiltro === "erros" ? "bg-rose-500/20 text-rose-300 border border-rose-500/30 shadow-sm" : "text-slate-400 hover:text-rose-300"
               }`}
             >
@@ -2304,7 +2306,7 @@ export default function CadernosTab({
             </button>
             <button
               onClick={() => setStatusFiltro("mais_erros")}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+              className={`flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap shrink-0 ${
                 statusFiltro === "mais_erros" ? "bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm" : "text-slate-400 hover:text-amber-300"
               }`}
             >
@@ -2313,7 +2315,7 @@ export default function CadernosTab({
             </button>
             <button
               onClick={() => setStatusFiltro("nao_feitas")}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+              className={`flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap shrink-0 ${
                 statusFiltro === "nao_feitas" ? "bg-purple-500/20 text-purple-300 border border-purple-500/30 shadow-sm" : "text-slate-400 hover:text-purple-300"
               }`}
             >
@@ -2322,7 +2324,7 @@ export default function CadernosTab({
             </button>
             <button
               onClick={() => setStatusFiltro("duvidas")}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+              className={`flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap shrink-0 ${
                 statusFiltro === "duvidas" ? "bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm" : "text-slate-400 hover:text-amber-300"
               }`}
             >
@@ -2430,32 +2432,39 @@ export default function CadernosTab({
                   key={mat.id}
                   className="flex flex-col bg-[#0d1220] border border-white/[0.07] rounded-xl p-2.5 sm:p-3 gap-1.5 transition-colors hover:border-white/[0.12]"
                 >
-                  {/* ── CABEÇALHO DA MATÉRIA (botão de recolher/expandir) ── */}
+                  {/* ── CABEÇALHO DA MATÉRIA (botão de recolher/expandir com layout mobile-first) ── */}
                   <button
                     type="button"
                     onClick={() => toggleRecolherMateria(mat.id)}
-                    className={`w-full flex items-center justify-between pb-1.5 px-1.5 flex-nowrap gap-2 cursor-pointer select-none rounded-lg hover:bg-white/[0.05] active:bg-white/[0.08] transition-colors text-left ${
+                    className={`w-full flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 sm:pb-1.5 px-1.5 gap-1.5 sm:gap-2 cursor-pointer select-none rounded-lg hover:bg-white/[0.05] active:bg-white/[0.08] transition-colors text-left ${
                       isRecolhido ? "" : "border-b border-white/[0.04]"
                     }`}
                     title={isRecolhido ? `Expandir ${mat.cadernos.length} cadernos` : "Recolher cadernos"}
                   >
-                    <div className="flex items-center gap-2 min-w-0 flex-nowrap">
-                      <ChevronDown
-                        size={12}
-                        className={`transition-transform duration-200 shrink-0 ${
-                          isRecolhido ? "-rotate-90 text-slate-500" : "rotate-0 text-indigo-400"
-                        }`}
-                      />
-                      <span className="w-1 h-1 rounded-full bg-indigo-400/80 shrink-0" />
-                      <span className="text-xs shrink-0 opacity-80">{mat.icone}</span>
-                      <h3 className="text-xs font-semibold text-slate-200 truncate">
-                        {mat.nome}
-                      </h3>
+                    <div className="flex items-center justify-between sm:justify-start gap-2 min-w-0 w-full sm:w-auto">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <ChevronDown
+                          size={13}
+                          className={`transition-transform duration-200 shrink-0 ${
+                            isRecolhido ? "-rotate-90 text-slate-500" : "rotate-0 text-indigo-400"
+                          }`}
+                        />
+                        <span className="w-1 h-1 rounded-full bg-indigo-400/80 shrink-0" />
+                        <span className="text-xs shrink-0 opacity-80">{mat.icone}</span>
+                        <h3 className="text-xs font-semibold text-slate-200 truncate">
+                          {mat.nome}
+                        </h3>
+                      </div>
+
+                      {/* No mobile, contagem de cadernos vai ao lado do título */}
+                      <span className="sm:hidden text-[9px] font-light text-slate-400 font-mono bg-white/[0.03] px-1.5 py-0.5 rounded border border-white/[0.06] shrink-0">
+                        {mat.cadernos.length} cad.
+                      </span>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0 flex-nowrap whitespace-nowrap">
+                    <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0 flex-nowrap whitespace-nowrap overflow-x-auto custom-scrollbar py-0.5">
                       <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] font-light shrink-0 select-none flex-nowrap whitespace-nowrap tabular-nums">
-                        <span className="text-slate-500 font-light">{mTotal} quest.</span>
+                        <span className="text-slate-500 font-light">{mTotal} <span className="hidden sm:inline">quest.</span><span className="sm:hidden">q.</span></span>
                         <span className="text-emerald-400/80 flex items-center gap-0.5">
                           <Check size={9} className="stroke-[1.5]" />
                           {mAcertos}
@@ -2473,7 +2482,8 @@ export default function CadernosTab({
                         </span>
                       </div>
 
-                      <span className="text-[9.5px] font-light text-slate-500 font-mono bg-white/[0.02] px-1.5 py-0.2 rounded border border-white/[0.04] shrink-0">
+                      {/* No desktop, contagem de cadernos fica no final */}
+                      <span className="hidden sm:inline-block text-[9.5px] font-light text-slate-500 font-mono bg-white/[0.02] px-1.5 py-0.2 rounded border border-white/[0.04] shrink-0">
                         {mat.cadernos.length} caderno{mat.cadernos.length > 1 ? "s" : ""}
                       </span>
                     </div>
@@ -2514,7 +2524,7 @@ export default function CadernosTab({
                               handleDropQuestion(qId, caderno.id);
                             }
                           }}
-                          className={`grid min-h-11 grid-cols-[minmax(0,1fr)_120px_auto] items-center gap-4 px-3 sm:px-4 py-1 rounded-md border-b border-white/[0.05] transition-colors group cursor-pointer ${
+                          className={`grid min-h-11 grid-cols-[minmax(0,1fr)_auto_auto] sm:grid-cols-[minmax(0,1fr)_120px_auto] items-center gap-2 sm:gap-4 px-2 sm:px-4 py-1.5 sm:py-1 rounded-md border-b border-white/[0.05] transition-colors group cursor-pointer ${
                             cadernoIndex % 2 === 0
                               ? "bg-[#101623] hover:bg-[#182131]"
                               : "bg-[#0c111c] hover:bg-[#151d2a]"
@@ -2528,34 +2538,34 @@ export default function CadernosTab({
                             <span className="text-xs font-medium text-slate-300 group-hover:text-white truncate min-w-0">
                               {caderno.nome}
                             </span>
-                            <span className="shrink-0 rounded bg-white/[0.04] px-1.5 py-0.5 text-[9px] leading-none text-slate-500">
-                              {cTotal} quest.
+                            <span className="shrink-0 rounded bg-white/[0.04] px-1 sm:px-1.5 py-0.5 text-[8.5px] sm:text-[9px] leading-none text-slate-500">
+                              {cTotal} <span className="hidden sm:inline">quest.</span><span className="sm:hidden">q.</span>
                             </span>
                           </div>
 
-                          {/* Status em colunas fixas, alinhadas à direita antes das ações */}
-                          <div className="grid w-[120px] grid-cols-[28px_28px_28px_36px] items-center justify-items-center whitespace-nowrap tabular-nums">
-                            <span className="w-7 text-center text-emerald-400/80 font-light inline-flex justify-center items-center gap-0.5 text-[10px]" title="Acertos">
+                          {/* Status em colunas compactas no mobile e fixas no desktop */}
+                          <div className="flex sm:grid sm:w-[120px] sm:grid-cols-[28px_28px_28px_36px] items-center gap-1 sm:gap-0 justify-items-center whitespace-nowrap tabular-nums shrink-0">
+                            <span className="w-6 sm:w-7 text-center text-emerald-400/80 font-light inline-flex justify-center items-center gap-0.5 text-[9.5px] sm:text-[10px]" title="Acertos">
                               <Check size={9} className="stroke-[1.5]" />{cAcertos}
                             </span>
-                            <span className="w-7 text-center text-rose-400/80 font-light inline-flex justify-center items-center gap-0.5 text-[10px]" title="Erros">
+                            <span className="w-6 sm:w-7 text-center text-rose-400/80 font-light inline-flex justify-center items-center gap-0.5 text-[9.5px] sm:text-[10px]" title="Erros">
                               <X size={9} className="stroke-[1.5]" />{cErros}
                             </span>
-                            <span className="w-7 text-center text-amber-400/80 font-light inline-flex justify-center items-center gap-0.5 text-[10px]" title="Dúvidas">
-                              {cDuvidas > 0 ? <><Flag size={8} />{cDuvidas}</> : <span className="invisible">0</span>}
+                            <span className="w-5 sm:w-7 text-center text-amber-400/80 font-light inline-flex justify-center items-center gap-0.5 text-[9.5px] sm:text-[10px]" title="Dúvidas">
+                              {cDuvidas > 0 ? <><Flag size={8} />{cDuvidas}</> : <span className="invisible text-[0px] sm:text-[10px]">0</span>}
                             </span>
-                            <span className={`w-9 text-center px-1 py-0.2 rounded border text-[9px] font-light ${cAproveitamentoClasses}`}>
+                            <span className={`w-8 sm:w-9 text-center px-1 py-0.2 rounded border text-[8.5px] sm:text-[9px] font-light ${cAproveitamentoClasses}`}>
                               {cPct === null ? "—" : `${cPct}%`}
                             </span>
                           </div>
 
-                          {/* Botão abrir + ações administrativas */}
-                          <div className="flex items-center gap-1">
+                          {/* Botão abrir + ações administrativas com touch targets confortáveis */}
+                          <div className="flex items-center gap-1 shrink-0">
                             <span
                               title="Abrir visão dedicada deste caderno"
-                              className="w-5 h-5 flex items-center justify-center rounded border border-white/[0.05] bg-white/[0.02] text-slate-500 group-hover:text-slate-300 group-hover:border-white/[0.10] transition-all"
+                              className="w-6 h-6 sm:w-5 sm:h-5 flex items-center justify-center rounded border border-white/[0.05] bg-white/[0.02] text-slate-500 group-hover:text-slate-300 group-hover:border-white/[0.10] transition-all"
                             >
-                              <ChevronRight size={11} />
+                              <ChevronRight size={13} className="sm:w-[11px] sm:h-[11px]" />
                             </span>
 
                             {isAdminState && (
@@ -2567,17 +2577,17 @@ export default function CadernosTab({
                                   type="button"
                                   onClick={() => handleOpenRenameCaso(caderno.id, caderno.nome)}
                                   title="Renomear este caderno (Admin)"
-                                  className="w-5 h-5 flex items-center justify-center rounded border border-white/[0.08] bg-white/[0.04] text-slate-400 hover:text-amber-300 hover:border-amber-500/30 hover:bg-amber-500/10 transition-all cursor-pointer"
+                                  className="w-6 h-6 sm:w-5 sm:h-5 flex items-center justify-center rounded border border-white/[0.08] bg-white/[0.04] text-slate-400 hover:text-amber-300 active:bg-amber-500/20 hover:border-amber-500/30 hover:bg-amber-500/10 transition-all cursor-pointer"
                                 >
-                                  <Pencil size={10} />
+                                  <Pencil size={11} className="sm:w-[10px] sm:h-[10px]" />
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteCaderno(caderno)}
                                   title={caderno.questoes.length > 0 ? `Excluir caderno e suas ${caderno.questoes.length} questões (Admin)` : "Excluir este caderno (Admin)"}
-                                  className="w-5 h-5 flex items-center justify-center rounded border border-rose-500/25 bg-rose-500/10 text-rose-400 hover:text-rose-100 hover:border-rose-500/50 hover:bg-rose-500/25 transition-all cursor-pointer shadow-sm"
+                                  className="w-6 h-6 sm:w-5 sm:h-5 flex items-center justify-center rounded border border-rose-500/25 bg-rose-500/10 text-rose-400 hover:text-rose-100 active:bg-rose-500/30 hover:border-rose-500/50 hover:bg-rose-500/25 transition-all cursor-pointer shadow-sm"
                                 >
-                                  <Trash2 size={10} />
+                                  <Trash2 size={11} className="sm:w-[10px] sm:h-[10px]" />
                                 </button>
                               </div>
                             )}
@@ -2608,8 +2618,8 @@ export default function CadernosTab({
 
       {/* ── MODAL DE RESOLUÇÃO FOCADA (IGUAL ABA QUESTÃO ATIVA) ── */}
       {modalQuestion && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-2 sm:p-4 md:p-6 overflow-y-auto">
-          <div className="relative w-full max-w-6xl max-h-[96vh] bg-[#0c101c] border border-white/10 rounded-2xl shadow-2xl overflow-y-auto custom-scrollbar p-4 sm:p-8 flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-1.5 sm:p-4 md:p-6 overflow-y-auto">
+          <div className="relative w-full max-w-6xl max-h-[98vh] sm:max-h-[96vh] bg-[#0c101c] border border-white/10 rounded-xl sm:rounded-2xl shadow-2xl overflow-y-auto custom-scrollbar p-2.5 sm:p-6 md:p-8 flex flex-col my-auto">
             <QuestionResolver
               question={modalQueue[modalIndex] || modalQuestion}
               questionIndex={modalIndex}
