@@ -31,6 +31,7 @@ import {
   Layers,
   Folder,
   FolderTree,
+  ListTree,
   FileText,
   Pencil,
   Trash2,
@@ -1250,7 +1251,10 @@ export default function CadernosTab({
   }, [user?.email, isAdminState]);
 
   // Alternador de Visualização: "blocos" (Notion Cards) ou "arvore" (Tree Folder)
-  const [viewMode, setViewMode] = useState<"blocos" | "arvore">("blocos");
+  const [viewMode, setViewMode] = useState<"blocos" | "arvore" | "mapa" | "caderno_plus">("blocos");
+  const [mapaCadernosAbertos, setMapaCadernosAbertos] = useState<Set<string>>(() => new Set());
+  const [painelMateriasAbertas, setPainelMateriasAbertas] = useState<Set<string>>(() => new Set());
+  const [painelCadernosAbertos, setPainelCadernosAbertos] = useState<Set<string>>(() => new Set());
 
   // Estado dos nós de organização carregados do Supabase
   const [dbNodes, setDbNodes] = useState<OrgNodeDB[]>([]);
@@ -2216,6 +2220,30 @@ export default function CadernosTab({
               <FolderTree size={12} />
               <span>Árvore</span>
             </button>
+            <button
+              onClick={() => setViewMode("mapa")}
+              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                viewMode === "mapa"
+                  ? "bg-indigo-600 text-white shadow"
+                  : "text-slate-400 hover:text-white"
+              }`}
+              aria-pressed={viewMode === "mapa"}
+              title="Visualizar cadernos e casos em trilhas de desempenho"
+            >
+              <ListTree size={12} />
+              <span>Mapa</span>
+            </button>
+            <button
+              onClick={() => setViewMode("caderno_plus")}
+              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                viewMode === "caderno_plus" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
+              }`}
+              aria-pressed={viewMode === "caderno_plus"}
+              title="Painel completo de cadernos, casos e questões"
+            >
+              <Layers size={12} />
+              <span>Caderno+</span>
+            </button>
           </div>
 
           <button
@@ -2356,7 +2384,254 @@ export default function CadernosTab({
       </div>
 
       {/* ── MODO 1: ÁRVORE HIERÁRQUICA COMPLETA (EXATAMENTE O PRINT DO USUÁRIO) ── */}
-      {viewMode === "arvore" ? (
+      {viewMode === "caderno_plus" ? (
+        <div className="relative z-10 rounded-xl border border-white/[0.07] bg-[#0b101a] p-3 sm:p-5">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-white/[0.07] pb-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">Visão detalhada</p>
+              <h3 className="mt-1 text-sm font-medium text-slate-200">Cadernos, casos e questões</h3>
+              <p className="mt-1 text-[10px] text-slate-500">Abra uma matéria e depois um caderno para acompanhar o desempenho de cada caso.</p>
+            </div>
+            <div className="flex items-center gap-1 rounded-lg border border-white/[0.08] bg-[#0d1420] p-0.5">
+              <button type="button" onClick={() => {
+                setPainelMateriasAbertas(new Set(materiasFiltradas.map(m => m.id)));
+                setPainelCadernosAbertos(new Set(materiasFiltradas.flatMap(m => m.cadernos.map(c => c.id))));
+              }} className="rounded-md px-2 py-1 text-[10px] text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-slate-200">Expandir tudo</button>
+              <button type="button" onClick={() => {
+                setPainelMateriasAbertas(new Set());
+                setPainelCadernosAbertos(new Set());
+              }} className="rounded-md px-2 py-1 text-[10px] text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-slate-200">Recolher tudo</button>
+            </div>
+          </div>
+
+          <div className="mb-3 flex flex-wrap gap-2 text-[10px] text-slate-400">
+            <span className="rounded-md border border-white/[0.06] bg-white/[0.02] px-2 py-1">{materiasFiltradas.length} matérias</span>
+            <span className="rounded-md border border-white/[0.06] bg-white/[0.02] px-2 py-1">{materiasFiltradas.reduce((n, m) => n + m.cadernos.length, 0)} cadernos</span>
+            <span className="rounded-md border border-white/[0.06] bg-white/[0.02] px-2 py-1">{materiasFiltradas.reduce((n, m) => n + m.totalQuestoes, 0)} questões</span>
+          </div>
+
+          <div className="space-y-2">
+            {materiasFiltradas.map((mat) => {
+              const isMateriaAberta = painelMateriasAbertas.has(mat.id);
+              const materiaStat = materiasStats.get(mat.id) || { acertos: 0, erros: 0, duvidas: 0, pct: null };
+              const materiaRespondidas = materiaStat.acertos + materiaStat.erros;
+              const materiaAbertas = Math.max(0, mat.totalQuestoes - materiaRespondidas);
+              return (
+                <section key={mat.id} className="overflow-hidden rounded-lg border border-white/[0.07] bg-[#0e1420]">
+                  <button type="button" aria-expanded={isMateriaAberta} onClick={() => setPainelMateriasAbertas(prev => {
+                    const next = new Set(prev);
+                    if (next.has(mat.id)) next.delete(mat.id); else next.add(mat.id);
+                    return next;
+                  })} className="flex w-full flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-left transition-colors hover:bg-white/[0.025]">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <ChevronRight size={13} className={`shrink-0 text-slate-500 transition-transform ${isMateriaAberta ? "rotate-90" : ""}`} />
+                      <span className="text-sm">{mat.icone}</span>
+                      <span className="truncate text-xs font-medium text-slate-200">{mat.nome}</span>
+                      <span className="shrink-0 text-[10px] text-slate-500">{mat.totalQuestoes} q.</span>
+                    </span>
+                    <span className="flex items-center gap-2 text-[10px] tabular-nums">
+                      <span className="text-rose-400">× {materiaStat.erros}</span>
+                      <span className="text-emerald-400">✓ {materiaStat.acertos}</span>
+                      <span className="hidden text-amber-400 sm:inline">⚑ {materiaStat.duvidas}</span>
+                      <span className="text-slate-500">{materiaAbertas} abertas</span>
+                      <span className="min-w-9 rounded border border-white/[0.08] px-1.5 py-0.5 text-center text-slate-300">{materiaStat.pct === null ? "—" : `${materiaStat.pct}%`}</span>
+                    </span>
+                  </button>
+
+                  {isMateriaAberta && <div className="space-y-1.5 border-t border-white/[0.05] px-2 py-2 sm:px-3">
+                    {mat.cadernos.map((caderno) => {
+                      const isCadernoAberto = painelCadernosAbertos.has(caderno.id);
+                      const cases = caderno.casos.length ? caderno.casos : [{ id: caderno.id, nome: caderno.nome, questoes: caderno.questoes }];
+                      const cStat = cadernosStats.get(caderno.id) || { acertos: 0, erros: 0, duvidas: 0, pct: null };
+                      return (
+                        <article key={caderno.id} className="overflow-hidden rounded-md border border-white/[0.06] bg-[#101723]">
+                          <div className="flex flex-wrap items-center justify-between gap-2 px-2.5 py-2">
+                            <button type="button" aria-expanded={isCadernoAberto} onClick={() => setPainelCadernosAbertos(prev => {
+                              const next = new Set(prev);
+                              if (next.has(caderno.id)) next.delete(caderno.id); else next.add(caderno.id);
+                              return next;
+                            })} className="flex min-w-0 items-center gap-1.5 text-left">
+                              <ChevronRight size={11} className={`shrink-0 text-slate-500 transition-transform ${isCadernoAberto ? "rotate-90" : ""}`} />
+                              <Folder size={12} className="shrink-0 text-indigo-300/80" />
+                              <span className="truncate text-[11px] text-slate-200">{caderno.nome}</span>
+                              <span className="shrink-0 text-[9px] text-slate-500">{caderno.questoes.length} q. · {cases.length} casos</span>
+                            </button>
+                            <div className="flex shrink-0 items-center gap-2 text-[9px] tabular-nums">
+                              <span className="text-rose-400">× {cStat.erros}</span><span className="text-emerald-400">✓ {cStat.acertos}</span>
+                              <span className="text-amber-400">⚑ {cStat.duvidas}</span>
+                              <span className="text-slate-500">{Math.max(0, caderno.questoes.length - cStat.acertos - cStat.erros)} abertas</span>
+                              <span className="min-w-8 rounded border border-white/[0.07] px-1 py-0.5 text-center text-slate-300">{cStat.pct === null ? "—" : `${cStat.pct}%`}</span>
+                            </div>
+                          </div>
+
+                          {isCadernoAberto && <div className="space-y-2 border-t border-white/[0.05] p-2.5">
+                            {cases.map((caso) => {
+                              const correct = caso.questoes.filter(q => userAnswers[String(q.id)]?.isCorrect === true).length;
+                              const wrong = caso.questoes.filter(q => userAnswers[String(q.id)]?.isCorrect === false).length;
+                              const doubts = caso.questoes.filter(q => duvidas.has(String(q.id))).length;
+                              const open = Math.max(0, caso.questoes.length - correct - wrong);
+                              const pct = correct + wrong > 0 ? Math.round(correct / (correct + wrong) * 100) : null;
+                              return (
+                                <section key={caso.id} className="rounded-md border border-white/[0.05] bg-[#0c121c] p-2.5">
+                                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.05] pb-2">
+                                    <div className="flex min-w-0 items-center gap-1.5">
+                                      <ChevronRight size={10} className="shrink-0 text-slate-600" />
+                                      <span className="truncate text-[10px] text-slate-300" title={caso.nome}>{caso.nome}</span>
+                                      <span className="shrink-0 text-[9px] text-slate-500">{caso.questoes.length} q.</span>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2 text-[9px] tabular-nums">
+                                      <span className="text-rose-400">× {wrong} erros</span>
+                                      <span className="text-emerald-400">✓ {correct} acertos</span>
+                                      <span className="text-amber-400">⚑ {doubts} dúvidas</span>
+                                      <span className="text-slate-500">{open} abertas</span>
+                                      <span className="min-w-8 rounded border border-white/[0.07] px-1 py-0.5 text-center text-slate-300">{pct === null ? "—" : `${pct}%`}</span>
+                                    </div>
+                                  </div>
+                                  <div className="mt-2 flex flex-wrap gap-1.5">
+                                    {caso.questoes.map((q, index) => {
+                                      const answer = userAnswers[String(q.id)];
+                                      const doubt = duvidas.has(String(q.id));
+                                      const qStatus = answer ? (answer.isCorrect ? "Acertou" : "Errou") : doubt ? "Dúvida · não respondida" : "Não respondida";
+                                      const qId = (q as any).ID_Qconcursos || (q as any).Ordem || q.id;
+                                      const category = CATEGORIES.find(c => c.key === resolveCategory(q));
+                                      return (
+                                        <button key={q.id} type="button" onClick={() => handleOpenQuestionInModal(q, caso.questoes)} title={`Questão ${qId} · ${qStatus} · ${category?.label || "Média"}`} className={`inline-flex items-center gap-1 rounded border px-1.5 py-1 text-[9px] transition-colors hover:border-indigo-400/40 ${answer ? (answer.isCorrect ? "border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-300" : "border-rose-500/20 bg-rose-500/[0.06] text-rose-300") : doubt ? "border-amber-500/20 bg-amber-500/[0.05] text-amber-300" : "border-white/[0.07] bg-white/[0.02] text-slate-400"}`}>
+                                          <span className="text-slate-500">{index + 1}.</span><span>Q{qId}</span>
+                                          <span className="hidden border-l border-current/20 pl-1 text-[8px] opacity-70 sm:inline">{category?.label || "Média"}</span>
+                                        </button>
+                                      );
+                                    })}
+                                    {caso.questoes.length === 0 && <span className="text-[9px] text-slate-600">Este caso ainda não tem questões.</span>}
+                                  </div>
+                                </section>
+                              );
+                            })}
+                          </div>}
+                        </article>
+                      );
+                    })}
+                    {mat.cadernos.length === 0 && <p className="px-2 py-3 text-[10px] text-slate-500">Nenhum caderno nesta matéria.</p>}
+                  </div>}
+                </section>
+              );
+            })}
+          </div>
+        </div>
+      ) : viewMode === "mapa" ? (
+        <div className="relative z-10 rounded-xl border border-white/[0.07] bg-[#0b101a] p-3 sm:p-5">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-2 border-b border-white/[0.07] pb-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">Cadernos · casos</p>
+              <h3 className="mt-1 text-sm font-medium text-slate-200">Mapa de desempenho</h3>
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
+              <div className="flex items-center gap-x-3 text-[10px] text-slate-400">
+              <span className="inline-flex items-center gap-1"><X size={10} className="text-rose-400" /> Erros</span>
+              <span className="inline-flex items-center gap-1"><Check size={10} className="text-emerald-400" /> Acertos</span>
+              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm border border-slate-600" /> Não respondidas</span>
+              <span className="inline-flex items-center gap-1"><Flag size={9} className="text-amber-400" /> Dúvidas</span>
+              </div>
+              <div className="flex items-center gap-1 rounded-lg border border-white/[0.08] bg-[#0d1420] p-0.5">
+                <button type="button" onClick={() => setMapaCadernosAbertos(new Set(materiasFiltradas.flatMap(mat => mat.cadernos.map(caderno => caderno.id))))} className="rounded-md px-2 py-1 text-[10px] text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-slate-200">Expandir</button>
+                <button type="button" onClick={() => setMapaCadernosAbertos(new Set())} className="rounded-md px-2 py-1 text-[10px] text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-slate-200">Recolher</button>
+              </div>
+            </div>
+          </div>
+
+          {materiasFiltradas.length === 0 ? (
+            <p className="py-10 text-center text-xs text-slate-500">Nenhum caderno encontrado.</p>
+          ) : (
+            <div className="space-y-5">
+              {materiasFiltradas.map((mat) => (
+                <section key={mat.id} className="min-w-0">
+                  <div className="mb-2 flex items-center gap-2 border-b border-white/[0.06] pb-2">
+                    <span className="text-xs opacity-80">{mat.icone}</span>
+                    <h4 className="text-xs font-medium text-slate-200">{mat.nome}</h4>
+                    <span className="text-[10px] text-slate-500">{mat.totalQuestoes} questões</span>
+                  </div>
+
+                  <div className="relative ml-1 space-y-2 border-l border-slate-700/70 pl-4 sm:ml-3 sm:pl-6">
+                    {mat.cadernos.map((caderno) => {
+                      const stat = cadernosStats.get(caderno.id) || { acertos: 0, erros: 0, duvidas: 0, pct: null };
+                      const totalRespondidas = stat.acertos + stat.erros;
+                      const naoRespondidas = Math.max(0, caderno.questoes.length - totalRespondidas);
+                      const casos = caderno.casos.length ? caderno.casos : [{ id: caderno.id, nome: caderno.nome, questoes: caderno.questoes }];
+                      const isMapaCadernoAberto = mapaCadernosAbertos.has(caderno.id);
+                      return (
+                        <article key={caderno.id} className="relative rounded-lg border border-white/[0.07] bg-[#101622] px-3 py-2.5 sm:px-4">
+                          <span className="absolute -left-[21px] top-4 h-px w-4 bg-slate-700 sm:-left-[25px] sm:w-6" />
+                          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                            <button type="button" onClick={() => setMapaCadernosAbertos(prev => {
+                              const next = new Set(prev);
+                              if (next.has(caderno.id)) next.delete(caderno.id);
+                              else next.add(caderno.id);
+                              return next;
+                            })} aria-expanded={isMapaCadernoAberto} className="flex min-w-0 items-center gap-2 text-left">
+                              <ChevronRight size={12} className={`shrink-0 text-slate-500 transition-transform ${isMapaCadernoAberto ? "rotate-90" : ""}`} />
+                              <Folder size={13} className="shrink-0 text-indigo-300/80" />
+                              <span className="truncate text-xs text-slate-200">{caderno.nome}</span>
+                              <span className="shrink-0 text-[10px] text-slate-500">{caderno.questoes.length} q.</span>
+                            </button>
+                            <div className="flex shrink-0 items-center gap-2 text-[10px] tabular-nums">
+                              <span className="inline-flex items-center gap-1 text-rose-400/90"><X size={10} />{stat.erros}</span>
+                              <span className="inline-flex items-center gap-1 text-emerald-400/90"><Check size={10} />{stat.acertos}</span>
+                              <span className="text-slate-500">{naoRespondidas} abertas</span>
+                              {stat.duvidas > 0 && <span className="inline-flex items-center gap-1 text-amber-400"><Flag size={9} />{stat.duvidas}</span>}
+                              <span className="min-w-9 rounded border border-white/[0.08] px-1.5 py-0.5 text-center text-slate-300">{stat.pct === null ? "—" : `${stat.pct}%`}</span>
+                            </div>
+                          </div>
+
+                          {isMapaCadernoAberto && <div className="mt-2.5 flex flex-wrap gap-x-5 gap-y-3 border-t border-white/[0.05] pt-2.5">
+                            {casos.map((caso) => {
+                              const caseCorrect = caso.questoes.filter(q => userAnswers[String(q.id)]?.isCorrect === true).length;
+                              const caseWrong = caso.questoes.filter(q => userAnswers[String(q.id)]?.isCorrect === false).length;
+                              const caseDoubt = caso.questoes.filter(q => duvidas.has(String(q.id))).length;
+                              const caseOpen = Math.max(0, caso.questoes.length - caseCorrect - caseWrong);
+                              return (
+                                <div key={caso.id} className="min-w-0 max-w-full">
+                                  <div className="mb-1.5 flex items-center gap-1.5 text-[10px] text-slate-400">
+                                    <ChevronRight size={10} className="shrink-0 text-slate-600" />
+                                    <span className="max-w-[280px] truncate" title={caso.nome}>{caso.nome}</span>
+                                    <span className="shrink-0 text-slate-600">{caso.questoes.length} q.</span>
+                                  </div>
+                                  <div className="flex flex-wrap gap-[3px] pl-4" aria-label={`${caso.nome}: ${caseCorrect} acertos, ${caseWrong} erros, ${caseOpen} não respondidas${caseDoubt ? `, ${caseDoubt} dúvidas` : ""}`}>
+                                    {caso.questoes.map((q, idx) => {
+                                      const answer = userAnswers[String(q.id)];
+                                      const markedDoubt = duvidas.has(String(q.id));
+                                      const statusClass = answer
+                                        ? answer.isCorrect
+                                          ? "border-emerald-500/60 bg-emerald-500/20 text-emerald-300"
+                                          : "border-rose-500/60 bg-rose-500/20 text-rose-300"
+                                        : markedDoubt
+                                          ? "border-amber-500/50 bg-amber-500/10 text-amber-300"
+                                          : "border-slate-600/70 bg-[#0b1019] text-slate-600";
+                                      return (
+                                        <button
+                                          key={q.id}
+                                          type="button"
+                                          onClick={() => handleOpenQuestionInModal(q, caso.questoes)}
+                                          title={`Questão ${idx + 1}${answer ? (answer.isCorrect ? " · Acerto" : " · Erro") : markedDoubt ? " · Dúvida" : " · Não respondida"}`}
+                                          className={`flex h-[15px] w-[15px] items-center justify-center rounded-[3px] border transition-colors hover:brightness-125 ${statusClass}`}
+                                        >
+                                          {answer ? (answer.isCorrect ? <Check size={9} /> : <X size={9} />) : markedDoubt ? <Flag size={7} /> : null}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>}
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : viewMode === "arvore" ? (
         <div className="flex flex-col gap-2 p-3 sm:p-4 bg-[#0d1220] rounded-xl border border-white/[0.07] relative z-10">
           <div className="flex items-center justify-between border-b border-white/[0.06] pb-2 mb-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">

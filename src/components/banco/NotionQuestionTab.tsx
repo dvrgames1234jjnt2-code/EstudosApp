@@ -7,7 +7,7 @@ import {
   BookMarked, RefreshCw, X, Check, Play, Eye, EyeOff,
   Triangle, Flag, History, LayoutGrid, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Moon, Sun,
   Clock, HelpCircle, Filter, Flame, Calendar, BarChart3, Target, AlertTriangle,
-  GripVertical, ArrowUp, ArrowDown, MoreVertical, Database, Printer
+  GripVertical, ArrowUp, ArrowDown, MoreVertical, Database, Printer, ListTree
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { SyncBancoModal } from "./SyncBancoModal";
@@ -2113,6 +2113,7 @@ const CasoCard = memo(function CasoCard({
   statusFiltro = "todas",
   feitasHojeIds = [],
   isAdmin = false,
+  showQuestionMap = false,
   onMoveUp,
   onMoveDown,
   onDropCaso,
@@ -2132,6 +2133,7 @@ const CasoCard = memo(function CasoCard({
   statusFiltro?: "todas" | "erros" | "nao_feitas" | "feitas_hoje" | "mais_erros";
   feitasHojeIds?: string[];
   isAdmin?: boolean;
+  showQuestionMap?: boolean;
   onMoveUp?: (id: string) => void;
   onMoveDown?: (id: string) => void;
   onDropCaso?: (draggedId: string, targetId: string) => void;
@@ -2247,7 +2249,8 @@ const CasoCard = memo(function CasoCard({
         setLoading(true);
         try {
           // 1. Tentar buscar questões deste caso diretamente da tabela definitiva notion_questoes_banco do Supabase
-          try {
+          if (!showQuestionMap) {
+            try {
             const cleanCasoId = caso.id.replace(/-/g, "");
             const { data: bQuestoes } = await supabase
               .from("notion_questoes_banco")
@@ -2273,7 +2276,8 @@ const CasoCard = memo(function CasoCard({
                 return;
               }
             }
-          } catch (e) {}
+            } catch (e) {}
+          }
 
           const children = await fetchChildren(caso.id);
           const tempQuestoes: Questao[] = [];
@@ -2356,7 +2360,7 @@ const CasoCard = memo(function CasoCard({
       })();
       return () => { active = false; };
     }
-  }, [open, caso.id, loaded]);
+  }, [open, caso.id, loaded, showQuestionMap]);
 
   const effectiveStatus = statusFiltro !== "todas" ? statusFiltro : (apenasComErros ? "erros" : "todas");
 
@@ -2515,6 +2519,7 @@ const CasoCard = memo(function CasoCard({
                   statusFiltro={statusFiltro}
                   feitasHojeIds={feitasHojeIds}
                   isAdmin={isAdmin}
+                  showQuestionMap={showQuestionMap}
                   onMoveUp={(id) => handleMoveSubcaso(id, "up")}
                   onMoveDown={(id) => handleMoveSubcaso(id, "down")}
                   onDropCaso={handleDropSubcaso}
@@ -2524,7 +2529,38 @@ const CasoCard = memo(function CasoCard({
                 />
               ))}
 
-              {sortedQuestoes.map((q, idx) => (
+              {showQuestionMap && sortedQuestoes.length > 0 && (
+                <div className="my-1 space-y-2 rounded-md border border-white/[0.05] bg-black/10 p-2.5">
+                  {CATEGORIES.map(category => {
+                    const difficultyQuestions = sortedQuestoes.filter(q => q.categoryKey === category.key);
+                    if (difficultyQuestions.length === 0) return null;
+                    return (
+                      <div key={category.key} className="grid grid-cols-[minmax(105px,165px)_1fr] items-start gap-2.5">
+                        <div className="flex items-center gap-1.5 pt-1 text-[11px]" style={{ color: category.textColor }}>
+                          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: category.color }} />
+                          <span>{category.label}</span><span className="text-slate-600">{difficultyQuestions.length}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {difficultyQuestions.map((q, index) => {
+                            const questionIndex = questoes.findIndex(item => item.id === q.id);
+                            const answer = resultadosMap?.get(q.id)?.ultimo;
+                            const doubt = duvidasIds.has(q.id);
+                            const statusClass = answer === "acerto" ? "border-emerald-500/65 bg-emerald-500/15 text-emerald-300" : answer === "erro" ? "border-rose-500/65 bg-rose-500/15 text-rose-300" : doubt ? "border-amber-500/60 bg-amber-500/10 text-amber-300" : "border-slate-600/70 bg-[#090e17] text-slate-600 hover:border-slate-400/70";
+                            const status = answer === "acerto" ? "acerto" : answer === "erro" ? "erro" : doubt ? "dúvida, não respondida" : "não respondida";
+                            return (
+                              <button key={q.id} type="button" aria-label={`Questão ${q.numero || index + 1}, ${category.label}, ${status}`} title={`Questão ${q.numero || index + 1} · ${category.label} · ${status}${q.topic ? ` · ${q.topic}` : ""}`} onClick={() => setZoomedQuestaoIndex(questionIndex)} className={`flex h-5 w-5 items-center justify-center rounded-[4px] border transition-colors hover:brightness-125 ${statusClass}`}>
+                                {answer === "acerto" ? <Check size={10} /> : answer === "erro" ? <X size={10} /> : doubt ? <Flag size={8} /> : null}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {!showQuestionMap && sortedQuestoes.map((q, idx) => (
                 <div key={q.id} className={idx < questoes.length - 1 ? "border-b border-white/[0.06] pb-1 mb-1" : ""}>
                   <QuestaoRow 
                     questao={q} 
@@ -2579,6 +2615,7 @@ function BlockViewer({
   statusFiltro = "todas",
   feitasHojeIds = [],
   isAdmin = false,
+  showQuestionMap = false,
   refreshKey,
   onPrintCaso,
 }: { 
@@ -2592,6 +2629,7 @@ function BlockViewer({
   statusFiltro?: "todas" | "erros" | "nao_feitas" | "feitas_hoje" | "mais_erros";
   feitasHojeIds?: string[];
   isAdmin?: boolean;
+  showQuestionMap?: boolean;
   refreshKey?: number;
   onPrintCaso?: (caso: Caso, questoes?: Questao[]) => void;
 }) {
@@ -2775,6 +2813,7 @@ function BlockViewer({
           statusFiltro={statusFiltro}
           feitasHojeIds={feitasHojeIds}
           isAdmin={isAdmin}
+          showQuestionMap={showQuestionMap}
           onMoveUp={(id) => handleMoveCaso(id, "up")}
           onMoveDown={(id) => handleMoveCaso(id, "down")}
           onDropCaso={handleDropCaso}
@@ -2837,6 +2876,7 @@ function BlocoStatsBadge({
 
   const respondidas = acertos + erros;
   const aproveitamento = respondidas > 0 ? Math.round((acertos / respondidas) * 100) : null;
+  const abertas = Math.max(0, ids.length - respondidas);
 
   const aproveitamentoClasses =
     aproveitamento === null
@@ -2861,6 +2901,9 @@ function BlocoStatsBadge({
       <span className="text-amber-400/90 flex items-center gap-0.5 font-normal" title="Em Dúvida">
         <Flag size={10} className="text-amber-400/80 fill-amber-400/10" />
         {duvidas}
+      </span>
+      <span className="text-slate-500 text-[9px]" title="Questões ainda não respondidas">
+        {abertas} abertas
       </span>
       <span className={`px-1.5 py-0.5 rounded border tabular-nums ${aproveitamentoClasses}`} title="Aproveitamento">
         {aproveitamento === null ? "—" : `${aproveitamento}%`}
@@ -3231,6 +3274,7 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
   isFirst = false,
   isLast = false,
   onSelect,
+  showQuestionMap = false,
   onPrintCaderno,
   onPrintCaso,
 }: {
@@ -3252,6 +3296,7 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
   isFirst?: boolean;
   isLast?: boolean;
   onSelect?: (block: NotionBlockRow) => void;
+  showQuestionMap?: boolean;
   onPrintCaderno?: (block: NotionBlockRow) => void;
   onPrintCaso?: (caso: Caso, questoes?: Questao[]) => void;
 }) {
@@ -3522,6 +3567,7 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
             statusFiltro={statusFiltro}
             feitasHojeIds={feitasHojeIds}
             isAdmin={isAdmin}
+            showQuestionMap={showQuestionMap}
             onPrintCaso={onPrintCaso}
           />
         </div>
@@ -3552,6 +3598,8 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   
   const [materiaFiltro, setMateriaFiltro] = useState("Todas");
   const [cadernoFiltro, setCadernoFiltro] = useState("Todos");
+  const [notionViewMode, setNotionViewMode] = useState<"quadros" | "lista" | "mapa">("quadros");
+  const [materiasListaAbertas, setMateriasListaAbertas] = useState<Set<string>>(() => new Set());
   const [statusFiltro, setStatusFiltro] = useState<"todas" | "erros" | "nao_feitas" | "feitas_hoje" | "mais_erros">("todas");
   const [saving, setSaving] = useState(false); const [saveErr, setSaveErr] = useState("");
 
@@ -4300,22 +4348,24 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               </select>
             </div>
 
-            {/* Filtro por Matéria */}
-            <div className="flex items-center gap-1 flex-wrap">
-              {["Todas", ...materiasDisponiveis, "Sem matéria"].map(m => (
-                <button
-                  key={m}
-                  onClick={() => setMateriaFiltro(m)}
-                  className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all ${
-                    materiaFiltro === m
-                      ? "bg-indigo-600 border-indigo-500 text-white shadow-sm"
-                      : "bg-[#0d1220] border-white/[0.07] text-slate-400 hover:text-slate-200 hover:border-white/[0.15]"
-                  }`}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
+            {/* Filtro por Matéria em lista suspensa */}
+            <label className="flex items-center gap-1.5 bg-[#0d1220] border border-white/[0.08] hover:border-white/[0.18] px-2.5 py-1.5 rounded-xl transition-all">
+              <Filter size={12} className="text-indigo-400 shrink-0" />
+              <span className="text-[10px] text-slate-500 shrink-0">Matéria</span>
+              <select
+                value={materiaFiltro}
+                onChange={e => setMateriaFiltro(e.target.value)}
+                aria-label="Filtrar por matéria"
+                className="bg-transparent text-slate-200 text-[11px] focus:outline-none cursor-pointer border-none max-w-[190px]"
+                style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}
+              >
+                {["Todas", ...materiasDisponiveis, "Sem matéria"].map(m => (
+                  <option key={m} value={m} style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}>
+                    {m === "Todas" ? `Todas as matérias (${materiasDisponiveis.length})` : m}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
 
           {/* Filtro por Status da Questão */}
@@ -4361,6 +4411,23 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               ⚡ Feitas Hoje
             </button>
           </div>
+          <div className="flex items-center gap-1 rounded-xl border border-white/[0.08] bg-[#0d1220] p-1 shrink-0">
+            <button type="button" onClick={() => setNotionViewMode("quadros")} aria-pressed={notionViewMode === "quadros"} className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold transition-colors ${notionViewMode === "quadros" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"}`}>
+              <LayoutGrid size={11} /> Quadros
+            </button>
+            <button type="button" onClick={() => setNotionViewMode("lista")} aria-pressed={notionViewMode === "lista"} className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold transition-colors ${notionViewMode === "lista" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"}`}>
+              <ListTree size={11} /> Lista
+            </button>
+            <button type="button" onClick={() => setNotionViewMode("mapa")} aria-pressed={notionViewMode === "mapa"} className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold transition-colors ${notionViewMode === "mapa" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"}`}>
+              <BarChart3 size={11} /> Mapa
+            </button>
+          </div>
+          {notionViewMode !== "quadros" && (
+            <div className="flex items-center gap-1 rounded-xl border border-white/[0.08] bg-[#0d1220] p-1 shrink-0">
+              <button type="button" onClick={() => setMateriasListaAbertas(new Set(blocksPorMateria.keys()))} className="rounded-lg px-2 py-1 text-[10px] text-slate-400 hover:bg-white/[0.06] hover:text-slate-200">Expandir</button>
+              <button type="button" onClick={() => setMateriasListaAbertas(new Set())} className="rounded-lg px-2 py-1 text-[10px] text-slate-400 hover:bg-white/[0.06] hover:text-slate-200">Recolher</button>
+            </div>
+          )}
         </div>
       )}
 
@@ -4480,6 +4547,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               statusFiltro={statusFiltro}
               feitasHojeIds={feitasHojeIds}
               isAdmin={isAdmin}
+            showQuestionMap={notionViewMode === "mapa"}
               refreshKey={refreshKey}
               onPrintCaso={handlePrintCaso}
             />
@@ -4508,6 +4576,78 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               <button onClick={() => { setMateriaFiltro("Todas"); setCadernoFiltro("Todos"); setStatusFiltro("todas"); }} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold">Limpar filtros</button>
             </div>
           ) : (
+            notionViewMode !== "quadros" ? (
+              <div className="flex flex-col gap-2 relative z-10">
+                {[...blocksPorMateria.entries()].map(([materiaName, mBlocks]) => {
+                  const isOpen = materiasListaAbertas.has(materiaName);
+                  return (
+                    <section key={materiaName} className="overflow-hidden rounded-xl border border-white/[0.07] bg-[#0d1320]">
+                      <button type="button" aria-expanded={isOpen} onClick={() => setMateriasListaAbertas(prev => {
+                        const next = new Set(prev);
+                        if (next.has(materiaName)) next.delete(materiaName); else next.add(materiaName);
+                        return next;
+                      })} className="flex w-full flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-left transition-colors hover:bg-white/[0.025]">
+                        <span className="flex min-w-0 items-center gap-2">
+                          <ChevronRight size={12} className={`shrink-0 text-slate-500 transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
+                          <span className="truncate text-[11px] font-medium uppercase tracking-wide text-slate-300">{materiaName}</span>
+                          <span className="shrink-0 text-[10px] text-slate-500">{mBlocks.length} cadernos</span>
+                        </span>
+                        <MateriaStatsBadge blocks={mBlocks} resultadosMap={resultadosMap} duvidasIds={duvidasIds} />
+                      </button>
+                      {isOpen && <div className="flex flex-col gap-1.5 border-t border-white/[0.05] p-2 sm:p-2.5">
+                        {notionViewMode === "mapa" ? mBlocks.map((block, index) => (
+                          <NotionBlockRowItem
+                            key={block.id}
+                            block={block}
+                            user={user}
+                            onDelete={handleDelete}
+                            duvidasIds={duvidasIds}
+                            onToggleDuvida={handleToggleDuvida}
+                            onAnswered={handleAnswered}
+                            resultadosMap={resultadosMap}
+                            statusFiltro={statusFiltro}
+                            feitasHojeIds={feitasHojeIds}
+                            isAdmin={isAdmin}
+                            onMoveUp={(id) => handleMoveBlock(id, "up")}
+                            onMoveDown={(id) => handleMoveBlock(id, "down")}
+                            onDropBlock={handleDropBlock}
+                            onUpdateOrdem={handleSingleOrdemChange}
+                            isFirst={index === 0}
+                            isLast={index === mBlocks.length - 1}
+                            showQuestionMap
+                            onPrintCaderno={handlePrintCaderno}
+                            onPrintCaso={handlePrintCaso}
+                          />
+                        )) : mBlocks.map((block, index) => (
+                          <NotionBlockRowItem
+                            key={block.id}
+                            block={block}
+                            user={user}
+                            onDelete={handleDelete}
+                            duvidasIds={duvidasIds}
+                            onToggleDuvida={handleToggleDuvida}
+                            onAnswered={handleAnswered}
+                            resultadosMap={resultadosMap}
+                            statusFiltro={statusFiltro}
+                            feitasHojeIds={feitasHojeIds}
+                            isAdmin={isAdmin}
+                            onMoveUp={(id) => handleMoveBlock(id, "up")}
+                            onMoveDown={(id) => handleMoveBlock(id, "down")}
+                            onDropBlock={handleDropBlock}
+                            onUpdateOrdem={handleSingleOrdemChange}
+                            isFirst={index === 0}
+                            isLast={index === mBlocks.length - 1}
+                            onPrintCaderno={handlePrintCaderno}
+                            onPrintCaso={handlePrintCaso}
+                          />
+                        ))}
+                      </div>}
+                    </section>
+                  );
+                })}
+              </div>
+            ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 relative z-10">
               {[...blocksPorMateria.entries()].map(([materiaName, mBlocks]) => (
                 <div 
@@ -4562,6 +4702,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                 </div>
               ))}
             </div>
+            )
           )}
         </>
       )}
