@@ -26,13 +26,13 @@ const CATEGORIES = [
 type CategoryKey = typeof CATEGORIES[number]["key"];
 
 const CATEGORY_ORDER: Record<CategoryKey, number> = {
-  bonus: 1,
-  faceis: 2,
-  media: 3,
-  atencao: 4,
-  lacuna: 5,
-  dificil: 6,
-  ultrahard: 7,
+  faceis: 1,
+  media: 2,
+  atencao: 3,
+  lacuna: 4,
+  dificil: 5,
+  ultrahard: 6,
+  bonus: 7,
 };
 
 interface NotionBlockRow {
@@ -63,6 +63,22 @@ interface Questao {
   resposta?: string;
   respostaImageUrls: string[];
   caseLabel?: string;
+}
+
+function sortQuestoesPorDificuldade(questions: Questao[], savedOrderIds: string[] = []): Questao[] {
+  const savedOrder = new Map(savedOrderIds.map((id, index) => [id, index]));
+  return [...questions].sort((a, b) => {
+    const categoryDiff = (CATEGORY_ORDER[a.categoryKey] ?? 99) - (CATEGORY_ORDER[b.categoryKey] ?? 99);
+    if (categoryDiff !== 0) return categoryDiff;
+
+    const orderA = savedOrder.get(a.id);
+    const orderB = savedOrder.get(b.id);
+    if (orderA !== undefined && orderB !== undefined && orderA !== orderB) return orderA - orderB;
+
+    const numberA = Number.parseInt(a.numero || "0", 10);
+    const numberB = Number.parseInt(b.numero || "0", 10);
+    return numberA - numberB;
+  });
 }
 
 interface Caso {
@@ -2251,31 +2267,37 @@ const CasoCard = memo(function CasoCard({
           // 1. Tentar buscar questões deste caso diretamente da tabela definitiva notion_questoes_banco do Supabase
           if (!showQuestionMap) {
             try {
-            const cleanCasoId = caso.id.replace(/-/g, "");
-            const { data: bQuestoes } = await supabase
-              .from("notion_questoes_banco")
-              .select("*")
-              .or(`caso_id.eq.${caso.id},caso_id.eq.${cleanCasoId},caso_nome.eq.${caso.nome}`);
+              const cleanCasoId = caso.id.replace(/-/g, "");
+              const { data: bQuestoes } = await supabase
+                .from("notion_questoes_banco")
+                .select("*")
+                .in("caso_id", [caso.id, cleanCasoId]);
 
-            if (bQuestoes && bQuestoes.length > 0) {
-              const mapped: Questao[] = bQuestoes.map((b: any) => ({
-                id: b.id,
-                numero: b.numero || "",
-                topic: b.topico || "",
-                categoryKey: (b.categoria || "media") as CategoryKey,
-                imageUrls: Array.isArray(b.imagens_urls) ? b.imagens_urls : [],
-                resposta: b.gabarito_texto || undefined,
-                respostaImageUrls: Array.isArray(b.gabarito_imagens_urls) ? b.gabarito_imagens_urls : [],
-                caseLabel: b.caso_nome || caso.nome,
-              }));
+              if (bQuestoes && bQuestoes.length > 0) {
+                const mapped: Questao[] = bQuestoes.map((b: any) => ({
+                  id: b.id,
+                  numero: b.numero || "",
+                  topic: b.topico || "",
+                  categoryKey: (b.categoria || "media") as CategoryKey,
+                  imageUrls: Array.isArray(b.imagens_urls) ? b.imagens_urls : [],
+                  resposta: b.gabarito_texto || undefined,
+                  respostaImageUrls: Array.isArray(b.gabarito_imagens_urls) ? b.gabarito_imagens_urls : [],
+                  caseLabel: b.caso_nome || caso.nome,
+                }));
 
-              if (active) {
-                setQuestoes(mapped);
-                setLoaded(true);
-                setLoading(false);
-                return;
+                let savedOrderIds: string[] = [];
+                try {
+                  const savedQ = localStorage.getItem(`notion_questoes_order_${caso.id}`);
+                  if (savedQ) savedOrderIds = JSON.parse(savedQ);
+                } catch (e) {}
+
+                if (active) {
+                  setQuestoes(sortQuestoesPorDificuldade(mapped, savedOrderIds));
+                  setLoaded(true);
+                  setLoading(false);
+                  return;
+                }
               }
-            }
             } catch (e) {}
           }
 
@@ -2315,40 +2337,17 @@ const CasoCard = memo(function CasoCard({
               }
             } catch (e) {}
 
-            // Ordenar questões se houver ordem salva
+            // A dificuldade mantém a hierarquia principal; a ordem manual é
+            // preservada apenas entre questões da mesma dificuldade.
+            let savedQuestionOrder: string[] = [];
             try {
               const savedQ = localStorage.getItem(`notion_questoes_order_${caso.id}`);
-              if (savedQ) {
-                const orderIds: string[] = JSON.parse(savedQ);
-                const map = new Map<string, number>();
-                orderIds.forEach((id, i) => map.set(id, i));
-                tempQuestoes.sort((a, b) => {
-                  const idxA = map.has(a.id) ? map.get(a.id)! : 999;
-                  const idxB = map.has(b.id) ? map.get(b.id)! : 999;
-                  if (idxA !== 999 || idxB !== 999) return idxA - idxB;
-                  const valA = CATEGORY_ORDER[a.categoryKey] ?? 99;
-                  const valB = CATEGORY_ORDER[b.categoryKey] ?? 99;
-                  if (valA !== valB) return valA - valB;
-                  return parseInt(a.numero || "0", 10) - parseInt(b.numero || "0", 10);
-                });
-              } else {
-                tempQuestoes.sort((a, b) => {
-                  const valA = CATEGORY_ORDER[a.categoryKey] ?? 99;
-                  const valB = CATEGORY_ORDER[b.categoryKey] ?? 99;
-                  if (valA !== valB) return valA - valB;
-                  return parseInt(a.numero || "0", 10) - parseInt(b.numero || "0", 10);
-                });
-              }
+              if (savedQ) savedQuestionOrder = JSON.parse(savedQ);
             } catch (e) {
-              tempQuestoes.sort((a, b) => {
-                const valA = CATEGORY_ORDER[a.categoryKey] ?? 99;
-                const valB = CATEGORY_ORDER[b.categoryKey] ?? 99;
-                if (valA !== valB) return valA - valB;
-                return parseInt(a.numero || "0", 10) - parseInt(b.numero || "0", 10);
-              });
+              savedQuestionOrder = [];
             }
 
-            setQuestoes(tempQuestoes);
+            setQuestoes(sortQuestoesPorDificuldade(tempQuestoes, savedQuestionOrder));
             setSubcasos(tempSubcasos);
             setLoaded(true);
           }
@@ -4045,12 +4044,11 @@ export default function NotionQuestionTab({ user }: { user: any }) {
       const { data: dbQuestoes, error } = await supabase
         .from("notion_questoes_banco")
         .select("*")
-        .or(`caso_id.eq.${caso.id},caso_id.eq.${cleanCasoId},caso_nome.eq.${caso.nome}`)
+        .in("caso_id", [caso.id, cleanCasoId])
         .order("numero", { ascending: true });
 
       if (!error && dbQuestoes && dbQuestoes.length > 0) {
-        const sorted = [...dbQuestoes].sort((a, b) => parseInt(a.numero || "0", 10) - parseInt(b.numero || "0", 10));
-        const mapped: PrintableNotionQuestion[] = sorted.map((b: any, idx: number) => ({
+        const mapped: PrintableNotionQuestion[] = dbQuestoes.map((b: any, idx: number) => ({
           id: b.id,
           numero: b.numero || String(idx + 1),
           topic: b.topico || "",
@@ -4059,7 +4057,10 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           imageUrls: Array.isArray(b.imagens_urls) ? b.imagens_urls : [],
           respostaText: b.gabarito_texto || undefined,
           respostaImageUrls: Array.isArray(b.gabarito_imagens_urls) ? b.gabarito_imagens_urls : [],
-        }));
+        })).sort((a, b) => {
+          const difficultyDiff = (CATEGORY_ORDER[a.categoryKey as CategoryKey] ?? 99) - (CATEGORY_ORDER[b.categoryKey as CategoryKey] ?? 99);
+          return difficultyDiff || Number.parseInt(a.numero || "0", 10) - Number.parseInt(b.numero || "0", 10);
+        });
 
         setPrintModalState(prev => ({
           ...prev,
