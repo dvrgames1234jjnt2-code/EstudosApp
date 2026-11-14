@@ -7,7 +7,7 @@ import {
   BookMarked, RefreshCw, X, Check, Play, Eye, EyeOff,
   Triangle, Flag, History, LayoutGrid, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Moon, Sun,
   Clock, HelpCircle, Filter, Flame, Calendar, BarChart3, Target, AlertTriangle,
-  GripVertical, ArrowUp, ArrowDown, MoreVertical, Database, Printer, ListTree
+  GripVertical, ArrowUp, ArrowDown, MoreVertical, Database, Printer, ListTree, Tag
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { SyncBancoModal } from "./SyncBancoModal";
@@ -32,12 +32,16 @@ interface ClassificationContextValue {
   overrides: Map<string, CategoryKey>;
   updateClassification: (questionId: string, classification: CategoryKey | null) => Promise<void>;
   canEdit: boolean;
+  classificacaoFiltro: string;
+  setClassificacaoFiltro: (val: string) => void;
 }
 
 const ClassificationContext = createContext<ClassificationContextValue>({
   overrides: new Map(),
   updateClassification: async () => {},
   canEdit: false,
+  classificacaoFiltro: "todas",
+  setClassificacaoFiltro: () => {},
 });
 
 const CATEGORY_ORDER: Record<CategoryKey, number> = {
@@ -1472,7 +1476,7 @@ const QuestaoRow = memo(function QuestaoRow({
   hasNextQuestion?: boolean;
   hasPrevQuestion?: boolean;
 }) {
-  const { overrides, updateClassification, canEdit: canEditClassification } = useContext(ClassificationContext);
+  const { overrides, updateClassification, canEdit: canEditClassification, classificacaoFiltro } = useContext(ClassificationContext);
   const classification = overrides.get(questao.id) ?? null;
   const displayedCategory = classification ?? questao.categoryKey;
   const [antiBrilho] = useAntiBrilhoMode();
@@ -1734,6 +1738,12 @@ const QuestaoRow = memo(function QuestaoRow({
   if (effectiveStatus === "mais_erros" && (stats?.totalErros ?? 0) === 0) return null;
   if (effectiveStatus === "nao_feitas" && isRespondida) return null;
   if (effectiveStatus === "feitas_hoje" && !isFeitaHoje) return null;
+
+  if (classificacaoFiltro && classificacaoFiltro !== "todas") {
+    if (classificacaoFiltro === "personalizadas" && !overrides.has(questao.id)) return null;
+    if (classificacaoFiltro === "padrao" && overrides.has(questao.id)) return null;
+    if (classificacaoFiltro !== "personalizadas" && classificacaoFiltro !== "padrao" && displayedCategory !== classificacaoFiltro) return null;
+  }
 
   const showHighlightStyle = (effectiveStatus === "erros" && isErro) || (effectiveStatus === "mais_erros" && (stats?.totalErros ?? 0) > 0) || (effectiveStatus === "feitas_hoje" && isFeitaHoje);
 
@@ -2208,7 +2218,7 @@ const CasoCard = memo(function CasoCard({
   onPrintCaso?: (caso: Caso, questoes?: Questao[]) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const { overrides } = useContext(ClassificationContext);
+  const { overrides, classificacaoFiltro } = useContext(ClassificationContext);
   const [questoes, setQuestoes] = useState<Questao[]>([]);
   const [subcasos, setSubcasos] = useState<Caso[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -2426,6 +2436,16 @@ const CasoCard = memo(function CasoCard({
     });
   }, [questoes, effectiveStatus, resultadosMap, overrides]);
 
+  const filteredQuestoes = useMemo(() => {
+    if (classificacaoFiltro === "todas") return sortedQuestoes;
+    return sortedQuestoes.filter(q => {
+      const currentCat = overrides.get(q.id) ?? q.categoryKey;
+      if (classificacaoFiltro === "personalizadas") return overrides.has(q.id);
+      if (classificacaoFiltro === "padrao") return !overrides.has(q.id);
+      return currentCat === classificacaoFiltro;
+    });
+  }, [sortedQuestoes, classificacaoFiltro, overrides]);
+
   const errosInCaso = loaded && resultadosMap
     ? (effectiveStatus === "mais_erros"
         ? questoes.filter(q => (resultadosMap.get(q.id)?.totalErros ?? 0) > 0).length
@@ -2436,9 +2456,13 @@ const CasoCard = memo(function CasoCard({
     return null;
   }
 
+  if (classificacaoFiltro !== "todas" && loaded && filteredQuestoes.length === 0 && subcasos.length === 0) {
+    return null;
+  }
+
   const hasErrosInCaso = (effectiveStatus === "erros" || effectiveStatus === "mais_erros") && errosInCaso > 0;
-  const hasContent = sortedQuestoes.length > 0 || subcasos.length > 0;
-  const total = loaded ? (sortedQuestoes.length + subcasos.length) || undefined : undefined;
+  const hasContent = filteredQuestoes.length > 0 || subcasos.length > 0;
+  const total = loaded ? (filteredQuestoes.length + subcasos.length) || undefined : undefined;
   const indent = depth > 0 ? "pl-4 border-l border-indigo-500/[0.15] ml-3" : "";
 
   return (
@@ -2555,7 +2579,9 @@ const CasoCard = memo(function CasoCard({
               Carregando...
             </div>
           ) : !hasContent ? (
-            <div className="text-[11px] text-slate-600 italic py-1 px-2">Sem questões registradas.</div>
+            <div className="text-[11px] text-slate-600 italic py-1 px-2">
+              {classificacaoFiltro !== "todas" ? "Nenhuma questão com esta classificação neste caso." : "Sem questões registradas."}
+            </div>
           ) : (
             <>
               {subcasos.map((sub, idx) => (
@@ -2582,10 +2608,10 @@ const CasoCard = memo(function CasoCard({
                 />
               ))}
 
-              {showQuestionMap && sortedQuestoes.length > 0 && (
+              {showQuestionMap && filteredQuestoes.length > 0 && (
                 <div className="my-1 space-y-2 rounded-md border border-white/[0.05] bg-black/10 p-2.5">
-                  {CATEGORIES.map(category => {
-                    const difficultyQuestions = sortedQuestoes.filter(q => q.categoryKey === category.key);
+                  {CATEGORIES.filter(c => classificacaoFiltro === "todas" || classificacaoFiltro === "personalizadas" || classificacaoFiltro === "padrao" || c.key === classificacaoFiltro).map(category => {
+                    const difficultyQuestions = filteredQuestoes.filter(q => q.categoryKey === category.key);
                     if (difficultyQuestions.length === 0) return null;
                     return (
                       <div key={category.key} className="grid grid-cols-[minmax(105px,165px)_1fr] items-start gap-2.5">
@@ -2613,8 +2639,8 @@ const CasoCard = memo(function CasoCard({
                 </div>
               )}
 
-              {!showQuestionMap && sortedQuestoes.map((q, idx) => (
-                <div key={q.id} className={idx < questoes.length - 1 ? "border-b border-white/[0.06] pb-1 mb-1" : ""}>
+              {!showQuestionMap && filteredQuestoes.map((q, idx) => (
+                <div key={q.id} className={idx < filteredQuestoes.length - 1 ? "border-b border-white/[0.06] pb-1 mb-1" : ""}>
                   <QuestaoRow 
                     questao={q} 
                     user={user} 
@@ -2630,10 +2656,10 @@ const CasoCard = memo(function CasoCard({
                     onMoveDown={(id) => handleMoveQuestao(id, "down")}
                     onDropQuestao={handleDropQuestao}
                     isFirst={idx === 0}
-                    isLast={idx === questoes.length - 1}
-                    onNextQuestion={idx < questoes.length - 1 ? () => setZoomedQuestaoIndex(idx + 1) : undefined}
+                    isLast={idx === filteredQuestoes.length - 1}
+                    onNextQuestion={idx < filteredQuestoes.length - 1 ? () => setZoomedQuestaoIndex(idx + 1) : undefined}
                     onPrevQuestion={idx > 0 ? () => setZoomedQuestaoIndex(idx - 1) : undefined}
-                    hasNextQuestion={idx < questoes.length - 1}
+                    hasNextQuestion={idx < filteredQuestoes.length - 1}
                     hasPrevQuestion={idx > 0}
                   />
                 </div>
@@ -2686,6 +2712,7 @@ function BlockViewer({
   refreshKey?: number;
   onPrintCaso?: (caso: Caso, questoes?: Questao[]) => void;
 }) {
+  const { overrides, classificacaoFiltro } = useContext(ClassificationContext);
   const [casos, setCasos] = useState<Caso[]>([]);
   const [filteredItens, setFilteredItens] = useState<QuestaoResumo[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -2810,20 +2837,31 @@ function BlockViewer({
     </div>
   );
 
+  const displayFilteredItens = useMemo(() => {
+    if (!filteredItens) return null;
+    if (!classificacaoFiltro || classificacaoFiltro === "todas") return filteredItens;
+    return filteredItens.filter(item => {
+      const cat = overrides.get(item.id) ?? item.categoryKey;
+      if (classificacaoFiltro === "personalizadas") return overrides.has(item.id);
+      if (classificacaoFiltro === "padrao") return !overrides.has(item.id);
+      return cat === classificacaoFiltro;
+    });
+  }, [filteredItens, classificacaoFiltro, overrides]);
+
   if (effectiveStatus !== "todas") {
-    if (!filteredItens || filteredItens.length === 0) {
+    if (!displayFilteredItens || displayFilteredItens.length === 0) {
       const msgMap: Record<string, string> = {
         erros: "Nenhuma questão errada neste caderno.",
         nao_feitas: "Todas as questões deste caderno já foram respondidas!",
         feitas_hoje: "Nenhuma questão respondida hoje neste caderno.",
       };
-      return <p className="text-[11px] text-slate-600 italic text-center py-6">{msgMap[effectiveStatus] || "Nenhuma questão encontrada."}</p>;
+      return <p className="text-[11px] text-slate-600 italic text-center py-6">{msgMap[effectiveStatus] || "Nenhuma questão encontrada com os filtros selecionados."}</p>;
     }
 
     return (
       <div className="flex flex-col gap-1 pl-4 border-l border-indigo-500/20 ml-4 my-1">
-        {filteredItens.map((item, idx) => (
-          <div key={item.id} className={idx < filteredItens.length - 1 ? "border-b border-white/[0.05] pb-1 mb-1" : ""}>
+        {displayFilteredItens.map((item, idx) => (
+          <div key={item.id} className={idx < displayFilteredItens.length - 1 ? "border-b border-white/[0.05] pb-1 mb-1" : ""}>
             <QuestaoRow
               questao={{
                 id: item.id,
@@ -3656,6 +3694,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   const [notionViewMode, setNotionViewMode] = useState<"quadros" | "lista" | "mapa">("quadros");
   const [materiasListaAbertas, setMateriasListaAbertas] = useState<Set<string>>(() => new Set());
   const [statusFiltro, setStatusFiltro] = useState<"todas" | "erros" | "nao_feitas" | "feitas_hoje" | "mais_erros">("todas");
+  const [classificacaoFiltro, setClassificacaoFiltro] = useState<string>("todas");
   const [saving, setSaving] = useState(false); const [saveErr, setSaveErr] = useState("");
 
   const fetchBlocks = useCallback(async () => {
@@ -4279,7 +4318,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   }, []);
 
   return (
-    <ClassificationContext.Provider value={{ overrides: classificationOverrides, updateClassification: handleUpdateClassification, canEdit: !!user?.id }}>
+    <ClassificationContext.Provider value={{ overrides: classificationOverrides, updateClassification: handleUpdateClassification, canEdit: !!user?.id, classificacaoFiltro, setClassificacaoFiltro }}>
     <div className="flex flex-col gap-4 bg-[#080d1a] rounded-2xl border border-white/[0.06] p-4 sm:p-5 shadow-2xl relative overflow-hidden">
       {/* Background ambient glow */}
       <div className="absolute top-0 right-1/4 w-80 h-80 bg-indigo-600/[0.03] blur-[120px] rounded-full pointer-events-none" />
@@ -4533,6 +4572,28 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               ⚡ Feitas Hoje
             </button>
           </div>
+
+          {/* Filtro por Classificação */}
+          <label className="flex items-center gap-1.5 bg-[#0d1220] border border-white/[0.08] hover:border-white/[0.18] px-2.5 py-1.5 rounded-xl transition-all shrink-0">
+            <Tag size={12} className={classificacaoFiltro !== "todas" ? "text-amber-400" : "text-indigo-400"} />
+            <span className="text-[10px] text-slate-500 shrink-0">Classificação</span>
+            <select
+              value={classificacaoFiltro}
+              onChange={e => setClassificacaoFiltro(e.target.value)}
+              aria-label="Filtrar por classificação"
+              className="bg-transparent text-slate-200 text-[11px] focus:outline-none cursor-pointer border-none max-w-[190px]"
+              style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}
+            >
+              <option value="todas" style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}>Todas as classificações</option>
+              <option value="personalizadas" style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}>✨ Apenas Personalizadas</option>
+              <option value="padrao" style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}>📋 Apenas Padrão</option>
+              {CATEGORIES.map(cat => (
+                <option key={cat.key} value={cat.key} style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}>
+                  {cat.icon || (cat.dot ? "●" : "")} {cat.label}
+                </option>
+              ))}
+            </select>
+          </label>
           <div className="flex items-center gap-1 rounded-xl border border-white/[0.08] bg-[#0d1220] p-1 shrink-0">
             <button type="button" onClick={() => setNotionViewMode("quadros")} aria-pressed={notionViewMode === "quadros"} className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold transition-colors ${notionViewMode === "quadros" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"}`}>
               <LayoutGrid size={11} /> Quadros
@@ -4608,51 +4669,134 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           </div>
 
           {/* Barra de Filtro interna do Caderno */}
-          <div className="flex items-center justify-between gap-3 bg-[#101526] p-3 rounded-2xl border border-white/[0.06] flex-wrap">
-            <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-              <Filter size={14} className="text-indigo-400" />
-              Filtrar questões neste caderno:
-            </span>
-            <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] shrink-0 flex-wrap">
+          <div className="flex flex-col gap-2.5 bg-[#101526] p-3 rounded-2xl border border-white/[0.06]">
+            {/* Linha 1: Status da Questão */}
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <Filter size={14} className="text-indigo-400" />
+                Filtrar questões neste caderno:
+              </span>
+              <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] shrink-0 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setStatusFiltro("todas")}
+                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                    statusFiltro === "todas" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  Todas
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFiltro("erros")}
+                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                    statusFiltro === "erros" ? "bg-rose-600 text-white shadow" : "text-rose-400/70 hover:text-rose-300"
+                  }`}
+                >
+                  🔴 Últs. Erros
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFiltro("mais_erros")}
+                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                    statusFiltro === "mais_erros" ? "bg-amber-600 text-white shadow" : "text-amber-400/70 hover:text-amber-300"
+                  }`}
+                >
+                  🔥 Mais Erros
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFiltro("nao_feitas")}
+                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                    statusFiltro === "nao_feitas" ? "bg-purple-600 text-white shadow" : "text-purple-400/70 hover:text-purple-300"
+                  }`}
+                >
+                  ⭕ Não Feitas
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFiltro("feitas_hoje")}
+                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                    statusFiltro === "feitas_hoje" ? "bg-sky-600 text-white shadow" : "text-sky-400/70 hover:text-sky-300"
+                  }`}
+                >
+                  ⚡ Feitas Hoje
+                </button>
+              </div>
+            </div>
+
+            {/* Linha 2: Filtro por Classificação / Dificuldade */}
+            <div className="flex items-center gap-1.5 pt-2 border-t border-white/[0.04] overflow-x-auto pb-0.5 no-scrollbar flex-nowrap">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 shrink-0 flex items-center gap-1 mr-1">
+                <Tag size={11} className={classificacaoFiltro !== "todas" ? "text-amber-400" : "text-indigo-400"} />
+                Classificação:
+              </span>
+
               <button
-                onClick={() => setStatusFiltro("todas")}
-                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                  statusFiltro === "todas" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
+                type="button"
+                onClick={() => setClassificacaoFiltro("todas")}
+                className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all shrink-0 ${
+                  classificacaoFiltro === "todas"
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "bg-[#0d1220] text-slate-400 hover:text-slate-200 border border-white/[0.06]"
                 }`}
               >
                 Todas
               </button>
+
+              {CATEGORIES.map(cat => {
+                const isSelected = classificacaoFiltro === cat.key;
+                return (
+                  <button
+                    key={cat.key}
+                    type="button"
+                    onClick={() => setClassificacaoFiltro(isSelected ? "todas" : cat.key)}
+                    style={{
+                      color: isSelected ? "#ffffff" : cat.textColor,
+                      backgroundColor: isSelected ? cat.color : "#0d1220",
+                      borderColor: isSelected ? cat.color : "rgba(255,255,255,0.06)",
+                    }}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10.5px] font-semibold border transition-all shrink-0 hover:brightness-110 active:scale-95 ${
+                      isSelected ? "shadow-sm shadow-black/40 font-bold ring-1 ring-white/20" : ""
+                    }`}
+                  >
+                    {cat.icon ? (
+                      <span className="text-xs">{cat.icon}</span>
+                    ) : cat.dot ? (
+                      <span
+                        className="w-2 h-2 rounded-full shrink-0"
+                        style={{ backgroundColor: isSelected ? "#ffffff" : cat.color }}
+                      />
+                    ) : null}
+                    <span>{cat.label}</span>
+                  </button>
+                );
+              })}
+
               <button
-                onClick={() => setStatusFiltro("erros")}
-                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                  statusFiltro === "erros" ? "bg-rose-600 text-white shadow" : "text-rose-400/70 hover:text-rose-300"
+                type="button"
+                onClick={() => setClassificacaoFiltro(classificacaoFiltro === "personalizadas" ? "todas" : "personalizadas")}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10.5px] font-semibold border transition-all shrink-0 active:scale-95 ${
+                  classificacaoFiltro === "personalizadas"
+                    ? "bg-purple-600 border-purple-500 text-white shadow-sm font-bold ring-1 ring-white/20"
+                    : "bg-[#0d1220] text-purple-400/80 hover:text-purple-300 border-white/[0.06]"
                 }`}
               >
-                🔴 Últs. Erros
+                <span>✨</span>
+                <span>Personalizadas</span>
               </button>
+
               <button
-                onClick={() => setStatusFiltro("mais_erros")}
-                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                  statusFiltro === "mais_erros" ? "bg-amber-600 text-white shadow" : "text-amber-400/70 hover:text-amber-300"
+                type="button"
+                onClick={() => setClassificacaoFiltro(classificacaoFiltro === "padrao" ? "todas" : "padrao")}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10.5px] font-semibold border transition-all shrink-0 active:scale-95 ${
+                  classificacaoFiltro === "padrao"
+                    ? "bg-slate-700 border-slate-600 text-white shadow-sm font-bold ring-1 ring-white/20"
+                    : "bg-[#0d1220] text-slate-400 hover:text-slate-200 border-white/[0.06]"
                 }`}
               >
-                🔥 Mais Erros
-              </button>
-              <button
-                onClick={() => setStatusFiltro("nao_feitas")}
-                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                  statusFiltro === "nao_feitas" ? "bg-purple-600 text-white shadow" : "text-purple-400/70 hover:text-purple-300"
-                }`}
-              >
-                ⭕ Não Feitas
-              </button>
-              <button
-                onClick={() => setStatusFiltro("feitas_hoje")}
-                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                  statusFiltro === "feitas_hoje" ? "bg-sky-600 text-white shadow" : "text-sky-400/70 hover:text-sky-300"
-                }`}
-              >
-                ⚡ Feitas Hoje
+                <span>📋</span>
+                <span>Padrão</span>
               </button>
             </div>
           </div>
@@ -4695,7 +4839,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           ) : blocksFiltrados.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-2 text-center bg-[#101526]/80 border border-white/[0.06] rounded-2xl relative z-10">
               <p className="text-[12px] font-black text-slate-600 uppercase tracking-widest">Nenhum caderno encontrado</p>
-              <button onClick={() => { setMateriaFiltro("Todas"); setCadernoFiltro("Todos"); setStatusFiltro("todas"); }} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold">Limpar filtros</button>
+              <button onClick={() => { setMateriaFiltro("Todas"); setCadernoFiltro("Todos"); setStatusFiltro("todas"); setClassificacaoFiltro("todas"); }} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold">Limpar filtros</button>
             </div>
           ) : (
             notionViewMode !== "quadros" ? (
