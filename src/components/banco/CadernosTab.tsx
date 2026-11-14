@@ -188,6 +188,7 @@ function QuestaoRowItem({
   onEdit,
   onMove,
   onDelete,
+  onChangeDifficulty,
 }: {
   questao: BancoQuestion;
   numero: number;
@@ -199,17 +200,37 @@ function QuestaoRowItem({
   onEdit?: (q: BancoQuestion) => void;
   onMove?: (q: BancoQuestion) => void;
   onDelete?: (q: BancoQuestion) => void;
+  onChangeDifficulty?: (q: BancoQuestion, difficulty: string) => Promise<void>;
 }) {
+  const [difficultyMenuOpen, setDifficultyMenuOpen] = useState(false);
+  const [savingDifficulty, setSavingDifficulty] = useState(false);
+  const difficultyLevels = [
+    { label: "Fácil", value: "Fácil", emoji: "🟢" },
+    { label: "Média", value: "Média", emoji: "🟡" },
+    { label: "Difícil", value: "Difícil", emoji: "🔴" },
+  ];
+  const currentDifficultyIndex = difficultyLevels.findIndex(level => level.value.toLowerCase() === (questao.dificuldade || "").toLowerCase());
+  const currentDifficulty = currentDifficultyIndex >= 0 ? difficultyLevels[currentDifficultyIndex] : null;
   const catKey = resolveCategory(questao);
   const categoryInfo = CATEGORIES.find(c => c.key === catKey);
   const catLabel = categoryInfo?.label || "Média";
   const catColor = categoryInfo?.textColor || "#c69238";
-
   const isErro = stats?.isCorrect === false;
   const isAcerto = stats?.isCorrect === true;
 
   // Exibir ID_Qconcursos, Ordem ou ID
   const displayId = (questao as any).ID_Qconcursos || (questao as any).Ordem || questao.id;
+  const changeDifficulty = async (nextIndex: number) => {
+    const next = difficultyLevels[nextIndex];
+    if (!next || savingDifficulty || next.value === questao.dificuldade) return;
+    setSavingDifficulty(true);
+    try {
+      await onChangeDifficulty?.(questao, next.value);
+      setDifficultyMenuOpen(false);
+    } finally {
+      setSavingDifficulty(false);
+    }
+  };
 
   return (
     <div
@@ -242,20 +263,52 @@ function QuestaoRowItem({
         {displayId}
       </span>
 
-      {/* Bolinha com cor da dificuldade */}
-      <span
-        className="w-1.5 h-1.5 rounded-full shrink-0 select-none opacity-80"
-        style={{ backgroundColor: catColor }}
-        title={catLabel}
-      />
-
-      {/* Pill com nome da categoria */}
-      <span
-        className="text-[9.5px] font-light px-1.5 py-0.2 rounded bg-black/25 border border-white/[0.05] shrink-0"
-        style={{ color: catColor }}
-      >
-        {catLabel}
-      </span>
+      {isAdmin && onChangeDifficulty ? (
+        <div className="relative shrink-0" onClick={(event) => event.stopPropagation()}>
+          <button
+            type="button"
+            aria-expanded={difficultyMenuOpen}
+            disabled={savingDifficulty}
+            onClick={() => setDifficultyMenuOpen(open => !open)}
+            className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-black/25 px-1.5 py-0.5 text-[9.5px] font-medium text-slate-300 transition-colors hover:border-indigo-400/40 hover:bg-indigo-500/10"
+            title="Alterar dificuldade"
+          >
+            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: catColor }} />
+            {savingDifficulty ? "Salvando…" : currentDifficulty?.label ?? catLabel}
+            <ChevronDown size={10} className={`transition-transform ${difficultyMenuOpen ? "rotate-180" : ""}`} />
+          </button>
+          {difficultyMenuOpen && (
+            <div className="absolute left-0 top-full z-50 mt-1 w-64 rounded-xl border border-white/10 bg-[#111827] p-2 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+              <p className="px-1.5 pb-1.5 text-[9px] font-semibold uppercase tracking-wider text-slate-500">Progressão de dificuldade</p>
+              <div className="grid grid-cols-3 gap-1">
+                {difficultyLevels.map((level, index) => {
+                  const relation = currentDifficultyIndex < 0 ? "" : index < currentDifficultyIndex ? "anterior" : index > currentDifficultyIndex ? "próximo" : "atual";
+                  return (
+                    <button
+                      key={level.value}
+                      type="button"
+                      disabled={savingDifficulty || index === currentDifficultyIndex}
+                      onClick={() => void changeDifficulty(index)}
+                      className={`flex flex-col items-center gap-1 rounded-lg border px-1 py-2 text-[9px] transition-colors ${index === currentDifficultyIndex ? "border-indigo-400/40 bg-indigo-500/15 text-indigo-200" : "border-white/[0.06] bg-white/[0.02] text-slate-400 hover:border-white/15 hover:bg-white/[0.06] hover:text-white"} disabled:cursor-default`}
+                    >
+                      <span className="text-sm">{level.emoji}</span>
+                      <span>{level.label}</span>
+                      {relation && <span className="text-[8px] text-slate-500">{relation}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-1.5 flex items-center justify-between rounded-lg bg-black/20 px-2 py-1.5 text-[8px] text-slate-500">
+                <span>Primeiro: {difficultyLevels[0].label}</span>
+                <span>Agora: {currentDifficulty?.label ?? "não definida"}</span>
+                <span>Último: {difficultyLevels[difficultyLevels.length - 1].label}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <span className="text-[9.5px] font-light px-1.5 py-0.2 rounded bg-black/25 border border-white/[0.05] shrink-0" style={{ color: catColor }}>{catLabel}</span>
+      )}
 
       {/* Pill com seta e nome da pasta/caso atual (oculto no mobile para poupar espaço) */}
       <span className="hidden sm:inline-flex text-[9.5px] font-light text-slate-400 bg-white/[0.03] border border-white/[0.06] px-1.5 py-0.2 rounded-md shrink-0 items-center gap-1 max-w-[240px]">
@@ -334,6 +387,9 @@ function TreeNodeItem({
   onDropQuestion,
   onAddSubfolder,
   onPrintNode,
+  isAdmin,
+  onChangeDifficulty,
+  getQuestionWithCurrentDifficulty,
 }: {
   node: HierarchyTreeNode;
   depth?: number;
@@ -343,6 +399,9 @@ function TreeNodeItem({
   onDropQuestion: (questaoId: string, targetNodeId: string) => void;
   onAddSubfolder: (parentId: string) => void;
   onPrintNode?: (node: HierarchyTreeNode) => void;
+  isAdmin?: boolean;
+  onChangeDifficulty?: (q: BancoQuestion, difficulty: string) => Promise<void>;
+  getQuestionWithCurrentDifficulty: (q: BancoQuestion) => BancoQuestion;
 }) {
   const [isOpen, setIsOpen] = useState(depth === 0);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -449,11 +508,15 @@ function TreeNodeItem({
               onDropQuestion={onDropQuestion}
               onAddSubfolder={onAddSubfolder}
               onPrintNode={onPrintNode}
+              isAdmin={isAdmin}
+              onChangeDifficulty={onChangeDifficulty}
+              getQuestionWithCurrentDifficulty={getQuestionWithCurrentDifficulty}
             />
           ))}
 
           {/* Questões diretamente vinculadas a este nó */}
           {node.questoes.map((q, idx) => {
+            q = getQuestionWithCurrentDifficulty(q);
             const displayId = (q as any).ID_Qconcursos || (q as any).Ordem || q.id;
             const catKey = resolveCategory(q);
             const catInfo = CATEGORIES.find(c => c.key === catKey);
@@ -519,6 +582,8 @@ function CasoAccordion({
   onEditQuestao,
   onMoveQuestao,
   onDeleteQuestao,
+  onChangeDifficulty,
+  getQuestionWithCurrentDifficulty,
   onRenameCaso,
   onAddSubfolder,
   onDeleteCaso,
@@ -536,6 +601,8 @@ function CasoAccordion({
   onEditQuestao?: (q: BancoQuestion) => void;
   onMoveQuestao?: (q: BancoQuestion) => void;
   onDeleteQuestao?: (q: BancoQuestion) => void;
+  onChangeDifficulty?: (q: BancoQuestion, difficulty: string) => Promise<void>;
+  getQuestionWithCurrentDifficulty: (q: BancoQuestion) => BancoQuestion;
   onRenameCaso?: (casoId: string, currentNome: string) => void;
   onAddSubfolder?: (casoId: string) => void;
   onDeleteCaso?: (casoId: string, casoNome: string, questoes?: BancoQuestion[]) => void;
@@ -756,7 +823,9 @@ function CasoAccordion({
             </div>
           ) : (
             <div className="flex flex-col gap-0.5">
-              {caso.questoes.map((q, qIdx) => (
+              {caso.questoes.map((sourceQuestion, qIdx) => {
+                const q = getQuestionWithCurrentDifficulty(sourceQuestion);
+                return (
                 <QuestaoRowItem
                   key={q.id}
                   questao={q}
@@ -769,8 +838,10 @@ function CasoAccordion({
                   onEdit={onEditQuestao}
                   onMove={onMoveQuestao}
                   onDelete={onDeleteQuestao}
+                  onChangeDifficulty={onChangeDifficulty}
                 />
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -795,6 +866,8 @@ function CadernoDedicatedView({
   onEditQuestao,
   onMoveQuestao,
   onDeleteQuestao,
+  onChangeDifficulty,
+  getQuestionWithCurrentDifficulty,
   onRenameCaso,
   onDeleteCaso,
   onPrintCaderno,
@@ -815,6 +888,8 @@ function CadernoDedicatedView({
   onEditQuestao?: (q: BancoQuestion) => void;
   onMoveQuestao?: (q: BancoQuestion) => void;
   onDeleteQuestao?: (q: BancoQuestion) => void;
+  onChangeDifficulty?: (q: BancoQuestion, difficulty: string) => Promise<void>;
+  getQuestionWithCurrentDifficulty: (q: BancoQuestion) => BancoQuestion;
   onRenameCaso?: (casoId: string, currentNome: string) => void;
   onDeleteCaso?: (casoId: string, casoNome: string, questoes?: BancoQuestion[]) => void;
   onPrintCaderno?: (caderno: CadernoItem) => void;
@@ -1025,6 +1100,8 @@ function CadernoDedicatedView({
               onEditQuestao={onEditQuestao}
               onMoveQuestao={onMoveQuestao}
               onDeleteQuestao={onDeleteQuestao}
+              onChangeDifficulty={onChangeDifficulty}
+              getQuestionWithCurrentDifficulty={getQuestionWithCurrentDifficulty}
               onRenameCaso={onRenameCaso}
               onAddSubfolder={onOpenNovaPastaModal}
               onDeleteCaso={onDeleteCaso}
@@ -1258,6 +1335,7 @@ export default function CadernosTab({
 
   // Estado dos nós de organização carregados do Supabase
   const [dbNodes, setDbNodes] = useState<OrgNodeDB[]>([]);
+  const [difficultyOverrides, setDifficultyOverrides] = useState<Map<string, string>>(new Map());
   const [isNovaPastaModalOpen, setIsNovaPastaModalOpen] = useState(false);
   const [modalDefaultParentId, setModalDefaultParentId] = useState<string>("");
 
@@ -1373,6 +1451,39 @@ export default function CadernosTab({
       setModalQuestion(updated);
     }
   }, [onRefreshQuestions, modalQuestion]);
+
+  const handleChangeDifficulty = useCallback(async (question: BancoQuestion, difficulty: string) => {
+    if (!isAdminState) return;
+    const previous = question.dificuldade;
+    const questionId = String(question.id);
+    setDifficultyOverrides(current => new Map(current).set(questionId, difficulty));
+    try {
+      let result = await supabase.from("questoes").update({ Dificuldade: difficulty }).eq("id", question.id);
+      if (result.error) {
+        result = await supabasePublic.from("questoes").update({ Dificuldade: difficulty }).eq("id", question.id);
+      }
+      if (result.error) throw result.error;
+      const updatedQuestion = { ...question, dificuldade: difficulty };
+      setModalQueue(queue => queue.map(item => String(item.id) === questionId ? updatedQuestion : item));
+      setModalQuestion(current => current && String(current.id) === questionId ? updatedQuestion : current);
+      showToast(`Dificuldade alterada para ${difficulty}.`);
+      if (onRefreshQuestions) onRefreshQuestions();
+    } catch (error: any) {
+      setDifficultyOverrides(current => {
+        const next = new Map(current);
+        if (previous) next.set(questionId, previous);
+        else next.delete(questionId);
+        return next;
+      });
+      showToast(error?.message || "Não foi possível alterar a dificuldade.", "error");
+      throw error;
+    }
+  }, [isAdminState, onRefreshQuestions]);
+
+  const getQuestionWithCurrentDifficulty = useCallback((question: BancoQuestion) => {
+    const override = difficultyOverrides.get(String(question.id));
+    return override ? { ...question, dificuldade: override } : question;
+  }, [difficultyOverrides]);
 
   const handleOpenMoveModal = useCallback((q: BancoQuestion) => {
     if (!isAdminState) return;
@@ -2035,6 +2146,8 @@ export default function CadernosTab({
           onEditQuestao={handleEditQuestao}
           onMoveQuestao={handleOpenMoveModal}
           onDeleteQuestao={handleDeleteQuestao}
+          onChangeDifficulty={handleChangeDifficulty}
+          getQuestionWithCurrentDifficulty={getQuestionWithCurrentDifficulty}
           onRenameCaso={handleOpenRenameCaso}
           onDeleteCaso={handleDeleteCaso}
           onPrintCaderno={handlePrintCaderno}
@@ -2705,6 +2818,9 @@ export default function CadernosTab({
                   setIsNovaPastaModalOpen(true);
                 }}
                 onPrintNode={handlePrintNode}
+                isAdmin={isAdminState}
+                onChangeDifficulty={handleChangeDifficulty}
+                getQuestionWithCurrentDifficulty={getQuestionWithCurrentDifficulty}
               />
             ))}
           </div>
