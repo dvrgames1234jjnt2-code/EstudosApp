@@ -1525,6 +1525,7 @@ export default function BancoPage() {
                   onAnswer={handleAnswer}
                   onToggleDuvida={handleToggleDuvida}
                   user={user}
+                  userId={user?.id}
                   onShowAuth={() => setShowAuthModal(true)}
                   onRefreshQuestions={fetchQuestions}
                   isAdmin={isAdmin}

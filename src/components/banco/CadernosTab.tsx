@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { createContext, useContext } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -62,6 +63,13 @@ export const CATEGORIES = [
 
 export type CategoryKey = typeof CATEGORIES[number]["key"];
 
+interface QuestionClassificationContextValue {
+  difficultyOverrides: Map<string, string>;
+  onChangeDifficulty?: (question: BancoQuestion, difficulty: string) => Promise<void>;
+}
+
+const QuestionClassificationContext = createContext<QuestionClassificationContextValue>({ difficultyOverrides: new Map() });
+
 const FACE_EMOJI: Record<CategoryKey, string> = {
   bonus: "🎉", faceis: "😊", atencao: "🔵", lacuna: "⛳", media: "😐", dificil: "😞", ultrahard: "🟣",
 };
@@ -96,6 +104,7 @@ interface CadernosTabProps {
   onShowAuth: () => void;
   onRefreshQuestions?: () => void;
   isAdmin?: boolean;
+  userId?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -202,14 +211,23 @@ function QuestaoRowItem({
   onDelete?: (q: BancoQuestion) => void;
   onChangeDifficulty?: (q: BancoQuestion, difficulty: string) => Promise<void>;
 }) {
+  const { difficultyOverrides: personalClassifications, onChangeDifficulty: savePersonalClassification } = useContext(QuestionClassificationContext);
+  const questionClassification = personalClassifications.get(String(questao.id));
+  const displayedQuestion = questionClassification ? { ...questao, dificuldade: questionClassification } : questao;
   const [difficultyMenuOpen, setDifficultyMenuOpen] = useState(false);
   const [savingDifficulty, setSavingDifficulty] = useState(false);
   const difficultyLevels = [
     { label: "Fácil", value: "Fácil", emoji: "🟢" },
     { label: "Média", value: "Média", emoji: "🟡" },
     { label: "Difícil", value: "Difícil", emoji: "🔴" },
+    { label: "Atenção", value: "Atenção", emoji: "🔵" },
+    { label: "Lacuna", value: "Lacuna", emoji: "⛳" },
+    { label: "Treinar", value: "Treinar", emoji: "🧠" },
+    { label: "Dominada", value: "Dominada", emoji: "🏆" },
+    { label: "Ultrahard", value: "Ultrahard", emoji: "🟣" },
+    { label: "Bônus", value: "Bônus", emoji: "🎉" },
   ];
-  const currentDifficultyIndex = difficultyLevels.findIndex(level => level.value.toLowerCase() === (questao.dificuldade || "").toLowerCase());
+  const currentDifficultyIndex = difficultyLevels.findIndex(level => level.value.toLowerCase() === (displayedQuestion.dificuldade || "").toLowerCase());
   const currentDifficulty = currentDifficultyIndex >= 0 ? difficultyLevels[currentDifficultyIndex] : null;
   const catKey = resolveCategory(questao);
   const categoryInfo = CATEGORIES.find(c => c.key === catKey);
@@ -222,10 +240,10 @@ function QuestaoRowItem({
   const displayId = (questao as any).ID_Qconcursos || (questao as any).Ordem || questao.id;
   const changeDifficulty = async (nextIndex: number) => {
     const next = difficultyLevels[nextIndex];
-    if (!next || savingDifficulty || next.value === questao.dificuldade) return;
+    if (!next || savingDifficulty || next.value === displayedQuestion.dificuldade) return;
     setSavingDifficulty(true);
     try {
-      await onChangeDifficulty?.(questao, next.value);
+      await savePersonalClassification?.(questao, next.value);
       setDifficultyMenuOpen(false);
     } finally {
       setSavingDifficulty(false);
@@ -263,7 +281,7 @@ function QuestaoRowItem({
         {displayId}
       </span>
 
-      {isAdmin && onChangeDifficulty ? (
+      {savePersonalClassification ? (
         <div className="relative shrink-0" onClick={(event) => event.stopPropagation()}>
           <button
             type="button"
@@ -299,9 +317,9 @@ function QuestaoRowItem({
                 })}
               </div>
               <div className="mt-1.5 flex items-center justify-between rounded-lg bg-black/20 px-2 py-1.5 text-[8px] text-slate-500">
-                <span>Primeiro: {difficultyLevels[0].label}</span>
+                <span>Primeiro: Fácil</span>
                 <span>Agora: {currentDifficulty?.label ?? "não definida"}</span>
-                <span>Último: {difficultyLevels[difficultyLevels.length - 1].label}</span>
+                <span>Último: Difícil</span>
               </div>
             </div>
           )}
@@ -1278,6 +1296,7 @@ export default function CadernosTab({
   onAnswer,
   onToggleDuvida,
   user,
+  userId,
   onShowAuth,
   onRefreshQuestions,
   isAdmin = false,
@@ -1453,21 +1472,25 @@ export default function CadernosTab({
   }, [onRefreshQuestions, modalQuestion]);
 
   const handleChangeDifficulty = useCallback(async (question: BancoQuestion, difficulty: string) => {
-    if (!isAdminState) return;
+    if (!userId) {
+      onShowAuth();
+      return;
+    }
     const previous = question.dificuldade;
     const questionId = String(question.id);
     setDifficultyOverrides(current => new Map(current).set(questionId, difficulty));
     try {
-      let result = await supabase.from("questoes").update({ Dificuldade: difficulty }).eq("id", question.id);
-      if (result.error) {
-        result = await supabasePublic.from("questoes").update({ Dificuldade: difficulty }).eq("id", question.id);
-      }
+      const result = await supabase.from("questao_classificacoes").upsert({
+        user_id: userId,
+        questao_id: questionId,
+        classificacao: difficulty,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id,questao_id" });
       if (result.error) throw result.error;
       const updatedQuestion = { ...question, dificuldade: difficulty };
       setModalQueue(queue => queue.map(item => String(item.id) === questionId ? updatedQuestion : item));
       setModalQuestion(current => current && String(current.id) === questionId ? updatedQuestion : current);
-      showToast(`Dificuldade alterada para ${difficulty}.`);
-      if (onRefreshQuestions) onRefreshQuestions();
+      showToast(`Sua classificação foi alterada para ${difficulty}.`);
     } catch (error: any) {
       setDifficultyOverrides(current => {
         const next = new Map(current);
@@ -1478,7 +1501,26 @@ export default function CadernosTab({
       showToast(error?.message || "Não foi possível alterar a dificuldade.", "error");
       throw error;
     }
-  }, [isAdminState, onRefreshQuestions]);
+  }, [userId, onShowAuth]);
+
+  useEffect(() => {
+    let active = true;
+    if (!userId) {
+      setDifficultyOverrides(new Map());
+      return;
+    }
+    (async () => {
+      const { data, error } = await supabase.from("questao_classificacoes")
+        .select("questao_id, classificacao").eq("user_id", userId);
+      if (!active) return;
+      if (error) {
+        console.error("Erro ao carregar classificações pessoais:", error);
+        return;
+      }
+      setDifficultyOverrides(new Map((data ?? []).map(row => [String(row.questao_id), String(row.classificacao)])));
+    })();
+    return () => { active = false; };
+  }, [userId]);
 
   const getQuestionWithCurrentDifficulty = useCallback((question: BancoQuestion) => {
     const override = difficultyOverrides.get(String(question.id));
@@ -2083,11 +2125,12 @@ export default function CadernosTab({
       onShowAuth();
       return;
     }
-    const idx = queue.findIndex(item => String(item.id) === String(q.id));
-    setModalQueue(queue);
+    const personalizedQueue = queue.map(getQuestionWithCurrentDifficulty);
+    const idx = personalizedQueue.findIndex(item => String(item.id) === String(q.id));
+    setModalQueue(personalizedQueue);
     setModalIndex(idx >= 0 ? idx : 0);
-    setModalQuestion(q);
-  }, [user, onShowAuth]);
+    setModalQuestion(personalizedQueue[idx >= 0 ? idx : 0]);
+  }, [user, onShowAuth, getQuestionWithCurrentDifficulty]);
 
   const handleModalAnswer = async (id: any, answer: string, isCorrect: boolean) => {
     if (onAnswer) {
@@ -2122,7 +2165,8 @@ export default function CadernosTab({
       <div className="flex w-full max-w-[1200px] mx-auto flex-col gap-4 bg-[#080d1a] rounded-2xl border border-white/[0.06] p-4 sm:p-5 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-1/4 w-80 h-80 bg-indigo-600/[0.03] blur-[120px] rounded-full pointer-events-none" />
 
-        <CadernoDedicatedView
+          <QuestionClassificationContext.Provider value={{ difficultyOverrides, onChangeDifficulty: handleChangeDifficulty }}>
+          <CadernoDedicatedView
           caderno={selectedCaderno}
           onBack={() => {
             setSelectedCaderno(null);
@@ -2156,6 +2200,7 @@ export default function CadernosTab({
           onMoverCaso={handleMoverCaso}
           todosCadernos={todosCadernos}
         />
+          </QuestionClassificationContext.Provider>
 
         {/* Modal de Criar Pasta */}
         <ModalCriarPasta
@@ -2274,6 +2319,7 @@ export default function CadernosTab({
   });
 
   return (
+    <QuestionClassificationContext.Provider value={{ difficultyOverrides, onChangeDifficulty: handleChangeDifficulty }}>
     <div className="flex w-full max-w-[1200px] mx-auto flex-col gap-4 bg-[#0a0e18] rounded-2xl border border-white/[0.07] p-3 sm:p-4 relative overflow-hidden">
       {/* Background ambient glow idêntico ao NotionQuestionTab */}
       <div className="absolute top-0 right-1/4 w-80 h-80 bg-indigo-600/[0.02] blur-[120px] rounded-full pointer-events-none" />
@@ -3168,5 +3214,6 @@ export default function CadernosTab({
         </div>
       )}
     </div>
+    </QuestionClassificationContext.Provider>
   );
 }
