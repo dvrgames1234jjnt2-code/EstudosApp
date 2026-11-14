@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, memo, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, memo, createContext, useContext, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
   Plus, Trash2, ChevronDown, ChevronRight, ChevronLeft, Loader2,
@@ -21,9 +21,24 @@ const CATEGORIES = [
   { key: "media",     label: "Média",     emojis: ["🟡","💛","⭐","🌟","🟠","🧡"],   icon: null,  color: "#ea580c", textColor: "#c69238", dot: true  },
   { key: "dificil",   label: "Difícil",   emojis: ["🔴","❤️","💔","🔥"],   icon: null,  color: "#dc2626", textColor: "#c45454", dot: true  },
   { key: "ultrahard", label: "Ultrahard", emojis: ["🟣","💜","👾","🫀"],   icon: null,  color: "#9333ea", textColor: "#8e66ab", dot: true  },
+  { key: "dominada",  label: "Dominada",  emojis: ["🏆"],                   icon: "🏆", color: "#0f766e", textColor: "#48b5a1", dot: false },
+  { key: "treinar",   label: "Treinar",   emojis: ["🧠"],                   icon: "🧠", color: "#0891b2", textColor: "#5fb8d0", dot: false },
+  { key: "revisar",   label: "Revisar",   emojis: ["🔁"],                   icon: "🔁", color: "#d97706", textColor: "#d6a258", dot: false },
 ] as const;
 
 type CategoryKey = typeof CATEGORIES[number]["key"];
+
+interface ClassificationContextValue {
+  overrides: Map<string, CategoryKey>;
+  updateClassification: (questionId: string, classification: CategoryKey | null) => Promise<void>;
+  canEdit: boolean;
+}
+
+const ClassificationContext = createContext<ClassificationContextValue>({
+  overrides: new Map(),
+  updateClassification: async () => {},
+  canEdit: false,
+});
 
 const CATEGORY_ORDER: Record<CategoryKey, number> = {
   faceis: 1,
@@ -32,7 +47,10 @@ const CATEGORY_ORDER: Record<CategoryKey, number> = {
   lacuna: 4,
   dificil: 5,
   ultrahard: 6,
-  bonus: 7,
+  dominada: 0,
+  treinar: 7,
+  revisar: 8,
+  bonus: 9,
 };
 
 interface NotionBlockRow {
@@ -1185,6 +1203,9 @@ function ImagemLightbox({
               src={url.trim()}
               alt="Imagem da questão"
               draggable={false}
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
               style={{
                 transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
                 transition: isDragging ? "none" : "transform 0.15s ease-out",
@@ -1228,6 +1249,8 @@ function ImagemLightbox({
                     key={i}
                     src={rUrl.trim()}
                     alt={`Resposta ${i + 1}`}
+                    loading="lazy"
+                    decoding="async"
                     style={getImageFilterStyle()}
                     className={`w-full rounded-xl border border-white/10 object-contain shadow-md max-h-[55vh] ${
                       antiBrilho === 'noturno' ? 'bg-[#0b101d]' : 'bg-slate-900/90'
@@ -1449,13 +1472,16 @@ const QuestaoRow = memo(function QuestaoRow({
   hasNextQuestion?: boolean;
   hasPrevQuestion?: boolean;
 }) {
+  const { overrides, updateClassification, canEdit: canEditClassification } = useContext(ClassificationContext);
+  const classification = overrides.get(questao.id) ?? null;
+  const displayedCategory = classification ?? questao.categoryKey;
   const [antiBrilho] = useAntiBrilhoMode();
   const [open, setOpen] = useState(startOpen);
   const [showResp, setShowResp] = useState(false);
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>(questao.imageUrls ?? []);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
-  const [respostaImageUrls, setRespostaImageUrls] = useState<string[]>([]);
-  const [respostaText, setRespostaText] = useState<string | undefined>();
+  const [respostaImageUrls, setRespostaImageUrls] = useState<string[]>(questao.respostaImageUrls ?? []);
+  const [respostaText, setRespostaText] = useState<string | undefined>(questao.resposta);
   const [respostaToggleId, setRespostaToggleId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -1664,10 +1690,13 @@ const QuestaoRow = memo(function QuestaoRow({
     media: "🟠",
     dificil: "🔴",
     ultrahard: "🟣",
+    dominada: "🏆",
+    treinar: "🧠",
+    revisar: "🔁",
   };
 
-  const catEmoji = emojiMap[questao.categoryKey] || "🟢";
-  const categoryInfo = CATEGORIES.find(c => c.key === questao.categoryKey);
+  const catEmoji = emojiMap[displayedCategory] || "🟢";
+  const categoryInfo = CATEGORIES.find(c => c.key === displayedCategory);
   const catLabel = categoryInfo?.label || "Geral";
   const catColor = categoryInfo?.textColor || "#94a3b8";
 
@@ -1717,7 +1746,7 @@ const QuestaoRow = memo(function QuestaoRow({
     ultrahard: "bg-[#120b16]/60 hover:bg-[#180f1d]",
     bonus: "bg-[#120b16]/60 hover:bg-[#180f1d]",
   };
-  const bgClass = diffBgClasses[questao.categoryKey] || "hover:bg-white/[0.03]";
+  const bgClass = diffBgClasses[displayedCategory] || "hover:bg-white/[0.03]";
 
   return (
     <div
@@ -1765,7 +1794,7 @@ const QuestaoRow = memo(function QuestaoRow({
           onClick={() => { setOpen(v => !v); setShowResp(false); }}
           className="text-slate-500 hover:text-slate-300 transition-colors w-4 h-4 flex items-center justify-center shrink-0"
         >
-          {loading ? (
+          {loading && imageUrls.filter(u => u && u.trim() !== "").length === 0 ? (
             <Loader2 size={10} className="animate-spin text-slate-500" />
           ) : (
             <ChevronRight size={12} className={`text-slate-500 transition-transform duration-150 shrink-0 ${open ? "rotate-90" : ""}`} />
@@ -1784,6 +1813,24 @@ const QuestaoRow = memo(function QuestaoRow({
         >
           {catLabel}
         </span>
+
+        <select
+          aria-label={`Classificação pessoal da questão ${questao.numero}`}
+          title={canEditClassification ? "Classificar questão para sua conta" : "Entre na conta para salvar sua classificação"}
+          disabled={!canEditClassification}
+          value={classification ?? ""}
+          onClick={(event) => event.stopPropagation()}
+          onChange={(event) => {
+            const value = event.target.value as CategoryKey | "";
+            void updateClassification(questao.id, value || null);
+          }}
+          className="max-w-[118px] rounded-md border border-white/[0.08] bg-[#0b1019] px-1.5 py-1 text-[10px] text-slate-300 outline-none focus:border-indigo-500/60 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <option value="">Padrão</option>
+          {CATEGORIES.map(category => (
+            <option key={category.key} value={category.key}>{category.label}</option>
+          ))}
+        </select>
 
         {questao.topic && (
           <span className="text-[12px] sm:text-[13px] font-normal text-slate-300 leading-relaxed truncate ml-0.5">
@@ -1845,7 +1892,7 @@ const QuestaoRow = memo(function QuestaoRow({
 
       {open && (
         <div className="ml-6 pl-4 border-l border-indigo-500/[0.15] my-2 flex flex-col gap-3">
-          {loading ? (
+          {loading && imageUrls.filter(u => u && u.trim() !== "").length === 0 ? (
             <div className="flex items-center gap-2 text-[11px] text-slate-500 italic py-2">
               <Loader2 size={12} className="animate-spin" />
               Carregando detalhes...
@@ -1858,6 +1905,8 @@ const QuestaoRow = memo(function QuestaoRow({
                     <img
                       src={url.trim()}
                       alt={`Q${questao.numero} img${i + 1}`}
+                      loading="lazy"
+                      decoding="async"
                       onClick={() => setZoomedImage(url.trim())}
                       style={getNotionImageFilterStyle(antiBrilho)}
                       className={`w-full rounded-xl border object-contain cursor-zoom-in hover:brightness-105 transition-all shadow-md ${
@@ -2159,6 +2208,7 @@ const CasoCard = memo(function CasoCard({
   onPrintCaso?: (caso: Caso, questoes?: Questao[]) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const { overrides } = useContext(ClassificationContext);
   const [questoes, setQuestoes] = useState<Questao[]>([]);
   const [subcasos, setSubcasos] = useState<Caso[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -2364,13 +2414,17 @@ const CasoCard = memo(function CasoCard({
   const effectiveStatus = statusFiltro !== "todas" ? statusFiltro : (apenasComErros ? "erros" : "todas");
 
   const sortedQuestoes = useMemo(() => {
-    if (effectiveStatus !== "mais_erros" || !resultadosMap) return questoes;
-    return [...questoes].sort((a, b) => {
+    const classified = questoes.map(question => ({
+      ...question,
+      categoryKey: overrides.get(question.id) ?? question.categoryKey,
+    }));
+    if (effectiveStatus !== "mais_erros" || !resultadosMap) return classified;
+    return classified.sort((a, b) => {
       const aErros = resultadosMap.get(a.id)?.totalErros ?? 0;
       const bErros = resultadosMap.get(b.id)?.totalErros ?? 0;
       return bErros - aErros;
     });
-  }, [questoes, effectiveStatus, resultadosMap]);
+  }, [questoes, effectiveStatus, resultadosMap, overrides]);
 
   const errosInCaso = loaded && resultadosMap
     ? (effectiveStatus === "mais_erros"
@@ -3031,6 +3085,7 @@ function TotalBancoStatsBadge({ blocks }: { blocks: NotionBlockRow[] }) {
 // Face/ícone e cor de cada nível de dificuldade, usado no badge do bloquinho
 const FACE_EMOJI: Record<CategoryKey, string> = {
   bonus: "🎉", faceis: "😊", atencao: "🔵", lacuna: "⛳", media: "😐", dificil: "😞", ultrahard: "🟣",
+  dominada: "🏆", treinar: "🧠", revisar: "🔁",
 };
 
 function QuestaoBloquinho({
@@ -3582,6 +3637,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   const [selectedBlock, setSelectedBlock] = useState<NotionBlockRow | null>(null);
   const [loadingBlocks, setLoadingBlocks] = useState(true);
   const [duvidasIds, setDuvidasIds] = useState<Set<string>>(new Set());
+  const [classificationOverrides, setClassificationOverrides] = useState<Map<string, CategoryKey>>(new Map());
   const [resultadosMap, setResultadosMap] = useState<Map<string, QuestaoStats>>(new Map());
   const [feitasHojeIds, setFeitasHojeIds] = useState<string[]>([]);
   const [respostasHojeMap, setRespostasHojeMap] = useState<Map<string, { data: string; horario: string; correto: string }>>(new Map());
@@ -3619,11 +3675,9 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   }, []);
 
   const handleReorder = useCallback(async (newBlocks: NotionBlockRow[]) => {
-    // Atribui números ordinais (1, 2, 3...) para o estado local
     const updatedBlocks = newBlocks.map((b, index) => ({ ...b, ordem: index + 1 }));
-    setBlocks(updatedBlocks);
-
-    // ATUALIZA A COLUNA 'ordem' NA TABELA 'notion_blocks' NO SUPABASE PARA TODOS OS USUÁRIOS
+    const reorderedIds = new Set(updatedBlocks.map(block => block.id));
+    setBlocks(prev => [...prev.filter(block => !reorderedIds.has(block.id)), ...updatedBlocks]);
     try {
       const updates = updatedBlocks.map((b) => 
         supabase.from("notion_blocks").update({ ordem: b.ordem }).eq("id", b.id)
@@ -3651,12 +3705,16 @@ export default function NotionQuestionTab({ user }: { user: any }) {
 
   const handleMoveBlock = useCallback((blockId: string, direction: "up" | "down") => {
     setBlocks(prev => {
-      const index = prev.findIndex(b => b.id === blockId);
+      const target = prev.find(b => b.id === blockId);
+      if (!target) return prev;
+      const subject = target.materia?.trim() || "Sem Matéria";
+      const newBlocks = prev.filter(b => (b.materia?.trim() || "Sem Matéria") === subject)
+        .sort((a, b) => (a.ordem ?? Number.MAX_SAFE_INTEGER) - (b.ordem ?? Number.MAX_SAFE_INTEGER));
+      const index = newBlocks.findIndex(b => b.id === blockId);
       if (index === -1) return prev;
       const newIndex = direction === "up" ? index - 1 : index + 1;
-      if (newIndex < 0 || newIndex >= prev.length) return prev;
+      if (newIndex < 0 || newIndex >= newBlocks.length) return prev;
       
-      const newBlocks = [...prev];
       const [moved] = newBlocks.splice(index, 1);
       newBlocks.splice(newIndex, 0, moved);
       
@@ -3668,11 +3726,16 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   const handleDropBlock = useCallback((draggedId: string, targetId: string) => {
     if (draggedId === targetId) return;
     setBlocks(prev => {
-      const dragIndex = prev.findIndex(b => b.id === draggedId);
-      const targetIndex = prev.findIndex(b => b.id === targetId);
+      const dragged = prev.find(b => b.id === draggedId);
+      const target = prev.find(b => b.id === targetId);
+      if (!dragged || !target || (dragged.materia?.trim() || "Sem Matéria") !== (target.materia?.trim() || "Sem Matéria")) return prev;
+      const subject = target.materia?.trim() || "Sem Matéria";
+      const newBlocks = prev.filter(b => (b.materia?.trim() || "Sem Matéria") === subject)
+        .sort((a, b) => (a.ordem ?? Number.MAX_SAFE_INTEGER) - (b.ordem ?? Number.MAX_SAFE_INTEGER));
+      const dragIndex = newBlocks.findIndex(b => b.id === draggedId);
+      const targetIndex = newBlocks.findIndex(b => b.id === targetId);
       if (dragIndex === -1 || targetIndex === -1) return prev;
 
-      const newBlocks = [...prev];
       const [moved] = newBlocks.splice(dragIndex, 1);
       newBlocks.splice(targetIndex, 0, moved);
 
@@ -3693,6 +3756,29 @@ export default function NotionQuestionTab({ user }: { user: any }) {
       setDuvidasIds(new Set((data ?? []).map((item: any) => item.questao_id)));
     } catch (e) {
       console.error("Erro ao buscar duvidas do Notion:", e);
+    }
+  }, [user?.id]);
+
+  const fetchClassifications = useCallback(async () => {
+    if (!user?.id) {
+      setClassificationOverrides(new Map());
+      return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from("notion_classificacoes")
+        .select("questao_id, classificacao")
+        .eq("user_id", user.id);
+      if (error) throw error;
+      const next = new Map<string, CategoryKey>();
+      for (const row of data ?? []) {
+        if (CATEGORIES.some(category => category.key === row.classificacao)) {
+          next.set(row.questao_id, row.classificacao as CategoryKey);
+        }
+      }
+      setClassificationOverrides(next);
+    } catch (error) {
+      console.error("Erro ao buscar classificações pessoais:", error);
     }
   }, [user?.id]);
 
@@ -3795,13 +3881,44 @@ export default function NotionQuestionTab({ user }: { user: any }) {
     if (user?.id) {
       fetchDuvidas();
       fetchResultados();
+      fetchClassifications();
     } else {
       setDuvidasIds(new Set());
+      setClassificationOverrides(new Map());
       setResultadosMap(new Map());
       setFeitasHojeIds([]);
       setRespostasHojeMap(new Map());
     }
-  }, [user?.id, fetchDuvidas, fetchResultados, statsRefreshTrigger]);
+  }, [user?.id, fetchDuvidas, fetchResultados, fetchClassifications, statsRefreshTrigger]);
+
+  const handleUpdateClassification = useCallback(async (questionId: string, classification: CategoryKey | null) => {
+    if (!user?.id) return;
+    const previous = classificationOverrides;
+    setClassificationOverrides(current => {
+      const next = new Map(current);
+      if (classification) next.set(questionId, classification);
+      else next.delete(questionId);
+      return next;
+    });
+    try {
+      if (classification) {
+        const { error } = await supabase.from("notion_classificacoes").upsert({
+          questao_id: questionId,
+          user_id: user.id,
+          classificacao: classification,
+        }, { onConflict: "user_id,questao_id" });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("notion_classificacoes")
+          .delete().eq("questao_id", questionId).eq("user_id", user.id);
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error("Erro ao salvar classificação da questão:", error);
+      setClassificationOverrides(previous);
+      alert("Não foi possível salvar a classificação. Confira a configuração da tabela no Supabase.");
+    }
+  }, [user?.id, classificationOverrides]);
 
   const handleToggleDuvida = async (questaoId: string, marcar: boolean) => {
     if (!user) return;
@@ -3893,6 +4010,9 @@ export default function NotionQuestionTab({ user }: { user: any }) {
       const mat = b.materia?.trim() || "Sem Matéria";
       if (!map.has(mat)) map.set(mat, []);
       map.get(mat)!.push(b);
+    }
+    for (const materiaBlocks of map.values()) {
+      materiaBlocks.sort((a, b) => (a.ordem ?? Number.MAX_SAFE_INTEGER) - (b.ordem ?? Number.MAX_SAFE_INTEGER));
     }
     return map;
   }, [blocksFiltrados]);
@@ -4159,6 +4279,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   }, []);
 
   return (
+    <ClassificationContext.Provider value={{ overrides: classificationOverrides, updateClassification: handleUpdateClassification, canEdit: !!user?.id }}>
     <div className="flex flex-col gap-4 bg-[#080d1a] rounded-2xl border border-white/[0.06] p-4 sm:p-5 shadow-2xl relative overflow-hidden">
       {/* Background ambient glow */}
       <div className="absolute top-0 right-1/4 w-80 h-80 bg-indigo-600/[0.03] blur-[120px] rounded-full pointer-events-none" />
@@ -4559,7 +4680,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           {isAdmin && !loadingBlocks && blocksFiltrados.length > 0 && (
             <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 bg-[#101526]/80 px-3.5 py-2 rounded-xl border border-white/[0.06] relative z-10">
               <MoreVertical size={12} className="text-indigo-400 shrink-0" />
-              <span>Modo Admin: Clique no menu de 3 pontinhos (⋮) no caderno para alterar a ordem no banco ou reordenar.</span>
+              <span>Modo Admin: arraste os cadernos ou use as setas no menu para organizar a ordem dentro de cada matéria.</span>
             </div>
           )}
 
@@ -4708,5 +4829,6 @@ export default function NotionQuestionTab({ user }: { user: any }) {
         </>
       )}
     </div>
+    </ClassificationContext.Provider>
   );
 }

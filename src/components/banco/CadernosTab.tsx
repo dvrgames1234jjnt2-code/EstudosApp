@@ -37,6 +37,8 @@ import {
   Trash2,
   FolderInput,
   Printer,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import type { BancoQuestion } from "./QuestionsTable";
 import QuestionResolver from "./QuestionResolver";
@@ -1653,6 +1655,15 @@ export default function CadernosTab({
         roots.push(node);
       }
     });
+    const sortChildren = (node: HierarchyTreeNode) => {
+      node.filhos.sort((a, b) => {
+        const orderA = a.ordem && a.ordem > 0 ? a.ordem : Number.MAX_SAFE_INTEGER;
+        const orderB = b.ordem && b.ordem > 0 ? b.ordem : Number.MAX_SAFE_INTEGER;
+        return orderA - orderB || a.nome.localeCompare(b.nome, "pt-BR");
+      });
+      node.filhos.forEach(sortChildren);
+    };
+    roots.forEach(sortChildren);
 
     // Mapear cada questão para o nó final em organizacao_nos através de organizacao_id
     const unlinkedQuestions: BancoQuestion[] = [];
@@ -1790,7 +1801,13 @@ export default function CadernosTab({
         cadernosList.push(cadItem);
       });
 
-      cadList.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+      cadList.sort((a, b) => {
+        const nodeA = nodeMap.get(a.id);
+        const nodeB = nodeMap.get(b.id);
+        const orderA = nodeA?.ordem && nodeA.ordem > 0 ? nodeA.ordem : Number.MAX_SAFE_INTEGER;
+        const orderB = nodeB?.ordem && nodeB.ordem > 0 ? nodeB.ordem : Number.MAX_SAFE_INTEGER;
+        return orderA - orderB || a.nome.localeCompare(b.nome, "pt-BR");
+      });
 
       materiasList.push({
         id: root.id,
@@ -1917,6 +1934,37 @@ export default function CadernosTab({
       }
     }
   };
+
+  const handleMoveCaderno = useCallback(async (materiaId: string, cadernoId: string, direction: "up" | "down") => {
+    if (!isAdminState) return;
+    const siblings = dbNodes
+      .filter(node => node.parent_id === materiaId)
+      .sort((a, b) => {
+        const orderA = a.ordem && a.ordem > 0 ? a.ordem : Number.MAX_SAFE_INTEGER;
+        const orderB = b.ordem && b.ordem > 0 ? b.ordem : Number.MAX_SAFE_INTEGER;
+        return orderA - orderB || a.nome.localeCompare(b.nome, "pt-BR");
+      });
+    const index = siblings.findIndex(node => node.id === cadernoId);
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (index < 0 || targetIndex < 0 || targetIndex >= siblings.length) return;
+
+    const [moved] = siblings.splice(index, 1);
+    siblings.splice(targetIndex, 0, moved);
+    const ordered = siblings.map((node, position) => ({ ...node, ordem: position + 1 }));
+    const orderedIds = new Set(ordered.map(node => node.id));
+    setDbNodes(current => [...current.filter(node => !orderedIds.has(node.id)), ...ordered]);
+
+    const results = await Promise.all(ordered.map(node =>
+      supabase.from("organizacao_nos").update({ ordem: node.ordem }).eq("id", node.id)
+    ));
+    const failed = results.find(result => result.error);
+    if (failed?.error) {
+      showToast("Não foi possível salvar a ordem dos cadernos.", "error");
+      await carregarNos();
+      return;
+    }
+    showToast("Ordem dos cadernos salva.");
+  }, [dbNodes, isAdminState, carregarNos]);
 
   // Manipulador de abertura de questão em modal QuestionResolver
   const handleOpenQuestionInModal = useCallback((q: BancoQuestion, queue: BancoQuestion[]) => {
@@ -2836,6 +2884,30 @@ export default function CadernosTab({
 
                           {/* Botão abrir + ações administrativas com touch targets confortáveis */}
                           <div className="flex items-center gap-1 shrink-0">
+                            {isAdminState && (
+                              <div className="flex items-center gap-0.5" onClick={(event) => event.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  disabled={cadernoIndex === 0}
+                                  onClick={() => void handleMoveCaderno(mat.id, caderno.id, "up")}
+                                  title="Mover caderno para cima"
+                                  aria-label={`Mover ${caderno.nome} para cima`}
+                                  className="flex h-6 w-6 items-center justify-center rounded border border-white/[0.08] bg-white/[0.03] text-slate-500 transition-colors hover:border-indigo-500/30 hover:bg-indigo-500/10 hover:text-indigo-300 disabled:cursor-not-allowed disabled:opacity-25"
+                                >
+                                  <ArrowUp size={11} />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={cadernoIndex === mat.cadernos.length - 1}
+                                  onClick={() => void handleMoveCaderno(mat.id, caderno.id, "down")}
+                                  title="Mover caderno para baixo"
+                                  aria-label={`Mover ${caderno.nome} para baixo`}
+                                  className="flex h-6 w-6 items-center justify-center rounded border border-white/[0.08] bg-white/[0.03] text-slate-500 transition-colors hover:border-indigo-500/30 hover:bg-indigo-500/10 hover:text-indigo-300 disabled:cursor-not-allowed disabled:opacity-25"
+                                >
+                                  <ArrowDown size={11} />
+                                </button>
+                              </div>
+                            )}
                             <span
                               title="Abrir visão dedicada deste caderno"
                               className="w-6 h-6 sm:w-5 sm:h-5 flex items-center justify-center rounded border border-white/[0.05] bg-white/[0.02] text-slate-500 group-hover:text-slate-300 group-hover:border-white/[0.10] transition-all"
