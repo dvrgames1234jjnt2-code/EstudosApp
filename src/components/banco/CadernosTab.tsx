@@ -37,8 +37,6 @@ import {
   Trash2,
   FolderInput,
   Printer,
-  ArrowUp,
-  ArrowDown,
 } from "lucide-react";
 import type { BancoQuestion } from "./QuestionsTable";
 import QuestionResolver from "./QuestionResolver";
@@ -1265,6 +1263,8 @@ export default function CadernosTab({
 
   // Override local de organizacao_id para drag and drop instantâneo
   const [orgOverrides, setOrgOverrides] = useState<Map<string, string>>(new Map());
+  const [draggingCadernoId, setDraggingCadernoId] = useState<string | null>(null);
+  const [dragOverCadernoId, setDragOverCadernoId] = useState<string | null>(null);
 
   // Administração Avançada (Exclusivo Admin)
   const [editingQuestao, setEditingQuestao] = useState<BancoQuestion | null>(null);
@@ -1935,7 +1935,7 @@ export default function CadernosTab({
     }
   };
 
-  const handleMoveCaderno = useCallback(async (materiaId: string, cadernoId: string, direction: "up" | "down") => {
+  const handleReorderCadernos = useCallback(async (materiaId: string, cadernoId: string, targetCadernoId: string) => {
     if (!isAdminState) return;
     const siblings = dbNodes
       .filter(node => node.parent_id === materiaId)
@@ -1945,8 +1945,8 @@ export default function CadernosTab({
         return orderA - orderB || a.nome.localeCompare(b.nome, "pt-BR");
       });
     const index = siblings.findIndex(node => node.id === cadernoId);
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (index < 0 || targetIndex < 0 || targetIndex >= siblings.length) return;
+    const targetIndex = siblings.findIndex(node => node.id === targetCadernoId);
+    if (index < 0 || targetIndex < 0 || index === targetIndex) return;
 
     const [moved] = siblings.splice(index, 1);
     siblings.splice(targetIndex, 0, moved);
@@ -2836,18 +2836,44 @@ export default function CadernosTab({
                       return (
                         <div
                           key={caderno.id}
+                          draggable={isAdminState}
+                          onDragStart={(event) => {
+                            event.stopPropagation();
+                            setDraggingCadernoId(caderno.id);
+                            event.dataTransfer.setData("application/x-estudos-caderno", caderno.id);
+                            event.dataTransfer.effectAllowed = "move";
+                          }}
+                          onDragEnd={() => {
+                            setDraggingCadernoId(null);
+                            setDragOverCadernoId(null);
+                          }}
                           onDragOver={(e) => {
                             e.preventDefault();
-                            e.dataTransfer.dropEffect = "move";
+                            const isCadernoDrag = e.dataTransfer.types.includes("application/x-estudos-caderno");
+                            e.dataTransfer.dropEffect = isCadernoDrag ? "move" : "copy";
+                            if (isCadernoDrag && draggingCadernoId !== caderno.id) setDragOverCadernoId(caderno.id);
                           }}
                           onDrop={(e) => {
                             e.preventDefault();
+                            e.stopPropagation();
+                            const movedCadernoId = e.dataTransfer.getData("application/x-estudos-caderno");
+                            if (movedCadernoId && movedCadernoId !== caderno.id) {
+                              void handleReorderCadernos(mat.id, movedCadernoId, caderno.id);
+                              setDraggingCadernoId(null);
+                              setDragOverCadernoId(null);
+                              return;
+                            }
                             const qId = e.dataTransfer.getData("questao_id") || e.dataTransfer.getData("text/plain");
                             if (qId) {
                               handleDropQuestion(qId, caderno.id);
                             }
                           }}
+                          onDragLeave={(event) => {
+                            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragOverCadernoId(null);
+                          }}
                           className={`grid min-h-11 grid-cols-[minmax(0,1fr)_auto_auto] sm:grid-cols-[minmax(0,1fr)_120px_auto] items-center gap-2 sm:gap-4 px-2 sm:px-4 py-1.5 sm:py-1 rounded-md border-b border-white/[0.05] transition-colors group cursor-pointer ${
+                            draggingCadernoId === caderno.id ? "opacity-40" : ""
+                          } ${dragOverCadernoId === caderno.id ? "ring-2 ring-indigo-400/70 bg-indigo-500/10" : ""} ${
                             cadernoIndex % 2 === 0
                               ? "bg-[#101623] hover:bg-[#182131]"
                               : "bg-[#0c111c] hover:bg-[#151d2a]"
@@ -2886,26 +2912,9 @@ export default function CadernosTab({
                           <div className="flex items-center gap-1 shrink-0">
                             {isAdminState && (
                               <div className="flex items-center gap-0.5" onClick={(event) => event.stopPropagation()}>
-                                <button
-                                  type="button"
-                                  disabled={cadernoIndex === 0}
-                                  onClick={() => void handleMoveCaderno(mat.id, caderno.id, "up")}
-                                  title="Mover caderno para cima"
-                                  aria-label={`Mover ${caderno.nome} para cima`}
-                                  className="flex h-6 w-6 items-center justify-center rounded border border-white/[0.08] bg-white/[0.03] text-slate-500 transition-colors hover:border-indigo-500/30 hover:bg-indigo-500/10 hover:text-indigo-300 disabled:cursor-not-allowed disabled:opacity-25"
-                                >
-                                  <ArrowUp size={11} />
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={cadernoIndex === mat.cadernos.length - 1}
-                                  onClick={() => void handleMoveCaderno(mat.id, caderno.id, "down")}
-                                  title="Mover caderno para baixo"
-                                  aria-label={`Mover ${caderno.nome} para baixo`}
-                                  className="flex h-6 w-6 items-center justify-center rounded border border-white/[0.08] bg-white/[0.03] text-slate-500 transition-colors hover:border-indigo-500/30 hover:bg-indigo-500/10 hover:text-indigo-300 disabled:cursor-not-allowed disabled:opacity-25"
-                                >
-                                  <ArrowDown size={11} />
-                                </button>
+                                <span className="flex h-6 w-6 cursor-grab items-center justify-center rounded border border-white/[0.08] bg-white/[0.03] text-slate-500 active:cursor-grabbing" title="Arraste para reorganizar este caderno">
+                                  <GripVertical size={12} />
+                                </span>
                               </div>
                             )}
                             <span
