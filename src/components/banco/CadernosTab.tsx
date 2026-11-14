@@ -2011,7 +2011,7 @@ export default function CadernosTab({
         {/* Modal QuestionResolver */}
         {modalQuestion && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-1.5 sm:p-4 md:p-6 overflow-y-auto">
-            <div className="relative w-full max-w-6xl max-h-[98vh] sm:max-h-[96vh] bg-[#0c101c] border border-white/10 rounded-xl sm:rounded-2xl shadow-2xl overflow-y-auto custom-scrollbar p-2.5 sm:p-6 md:p-8 flex flex-col my-auto">
+            <div className="relative w-full max-w-7xl min-h-[min(78vh,760px)] max-h-[98vh] sm:max-h-[96vh] bg-[#0c101c] border border-white/10 rounded-xl sm:rounded-2xl shadow-2xl overflow-y-auto custom-scrollbar p-2.5 sm:p-6 md:p-8 flex flex-col my-auto">
               <QuestionResolver
                 question={modalQueue[modalIndex] || modalQuestion}
                 questionIndex={modalIndex}
@@ -2894,7 +2894,7 @@ export default function CadernosTab({
       {/* ── MODAL DE RESOLUÇÃO FOCADA (IGUAL ABA QUESTÃO ATIVA) ── */}
       {modalQuestion && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-1.5 sm:p-4 md:p-6 overflow-y-auto">
-          <div className="relative w-full max-w-6xl max-h-[98vh] sm:max-h-[96vh] bg-[#0c101c] border border-white/10 rounded-xl sm:rounded-2xl shadow-2xl overflow-y-auto custom-scrollbar p-2.5 sm:p-6 md:p-8 flex flex-col my-auto">
+          <div className="relative w-full max-w-7xl min-h-[min(78vh,760px)] max-h-[98vh] sm:max-h-[96vh] bg-[#0c101c] border border-white/10 rounded-xl sm:rounded-2xl shadow-2xl overflow-y-auto custom-scrollbar p-2.5 sm:p-6 md:p-8 flex flex-col my-auto">
             <QuestionResolver
               question={modalQueue[modalIndex] || modalQuestion}
               questionIndex={modalIndex}
