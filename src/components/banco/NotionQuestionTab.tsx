@@ -2823,6 +2823,17 @@ function BlockViewer({
     return () => { cancelled = true; };
   }, [block.block_id, effectiveStatus, resultadosMap, feitasHojeIds, refreshKey]);
 
+  const displayFilteredItens = useMemo(() => {
+    if (!filteredItens) return null;
+    if (!classificacaoFiltro || classificacaoFiltro === "todas") return filteredItens;
+    return filteredItens.filter(item => {
+      const cat = overrides.get(item.id) ?? item.categoryKey;
+      if (classificacaoFiltro === "personalizadas") return overrides.has(item.id);
+      if (classificacaoFiltro === "padrao") return !overrides.has(item.id);
+      return cat === classificacaoFiltro;
+    });
+  }, [filteredItens, classificacaoFiltro, overrides]);
+
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-12 gap-3">
       <Loader2 className="w-7 h-7 text-indigo-500 animate-spin" />
@@ -2836,17 +2847,6 @@ function BlockViewer({
       <p className="text-[10px] text-slate-600">Verifique se a integração Notion tem acesso a este bloco.</p>
     </div>
   );
-
-  const displayFilteredItens = useMemo(() => {
-    if (!filteredItens) return null;
-    if (!classificacaoFiltro || classificacaoFiltro === "todas") return filteredItens;
-    return filteredItens.filter(item => {
-      const cat = overrides.get(item.id) ?? item.categoryKey;
-      if (classificacaoFiltro === "personalizadas") return overrides.has(item.id);
-      if (classificacaoFiltro === "padrao") return !overrides.has(item.id);
-      return cat === classificacaoFiltro;
-    });
-  }, [filteredItens, classificacaoFiltro, overrides]);
 
   if (effectiveStatus !== "todas") {
     if (!displayFilteredItens || displayFilteredItens.length === 0) {
@@ -4904,6 +4904,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                             onUpdateOrdem={handleSingleOrdemChange}
                             isFirst={index === 0}
                             isLast={index === mBlocks.length - 1}
+                            onSelect={(b) => setSelectedBlock(b)}
                             onPrintCaderno={handlePrintCaderno}
                             onPrintCaso={handlePrintCaso}
                           />
