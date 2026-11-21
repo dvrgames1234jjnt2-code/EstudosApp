@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   GraduationCap,
-  BookOpen,
   Layers,
   ClipboardList,
   BarChart3,
@@ -32,7 +31,7 @@ export function AppSidebarNav({
   onClose,
   onMouseEnter,
   onMouseLeave,
-  activeTab = "banco",
+  activeTab = "notion",
   onSelectTab,
   questionsCount,
   provasCount,
@@ -51,16 +50,6 @@ export function AppSidebarNav({
   }, [isOpen, onClose]);
 
   const navItems = [
-    {
-      id: "banco",
-      label: "Banco de Questões",
-      description: "Navegue por todas as questões",
-      icon: BookOpen,
-      count: questionsCount,
-      color: "from-blue-600 to-indigo-600",
-      textColor: "text-blue-400",
-      disabled: false,
-    },
     {
       id: "resolver",
       label: "Questão Ativa",

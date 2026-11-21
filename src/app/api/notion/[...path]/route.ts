@@ -30,6 +30,9 @@ const CACHE_TTL_MS = 10 * 1000; // 10 segundos apenas para deduplicação instan
 
 async function proxyNotion(path: string, request: NextRequest) {
   const token = process.env.NOTION_TOKEN;
+  if (!token) {
+    return NextResponse.json({ error: 'NOTION_TOKEN não configurado' }, { status: 500 });
+  }
   const searchParams = request.nextUrl.searchParams.toString();
   const url = `https://api.notion.com/v1/${path}${searchParams ? `?${searchParams}` : ''}`;
   const isGet = request.method === 'GET';

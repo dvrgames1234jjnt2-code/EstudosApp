@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   GraduationCap,
   ArrowLeft,
-  BookOpen,
   Layers,
   Loader2,
   RefreshCw,
@@ -125,7 +124,7 @@ export default function BancoPage() {
   const [duvidas, setDuvidas] = useState<Set<string>>(new Set());
 
   // UI
-  const [activeTab, setActiveTab]   = useState<ActiveTab>("banco");
+  const [activeTab, setActiveTab]   = useState<ActiveTab>("notion");
   const [selectedQuestion, setSelectedQuestion] = useState<BancoQuestion | null>(null);
   const [resolverQueue, setResolverQueue] = useState<BancoQuestion[]>([]);
   const [resolverIndex, setResolverIndex] = useState(0);
@@ -173,10 +172,15 @@ export default function BancoPage() {
 
   // ── Auth ──────────────────────────────────
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoadingUser(false);
-    });
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setUser(session?.user ?? null);
+        setLoadingUser(false);
+      })
+      .catch(() => {
+        setUser(null);
+        setLoadingUser(false);
+      });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null);
     });
@@ -520,7 +524,6 @@ export default function BancoPage() {
       <div className="sticky top-16 z-40 border-b border-white/[0.06] bg-[#020617]/90 backdrop-blur-md px-4 sm:px-8">
         <div className="flex items-center gap-1.5 w-full max-w-[1920px] mx-auto overflow-x-auto py-2 custom-scrollbar">
           {[
-            { id: "banco",      icon: <BookOpen size={13} />,       label: "Banco de Questões", count: questions.length },
             { id: "resolver",   icon: <Layers size={13} />,         label: "Questão Ativa", badge: selectedQuestion ? "●" : null },
             { id: "simulados",  icon: <ClipboardList size={13} />,  label: "Simulados", count: provasDisponiveis.length },
             { id: "desempenho", icon: <BarChart3 size={13} />,      label: "Desempenho", badge: resolverQueue.length > 0 ? "●" : null },
@@ -649,7 +652,7 @@ export default function BancoPage() {
                   onAnswer={handleAnswer}
                   onNext={handleNext}
                   onPrev={handlePrev}
-                  onBackToBank={() => setActiveTab("banco")}
+                  onBackToBank={() => setActiveTab("simulados")}
                   isSaving={isSaving}
                   provasDisponiveis={provasDisponiveis}
                   isAdmin={isAdmin}
