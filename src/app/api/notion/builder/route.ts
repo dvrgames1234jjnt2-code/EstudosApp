@@ -24,6 +24,17 @@ async function appendNotionChildren(parentBlockId: string, children: unknown[], 
   return { ok: res.ok, status: res.status, data };
 }
 
+export async function GET() {
+  return NextResponse.json(
+    { notionConfigured: Boolean(process.env.NOTION_TOKEN) },
+    {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      },
+    }
+  );
+}
+
 export async function POST(request: NextRequest) {
   const token = process.env.NOTION_TOKEN;
   const body = await request.json().catch(() => ({}));

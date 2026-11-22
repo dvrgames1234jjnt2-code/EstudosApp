@@ -11,7 +11,7 @@ import {
   Ban, Trophy, FolderPlus, FolderInput, Pencil, FilePlus2
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
-import { SyncBancoModal } from "./SyncBancoModal";
+import { SyncBancoModal, type NotionIdChangeAlert } from "./SyncBancoModal";
 import { PrintNotionModal, type PrintableNotionQuestion } from "./PrintNotionModal";
 import { CreateCasoModal, QuestaoBuilderModal, MoveQuestaoModal, type QuestaoInitialEdit } from "./NotionBuilderModals";
 import { deleteCasoOrSubcaso, deleteQuestaoFromCaso, writeSupabaseCacheBlocks, type BuilderCategoryKey } from "../../lib/notionLocalBuilder";
@@ -220,9 +220,90 @@ function useAntiBrilhoMode() {
   return [antiBrilho, toggleAntiBrilho] as const;
 }
 
-// Cache de alta performance (SWR: 0ms local/Supabase + revalidação silenciosa no Notion)
+// Cache de alta performance (SWR: 0ms local/Supabase + revalidação silenciosa no Notion quando configurado)
 const childrenCache = new Map<string, { data: NotionAPIBlock[]; timestamp: number }>();
 const childrenInFlight = new Map<string, Promise<NotionAPIBlock[]>>();
+
+let notionEnabledPromise: Promise<boolean> | null = null;
+async function isNotionEnabled(): Promise<boolean> {
+  if (!notionEnabledPromise) {
+    notionEnabledPromise = fetch("/api/notion/builder")
+      .then(async res => {
+        if (!res.ok) return false;
+        const data = await res.json();
+        return Boolean(data?.notionConfigured);
+      })
+      .catch(() => false);
+  }
+  return notionEnabledPromise;
+}
+
+function isExpiredAwsUrl(url?: string | null): boolean {
+  if (!url) return false;
+  return url.includes("amazonaws.com") || url.includes("prod-files-secure");
+}
+
+function hasExpiredAwsUrl(urls?: string[] | null): boolean {
+  return Array.isArray(urls) && urls.some(u => isExpiredAwsUrl(u));
+}
+
+const preloadedImgUrls = new Set<string>();
+function preloadImageUrls(urls?: (string | undefined | null)[]) {
+  if (typeof window === "undefined" || !urls || urls.length === 0) return;
+  for (const raw of urls) {
+    const url = raw?.trim();
+    if (!url || isExpiredAwsUrl(url) || preloadedImgUrls.has(url)) continue;
+    preloadedImgUrls.add(url);
+    const img = new window.Image();
+    img.decoding = "async";
+    img.src = url;
+  }
+}
+
+const bancoIdsByRootCache = new Map<string, string[]>();
+const bancoIdsByCasoCache = new Map<string, string[]>();
+let bancoIdsLoadedPromise: Promise<void> | null = null;
+
+async function ensureBancoIdsLoaded(): Promise<void> {
+  if (!bancoIdsLoadedPromise) {
+    bancoIdsLoadedPromise = (async () => {
+      try {
+        const allRows: Array<{ id: string; bloco_raiz_id: string | null; caso_id: string | null }> = [];
+        let from = 0;
+        const pageSize = 1000;
+        while (true) {
+          const { data, error } = await supabase
+            .from("notion_questoes_banco")
+            .select("id, bloco_raiz_id, caso_id")
+            .range(from, from + pageSize - 1);
+          if (error || !data || data.length === 0) break;
+          allRows.push(...(data as Array<{ id: string; bloco_raiz_id: string | null; caso_id: string | null }>));
+          if (data.length < pageSize) break;
+          from += pageSize;
+        }
+        bancoIdsByRootCache.clear();
+        bancoIdsByCasoCache.clear();
+        for (const row of allRows) {
+          if (row.bloco_raiz_id) {
+            const rClean = row.bloco_raiz_id.replace(/-/g, "");
+            const arr = bancoIdsByRootCache.get(rClean) ?? [];
+            arr.push(row.id);
+            bancoIdsByRootCache.set(rClean, arr);
+          }
+          if (row.caso_id) {
+            const cClean = row.caso_id.replace(/-/g, "");
+            const arr = bancoIdsByCasoCache.get(cClean) ?? [];
+            arr.push(row.id);
+            bancoIdsByCasoCache.set(cClean, arr);
+          }
+        }
+      } catch {
+        // Ignora erro silenciosamente e permite fallback no cache
+      }
+    })();
+  }
+  return bancoIdsLoadedPromise;
+}
 
 function getLocalNotionCache(key: string) {
   try {
@@ -292,22 +373,59 @@ async function setSupabaseNotionCache(key: string, data: any) {
 export function clearNotionClientCache() {
   childrenCache.clear();
   childrenInFlight.clear();
+  fullQuestaoCache.clear();
   fullQuestaoInFlight.clear();
   questoesDoBlocoCache.clear();
+  questoesDoBlocoInFlight.clear();
   questoesDetalhesCache.clear();
+  questoesDetalhesInFlight.clear();
+  bancoIdsLoadedPromise = null;
+  bancoIdsByRootCache.clear();
+  bancoIdsByCasoCache.clear();
   clearLocalNotionCache();
+}
+
+function emitNotionIdChangeAlert(alert: NotionIdChangeAlert) {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem("notion_id_change_alerts");
+    const list: NotionIdChangeAlert[] = raw ? JSON.parse(raw) : [];
+    const map = new Map<string, NotionIdChangeAlert>();
+    for (const item of list) map.set(item.id, item);
+    map.set(alert.id, alert);
+    localStorage.setItem("notion_id_change_alerts", JSON.stringify([...map.values()]));
+    window.dispatchEvent(new Event("notion-id-alerts-updated"));
+  } catch {
+    // ignore storage error
+  }
 }
 
 async function revalidateChildrenInBackground(clean: string, force = false): Promise<NotionAPIBlock[]> {
   if (!force && childrenInFlight.has(clean)) return childrenInFlight.get(clean)!;
+
+  if (!(await isNotionEnabled())) {
+    return [];
+  }
 
   const url = `/api/notion/blocks/${clean}/children?page_size=100${force ? '&force=true&t=' + Date.now() : ''}`;
   const req = fetch(url, {
     headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
   })
     .then(async res => {
-      if (!res.ok) throw new Error(`Notion ${res.status}`);
-      const data: NotionAPIBlock[] = (await res.json()).results ?? [];
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 404 || payload?.code === "object_not_found") {
+          emitNotionIdChangeAlert({
+            id: `missing:${clean}`,
+            tipo: "bloco_removido",
+            antigoId: clean,
+            detectedAt: new Date().toISOString(),
+            mensagem: `O bloco ${clean.slice(0, 8)} não foi encontrado no Notion (ID alterado ou bloco removido).`,
+          });
+        }
+        throw new Error(`Notion ${res.status}`);
+      }
+      const data: NotionAPIBlock[] = payload?.results ?? [];
       const now = Date.now();
       childrenCache.set(clean, { data, timestamp: now });
       setLocalNotionCache(clean, data);
@@ -324,10 +442,8 @@ async function revalidateChildrenInBackground(clean: string, force = false): Pro
   return req;
 }
 
-async function fetchChildren(blockId: string, force = false): Promise<NotionAPIBlock[]> {
+async function fetchChildren(blockId: string, force = false, allowNotionFallback = true): Promise<NotionAPIBlock[]> {
   const clean = blockId.replace(/-/g, "");
-  const now = Date.now();
-  const FRESH_TTL = 3 * 60 * 1000; // 3 minutos para revalidação silenciosa
 
   if (force) {
     childrenCache.delete(clean);
@@ -336,40 +452,33 @@ async function fetchChildren(blockId: string, force = false): Promise<NotionAPIB
       localStorage.removeItem(`notion_c_${clean}`);
       sessionStorage.removeItem(`notion_c_${clean}`);
     } catch(e){}
-    return revalidateChildrenInBackground(clean, true);
-  }
-
-  // 1. Ver se existe no cache de memória
-  if (childrenCache.has(clean)) {
-    const cached = childrenCache.get(clean)!;
-    if (now - cached.timestamp >= FRESH_TTL) {
-      revalidateChildrenInBackground(clean).catch(() => {});
+    if (allowNotionFallback && await isNotionEnabled()) {
+      return revalidateChildrenInBackground(clean, true);
     }
-    return cached.data;
   }
 
-  // 2. Ver se existe no localStorage/sessionStorage
+  // 1. Cache de memória
+  if (childrenCache.has(clean)) {
+    return childrenCache.get(clean)!.data;
+  }
+
+  // 2. Cache localStorage/sessionStorage
   const local = getLocalNotionCache(clean);
   if (local && local.data && Array.isArray(local.data)) {
     childrenCache.set(clean, { data: local.data, timestamp: local.timestamp });
-    if (now - local.timestamp >= FRESH_TTL) {
-      revalidateChildrenInBackground(clean).catch(() => {});
-    }
     return local.data;
   }
 
-  // 3. Ver se existe no Supabase (notion_cache_blocos)
+  // 3. Supabase primeiro (notion_cache_blocos) — sem chamar Notion se já existir no Supabase
   const sbCache = await getSupabaseNotionCache(clean);
   if (sbCache && sbCache.data && Array.isArray(sbCache.data)) {
     childrenCache.set(clean, { data: sbCache.data, timestamp: sbCache.timestamp });
     setLocalNotionCache(clean, sbCache.data);
-    if (now - sbCache.timestamp >= FRESH_TTL) {
-      revalidateChildrenInBackground(clean).catch(() => {});
-    }
     return sbCache.data;
   }
 
-  // 4. Primeiro carregamento a frio (sem cache em nenhum lugar)
+  // 4. Somente se não existir no Supabase, busca no Notion
+  if (!allowNotionFallback) return [];
   return revalidateChildrenInBackground(clean);
 }
 
@@ -385,93 +494,100 @@ interface FullQuestaoData {
 const fullQuestaoCache = new Map<string, { data: FullQuestaoData; timestamp: number }>();
 const fullQuestaoInFlight = new Map<string, Promise<FullQuestaoData>>();
 
+async function buildQuestaoFullData(
+  clean: string,
+  force = false,
+  allowNotionFallback = true
+): Promise<FullQuestaoData> {
+  const children = await fetchChildren(clean, force, allowNotionFallback);
+  const imgs: string[] = [];
+  const rImgs: string[] = [];
+  const enunciadoTexts: string[] = [];
+  let textResp: string | undefined;
+  let foundToggleId: string | null = null;
+
+  for (const child of children) {
+    if (child.type === "image") {
+      const url = imgUrl(child);
+      if (url) imgs.push(url);
+    } else if (child.type === "toggle") {
+      const tText = richText(child.toggle?.rich_text ?? []).toLowerCase();
+      if (tText.includes("resposta")) {
+        foundToggleId = child.id;
+      }
+    } else {
+      const t = richText(
+        child.paragraph?.rich_text ??
+        child.bulleted_list_item?.rich_text ??
+        child.numbered_list_item?.rich_text ??
+        child.callout?.rich_text ??
+        child.quote?.rich_text ??
+        child.heading_1?.rich_text ??
+        child.heading_2?.rich_text ??
+        child.heading_3?.rich_text ??
+        []
+      );
+      if (t) enunciadoTexts.push(t);
+    }
+  }
+  const textEnunciado = enunciadoTexts.join("\n") || undefined;
+
+  const togglePromises = children
+    .filter(child => {
+      if (child.type !== "toggle" || !child.has_children) return false;
+      const tText = richText(child.toggle?.rich_text ?? []).toLowerCase();
+      return tText.includes("resposta");
+    })
+    .map(async child => {
+      const rChildren = await fetchChildren(child.id, force, allowNotionFallback);
+      const childImgs: string[] = [];
+      const texts: string[] = [];
+      for (const rc of rChildren) {
+        if (rc.type === "image") {
+          const url = imgUrl(rc);
+          if (url) childImgs.push(url);
+        } else {
+          const icon = rc.callout?.icon?.type === "emoji" ? `${rc.callout.icon.emoji} ` : "";
+          const t = richText(
+            rc.paragraph?.rich_text ??
+            rc.bulleted_list_item?.rich_text ??
+            rc.numbered_list_item?.rich_text ??
+            rc.callout?.rich_text ??
+            rc.quote?.rich_text ??
+            rc.heading_1?.rich_text ??
+            rc.heading_2?.rich_text ??
+            rc.heading_3?.rich_text ??
+            []
+          );
+          if (t) texts.push(icon + t);
+        }
+      }
+      return { imgs: childImgs, text: texts.join("\n") || undefined };
+    });
+
+  const toggleResults = await Promise.all(togglePromises);
+  for (const res of toggleResults) {
+    rImgs.push(...res.imgs);
+    if (res.text && !textResp) textResp = res.text;
+  }
+
+  const result: FullQuestaoData = { children, imgs, rImgs, textEnunciado, textResp, foundToggleId };
+  const now = Date.now();
+  fullQuestaoCache.set(clean, { data: result, timestamp: now });
+  if (hasFullQuestaoContent(result) && !isFullQuestaoExpired(result)) {
+    setLocalNotionCache(`qfull_${clean}`, result);
+    setSupabaseNotionCache(`qfull_${clean}`, result).catch(() => {});
+  }
+  return result;
+}
+
 async function revalidateQuestaoFullData(clean: string, force = false): Promise<FullQuestaoData> {
   if (!force && fullQuestaoInFlight.has(clean)) return fullQuestaoInFlight.get(clean)!;
 
-  const promise = (async () => {
-    const children = await fetchChildren(clean, force);
-    const imgs: string[] = [];
-    const rImgs: string[] = [];
-    const enunciadoTexts: string[] = [];
-    let textResp: string | undefined;
-    let foundToggleId: string | null = null;
-
-    for (const child of children) {
-      if (child.type === "image") {
-        const url = imgUrl(child);
-        if (url) imgs.push(url);
-      } else if (child.type === "toggle") {
-        const tText = richText(child.toggle?.rich_text ?? []).toLowerCase();
-        if (tText.includes("resposta")) {
-          foundToggleId = child.id;
-        }
-      } else {
-        const t = richText(
-          child.paragraph?.rich_text ??
-          child.bulleted_list_item?.rich_text ??
-          child.numbered_list_item?.rich_text ??
-          child.callout?.rich_text ??
-          child.quote?.rich_text ??
-          child.heading_1?.rich_text ??
-          child.heading_2?.rich_text ??
-          child.heading_3?.rich_text ??
-          []
-        );
-        if (t) enunciadoTexts.push(t);
-      }
-    }
-    const textEnunciado = enunciadoTexts.join("\n") || undefined;
-
-    const togglePromises = children
-      .filter(child => {
-        if (child.type !== "toggle" || !child.has_children) return false;
-        const tText = richText(child.toggle?.rich_text ?? []).toLowerCase();
-        return tText.includes("resposta");
-      })
-      .map(async child => {
-        const rChildren = await fetchChildren(child.id, force);
-        const childImgs: string[] = [];
-        const texts: string[] = [];
-        for (const rc of rChildren) {
-          if (rc.type === "image") {
-            const url = imgUrl(rc);
-            if (url) childImgs.push(url);
-          } else {
-            const icon = rc.callout?.icon?.type === "emoji" ? `${rc.callout.icon.emoji} ` : "";
-            const t = richText(
-              rc.paragraph?.rich_text ??
-              rc.bulleted_list_item?.rich_text ??
-              rc.numbered_list_item?.rich_text ??
-              rc.callout?.rich_text ??
-              rc.quote?.rich_text ??
-              rc.heading_1?.rich_text ??
-              rc.heading_2?.rich_text ??
-              rc.heading_3?.rich_text ??
-              []
-            );
-            if (t) texts.push(icon + t);
-          }
-        }
-        return { imgs: childImgs, text: texts.join("\n") || undefined };
-      });
-
-    const toggleResults = await Promise.all(togglePromises);
-    for (const res of toggleResults) {
-      rImgs.push(...res.imgs);
-      if (res.text && !textResp) textResp = res.text;
-    }
-
-    const result: FullQuestaoData = { children, imgs, rImgs, textEnunciado, textResp, foundToggleId };
-    const now = Date.now();
-    fullQuestaoCache.set(clean, { data: result, timestamp: now });
-    setLocalNotionCache(`qfull_${clean}`, result);
-    setSupabaseNotionCache(`qfull_${clean}`, result).catch(() => {});
-    fullQuestaoInFlight.delete(clean);
-    return result;
-  })().catch(err => {
-    fullQuestaoInFlight.delete(clean);
-    throw err;
-  });
+  const promise = buildQuestaoFullData(clean, force, true)
+    .finally(() => {
+      fullQuestaoInFlight.delete(clean);
+    });
 
   fullQuestaoInFlight.set(clean, promise);
   return promise;
@@ -504,10 +620,19 @@ async function getQuestaoFromBancoTable(id: string): Promise<FullQuestaoData | n
   return null;
 }
 
+function isFullQuestaoExpired(data?: FullQuestaoData | null): boolean {
+  if (!data) return false;
+  return hasExpiredAwsUrl(data.imgs) || hasExpiredAwsUrl(data.rImgs);
+}
+
+function hasFullQuestaoContent(data?: FullQuestaoData | null): boolean {
+  if (!data) return false;
+  return data.imgs.length > 0 || data.rImgs.length > 0 || Boolean(data.textResp) || Boolean(data.textEnunciado);
+}
+
 async function fetchQuestaoFullData(blockId: string, force = false): Promise<FullQuestaoData> {
   const clean = blockId.replace(/-/g, "");
   const now = Date.now();
-  const FRESH_TTL = 5 * 60 * 1000;
 
   if (force) {
     fullQuestaoCache.delete(clean);
@@ -516,49 +641,75 @@ async function fetchQuestaoFullData(blockId: string, force = false): Promise<Ful
       localStorage.removeItem(`notion_c_qfull_${clean}`);
       sessionStorage.removeItem(`notion_c_qfull_${clean}`);
     } catch(e){}
-    return revalidateQuestaoFullData(clean, true);
+    if (await isNotionEnabled()) {
+      return revalidateQuestaoFullData(clean, true);
+    }
   }
 
-  // 1. Ver no cache de memória
+  // 1. Ver no cache de memória (somente se não tiver URLs expiradas da AWS)
   if (fullQuestaoCache.has(clean)) {
     const cached = fullQuestaoCache.get(clean)!;
-    if (now - cached.timestamp >= FRESH_TTL) {
-      revalidateQuestaoFullData(clean).catch(() => {});
+    if (!isFullQuestaoExpired(cached.data)) {
+      return cached.data;
     }
-    return cached.data;
   }
 
-  // 2. Ver no localStorage (INSTANTÂNEO 0ms!)
+  // 2. Ver no localStorage (INSTANTÂNEO 0ms! Ignora se estiver com URL expirada da AWS)
   const local = getLocalNotionCache(`qfull_${clean}`);
-  if (local && local.data) {
+  if (local && local.data && hasFullQuestaoContent(local.data) && !isFullQuestaoExpired(local.data)) {
     fullQuestaoCache.set(clean, { data: local.data, timestamp: local.timestamp });
-    if (now - local.timestamp >= FRESH_TTL) {
-      revalidateQuestaoFullData(clean).catch(() => {});
-    }
     return local.data;
   }
 
-  // 3. Ver na tabela notion_questoes_banco do Supabase (com imagens permanentes no Storage!)
-  const bancoQuestao = await getQuestaoFromBancoTable(blockId);
-  if (bancoQuestao && (bancoQuestao.imgs.length > 0 || bancoQuestao.rImgs.length > 0 || bancoQuestao.textResp || bancoQuestao.textEnunciado)) {
-    fullQuestaoCache.set(clean, { data: bancoQuestao, timestamp: now });
-    setLocalNotionCache(`qfull_${clean}`, bancoQuestao);
-    return bancoQuestao;
+  if (!force && fullQuestaoInFlight.has(clean)) {
+    return fullQuestaoInFlight.get(clean)!;
   }
 
-  // 4. Ver no cache genérico do Supabase (notion_cache_blocos)
-  const sbCache = await getSupabaseNotionCache(`qfull_${clean}`);
-  if (sbCache && sbCache.data) {
-    fullQuestaoCache.set(clean, { data: sbCache.data, timestamp: sbCache.timestamp });
-    setLocalNotionCache(`qfull_${clean}`, sbCache.data);
-    if (now - sbCache.timestamp >= FRESH_TTL) {
-      revalidateQuestaoFullData(clean).catch(() => {});
+  const loadPromise = (async (): Promise<FullQuestaoData> => {
+    // 3. Supabase primeiro: tabela estruturada notion_questoes_banco (imagens permanentes no Storage!)
+    const bancoQuestao = await getQuestaoFromBancoTable(blockId);
+    if (bancoQuestao && hasFullQuestaoContent(bancoQuestao) && !isFullQuestaoExpired(bancoQuestao)) {
+      fullQuestaoCache.set(clean, { data: bancoQuestao, timestamp: now });
+      setLocalNotionCache(`qfull_${clean}`, bancoQuestao);
+      return bancoQuestao;
     }
-    return sbCache.data;
-  }
 
-  // 5. Carregamento a frio (Notion API)
-  return revalidateQuestaoFullData(clean);
+    // 4. Supabase cache qfull_<clean> em notion_cache_blocos
+    const sbCache = await getSupabaseNotionCache(`qfull_${clean}`);
+    if (sbCache && sbCache.data && hasFullQuestaoContent(sbCache.data) && !isFullQuestaoExpired(sbCache.data)) {
+      fullQuestaoCache.set(clean, { data: sbCache.data, timestamp: sbCache.timestamp });
+      setLocalNotionCache(`qfull_${clean}`, sbCache.data);
+      return sbCache.data;
+    }
+
+    // 5. Supabase cache bruto de blocos (notion_cache_blocos/<clean>) antes de ir ao Notion
+    const rawFromSb = await buildQuestaoFullData(clean, false, false);
+    if (hasFullQuestaoContent(rawFromSb) && !isFullQuestaoExpired(rawFromSb)) {
+      return rawFromSb;
+    }
+
+    // 6. Somente se não existir no Supabase (ou estiver só com URL AWS expirada), buscar no Notion
+    if (await isNotionEnabled()) {
+      return buildQuestaoFullData(clean, force, true);
+    }
+
+    // 7. Sem NOTION_TOKEN: retorna o melhor registro disponível no Supabase sem gerar erro 500
+    const fallback = bancoQuestao ?? sbCache?.data ?? local?.data ?? rawFromSb ?? {
+      children: [],
+      imgs: [],
+      rImgs: [],
+      textEnunciado: undefined,
+      textResp: undefined,
+      foundToggleId: null,
+    };
+    fullQuestaoCache.set(clean, { data: fallback, timestamp: now });
+    return fallback;
+  })().finally(() => {
+    fullQuestaoInFlight.delete(clean);
+  });
+
+  fullQuestaoInFlight.set(clean, loadPromise);
+  return loadPromise;
 }
 
 
@@ -569,8 +720,20 @@ const questaoInfoCache = new Map<string, QuestaoInfo>();
 
 async function fetchNotionBlock(id: string): Promise<NotionAPIBlock> {
   const res = await fetch(`/api/notion/blocks/${id}`);
-  if (!res.ok) throw new Error(`Notion ${res.status}`);
-  return res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (res.status === 404 || data?.code === "object_not_found") {
+      emitNotionIdChangeAlert({
+        id: `missing:${id.replace(/-/g, "")}`,
+        tipo: "bloco_removido",
+        antigoId: id,
+        detectedAt: new Date().toISOString(),
+        mensagem: `O bloco ${id.slice(0, 8)} não foi encontrado no Notion (ID alterado ou removido).`,
+      });
+    }
+    throw new Error(`Notion ${res.status}`);
+  }
+  return data;
 }
 
 // Sobe a cadeia de "parent" do bloco até encontrar um bloco cadastrado em `notion_blocks`
@@ -627,6 +790,7 @@ async function resolveQuestaoInfo(questaoId: string, blocksMap: Map<string, stri
 // fetchChildren. Usada para calcular o resumo (total/acertos/erros/dúvidas) sem
 // precisar abrir o caderno na tela.
 const questoesDoBlocoCache = new Map<string, string[]>();
+const questoesDoBlocoInFlight = new Map<string, Promise<string[]>>();
 
 async function revalidateQuestaoIds(rootBlockId: string): Promise<string[]> {
   const clean = rootBlockId.replace(/-/g, "");
@@ -653,37 +817,37 @@ async function revalidateQuestaoIds(rootBlockId: string): Promise<string[]> {
   await walk(clean);
   questoesDoBlocoCache.set(clean, ids);
   setLocalNotionCache(`ids_${clean}`, ids);
-  setSupabaseNotionCache(`ids_${clean}`, ids).catch(() => {});
+  if (ids.length > 0) {
+    setSupabaseNotionCache(`ids_${clean}`, ids).catch(() => {});
+  }
   return ids;
 }
 
-async function getIdsFromBancoTable(rootBlockId: string): Promise<string[] | null> {
+async function getIdsFromBancoTable(targetId: string): Promise<string[] | null> {
   try {
-    const clean = rootBlockId.replace(/-/g, "");
-    const { data, error } = await supabase
-      .from("notion_questoes_banco")
-      .select("id")
-      .or(`bloco_raiz_id.eq.${rootBlockId},bloco_raiz_id.eq.${clean}`);
-
-    if (!error && data && data.length > 0) {
-      return data.map((d: any) => d.id);
-    }
+    await ensureBancoIdsLoaded();
+    const clean = targetId.replace(/-/g, "");
+    const byRoot = bancoIdsByRootCache.get(clean);
+    if (byRoot && byRoot.length > 0) return byRoot;
+    const byCaso = bancoIdsByCasoCache.get(clean);
+    if (byCaso && byCaso.length > 0) return byCaso;
   } catch (e) {}
   return null;
 }
 
 async function collectQuestaoIds(rootBlockId: string, force = false): Promise<string[]> {
   const clean = rootBlockId.replace(/-/g, "");
-  const now = Date.now();
-  const FRESH_TTL = 3 * 60 * 1000;
 
   if (force) {
     questoesDoBlocoCache.delete(clean);
+    questoesDoBlocoInFlight.delete(clean);
     try {
       localStorage.removeItem(`notion_c_ids_${clean}`);
       sessionStorage.removeItem(`notion_c_ids_${clean}`);
     } catch(e){}
-    return revalidateQuestaoIds(rootBlockId);
+    if (await isNotionEnabled()) {
+      return revalidateQuestaoIds(rootBlockId);
+    }
   }
 
   if (questoesDoBlocoCache.has(clean)) {
@@ -691,33 +855,40 @@ async function collectQuestaoIds(rootBlockId: string, force = false): Promise<st
   }
 
   const local = getLocalNotionCache(`ids_${clean}`);
-  if (local && local.data && Array.isArray(local.data)) {
+  if (local && local.data && Array.isArray(local.data) && local.data.length > 0) {
     questoesDoBlocoCache.set(clean, local.data);
-    if (now - local.timestamp >= FRESH_TTL) {
-      revalidateQuestaoIds(rootBlockId).catch(() => {});
-    }
     return local.data;
   }
 
-  // Verificar na tabela estruturada do Supabase
-  const bancoIds = await getIdsFromBancoTable(rootBlockId);
-  if (bancoIds && bancoIds.length > 0) {
-    questoesDoBlocoCache.set(clean, bancoIds);
-    setLocalNotionCache(`ids_${clean}`, bancoIds);
-    return bancoIds;
+  if (!force && questoesDoBlocoInFlight.has(clean)) {
+    return questoesDoBlocoInFlight.get(clean)!;
   }
 
-  const sbCache = await getSupabaseNotionCache(`ids_${clean}`);
-  if (sbCache && sbCache.data && Array.isArray(sbCache.data)) {
-    questoesDoBlocoCache.set(clean, sbCache.data);
-    setLocalNotionCache(`ids_${clean}`, sbCache.data);
-    if (now - sbCache.timestamp >= FRESH_TTL) {
-      revalidateQuestaoIds(rootBlockId).catch(() => {});
+  const loadPromise = (async (): Promise<string[]> => {
+    // 1. Supabase primeiro: tabela estruturada notion_questoes_banco (1 query em lote)
+    const bancoIds = await getIdsFromBancoTable(rootBlockId);
+    if (bancoIds && bancoIds.length > 0) {
+      questoesDoBlocoCache.set(clean, bancoIds);
+      setLocalNotionCache(`ids_${clean}`, bancoIds);
+      return bancoIds;
     }
-    return sbCache.data;
-  }
 
-  return revalidateQuestaoIds(rootBlockId);
+    // 2. Supabase cache pré-calculado (notion_cache_blocos)
+    const sbCache = await getSupabaseNotionCache(`ids_${clean}`);
+    if (sbCache && sbCache.data && Array.isArray(sbCache.data)) {
+      questoesDoBlocoCache.set(clean, sbCache.data);
+      setLocalNotionCache(`ids_${clean}`, sbCache.data);
+      return sbCache.data;
+    }
+
+    // 3. Somente se não houver no Supabase, varre árvore (e busca do Notion se faltar)
+    return revalidateQuestaoIds(rootBlockId);
+  })().finally(() => {
+    questoesDoBlocoInFlight.delete(clean);
+  });
+
+  questoesDoBlocoInFlight.set(clean, loadPromise);
+  return loadPromise;
 }
 
 // Igual à varredura acima, mas coleta os dados necessários para desenhar o
@@ -735,6 +906,7 @@ interface QuestaoDetalhesResult {
   caseIcons: Record<string, string>;
 }
 const questoesDetalhesCache = new Map<string, QuestaoDetalhesResult>();
+const questoesDetalhesInFlight = new Map<string, Promise<QuestaoDetalhesResult>>();
 
 async function getDetailsFromBancoTable(rootBlockId: string): Promise<QuestaoDetalhesResult | null> {
   try {
@@ -790,22 +962,25 @@ async function revalidateQuestaoDetails(rootBlockId: string): Promise<QuestaoDet
   const result: QuestaoDetalhesResult = { itens, caseIcons };
   questoesDetalhesCache.set(clean, result);
   setLocalNotionCache(`det_${clean}`, result);
-  setSupabaseNotionCache(`det_${clean}`, result).catch(() => {});
+  if (itens.length > 0) {
+    setSupabaseNotionCache(`det_${clean}`, result).catch(() => {});
+  }
   return result;
 }
 
 async function collectQuestaoDetails(rootBlockId: string, force = false): Promise<QuestaoDetalhesResult> {
   const clean = rootBlockId.replace(/-/g, "");
-  const now = Date.now();
-  const FRESH_TTL = 3 * 60 * 1000;
 
   if (force) {
     questoesDetalhesCache.delete(clean);
+    questoesDetalhesInFlight.delete(clean);
     try {
       localStorage.removeItem(`notion_c_det_${clean}`);
       sessionStorage.removeItem(`notion_c_det_${clean}`);
     } catch(e){}
-    return revalidateQuestaoDetails(rootBlockId);
+    if (await isNotionEnabled()) {
+      return revalidateQuestaoDetails(rootBlockId);
+    }
   }
 
   if (questoesDetalhesCache.has(clean)) {
@@ -813,33 +988,40 @@ async function collectQuestaoDetails(rootBlockId: string, force = false): Promis
   }
 
   const local = getLocalNotionCache(`det_${clean}`);
-  if (local && local.data) {
+  if (local && local.data && Array.isArray(local.data.itens) && local.data.itens.length > 0) {
     questoesDetalhesCache.set(clean, local.data);
-    if (now - local.timestamp >= FRESH_TTL) {
-      revalidateQuestaoDetails(rootBlockId).catch(() => {});
-    }
     return local.data;
   }
 
-  // Verificar na tabela estruturada do Supabase
-  const bancoDetails = await getDetailsFromBancoTable(rootBlockId);
-  if (bancoDetails && bancoDetails.itens.length > 0) {
-    questoesDetalhesCache.set(clean, bancoDetails);
-    setLocalNotionCache(`det_${clean}`, bancoDetails);
-    return bancoDetails;
+  if (!force && questoesDetalhesInFlight.has(clean)) {
+    return questoesDetalhesInFlight.get(clean)!;
   }
 
-  const sbCache = await getSupabaseNotionCache(`det_${clean}`);
-  if (sbCache && sbCache.data) {
-    questoesDetalhesCache.set(clean, sbCache.data);
-    setLocalNotionCache(`det_${clean}`, sbCache.data);
-    if (now - sbCache.timestamp >= FRESH_TTL) {
-      revalidateQuestaoDetails(rootBlockId).catch(() => {});
+  const loadPromise = (async (): Promise<QuestaoDetalhesResult> => {
+    // 1. Supabase primeiro: tabela estruturada notion_questoes_banco
+    const bancoDetails = await getDetailsFromBancoTable(rootBlockId);
+    if (bancoDetails && bancoDetails.itens.length > 0) {
+      questoesDetalhesCache.set(clean, bancoDetails);
+      setLocalNotionCache(`det_${clean}`, bancoDetails);
+      return bancoDetails;
     }
-    return sbCache.data;
-  }
 
-  return revalidateQuestaoDetails(rootBlockId);
+    // 2. Supabase cache pré-calculado (notion_cache_blocos)
+    const sbCache = await getSupabaseNotionCache(`det_${clean}`);
+    if (sbCache && sbCache.data) {
+      questoesDetalhesCache.set(clean, sbCache.data);
+      setLocalNotionCache(`det_${clean}`, sbCache.data);
+      return sbCache.data;
+    }
+
+    // 3. Somente se não houver no Supabase, varrer e buscar no Notion
+    return revalidateQuestaoDetails(rootBlockId);
+  })().finally(() => {
+    questoesDetalhesInFlight.delete(clean);
+  });
+
+  questoesDetalhesInFlight.set(clean, loadPromise);
+  return loadPromise;
 }
 
 function QuestaoTitleLabel({ questaoId, blocksMap }: { questaoId: string; blocksMap: Map<string, string> }) {
@@ -1335,8 +1517,9 @@ function ImagemLightbox({
                     key={i}
                     src={rUrl.trim()}
                     alt={`Resposta ${i + 1}`}
-                    loading="lazy"
+                    loading="eager"
                     decoding="async"
+                    fetchPriority="high"
                     style={getImageFilterStyle()}
                     className={`w-full rounded-xl border border-white/10 object-contain shadow-md max-h-[55vh] ${
                       antiBrilho === 'noturno' ? 'bg-[#0b101d]' : 'bg-slate-900/90'
@@ -1447,41 +1630,64 @@ function ZoomedQuestaoWrapper({
   initialRespostaText?: string;
   initialRespostaImageUrls?: string[];
 }) {
-  const initialImgs = (questao.imageUrls && questao.imageUrls.length > 0)
-    ? questao.imageUrls
-    : initialUrl ? [initialUrl] : [];
+  const getCachedZoomData = useCallback((q: Questao) => {
+    const cached = fullQuestaoCache.get(q.id.replace(/-/g, ""))?.data;
+    const validCached = cached && !isFullQuestaoExpired(cached) ? cached : undefined;
+    const imgs = (q.imageUrls && q.imageUrls.length > 0)
+      ? q.imageUrls
+      : (validCached?.imgs && validCached.imgs.length > 0)
+      ? validCached.imgs
+      : initialUrl ? [initialUrl] : [];
+    const textEnunc = q.enunciadoTexto || validCached?.textEnunciado;
+    const rImgs = (q.respostaImageUrls && q.respostaImageUrls.length > 0)
+      ? q.respostaImageUrls
+      : (validCached?.rImgs && validCached.rImgs.length > 0)
+      ? validCached.rImgs
+      : initialRespostaImageUrls ?? [];
+    const textResp = q.resposta || validCached?.textResp || initialRespostaText;
+    return { imgs, textEnunc, rImgs, textResp, hasFullCache: Boolean(validCached && hasFullQuestaoContent(validCached)) };
+  }, [initialUrl, initialRespostaImageUrls, initialRespostaText]);
 
-  const [imageUrls, setImageUrls] = useState<string[]>(initialImgs);
-  const [enunciadoText, setEnunciadoText] = useState<string | undefined>(questao.enunciadoTexto);
-  const [respostaImageUrls, setRespostaImageUrls] = useState<string[]>(
-    (questao.respostaImageUrls && questao.respostaImageUrls.length > 0)
-      ? questao.respostaImageUrls
-      : initialRespostaImageUrls ?? []
-  );
-  const [respostaText, setRespostaText] = useState<string | undefined>(questao.resposta || initialRespostaText);
-  const [loading, setLoading] = useState<boolean>(initialImgs.length === 0 && !questao.enunciadoTexto);
+  const initialSeed = getCachedZoomData(questao);
+  const [imageUrls, setImageUrls] = useState<string[]>(initialSeed.imgs);
+  const [enunciadoText, setEnunciadoText] = useState<string | undefined>(initialSeed.textEnunc);
+  const [respostaImageUrls, setRespostaImageUrls] = useState<string[]>(initialSeed.rImgs);
+  const [respostaText, setRespostaText] = useState<string | undefined>(initialSeed.textResp);
+  const [loading, setLoading] = useState<boolean>(initialSeed.imgs.length === 0 && !initialSeed.textEnunc);
 
   useEffect(() => {
     let active = true;
-    const currentImgs = (questao.imageUrls && questao.imageUrls.length > 0)
-      ? questao.imageUrls
-      : initialUrl ? [initialUrl] : [];
-    
-    setImageUrls(currentImgs);
-    setEnunciadoText(questao.enunciadoTexto);
-    setRespostaImageUrls(
-      (questao.respostaImageUrls && questao.respostaImageUrls.length > 0)
-        ? questao.respostaImageUrls
-        : initialRespostaImageUrls ?? []
-    );
-    setRespostaText(questao.resposta || initialRespostaText);
-    setLoading(currentImgs.length === 0 && !questao.enunciadoTexto);
+    const seed = getCachedZoomData(questao);
+
+    setImageUrls(seed.imgs);
+    setEnunciadoText(seed.textEnunc);
+    setRespostaImageUrls(seed.rImgs);
+    setRespostaText(seed.textResp);
+    preloadImageUrls(seed.imgs);
+    preloadImageUrls(seed.rImgs);
+
+    const alreadyHasCompleteData =
+      seed.hasFullCache ||
+      ((seed.imgs.length > 0 || Boolean(seed.textEnunc)) && (seed.rImgs.length > 0 || Boolean(seed.textResp)));
+
+    if (alreadyHasCompleteData) {
+      setLoading(false);
+      return () => { active = false; };
+    }
+
+    setLoading(seed.imgs.length === 0 && !seed.textEnunc);
 
     fetchQuestaoFullData(questao.id).then(result => {
       if (!active) return;
-      if (result.imgs.length > 0) setImageUrls(result.imgs);
+      if (result.imgs.length > 0) {
+        setImageUrls(result.imgs);
+        preloadImageUrls(result.imgs);
+      }
       if (result.textEnunciado) setEnunciadoText(result.textEnunciado);
-      if (result.rImgs.length > 0) setRespostaImageUrls(result.rImgs);
+      if (result.rImgs.length > 0) {
+        setRespostaImageUrls(result.rImgs);
+        preloadImageUrls(result.rImgs);
+      }
       if (result.textResp) setRespostaText(result.textResp);
       setLoading(false);
     }).catch(e => {
@@ -1490,7 +1696,7 @@ function ZoomedQuestaoWrapper({
     });
 
     return () => { active = false; };
-  }, [questao.id, questao.enunciadoTexto, initialUrl]);
+  }, [questao, getCachedZoomData]);
 
 
   const mainUrl = imageUrls[0] || initialUrl || "";
@@ -1800,15 +2006,21 @@ const QuestaoRow = memo(function QuestaoRow({
   const catLabel = categoryInfo?.label || "Geral";
   const catColor = categoryInfo?.textColor || "#94a3b8";
 
-  const [loaded, setLoaded] = useState(false);
+  const hasInlineData = (q: Questao) =>
+    (q.imageUrls?.length ?? 0) > 0 ||
+    Boolean(q.enunciadoTexto?.trim()) ||
+    (q.respostaImageUrls?.length ?? 0) > 0 ||
+    Boolean(q.resposta?.trim());
+
+  const [loaded, setLoaded] = useState(() => hasInlineData(questao));
 
   useEffect(() => {
     setEnunciadoTexto(questao.enunciadoTexto);
     setImageUrls(questao.imageUrls ?? []);
     setRespostaText(questao.resposta);
     setRespostaImageUrls(questao.respostaImageUrls ?? []);
-    setLoaded(false);
-  }, [questao.id, questao.enunciadoTexto, questao.imageUrls, questao.resposta, questao.respostaImageUrls]);
+    setLoaded(hasInlineData(questao));
+  }, [questao]);
 
   useEffect(() => {
     if (open && !loaded && !loading) {
@@ -1821,6 +2033,8 @@ const QuestaoRow = memo(function QuestaoRow({
         setRespostaImageUrls(result.rImgs);
         setRespostaText(result.textResp);
         setRespostaToggleId(result.foundToggleId);
+        preloadImageUrls(result.imgs);
+        preloadImageUrls(result.rImgs);
         setLoaded(true);
       }).catch(e => {
         console.error("Erro ao carregar detalhes da questão:", e);
@@ -1829,7 +2043,18 @@ const QuestaoRow = memo(function QuestaoRow({
       });
       return () => { active = false; };
     }
-  }, [open, questao.id, loaded]);
+  }, [open, questao.id, loaded, loading]);
+
+  const handlePrefetchQuestao = useCallback(() => {
+    preloadImageUrls(questao.imageUrls);
+    preloadImageUrls(questao.respostaImageUrls);
+    if (!loaded) {
+      fetchQuestaoFullData(questao.id).then(result => {
+        preloadImageUrls(result.imgs);
+        preloadImageUrls(result.rImgs);
+      }).catch(() => {});
+    }
+  }, [questao.id, questao.imageUrls, questao.respostaImageUrls, loaded]);
 
 
   const isErro = stats?.ultimo === "erro";
@@ -1893,7 +2118,9 @@ const QuestaoRow = memo(function QuestaoRow({
         isDraggingOver ? "ring-2 ring-indigo-500/50 bg-indigo-500/10" : ""
       }`}
     >
-      <div className={`flex items-center gap-2 py-1 px-2.5 transition-colors duration-150 rounded-lg group ${
+      <div
+        onMouseEnter={handlePrefetchQuestao}
+        className={`flex items-center gap-2 py-1 px-2.5 transition-colors duration-150 rounded-lg group ${
         showHighlightStyle ? "bg-rose-500/[0.05]" : bgClass
       }`}>
         {isAdmin && (
@@ -2089,8 +2316,9 @@ const QuestaoRow = memo(function QuestaoRow({
                     <img
                       src={url.trim()}
                       alt={`Q${questao.numero} img${i + 1}`}
-                      loading="lazy"
+                      loading="eager"
                       decoding="async"
+                      fetchPriority="high"
                       onClick={() => setZoomedImage(url.trim())}
                       style={getNotionImageFilterStyle(antiBrilho)}
                       className={`w-full rounded-xl border object-contain cursor-zoom-in hover:brightness-105 transition-all shadow-md ${
@@ -2184,6 +2412,9 @@ const QuestaoRow = memo(function QuestaoRow({
                         <img
                           src={url.trim()}
                           alt={`Resposta img${i + 1}`}
+                          loading="eager"
+                          decoding="async"
+                          fetchPriority="high"
                           onClick={() => setZoomedImage(url.trim())}
                           style={getNotionImageFilterStyle(antiBrilho)}
                           className={`w-full rounded-xl border object-contain cursor-zoom-in hover:brightness-105 transition-all shadow-md ${
@@ -2449,11 +2680,30 @@ function CasoProgressMap({
   }, [questoes, overrides, originalCategoryById, resultadosMap, duvidasIds]);
 
   useEffect(() => {
+    if (questoes.length === 0) return;
+    const firstBatch = questoes.slice(0, 6);
+    for (const q of firstBatch) {
+      preloadImageUrls(q.imageUrls);
+      if ((!q.imageUrls || q.imageUrls.length === 0) && !q.enunciadoTexto) {
+        fetchQuestaoFullData(q.id).then(res => {
+          preloadImageUrls(res.imgs);
+        }).catch(() => {});
+      }
+    }
+  }, [questoes]);
+
+  useEffect(() => {
     if (!zoomSession) return;
-    const neighbors = [zoomSession.index - 1, zoomSession.index + 1];
+    const neighbors = [zoomSession.index - 1, zoomSession.index, zoomSession.index + 1, zoomSession.index + 2];
     for (const ni of neighbors) {
       if (ni >= 0 && ni < zoomSession.items.length) {
-        fetchQuestaoFullData(zoomSession.items[ni].id).catch(() => {});
+        const item = zoomSession.items[ni];
+        preloadImageUrls(item.imageUrls);
+        preloadImageUrls(item.respostaImageUrls);
+        fetchQuestaoFullData(item.id).then(res => {
+          preloadImageUrls(res.imgs);
+          preloadImageUrls(res.rImgs);
+        }).catch(() => {});
       }
     }
   }, [zoomSession]);
@@ -2589,6 +2839,14 @@ function CasoProgressMap({
                                 <button
                                   key={item.id}
                                   type="button"
+                                  onMouseEnter={() => {
+                                    preloadImageUrls(item.imageUrls);
+                                    preloadImageUrls(item.respostaImageUrls);
+                                    fetchQuestaoFullData(item.id).then(res => {
+                                      preloadImageUrls(res.imgs);
+                                      preloadImageUrls(res.rImgs);
+                                    }).catch(() => {});
+                                  }}
                                   onClick={() => setZoomSession({ items: colAllItems, index: colIndex >= 0 ? colIndex : 0 })}
                                   title={tooltipParts.join(" · ")}
                                   aria-label={tooltipParts.join(" - ")}
@@ -2723,13 +2981,19 @@ const CasoCard = memo(function CasoCard({
     }
   }, [builderRefreshSeq]);
 
-  // Pre-fetch das questões adjacentes para navegação instantânea
+  // Pre-fetch das questões adjacentes e imagens para navegação instantânea
   useEffect(() => {
     if (zoomedQuestaoIndex === null) return;
-    const neighbors = [zoomedQuestaoIndex - 1, zoomedQuestaoIndex + 1];
+    const neighbors = [zoomedQuestaoIndex - 1, zoomedQuestaoIndex, zoomedQuestaoIndex + 1, zoomedQuestaoIndex + 2];
     for (const ni of neighbors) {
       if (ni >= 0 && ni < questoes.length) {
-        fetchQuestaoFullData(questoes[ni].id).catch(() => {});
+        const q = questoes[ni];
+        preloadImageUrls(q.imageUrls);
+        preloadImageUrls(q.respostaImageUrls);
+        fetchQuestaoFullData(q.id).then(res => {
+          preloadImageUrls(res.imgs);
+          preloadImageUrls(res.rImgs);
+        }).catch(() => {});
       }
     }
   }, [zoomedQuestaoIndex, questoes]);
@@ -2813,14 +3077,20 @@ const CasoCard = memo(function CasoCard({
         setLoading(true);
         try {
           const cleanCasoId = caso.id.replace(/-/g, "");
-          const [dbRes, children] = await Promise.all([
+          // 1. Buscar primeiro no Supabase (tabela estruturada + cache de blocos sem chamar Notion)
+          const [dbRes, sbChildren] = await Promise.all([
             supabase
               .from("notion_questoes_banco")
               .select("*")
               .in("caso_id", [caso.id, cleanCasoId])
               .then(r => r.data ?? [], () => [] as any[]),
-            fetchChildren(caso.id).catch(() => [] as NotionAPIBlock[]),
+            fetchChildren(caso.id, false, false).catch(() => [] as NotionAPIBlock[]),
           ]);
+
+          // 2. Somente se não houver nada no Supabase para este caso, buscar no Notion
+          const children = (dbRes.length === 0 && sbChildren.length === 0)
+            ? await fetchChildren(caso.id, false, true).catch(() => [] as NotionAPIBlock[])
+            : sbChildren;
 
           const mappedDb: Questao[] = (dbRes as any[]).map((b: any) => ({
             id: b.id,
@@ -2833,6 +3103,25 @@ const CasoCard = memo(function CasoCard({
             respostaImageUrls: Array.isArray(b.gabarito_imagens_urls) ? b.gabarito_imagens_urls : [],
             caseLabel: b.caso_nome || caso.nome,
           }));
+
+          const seedTime = Date.now();
+          for (const mq of mappedDb) {
+            const qClean = mq.id.replace(/-/g, "");
+            const qFull: FullQuestaoData = {
+              children: [],
+              imgs: mq.imageUrls,
+              rImgs: mq.respostaImageUrls ?? [],
+              textEnunciado: mq.enunciadoTexto,
+              textResp: mq.resposta,
+              foundToggleId: null,
+            };
+            if (hasFullQuestaoContent(qFull) && !isFullQuestaoExpired(qFull)) {
+              fullQuestaoCache.set(qClean, { data: qFull, timestamp: seedTime });
+            }
+          }
+          for (const mq of mappedDb.slice(0, 6)) {
+            preloadImageUrls(mq.imageUrls);
+          }
 
           const seenQuestaoIds = new Set(mappedDb.map(q => q.id.replace(/-/g, "")));
           const tempQuestoes: Questao[] = [...mappedDb];
@@ -3323,24 +3612,72 @@ function BlockViewer({
         let built: Caso[] = [];
 
         try {
-          const rootChildren = await fetchChildren(block.block_id, forceFetch);
-          for (const casoBlock of rootChildren) {
-            const casoNome =
-              richText(casoBlock.toggle?.rich_text) ||
-              richText(casoBlock.heading_1?.rich_text) ||
-              richText(casoBlock.heading_2?.rich_text) ||
-              richText(casoBlock.heading_3?.rich_text) ||
-              richText(casoBlock.paragraph?.rich_text) ||
-              casoBlock.child_page?.title || "Sem nome";
+          const clean = block.block_id.replace(/-/g, "");
 
-            built.push({ id: casoBlock.id, nome: casoNome, questoes: [] });
-          }
+          // 1. Buscar primeiro no Supabase (cache de blocos + notion_questoes_banco)
+          const [sbRootChildren, dbCasosRes] = forceFetch
+            ? [await fetchChildren(block.block_id, true, true), [] as Array<{ caso_id: string | null; caso_nome: string | null }>]
+            : await Promise.all([
+                fetchChildren(block.block_id, false, false).catch(() => [] as NotionAPIBlock[]),
+                supabase
+                  .from("notion_questoes_banco")
+                  .select("caso_id, caso_nome")
+                  .or(`bloco_raiz_id.eq.${block.block_id},bloco_raiz_id.eq.${clean}`)
+                  .then(r => (r.data ?? []) as Array<{ caso_id: string | null; caso_nome: string | null }>, () => [] as Array<{ caso_id: string | null; caso_nome: string | null }>),
+              ]);
 
-          for (const c of built) {
-            fetchChildren(c.id, forceFetch).catch(() => {});
+          if (sbRootChildren.length > 0) {
+            for (const casoBlock of sbRootChildren) {
+              const casoNome =
+                richText(casoBlock.toggle?.rich_text) ||
+                richText(casoBlock.heading_1?.rich_text) ||
+                richText(casoBlock.heading_2?.rich_text) ||
+                richText(casoBlock.heading_3?.rich_text) ||
+                richText(casoBlock.paragraph?.rich_text) ||
+                casoBlock.child_page?.title || "Sem nome";
+
+              built.push({ id: casoBlock.id, nome: casoNome, questoes: [] });
+            }
+            const existingCleanCasos = new Set(built.map(c => c.id.replace(/-/g, "")));
+            for (const row of dbCasosRes) {
+              const cId = row.caso_id || row.caso_nome || "geral";
+              if (!existingCleanCasos.has(cId.replace(/-/g, ""))) {
+                existingCleanCasos.add(cId.replace(/-/g, ""));
+                built.push({ id: cId, nome: row.caso_nome || "Geral", questoes: [] });
+              }
+            }
+            for (const c of built) {
+              fetchChildren(c.id, false, false).catch(() => {});
+            }
+          } else if (dbCasosRes.length > 0) {
+            const seenCasos = new Map<string, string>();
+            for (const row of dbCasosRes) {
+              const cId = row.caso_id || row.caso_nome || "geral";
+              if (!seenCasos.has(cId)) {
+                seenCasos.set(cId, row.caso_nome || "Geral");
+              }
+            }
+            built = Array.from(seenCasos.entries()).map(([id, nome]) => ({
+              id,
+              nome,
+              questoes: [],
+            }));
+          } else if (!forceFetch) {
+            // 2. Somente se não houver no Supabase, buscar na API do Notion
+            const notionRootChildren = await fetchChildren(block.block_id, false, true);
+            for (const casoBlock of notionRootChildren) {
+              const casoNome =
+                richText(casoBlock.toggle?.rich_text) ||
+                richText(casoBlock.heading_1?.rich_text) ||
+                richText(casoBlock.heading_2?.rich_text) ||
+                richText(casoBlock.heading_3?.rich_text) ||
+                richText(casoBlock.paragraph?.rich_text) ||
+                casoBlock.child_page?.title || "Sem nome";
+              built.push({ id: casoBlock.id, nome: casoNome, questoes: [] });
+            }
           }
         } catch {
-          // Fallback para tabela sincronizada notion_questoes_banco caso não haja cache nem NOTION_TOKEN
+          // Fallback para tabela sincronizada notion_questoes_banco
           const clean = block.block_id.replace(/-/g, "");
           const { data: rows } = await supabase
             .from("notion_questoes_banco")
@@ -4082,19 +4419,46 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
     (async () => {
       try {
         const clean = block.block_id.replace(/-/g, "");
+        // 1. Buscar primeiro no cache local / Supabase
+        const localIcon = getLocalNotionCache(`icon_${clean}`);
+        if (localIcon?.data && typeof localIcon.data === "string") {
+          if (active) setBlockIcon(localIcon.data);
+          return;
+        }
+        const sbIcon = await getSupabaseNotionCache(`icon_${clean}`);
+        if (sbIcon?.data && typeof sbIcon.data === "string") {
+          setLocalNotionCache(`icon_${clean}`, sbIcon.data);
+          if (active) setBlockIcon(sbIcon.data);
+          return;
+        }
+
+        // 2. Somente se não houver no Supabase e o Notion estiver ativo, consultar o Notion
+        if (!(await isNotionEnabled())) return;
         const res = await fetch(`/api/notion/blocks/${clean}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (active && data.icon?.type === "emoji" && data.icon.emoji) {
-            setBlockIcon(data.icon.emoji);
-          }
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 404 || data?.code === "object_not_found" || data?.archived || data?.in_trash) {
+          emitNotionIdChangeAlert({
+            id: `caderno:${clean}`,
+            tipo: "caderno_nao_encontrado",
+            cadernoId: block.block_id,
+            cadernoNome: block.nome,
+            antigoId: block.block_id,
+            detectedAt: new Date().toISOString(),
+            mensagem: `O bloco do caderno "${block.nome}" (${block.block_id.slice(0, 8)}) foi alterado ou removido no Notion.`,
+          });
+          return;
+        }
+        if (res.ok && data.icon?.type === "emoji" && data.icon.emoji) {
+          setLocalNotionCache(`icon_${clean}`, data.icon.emoji);
+          setSupabaseNotionCache(`icon_${clean}`, data.icon.emoji).catch(() => {});
+          if (active) setBlockIcon(data.icon.emoji);
         }
       } catch (e) {
         console.error("Erro ao carregar ícone do Notion:", e);
       }
     })();
     return () => { active = false; };
-  }, [block.block_id]);
+  }, [block.block_id, block.nome]);
 
   const isFilteringErros = statusFiltro === "erros" || apenasComErros;
 
@@ -4348,6 +4712,174 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   const handleAnswered = useCallback(() => setStatsRefreshTrigger(v => v + 1), []);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
+  const [idChangeAlerts, setIdChangeAlerts] = useState<NotionIdChangeAlert[]>([]);
+  const [orphanIdAlerts, setOrphanIdAlerts] = useState<NotionIdChangeAlert[]>([]);
+  const [dismissedAlertIds, setDismissedAlertIds] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const raw = localStorage.getItem("notion_dismissed_id_alerts");
+      return new Set(raw ? JSON.parse(raw) : []);
+    } catch {
+      return new Set();
+    }
+  });
+  const [migratingAlertId, setMigratingAlertId] = useState<string | null>(null);
+
+  // Carrega avisos salvos de alteração de ID no Notion (via sync ou fallback 404)
+  useEffect(() => {
+    const loadStoredAlerts = () => {
+      try {
+        const raw = localStorage.getItem("notion_id_change_alerts");
+        setIdChangeAlerts(raw ? JSON.parse(raw) : []);
+      } catch {
+        setIdChangeAlerts([]);
+      }
+    };
+    loadStoredAlerts();
+    window.addEventListener("notion-id-alerts-updated", loadStoredAlerts);
+    return () => window.removeEventListener("notion-id-alerts-updated", loadStoredAlerts);
+  }, []);
+
+  // Verifica automaticamente no Supabase se algum ID do histórico/dúvidas do usuário não existe mais no banco atual (sem disparar chamadas ao Notion)
+  useEffect(() => {
+    let active = true;
+    if (blocks.length === 0) return;
+    if (resultadosMap.size === 0 && duvidasIds.size === 0 && classificationOverrides.size === 0) {
+      return;
+    }
+
+    (async () => {
+      try {
+        await ensureBancoIdsLoaded();
+        if (!active) return;
+
+        const allCleanKnown = new Set<string>();
+        let indexedBlocksCount = 0;
+
+        await Promise.all(
+          blocks.map(async b => {
+            const clean = b.block_id.replace(/-/g, "");
+            const bancoIds = bancoIdsByRootCache.get(clean);
+            if (bancoIds && bancoIds.length > 0) {
+              indexedBlocksCount++;
+              for (const qid of bancoIds) allCleanKnown.add(qid.replace(/-/g, "").toLowerCase());
+              return;
+            }
+            const sbCache = await getSupabaseNotionCache(`ids_${clean}`);
+            if (sbCache?.data && Array.isArray(sbCache.data)) {
+              indexedBlocksCount++;
+              for (const qid of sbCache.data) allCleanKnown.add(String(qid).replace(/-/g, "").toLowerCase());
+            }
+          })
+        );
+
+        if (!active) return;
+        // Só valida se todos os cadernos estiverem indexados no Supabase (para evitar falso positivo)
+        if (indexedBlocksCount < blocks.length || allCleanKnown.size === 0) {
+          setOrphanIdAlerts([]);
+          return;
+        }
+
+        const userIds = new Set<string>([
+          ...resultadosMap.keys(),
+          ...duvidasIds,
+          ...classificationOverrides.keys(),
+        ]);
+
+        const orphans: string[] = [];
+        for (const uid of userIds) {
+          const cleanUid = uid.replace(/-/g, "").toLowerCase();
+          if (!/^[a-f0-9]{32}$/.test(cleanUid)) continue;
+          if (!allCleanKnown.has(cleanUid)) {
+            orphans.push(uid);
+          }
+        }
+
+        if (orphans.length > 0 && active) {
+          setOrphanIdAlerts([
+            {
+              id: `orphan-summary:${orphans.length}:${orphans[0].slice(0, 8)}`,
+              tipo: "historico_orfao",
+              antigoId: orphans[0],
+              detectedAt: new Date().toISOString(),
+              mensagem: `${orphans.length} questão(ões) do seu histórico/dúvidas não correspondem mais a nenhum bloco atual (${orphans.slice(0, 3).map(o => o.slice(0, 8)).join(", ")}${orphans.length > 3 ? "…" : ""}). O ID do bloco no Notion pode ter sido alterado ou removido.`,
+            },
+          ]);
+        } else if (active) {
+          setOrphanIdAlerts([]);
+        }
+      } catch {
+        // ignore check errors
+      }
+    })();
+
+    return () => { active = false; };
+  }, [blocks, resultadosMap, duvidasIds, classificationOverrides]);
+
+  const visibleIdAlerts = useMemo(() => {
+    const hasHistory = resultadosMap.size > 0 || duvidasIds.size > 0 || classificationOverrides.size > 0;
+    const merged = hasHistory ? [...idChangeAlerts, ...orphanIdAlerts] : [...idChangeAlerts];
+    const seen = new Set<string>();
+    return merged.filter(a => {
+      if (dismissedAlertIds.has(a.id) || seen.has(a.id)) return false;
+      seen.add(a.id);
+      return true;
+    });
+  }, [idChangeAlerts, orphanIdAlerts, dismissedAlertIds, resultadosMap.size, duvidasIds.size, classificationOverrides.size]);
+
+  const handleDismissAlert = useCallback((alertId: string) => {
+    setDismissedAlertIds(prev => {
+      const next = new Set(prev);
+      next.add(alertId);
+      try {
+        localStorage.setItem("notion_dismissed_id_alerts", JSON.stringify([...next]));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  const handleDismissAllAlerts = useCallback(() => {
+    setDismissedAlertIds(prev => {
+      const next = new Set(prev);
+      for (const a of visibleIdAlerts) next.add(a.id);
+      try {
+        localStorage.setItem("notion_dismissed_id_alerts", JSON.stringify([...next]));
+        localStorage.removeItem("notion_id_change_alerts");
+      } catch {}
+      return next;
+    });
+    setIdChangeAlerts([]);
+  }, [visibleIdAlerts]);
+
+  const handleMigrateAlertHistory = useCallback(async (alertItem: NotionIdChangeAlert) => {
+    if (!user?.id || !alertItem.novoId) return;
+    setMigratingAlertId(alertItem.id);
+    try {
+      await Promise.all([
+        supabase
+          .from("notion_respostas")
+          .update({ questao_id: alertItem.novoId })
+          .eq("user_id", user.id)
+          .eq("questao_id", alertItem.antigoId),
+        supabase
+          .from("notion_duvidas")
+          .update({ questao_id: alertItem.novoId })
+          .eq("user_id", user.id)
+          .eq("questao_id", alertItem.antigoId),
+        supabase
+          .from("notion_classificacoes")
+          .update({ questao_id: alertItem.novoId })
+          .eq("user_id", user.id)
+          .eq("questao_id", alertItem.antigoId),
+      ]);
+      handleDismissAlert(alertItem.id);
+      setStatsRefreshTrigger(v => v + 1);
+    } catch (e) {
+      console.error("Erro ao migrar histórico para o novo ID:", e);
+    } finally {
+      setMigratingAlertId(null);
+    }
+  }, [user?.id, handleDismissAlert]);
 
   const [createCasoModal, setCreateCasoModal] = useState<{
     isOpen: boolean;
@@ -4705,12 +5237,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   };
 
   const triggerBuilderRefresh = useCallback(() => {
-    childrenCache.clear();
-    childrenInFlight.clear();
-    fullQuestaoCache.clear();
-    fullQuestaoInFlight.clear();
-    questoesDoBlocoCache.clear();
-    questoesDetalhesCache.clear();
+    clearNotionClientCache();
     setBuilderRefreshSeq(v => v + 1);
     setStatsRefreshTrigger(v => v + 1);
   }, []);
@@ -5234,6 +5761,77 @@ export default function NotionQuestionTab({ user }: { user: any }) {
         />
       )}
 
+      {/* Aviso de alteração ou remoção de ID de bloco no Notion */}
+      {visibleIdAlerts.length > 0 && (
+        <div className="relative z-10 flex flex-col gap-2.5 rounded-2xl border border-amber-500/35 bg-amber-950/25 p-3.5 shadow-lg">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 text-amber-300 text-xs font-bold">
+              <AlertTriangle size={15} className="text-amber-400 shrink-0" />
+              <span>
+                Aviso: Modificação de ID de bloco do Notion detectada ({visibleIdAlerts.length})
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowSyncModal(true)}
+                className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/35 text-amber-200 text-[10px] font-bold transition-all"
+              >
+                Sincronizar Banco
+              </button>
+              <button
+                type="button"
+                onClick={handleDismissAllAlerts}
+                className="px-2 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white text-[10px] font-medium transition-all"
+              >
+                Dispensar todos
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5 max-h-44 overflow-y-auto pr-1">
+            {visibleIdAlerts.map(alertItem => (
+              <div
+                key={alertItem.id}
+                className="flex items-center justify-between gap-3 flex-wrap rounded-xl border border-amber-500/20 bg-black/30 px-3 py-2 text-[11px]"
+              >
+                <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                  <span className="font-semibold text-amber-200 truncate">
+                    {alertItem.cadernoNome ? `${alertItem.cadernoNome}` : "Bloco Notion"}
+                    {alertItem.casoNome ? ` • ${alertItem.casoNome}` : ""}
+                    {alertItem.numero ? ` • Questão ${alertItem.numero}` : ""}
+                    {alertItem.topico ? ` — ${alertItem.topico}` : ""}
+                  </span>
+                  <span className="text-[10.5px] text-amber-100/80 break-words">
+                    {alertItem.mensagem}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {alertItem.novoId && user?.id && (
+                    <button
+                      type="button"
+                      disabled={migratingAlertId === alertItem.id}
+                      onClick={() => handleMigrateAlertHistory(alertItem)}
+                      className="px-2.5 py-1 rounded-lg bg-emerald-600/25 hover:bg-emerald-600/40 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold transition-all disabled:opacity-50"
+                    >
+                      {migratingAlertId === alertItem.id ? "Atualizando..." : "Atualizar meu histórico"}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleDismissAlert(alertItem.id)}
+                    title="Dispensar este aviso"
+                    className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <PrintNotionModal
         isOpen={printModalState.isOpen}
         onClose={() => setPrintModalState(prev => ({ ...prev, isOpen: false }))}
@@ -5692,7 +6290,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
             <div className="flex flex-col items-center justify-center py-20 gap-3 text-center bg-[#101526]/80 border border-white/[0.06] rounded-2xl relative z-10">
               <BookMarked size={32} className="text-slate-800" />
               <p className="text-[12px] font-black text-slate-600 uppercase tracking-widest">Nenhum bloco cadastrado</p>
-              <p className="text-[11px] text-slate-700 max-w-xs">Clique em "Novo Bloco" para cadastrar o ID de um bloco do Notion.</p>
+              <p className="text-[11px] text-slate-700 max-w-xs">Clique em &ldquo;Novo Bloco&rdquo; para cadastrar o ID de um bloco do Notion.</p>
             </div>
           ) : blocksFiltrados.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-2 text-center bg-[#101526]/80 border border-white/[0.06] rounded-2xl relative z-10">
