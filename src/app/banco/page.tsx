@@ -1557,6 +1557,7 @@ export default function BancoPage() {
                   setActiveTab("resolver");
                 }}
                 onEditQuestion={(q) => setEditingQuestion(q)}
+                onRefreshQuestions={fetchQuestions}
               />
             </motion.div>
           )}

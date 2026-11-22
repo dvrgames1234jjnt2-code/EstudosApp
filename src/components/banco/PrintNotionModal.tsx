@@ -12,6 +12,7 @@ export interface PrintableNotionQuestion {
   topic: string;
   caseLabel: string;
   categoryKey?: string;
+  enunciadoTexto?: string;
   imageUrls: string[];
   respostaText?: string;
   respostaImageUrls: string[];
@@ -93,13 +94,16 @@ export function buildNotionPrintHTML(
     const origNum = q.numero && q.numero !== String(idx + 1) ? ` (Q.${q.numero})` : '';
 
     const imgs = (q.imageUrls || []).filter(u => u && u.trim() !== '');
+    const textHtml = q.enunciadoTexto?.trim()
+      ? `<div style="font-size:11.5px;line-height:1.45;margin:4px 0 6px;color:#111827;">${cleanPrintText(q.enunciadoTexto)}</div>`
+      : '';
     const imgsHtml = imgs.length > 0
       ? imgs.map((u, i) => `
           <div class="q-img-wrap">
             <img src="${u.trim()}" alt="Q.${qNum} Img ${i + 1}" class="q-img" />
           </div>
         `).join('')
-      : `<div class="q-no-img">[Sem imagem cadastrada]</div>`;
+      : (textHtml ? '' : `<div class="q-no-img">[Sem imagem cadastrada]</div>`);
 
     return `
       <div class="print-question">
@@ -111,6 +115,7 @@ export function buildNotionPrintHTML(
           </div>
           ${q.topic ? `<span class="q-topic">${cleanPrintText(q.topic)}</span>` : ''}
         </div>
+        ${textHtml}
         ${imgsHtml}
       </div>
     `;

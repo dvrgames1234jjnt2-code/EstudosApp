@@ -19,16 +19,19 @@ import {
   Play,
   Filter,
   RefreshCw,
-  CheckCheck
+  CheckCheck,
+  FileJson
 } from "lucide-react";
 import type { BancoQuestion } from "./QuestionsTable";
 import { supabasePublic } from "../../lib/supabase";
+import { ImportJsonModal } from "./ImportJsonModal";
 
 interface VerificadorIDsTabProps {
   questions: BancoQuestion[];
   onSelectQuestion: (question: BancoQuestion) => void;
   isAdmin?: boolean;
   onEditQuestion?: (question: BancoQuestion) => void;
+  onRefreshQuestions?: () => void;
 }
 
 interface ResultadoItem {
@@ -43,6 +46,7 @@ export default function VerificadorIDsTab({
   onSelectQuestion,
   isAdmin,
   onEditQuestion,
+  onRefreshQuestions,
 }: VerificadorIDsTabProps) {
   const [textoIds, setTextoIds] = useState("");
   const [analisando, setAnalisando] = useState(false);
@@ -50,6 +54,7 @@ export default function VerificadorIDsTab({
   const [buscaResultado, setBuscaResultado] = useState("");
   const [copiadoTipo, setCopiadoTipo] = useState<string | null>(null);
   const [ultimoResultado, setUltimoResultado] = useState<ResultadoItem[] | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   // Normalizador auxiliar
   const normalizarID = (id: string) => {
@@ -291,7 +296,17 @@ export default function VerificadorIDsTab({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setShowImportModal(true)}
+              className="px-3.5 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1.5"
+            >
+              <FileJson size={13} />
+              <span>Importar Questão</span>
+            </button>
+          )}
           <button
             onClick={handleCarregarExemplo}
             className="px-2.5 py-1.5 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.06] text-slate-400 hover:text-slate-200 text-[11px] font-medium transition-all"
@@ -674,6 +689,14 @@ export default function VerificadorIDsTab({
 
         </div>
       )}
+
+      <ImportJsonModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onSuccess={() => {
+          onRefreshQuestions?.();
+        }}
+      />
 
     </div>
   );

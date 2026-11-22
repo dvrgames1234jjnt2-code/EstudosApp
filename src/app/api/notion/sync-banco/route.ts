@@ -151,7 +151,9 @@ async function syncBloco(
     .eq('bloco_raiz_id', blockRow.block_id);
 
   const existentesMap = new Map<string, string>(
-    (existentes ?? []).map((e: any) => [e.id, e.notion_last_edited_time])
+    (existentes ?? [])
+      .filter((e: any) => e.notion_last_edited_time !== 'local')
+      .map((e: any) => [e.id, e.notion_last_edited_time])
   );
 
   // IDs encontrados nessa sync (para detectar deletados)

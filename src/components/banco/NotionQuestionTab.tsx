@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, memo, createContext, useContext, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, memo, createContext, useContext, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
   Plus, Trash2, ChevronDown, ChevronRight, ChevronLeft, Loader2,
@@ -8,11 +8,13 @@ import {
   Triangle, Flag, History, LayoutGrid, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Moon, Sun,
   Clock, HelpCircle, Filter, Flame, Calendar, BarChart3, Target, AlertTriangle,
   GripVertical, ArrowUp, ArrowDown, MoreVertical, Database, Printer, ListTree, Tag,
-  BookOpen, Ban, Trophy
+  Ban, Trophy, FolderPlus, FolderInput, Pencil, FilePlus2
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { SyncBancoModal } from "./SyncBancoModal";
 import { PrintNotionModal, type PrintableNotionQuestion } from "./PrintNotionModal";
+import { CreateCasoModal, QuestaoBuilderModal, MoveQuestaoModal, type QuestaoInitialEdit } from "./NotionBuilderModals";
+import { deleteCasoOrSubcaso, deleteQuestaoFromCaso, writeSupabaseCacheBlocks, type BuilderCategoryKey } from "../../lib/notionLocalBuilder";
 
 const CATEGORIES = [
   { key: "bonus",     label: "Bônus",     emojis: ["🎉","🥳","🎊"],        icon: "🎉",  color: "#d97706", textColor: "#c69238", dot: false },
@@ -43,6 +45,28 @@ const ClassificationContext = createContext<ClassificationContextValue>({
   canEdit: false,
   classificacaoFiltro: "todas",
   setClassificacaoFiltro: () => {},
+});
+
+interface BuilderActionsContextValue {
+  builderRefreshSeq: number;
+  openCreateCaso: (rootBlockId: string, rootNome: string, existingCasos?: { id: string; nome: string }[]) => void;
+  openCreateSubcaso: (rootBlockId: string, parentCasoId: string, parentCasoNome: string) => void;
+  openCreateQuestao: (rootBlockId?: string, defaultCasoId?: string) => void;
+  openEditQuestao: (rootBlockId: string, casoId: string, casoNome: string, questao: Questao) => void;
+  openMoveQuestao: (rootBlockId: string, casoId: string, questao: Questao) => void;
+  deleteQuestao: (rootBlockId: string, casoId: string, questao: Questao) => Promise<void>;
+  deleteCaso: (rootBlockId: string, parentBlockId: string, casoId: string, casoNome: string) => Promise<void>;
+}
+
+const BuilderActionsContext = createContext<BuilderActionsContextValue>({
+  builderRefreshSeq: 0,
+  openCreateCaso: () => {},
+  openCreateSubcaso: () => {},
+  openCreateQuestao: () => {},
+  openEditQuestao: () => {},
+  openMoveQuestao: () => {},
+  deleteQuestao: async () => {},
+  deleteCaso: async () => {},
 });
 
 const CATEGORY_ORDER: Record<CategoryKey, number> = {
@@ -82,6 +106,7 @@ interface Questao {
   numero: string;
   topic: string;
   categoryKey: CategoryKey;
+  enunciadoTexto?: string;
   imageUrls: string[];
   resposta?: string;
   respostaImageUrls: string[];
@@ -352,6 +377,7 @@ interface FullQuestaoData {
   children: NotionAPIBlock[];
   imgs: string[];
   rImgs: string[];
+  textEnunciado?: string;
   textResp?: string;
   foundToggleId: string | null;
 }
@@ -366,6 +392,7 @@ async function revalidateQuestaoFullData(clean: string, force = false): Promise<
     const children = await fetchChildren(clean, force);
     const imgs: string[] = [];
     const rImgs: string[] = [];
+    const enunciadoTexts: string[] = [];
     let textResp: string | undefined;
     let foundToggleId: string | null = null;
 
@@ -378,8 +405,22 @@ async function revalidateQuestaoFullData(clean: string, force = false): Promise<
         if (tText.includes("resposta")) {
           foundToggleId = child.id;
         }
+      } else {
+        const t = richText(
+          child.paragraph?.rich_text ??
+          child.bulleted_list_item?.rich_text ??
+          child.numbered_list_item?.rich_text ??
+          child.callout?.rich_text ??
+          child.quote?.rich_text ??
+          child.heading_1?.rich_text ??
+          child.heading_2?.rich_text ??
+          child.heading_3?.rich_text ??
+          []
+        );
+        if (t) enunciadoTexts.push(t);
       }
     }
+    const textEnunciado = enunciadoTexts.join("\n") || undefined;
 
     const togglePromises = children
       .filter(child => {
@@ -420,7 +461,7 @@ async function revalidateQuestaoFullData(clean: string, force = false): Promise<
       if (res.text && !textResp) textResp = res.text;
     }
 
-    const result: FullQuestaoData = { children, imgs, rImgs, textResp, foundToggleId };
+    const result: FullQuestaoData = { children, imgs, rImgs, textEnunciado, textResp, foundToggleId };
     const now = Date.now();
     fullQuestaoCache.set(clean, { data: result, timestamp: now });
     setLocalNotionCache(`qfull_${clean}`, result);
@@ -448,11 +489,13 @@ async function getQuestaoFromBancoTable(id: string): Promise<FullQuestaoData | n
     if (!error && data) {
       const imgs = Array.isArray(data.imagens_urls) ? data.imagens_urls : [];
       const rImgs = Array.isArray(data.gabarito_imagens_urls) ? data.gabarito_imagens_urls : [];
+      const textEnunciado = data.enunciado_texto || undefined;
       const textResp = data.gabarito_texto || undefined;
       return {
         children: [],
         imgs,
         rImgs,
+        textEnunciado,
         textResp,
         foundToggleId: null,
       };
@@ -497,7 +540,7 @@ async function fetchQuestaoFullData(blockId: string, force = false): Promise<Ful
 
   // 3. Ver na tabela notion_questoes_banco do Supabase (com imagens permanentes no Storage!)
   const bancoQuestao = await getQuestaoFromBancoTable(blockId);
-  if (bancoQuestao && (bancoQuestao.imgs.length > 0 || bancoQuestao.rImgs.length > 0 || bancoQuestao.textResp)) {
+  if (bancoQuestao && (bancoQuestao.imgs.length > 0 || bancoQuestao.rImgs.length > 0 || bancoQuestao.textResp || bancoQuestao.textEnunciado)) {
     fullQuestaoCache.set(clean, { data: bancoQuestao, timestamp: now });
     setLocalNotionCache(`qfull_${clean}`, bancoQuestao);
     return bancoQuestao;
@@ -832,6 +875,8 @@ function QuestaoTitleLabel({ questaoId, blocksMap }: { questaoId: string; blocks
 
 function ImagemLightbox({
   url,
+  imageUrls,
+  enunciadoText,
   loading = false,
   onClose,
   onNext,
@@ -850,6 +895,8 @@ function ImagemLightbox({
   onAnswered,
 }: {
   url: string;
+  imageUrls?: string[];
+  enunciadoText?: string;
   loading?: boolean;
   onClose: () => void;
   onNext?: () => void;
@@ -1201,34 +1248,68 @@ function ImagemLightbox({
           {loading ? (
             <div className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl bg-slate-900/90 border border-white/10 shadow-2xl backdrop-blur-md">
               <Loader2 size={36} className="animate-spin text-indigo-400" />
-              <span className="text-xs font-semibold text-slate-300 animate-pulse">Carregando imagem da questão...</span>
+              <span className="text-xs font-semibold text-slate-300 animate-pulse">Carregando questão...</span>
             </div>
-          ) : url && url.trim() !== "" ? (
-            <img
-              src={url.trim()}
-              alt="Imagem da questão"
-              draggable={false}
-              loading="eager"
-              decoding="async"
-              fetchPriority="high"
-              style={{
-                transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-                transition: isDragging ? "none" : "transform 0.15s ease-out",
-                ...getImageFilterStyle(),
-              }}
-              className={`${getImageCardBgClass()} rounded-xl object-contain transition-all ${
-                showResposta
-                  ? "max-w-[95%] max-h-[82vh]"
-                  : isFullWidth
-                  ? "w-full h-full max-w-none max-h-none"
-                  : "max-w-[95vw] max-h-[85vh]"
-              }`}
-            />
-          ) : (
-            <div className="text-slate-400 italic text-xs bg-slate-900/80 px-4 py-3 rounded-xl border border-white/10">
-              Sem imagem registrada para esta questão
-            </div>
-          )}
+          ) : (() => {
+            const allImgs = (imageUrls && imageUrls.length > 0 ? imageUrls : url ? [url] : []).filter(u => u && u.trim() !== "");
+            const hasText = Boolean(enunciadoText && enunciadoText.trim() !== "");
+            if (!hasText && allImgs.length === 0) {
+              return (
+                <div className="text-slate-400 italic text-xs bg-slate-900/80 px-4 py-3 rounded-xl border border-white/10">
+                  Sem enunciado ou imagem registrada para esta questão
+                </div>
+              );
+            }
+            if (hasText && allImgs.length === 0) {
+              return (
+                <div className="max-w-2xl w-full max-h-[80vh] overflow-y-auto custom-scrollbar p-6 sm:p-8 rounded-2xl bg-[#0d1323] border border-white/10 shadow-2xl select-text">
+                  <p className="text-sm sm:text-base text-slate-100 whitespace-pre-wrap leading-relaxed">
+                    {enunciadoText}
+                  </p>
+                </div>
+              );
+            }
+            return (
+              <div className={`w-full h-full flex flex-col items-center ${hasText || allImgs.length > 1 ? "overflow-y-auto custom-scrollbar gap-4 py-4 px-2" : "justify-center"}`}>
+                {hasText && (
+                  <div className="max-w-3xl w-full p-4 sm:p-5 rounded-2xl bg-[#0d1323]/95 border border-white/10 shadow-xl shrink-0 select-text">
+                    <p className="text-xs sm:text-sm text-slate-100 whitespace-pre-wrap leading-relaxed">
+                      {enunciadoText}
+                    </p>
+                  </div>
+                )}
+                {allImgs.map((imgSrc, idx) => (
+                  <img
+                    key={`${imgSrc}-${idx}`}
+                    src={imgSrc.trim()}
+                    alt={`Imagem da questão ${idx + 1}`}
+                    draggable={false}
+                    loading="eager"
+                    decoding="async"
+                    fetchPriority="high"
+                    style={
+                      allImgs.length === 1 && !hasText
+                        ? {
+                            transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+                            transition: isDragging ? "none" : "transform 0.15s ease-out",
+                            ...getImageFilterStyle(),
+                          }
+                        : getImageFilterStyle()
+                    }
+                    className={`${getImageCardBgClass()} rounded-xl object-contain transition-all ${
+                      allImgs.length > 1 || hasText
+                        ? "max-w-[92%] max-h-[70vh]"
+                        : showResposta
+                        ? "max-w-[95%] max-h-[82vh]"
+                        : isFullWidth
+                        ? "w-full h-full max-w-none max-h-none"
+                        : "max-w-[95vw] max-h-[85vh]"
+                    }`}
+                  />
+                ))}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Right Side Answer Screen Panel (Fixed 50% Width, Scrollable Content) */}
@@ -1371,13 +1452,14 @@ function ZoomedQuestaoWrapper({
     : initialUrl ? [initialUrl] : [];
 
   const [imageUrls, setImageUrls] = useState<string[]>(initialImgs);
+  const [enunciadoText, setEnunciadoText] = useState<string | undefined>(questao.enunciadoTexto);
   const [respostaImageUrls, setRespostaImageUrls] = useState<string[]>(
     (questao.respostaImageUrls && questao.respostaImageUrls.length > 0)
       ? questao.respostaImageUrls
       : initialRespostaImageUrls ?? []
   );
   const [respostaText, setRespostaText] = useState<string | undefined>(questao.resposta || initialRespostaText);
-  const [loading, setLoading] = useState<boolean>(initialImgs.length === 0);
+  const [loading, setLoading] = useState<boolean>(initialImgs.length === 0 && !questao.enunciadoTexto);
 
   useEffect(() => {
     let active = true;
@@ -1386,17 +1468,19 @@ function ZoomedQuestaoWrapper({
       : initialUrl ? [initialUrl] : [];
     
     setImageUrls(currentImgs);
+    setEnunciadoText(questao.enunciadoTexto);
     setRespostaImageUrls(
       (questao.respostaImageUrls && questao.respostaImageUrls.length > 0)
         ? questao.respostaImageUrls
         : initialRespostaImageUrls ?? []
     );
     setRespostaText(questao.resposta || initialRespostaText);
-    setLoading(currentImgs.length === 0);
+    setLoading(currentImgs.length === 0 && !questao.enunciadoTexto);
 
     fetchQuestaoFullData(questao.id).then(result => {
       if (!active) return;
       if (result.imgs.length > 0) setImageUrls(result.imgs);
+      if (result.textEnunciado) setEnunciadoText(result.textEnunciado);
       if (result.rImgs.length > 0) setRespostaImageUrls(result.rImgs);
       if (result.textResp) setRespostaText(result.textResp);
       setLoading(false);
@@ -1406,7 +1490,7 @@ function ZoomedQuestaoWrapper({
     });
 
     return () => { active = false; };
-  }, [questao.id, initialUrl]);
+  }, [questao.id, questao.enunciadoTexto, initialUrl]);
 
 
   const mainUrl = imageUrls[0] || initialUrl || "";
@@ -1414,6 +1498,8 @@ function ZoomedQuestaoWrapper({
   return (
     <ImagemLightbox
       url={mainUrl}
+      imageUrls={imageUrls}
+      enunciadoText={enunciadoText}
       loading={loading}
       onClose={onClose}
       onNext={onNext}
@@ -1455,6 +1541,9 @@ const QuestaoRow = memo(function QuestaoRow({
   onPrevQuestion,
   hasNextQuestion,
   hasPrevQuestion,
+  rootBlockId,
+  casoId,
+  casoNome,
 }: { 
   questao: Questao; 
   user: any;
@@ -1476,15 +1565,21 @@ const QuestaoRow = memo(function QuestaoRow({
   onPrevQuestion?: () => void;
   hasNextQuestion?: boolean;
   hasPrevQuestion?: boolean;
+  rootBlockId?: string;
+  casoId?: string;
+  casoNome?: string;
 }) {
   const { overrides, updateClassification, canEdit: canEditClassification, classificacaoFiltro } = useContext(ClassificationContext);
+  const builder = useContext(BuilderActionsContext);
   const classification = overrides.get(questao.id) ?? null;
   const displayedCategory = classification ?? questao.categoryKey;
   const [antiBrilho] = useAntiBrilhoMode();
   const [open, setOpen] = useState(startOpen);
   const [showResp, setShowResp] = useState(false);
+  const [enunciadoTexto, setEnunciadoTexto] = useState<string | undefined>(questao.enunciadoTexto);
   const [imageUrls, setImageUrls] = useState<string[]>(questao.imageUrls ?? []);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [zoomTextOnly, setZoomTextOnly] = useState(false);
   const [respostaImageUrls, setRespostaImageUrls] = useState<string[]>(questao.respostaImageUrls ?? []);
   const [respostaText, setRespostaText] = useState<string | undefined>(questao.resposta);
   const [respostaToggleId, setRespostaToggleId] = useState<string | null>(null);
@@ -1708,12 +1803,21 @@ const QuestaoRow = memo(function QuestaoRow({
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    setEnunciadoTexto(questao.enunciadoTexto);
+    setImageUrls(questao.imageUrls ?? []);
+    setRespostaText(questao.resposta);
+    setRespostaImageUrls(questao.respostaImageUrls ?? []);
+    setLoaded(false);
+  }, [questao.id, questao.enunciadoTexto, questao.imageUrls, questao.resposta, questao.respostaImageUrls]);
+
+  useEffect(() => {
     if (open && !loaded && !loading) {
       let active = true;
       setLoading(true);
       fetchQuestaoFullData(questao.id).then(result => {
         if (!active) return;
         setImageUrls(result.imgs);
+        if (result.textEnunciado) setEnunciadoTexto(result.textEnunciado);
         setRespostaImageUrls(result.rImgs);
         setRespostaText(result.textResp);
         setRespostaToggleId(result.foundToggleId);
@@ -1859,8 +1963,59 @@ const QuestaoRow = memo(function QuestaoRow({
           <Flag size={11} className="fill-red-500 text-red-500 shrink-0 ml-1" />
         )}
 
+        {rootBlockId && casoId && (
+          <div className="flex items-center gap-0.5 opacity-45 group-hover:opacity-100 transition-opacity ml-auto mr-1 shrink-0">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                builder.openMoveQuestao(rootBlockId, casoId, {
+                  ...questao,
+                  enunciadoTexto,
+                  imageUrls,
+                  resposta: respostaText,
+                  respostaImageUrls,
+                });
+              }}
+              title="Jogar questão em outro Caso ou Subcaso"
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06] transition-all"
+            >
+              <FolderInput size={11} />
+              <span className="hidden md:inline">Subcaso</span>
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                builder.openEditQuestao(rootBlockId, casoId, casoNome || questao.caseLabel || "Geral", {
+                  ...questao,
+                  enunciadoTexto,
+                  imageUrls,
+                  resposta: respostaText,
+                  respostaImageUrls,
+                });
+              }}
+              title="Editar pergunta, imagem ou resposta"
+              className="w-5 h-5 flex items-center justify-center rounded text-slate-400 hover:text-amber-300 hover:bg-white/[0.06] transition-all"
+            >
+              <Pencil size={10} />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                void builder.deleteQuestao(rootBlockId, casoId, questao);
+              }}
+              title="Excluir questão"
+              className="w-5 h-5 flex items-center justify-center rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+            >
+              <Trash2 size={10} />
+            </button>
+          </div>
+        )}
+
         {isAdmin && (
-          <div className="flex items-center gap-0.5 opacity-30 group-hover:opacity-100 transition-opacity ml-auto mr-1">
+          <div className={`flex items-center gap-0.5 opacity-30 group-hover:opacity-100 transition-opacity ${!(rootBlockId && casoId) ? "ml-auto" : ""} mr-1`}>
             <button
               onClick={(e) => { e.stopPropagation(); onMoveUp?.(questao.id); }}
               disabled={isFirst}
@@ -1903,13 +2058,31 @@ const QuestaoRow = memo(function QuestaoRow({
 
       {open && (
         <div className="ml-6 pl-4 border-l border-indigo-500/[0.15] my-2 flex flex-col gap-3">
-          {loading && imageUrls.filter(u => u && u.trim() !== "").length === 0 ? (
+          {loading && !enunciadoTexto?.trim() && imageUrls.filter(u => u && u.trim() !== "").length === 0 ? (
             <div className="flex items-center gap-2 text-[11px] text-slate-500 italic py-2">
               <Loader2 size={12} className="animate-spin" />
               Carregando detalhes...
             </div>
           ) : (
             <>
+              {enunciadoTexto?.trim() && (
+                <div className="max-w-2xl p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] flex flex-col gap-2">
+                  <p className="text-[13px] sm:text-[14px] text-slate-200 whitespace-pre-wrap leading-relaxed">
+                    {enunciadoTexto}
+                  </p>
+                  {imageUrls.filter(u => u && u.trim() !== "").length === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setZoomTextOnly(true)}
+                      className="self-start px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-slate-300 text-[10px] font-bold flex items-center gap-1.5 border border-white/[0.08] transition-all"
+                    >
+                      <Maximize2 size={11} className="text-indigo-400" />
+                      Tela Cheia
+                    </button>
+                  )}
+                </div>
+              )}
+
               {imageUrls.filter(u => u && u.trim() !== "").length > 0 ? (
                 imageUrls.filter(u => u && u.trim() !== "").map((url, i) => (
                   <div key={i} className="relative group max-w-2xl">
@@ -1933,9 +2106,9 @@ const QuestaoRow = memo(function QuestaoRow({
                     </button>
                   </div>
                 ))
-              ) : (
-                <p className="text-[11px] text-slate-700 italic">Sem imagem</p>
-              )}
+              ) : !enunciadoTexto?.trim() ? (
+                <p className="text-[11px] text-slate-700 italic">Sem enunciado ou imagem registrada.</p>
+              ) : null}
 
               <button
                 onClick={() => setShowResp(v => !v)}
@@ -2160,13 +2333,17 @@ const QuestaoRow = memo(function QuestaoRow({
           )}
         </div>
       )}
-      {zoomedImage && (
+      {(zoomedImage || zoomTextOnly) && (
         <ZoomedQuestaoWrapper
-          questao={questao}
-          initialUrl={zoomedImage}
+          questao={{ ...questao, enunciadoTexto, imageUrls }}
+          user={user}
+          isDuvida={isDuvida}
+          onToggleDuvida={onToggleDuvida}
+          onAnswered={onAnswered}
+          initialUrl={zoomedImage ?? undefined}
           initialRespostaText={respostaText}
           initialRespostaImageUrls={respostaImageUrls}
-          onClose={() => setZoomedImage(null)}
+          onClose={() => { setZoomedImage(null); setZoomTextOnly(false); }}
           onNext={onNextQuestion}
           onPrev={onPrevQuestion}
           hasNext={hasNextQuestion}
@@ -2192,7 +2369,6 @@ function hasMapId(set: Set<string> | undefined, id: string): boolean {
 function CasoProgressMap({
   questoes,
   originalCategoryById,
-  casoNome,
   user,
   duvidasIds,
   onToggleDuvida,
@@ -2209,7 +2385,6 @@ function CasoProgressMap({
   resultadosMap?: Map<string, QuestaoStats>;
 }) {
   const { overrides } = useContext(ClassificationContext);
-  const [legendFiltro, setLegendFiltro] = useState<"todos" | "acerto" | "erro" | "duvida" | "pendente">("todos");
   const [zoomSession, setZoomSession] = useState<{ items: Questao[]; index: number } | null>(null);
 
   const visibleCategories = useMemo(() => {
@@ -2223,19 +2398,6 @@ function CasoProgressMap({
     }
     return CATEGORIES.filter(c => present.has(c.key));
   }, [questoes, overrides, originalCategoryById]);
-
-  const filteredItems = useMemo(() => {
-    if (legendFiltro === "todos") return questoes;
-    return questoes.filter((item) => {
-      const stats = getMapRowLookup(resultadosMap, item.id);
-      const isDuvida = hasMapId(duvidasIds, item.id);
-      if (legendFiltro === "acerto") return stats?.ultimo === "acerto";
-      if (legendFiltro === "erro") return stats?.ultimo === "erro";
-      if (legendFiltro === "duvida") return isDuvida;
-      if (legendFiltro === "pendente") return stats === undefined && !isDuvida;
-      return true;
-    });
-  }, [questoes, resultadosMap, duvidasIds, legendFiltro]);
 
   const grouped = useMemo(() => {
     const createRows = (): Record<CategoryKey, Questao[]> => ({
@@ -2257,9 +2419,7 @@ function CasoProgressMap({
       dominadas: createRows(),
     };
 
-    let hasPendentes = false;
-
-    for (const item of filteredItems) {
+    for (const item of questoes) {
       const overrideCat = getMapRowLookup(overrides, item.id);
       const originalCat = originalCategoryById?.get(item.id) ?? item.categoryKey;
       const effectiveCat = overrideCat ?? originalCat;
@@ -2279,18 +2439,14 @@ function CasoProgressMap({
         bucket = "nao_dominadas";
       }
 
-      if (!stats && !isDuvida) {
-        hasPendentes = true;
-      }
-
       columns[bucket][rowCategoryKey].push({
         ...item,
         categoryKey: effectiveCat,
       });
     }
 
-    return { columns, hasPendentes };
-  }, [filteredItems, overrides, originalCategoryById, resultadosMap, duvidasIds]);
+    return { columns };
+  }, [questoes, overrides, originalCategoryById, resultadosMap, duvidasIds]);
 
   useEffect(() => {
     if (!zoomSession) return;
@@ -2340,120 +2496,8 @@ function CasoProgressMap({
 
   return (
     <div className="my-2 flex flex-col gap-3">
-      {/* Banner Superior: Meu Progresso de Estudos dentro do Caso */}
-      <div className="flex flex-col justify-between gap-3 rounded-2xl border border-white/[0.08] bg-gradient-to-r from-[#0e1726] via-[#0d1524] to-[#101829] px-4 py-3 shadow-lg xl:flex-row xl:items-center">
-        <div className="flex items-center gap-3 min-w-0">
-          <BookOpen size={22} strokeWidth={1.75} className="shrink-0 text-[#4f8ff7]" />
-          <div className="h-8 w-px shrink-0 bg-white/[0.08]" />
-          <div className="min-w-0">
-            <h4 className="text-sm font-semibold tracking-tight text-slate-100 sm:text-base truncate">
-              Meu Progresso de Estudos
-            </h4>
-            <p className="text-[11px] text-slate-400 sm:text-xs truncate">
-              {casoNome
-                ? `${casoNome} · Acompanhe seu desempenho e foque no que precisa revisar`
-                : "Acompanhe seu desempenho e foque no que precisa revisar"}
-            </p>
-          </div>
-        </div>
-
-        {/* Legenda interativa */}
-        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => setLegendFiltro(prev => prev === "acerto" ? "todos" : "acerto")}
-            aria-pressed={legendFiltro === "acerto"}
-            title="Filtrar apenas questões acertadas neste caso"
-            className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition-colors ${
-              legendFiltro === "acerto"
-                ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40"
-                : "text-slate-200 hover:bg-white/[0.04]"
-            }`}
-          >
-            <span className="flex h-4 w-4 items-center justify-center rounded-[4px] bg-[#22c55e] text-white shadow-sm">
-              <Check size={11} strokeWidth={3} />
-            </span>
-            <span>Acertou</span>
-          </button>
-
-          <div className="hidden h-4 w-px bg-white/[0.08] sm:block" />
-
-          <button
-            type="button"
-            onClick={() => setLegendFiltro(prev => prev === "erro" ? "todos" : "erro")}
-            aria-pressed={legendFiltro === "erro"}
-            title="Filtrar apenas questões erradas neste caso"
-            className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition-colors ${
-              legendFiltro === "erro"
-                ? "bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/40"
-                : "text-slate-200 hover:bg-white/[0.04]"
-            }`}
-          >
-            <span className="flex h-4 w-4 items-center justify-center rounded-[4px] bg-[#b91c1c] text-white shadow-sm">
-              <X size={11} strokeWidth={3} />
-            </span>
-            <span>Errou</span>
-          </button>
-
-          <div className="hidden h-4 w-px bg-white/[0.08] sm:block" />
-
-          <button
-            type="button"
-            onClick={() => setLegendFiltro(prev => prev === "duvida" ? "todos" : "duvida")}
-            aria-pressed={legendFiltro === "duvida"}
-            title="Filtrar apenas questões em dúvida neste caso"
-            className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition-colors ${
-              legendFiltro === "duvida"
-                ? "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/40"
-                : "text-slate-200 hover:bg-white/[0.04]"
-            }`}
-          >
-            <span className="flex h-4 w-4 items-center justify-center rounded-[4px] bg-[#ca8a04] text-[10px] font-black text-[#111827] shadow-sm">
-              ?
-            </span>
-            <span>Em Dúvida</span>
-          </button>
-
-          {(grouped.hasPendentes || legendFiltro === "pendente") && (
-            <>
-              <div className="hidden h-4 w-px bg-white/[0.08] sm:block" />
-              <button
-                type="button"
-                onClick={() => setLegendFiltro(prev => prev === "pendente" ? "todos" : "pendente")}
-                aria-pressed={legendFiltro === "pendente"}
-                title="Filtrar apenas questões não respondidas neste caso"
-                className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition-colors ${
-                  legendFiltro === "pendente"
-                    ? "bg-slate-700/60 text-slate-100 ring-1 ring-slate-500/50"
-                    : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
-                }`}
-              >
-                <span className="flex h-4 w-4 items-center justify-center rounded-[4px] border border-white/[0.16] bg-slate-800/90 text-[10px] font-bold text-slate-400">
-                  ·
-                </span>
-                <span>Pendente</span>
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
       {/* Grade das 3 Colunas Principais dentro do Caso */}
-      {filteredItems.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/[0.08] bg-[#0e1523]/95 py-8 text-center">
-          <p className="text-xs font-medium text-slate-400">Nenhuma questão corresponde a este filtro neste caso.</p>
-          {legendFiltro !== "todos" && (
-            <button
-              type="button"
-              onClick={() => setLegendFiltro("todos")}
-              className="text-xs font-semibold text-sky-400 hover:text-sky-300"
-            >
-              Mostrar todas do caso
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-3">
           {columnConfigs.map((col) => {
             const colRows = grouped.columns[col.key];
             const colAllItems = visibleCategories.flatMap(cat => colRows[cat.key]);
@@ -2574,7 +2618,6 @@ function CasoProgressMap({
             );
           })}
         </div>
-      )}
 
       {activeZoomQuestion && zoomSession && (
         <ZoomedQuestaoWrapper
@@ -2627,6 +2670,8 @@ const CasoCard = memo(function CasoCard({
   isLast = false,
   refreshKey,
   onPrintCaso,
+  rootBlockId,
+  parentBlockId,
 }: { 
   caso: Caso; 
   depth?: number; 
@@ -2648,10 +2693,13 @@ const CasoCard = memo(function CasoCard({
   isLast?: boolean;
   refreshKey?: number;
   onPrintCaso?: (caso: Caso, questoes?: Questao[]) => void;
+  rootBlockId?: string;
+  parentBlockId?: string;
 }) {
   const [openState, setOpenState] = useState<{ open: boolean; seq: number }>({ open: false, seq: 0 });
   const open = expandSignal && expandSignal.seq > openState.seq ? expandSignal.mode === "expand" : openState.open;
   const { overrides, classificacaoFiltro } = useContext(ClassificationContext);
+  const { builderRefreshSeq, openCreateSubcaso, openCreateQuestao, deleteCaso } = useContext(BuilderActionsContext);
   const [questoes, setQuestoes] = useState<Questao[]>([]);
   const [subcasos, setSubcasos] = useState<Caso[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -2667,6 +2715,13 @@ const CasoCard = memo(function CasoCard({
       setSubcasos([]);
     }
   }, [refreshKey]);
+
+  // Recarrega suavemente quando houver criação/edição/movimentação local
+  useEffect(() => {
+    if (builderRefreshSeq > 0) {
+      setLoaded(false);
+    }
+  }, [builderRefreshSeq]);
 
   // Pre-fetch das questões adjacentes para navegação instantânea
   useEffect(() => {
@@ -2757,43 +2812,30 @@ const CasoCard = memo(function CasoCard({
       (async () => {
         setLoading(true);
         try {
-          // 1. Tentar buscar questões deste caso diretamente da tabela definitiva notion_questoes_banco do Supabase
-          try {
-            const cleanCasoId = caso.id.replace(/-/g, "");
-            const { data: bQuestoes } = await supabase
+          const cleanCasoId = caso.id.replace(/-/g, "");
+          const [dbRes, children] = await Promise.all([
+            supabase
               .from("notion_questoes_banco")
               .select("*")
-              .in("caso_id", [caso.id, cleanCasoId]);
+              .in("caso_id", [caso.id, cleanCasoId])
+              .then(r => r.data ?? [], () => [] as any[]),
+            fetchChildren(caso.id).catch(() => [] as NotionAPIBlock[]),
+          ]);
 
-            if (bQuestoes && bQuestoes.length > 0) {
-              const mapped: Questao[] = bQuestoes.map((b: any) => ({
-                id: b.id,
-                numero: b.numero || "",
-                topic: b.topico || "",
-                categoryKey: (b.categoria || "media") as CategoryKey,
-                imageUrls: Array.isArray(b.imagens_urls) ? b.imagens_urls : [],
-                resposta: b.gabarito_texto || undefined,
-                respostaImageUrls: Array.isArray(b.gabarito_imagens_urls) ? b.gabarito_imagens_urls : [],
-                caseLabel: b.caso_nome || caso.nome,
-              }));
+          const mappedDb: Questao[] = (dbRes as any[]).map((b: any) => ({
+            id: b.id,
+            numero: b.numero || "",
+            topic: b.topico || "",
+            categoryKey: (b.categoria || "media") as CategoryKey,
+            enunciadoTexto: b.enunciado_texto || undefined,
+            imageUrls: Array.isArray(b.imagens_urls) ? b.imagens_urls : [],
+            resposta: b.gabarito_texto || undefined,
+            respostaImageUrls: Array.isArray(b.gabarito_imagens_urls) ? b.gabarito_imagens_urls : [],
+            caseLabel: b.caso_nome || caso.nome,
+          }));
 
-              let savedOrderIds: string[] = [];
-              try {
-                const savedQ = localStorage.getItem(`notion_questoes_order_${caso.id}`);
-                if (savedQ) savedOrderIds = JSON.parse(savedQ);
-              } catch (e) {}
-
-              if (active) {
-                setQuestoes(sortQuestoesPorDificuldade(mapped, savedOrderIds));
-                setLoaded(true);
-                setLoading(false);
-                return;
-              }
-            }
-          } catch (e) {}
-
-          const children = await fetchChildren(caso.id);
-          const tempQuestoes: Questao[] = [];
+          const seenQuestaoIds = new Set(mappedDb.map(q => q.id.replace(/-/g, "")));
+          const tempQuestoes: Questao[] = [...mappedDb];
           const tempSubcasos: Caso[] = [];
 
           for (const child of children) {
@@ -2806,14 +2848,17 @@ const CasoCard = memo(function CasoCard({
             const categoryKey = detectCategory(emojis);
 
             if (categoryKey) {
-              tempQuestoes.push({ id: child.id, numero, topic, categoryKey, imageUrls: [], respostaImageUrls: [] });
+              const cleanChild = child.id.replace(/-/g, "");
+              if (!seenQuestaoIds.has(cleanChild)) {
+                seenQuestaoIds.add(cleanChild);
+                tempQuestoes.push({ id: child.id, numero, topic, categoryKey, imageUrls: [], respostaImageUrls: [] });
+              }
             } else {
               tempSubcasos.push({ id: child.id, nome: rawTitle || "Sem nome", questoes: [] });
             }
           }
 
           if (active) {
-            // Ordenar subcasos se houver ordem salva
             try {
               const savedSub = localStorage.getItem(`notion_subcasos_order_${caso.id}`);
               if (savedSub) {
@@ -2828,8 +2873,6 @@ const CasoCard = memo(function CasoCard({
               }
             } catch (e) {}
 
-            // A dificuldade mantém a hierarquia principal; a ordem manual é
-            // preservada apenas entre questões da mesma dificuldade.
             let savedQuestionOrder: string[] = [];
             try {
               const savedQ = localStorage.getItem(`notion_questoes_order_${caso.id}`);
@@ -2850,7 +2893,7 @@ const CasoCard = memo(function CasoCard({
       })();
       return () => { active = false; };
     }
-  }, [open, caso.id, loaded, showQuestionMap]);
+  }, [open, caso.id, caso.nome, loaded, loading, showQuestionMap]);
 
   const effectiveStatus = statusFiltro !== "todas" ? statusFiltro : (apenasComErros ? "erros" : "todas");
 
@@ -2990,7 +3033,46 @@ const CasoCard = memo(function CasoCard({
           </div>
         )}
 
-        <div className="flex items-center gap-1.5 shrink-0 ml-1">
+        <div className="flex items-center gap-1 shrink-0 ml-1">
+          {rootBlockId && (
+            <div className="flex items-center gap-0.5 opacity-45 group-hover:opacity-100 transition-opacity mr-0.5">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openCreateSubcaso(rootBlockId, caso.id, caso.nome);
+                }}
+                title={`Criar subcaso dentro de "${caso.nome}"`}
+                className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06] transition-all"
+              >
+                <FolderPlus size={11} />
+                <span className="hidden lg:inline">Subcaso</span>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openCreateQuestao(rootBlockId, caso.id);
+                }}
+                title={`Nova questão dentro de "${caso.nome}"`}
+                className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-emerald-300 hover:bg-white/[0.06] transition-all"
+              >
+                <FilePlus2 size={11} />
+                <span className="hidden lg:inline">Questão</span>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void deleteCaso(rootBlockId, parentBlockId || rootBlockId, caso.id, caso.nome);
+                }}
+                title={`Remover "${caso.nome}"`}
+                className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+              >
+                <Trash2 size={11} />
+              </button>
+            </div>
+          )}
           <button
             type="button"
             onClick={(e) => {
@@ -3018,8 +3100,28 @@ const CasoCard = memo(function CasoCard({
               Carregando...
             </div>
           ) : !hasContent ? (
-            <div className="text-[11px] text-slate-600 italic py-1 px-2">
-              {classificacaoFiltro !== "todas" ? "Nenhuma questão com esta classificação neste caso." : "Sem questões registradas."}
+            <div className="flex items-center gap-2 flex-wrap py-1.5 px-2">
+              <span className="text-[11px] text-slate-600 italic">
+                {classificacaoFiltro !== "todas" ? "Nenhuma questão com esta classificação neste caso." : "Sem questões registradas."}
+              </span>
+              {rootBlockId && classificacaoFiltro === "todas" && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => openCreateSubcaso(rootBlockId, caso.id, caso.nome)}
+                    className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20"
+                  >
+                    + Criar Subcaso
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openCreateQuestao(rootBlockId, caso.id)}
+                    className="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20"
+                  >
+                    + Criar Questão
+                  </button>
+                </>
+              )}
             </div>
           ) : (
             <>
@@ -3044,7 +3146,10 @@ const CasoCard = memo(function CasoCard({
                   onDropCaso={handleDropSubcaso}
                   isFirst={idx === 0}
                   isLast={idx === subcasos.length - 1}
+                  refreshKey={refreshKey}
                   onPrintCaso={onPrintCaso}
+                  rootBlockId={rootBlockId}
+                  parentBlockId={caso.id}
                 />
               ))}
 
@@ -3083,6 +3188,9 @@ const CasoCard = memo(function CasoCard({
                     onPrevQuestion={idx > 0 ? () => setZoomedQuestaoIndex(idx - 1) : undefined}
                     hasNextQuestion={idx < filteredQuestoes.length - 1}
                     hasPrevQuestion={idx > 0}
+                    rootBlockId={rootBlockId}
+                    casoId={caso.id}
+                    casoNome={caso.nome}
                   />
                 </div>
               ))}
@@ -3139,6 +3247,8 @@ function BlockViewer({
   onPrintCaso?: (caso: Caso, questoes?: Questao[]) => void;
 }) {
   const { overrides, classificacaoFiltro } = useContext(ClassificationContext);
+  const builder = useContext(BuilderActionsContext);
+  const prevRefreshKeyRef = useRef(0);
   const [casos, setCasos] = useState<Caso[]>([]);
   const [filteredItens, setFilteredItens] = useState<QuestaoResumo[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -3207,7 +3317,9 @@ function BlockViewer({
           return;
         }
 
-        const forceFetch = refreshKey !== undefined && refreshKey > 0;
+        const currentRefreshKey = refreshKey ?? 0;
+        const forceFetch = currentRefreshKey > prevRefreshKeyRef.current;
+        prevRefreshKeyRef.current = currentRefreshKey;
         let built: Caso[] = [];
 
         try {
@@ -3273,7 +3385,7 @@ function BlockViewer({
       }
     })();
     return () => { cancelled = true; };
-  }, [block.block_id, effectiveStatus, resultadosMap, feitasHojeIds, refreshKey]);
+  }, [block.block_id, effectiveStatus, resultadosMap, feitasHojeIds, refreshKey, builder.builderRefreshSeq]);
 
   const displayFilteredItens = useMemo(() => {
     if (!filteredItens) return null;
@@ -3379,52 +3491,87 @@ function BlockViewer({
     );
   }
 
-  if (casos.length === 0) return <p className="text-[11px] text-slate-600 italic text-center py-10">Nenhum caso encontrado.</p>;
-
   return (
     <div className="flex flex-col gap-2">
-      {showQuestionMap && casos.length > 1 && (
-        <div className="flex items-center justify-end gap-1.5 pb-1">
+      <div className="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-white/[0.05]">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
-            onClick={() => setExpandSignal(prev => ({ mode: "expand", seq: (prev?.seq ?? 0) + 1 }))}
-            className="rounded-lg border border-white/[0.08] bg-[#0d1220] px-2.5 py-1 text-[10px] font-medium text-slate-300 transition-colors hover:bg-white/[0.05] hover:text-white"
+            onClick={() => builder.openCreateCaso(block.block_id, block.nome, casos.map(c => ({ id: c.id, nome: c.nome })))}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/35 border border-indigo-500/30 text-indigo-300 text-[11px] font-bold transition-all active:scale-95"
           >
-            Expandir todos os casos
+            <FolderPlus size={13} />
+            <span>+ Novo Caso</span>
           </button>
           <button
             type="button"
-            onClick={() => setExpandSignal(prev => ({ mode: "collapse", seq: (prev?.seq ?? 0) + 1 }))}
-            className="rounded-lg border border-white/[0.08] bg-[#0d1220] px-2.5 py-1 text-[10px] font-medium text-slate-400 transition-colors hover:bg-white/[0.05] hover:text-white"
+            onClick={() => builder.openCreateQuestao(block.block_id, casos[0]?.id)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/35 border border-emerald-500/30 text-emerald-300 text-[11px] font-bold transition-all active:scale-95"
           >
-            Recolher todos
+            <FilePlus2 size={13} />
+            <span>+ Nova Questão</span>
           </button>
         </div>
+
+        {showQuestionMap && casos.length > 1 && (
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setExpandSignal(prev => ({ mode: "expand", seq: (prev?.seq ?? 0) + 1 }))}
+              className="rounded-lg border border-white/[0.08] bg-[#0d1220] px-2.5 py-1 text-[10px] font-medium text-slate-300 transition-colors hover:bg-white/[0.05] hover:text-white"
+            >
+              Expandir todos os casos
+            </button>
+            <button
+              type="button"
+              onClick={() => setExpandSignal(prev => ({ mode: "collapse", seq: (prev?.seq ?? 0) + 1 }))}
+              className="rounded-lg border border-white/[0.08] bg-[#0d1220] px-2.5 py-1 text-[10px] font-medium text-slate-400 transition-colors hover:bg-white/[0.05] hover:text-white"
+            >
+              Recolher todos
+            </button>
+          </div>
+        )}
+      </div>
+
+      {casos.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-10 gap-2 text-center">
+          <p className="text-[11px] text-slate-500 italic">Nenhum caso criado neste caderno ainda.</p>
+          <button
+            type="button"
+            onClick={() => builder.openCreateCaso(block.block_id, block.nome, [])}
+            className="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 px-3 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/25"
+          >
+            + Criar primeiro Caso
+          </button>
+        </div>
+      ) : (
+        casos.map((caso, idx) => (
+          <CasoCard 
+            key={caso.id} 
+            caso={caso} 
+            user={user} 
+            duvidasIds={duvidasIds}
+            onToggleDuvida={onToggleDuvida}
+            onAnswered={onAnswered}
+            resultadosMap={resultadosMap}
+            apenasComErros={apenasComErros}
+            statusFiltro={statusFiltro}
+            feitasHojeIds={feitasHojeIds}
+            isAdmin={isAdmin}
+            showQuestionMap={showQuestionMap}
+            expandSignal={expandSignal}
+            onMoveUp={(id) => handleMoveCaso(id, "up")}
+            onMoveDown={(id) => handleMoveCaso(id, "down")}
+            onDropCaso={handleDropCaso}
+            isFirst={idx === 0}
+            isLast={idx === casos.length - 1}
+            refreshKey={refreshKey}
+            onPrintCaso={onPrintCaso}
+            rootBlockId={block.block_id}
+            parentBlockId={block.block_id}
+          />
+        ))
       )}
-      {casos.map((caso, idx) => (
-        <CasoCard 
-          key={caso.id} 
-          caso={caso} 
-          user={user} 
-          duvidasIds={duvidasIds}
-          onToggleDuvida={onToggleDuvida}
-          onAnswered={onAnswered}
-          resultadosMap={resultadosMap}
-          apenasComErros={apenasComErros}
-          statusFiltro={statusFiltro}
-          feitasHojeIds={feitasHojeIds}
-          isAdmin={isAdmin}
-          showQuestionMap={showQuestionMap}
-          expandSignal={expandSignal}
-          onMoveUp={(id) => handleMoveCaso(id, "up")}
-          onMoveDown={(id) => handleMoveCaso(id, "down")}
-          onDropCaso={handleDropCaso}
-          isFirst={idx === 0}
-          isLast={idx === casos.length - 1}
-          refreshKey={refreshKey}
-          onPrintCaso={onPrintCaso}
-        />
-      ))}
     </div>
   );
 }
@@ -3442,6 +3589,7 @@ function BlocoStatsBadge({
   duvidasIds: Set<string>;
   onStatsLoaded?: (stats: { acertos: number; erros: number; duvidas: number; total: number }) => void;
 }) {
+  const { builderRefreshSeq } = useContext(BuilderActionsContext);
   const targetId = block?.block_id || blockId || "";
   const [ids, setIds] = useState<string[] | null>(null);
 
@@ -3453,7 +3601,7 @@ function BlocoStatsBadge({
       .then(res => { if (active) setIds(res); })
       .catch(() => { if (active) setIds([]); });
     return () => { active = false; };
-  }, [targetId]);
+  }, [targetId, builderRefreshSeq]);
 
   let acertos = 0, erros = 0, duvidas = 0;
   if (ids && resultadosMap) {
@@ -3523,6 +3671,7 @@ function MateriaStatsBadge({
   resultadosMap?: Map<string, QuestaoStats>;
   duvidasIds: Set<string>;
 }) {
+  const { builderRefreshSeq } = useContext(BuilderActionsContext);
   const [ids, setIds] = useState<string[] | null>(null);
 
   useEffect(() => {
@@ -3544,7 +3693,7 @@ function MateriaStatsBadge({
       });
 
     return () => { active = false; };
-  }, [blocks]);
+  }, [blocks, builderRefreshSeq]);
 
   let acertos = 0, erros = 0, duvidas = 0;
   if (ids && resultadosMap) {
@@ -3596,6 +3745,7 @@ function MateriaStatsBadge({
 }
 
 function TotalBancoStatsBadge({ blocks }: { blocks: NotionBlockRow[] }) {
+  const { builderRefreshSeq } = useContext(BuilderActionsContext);
   const [total, setTotal] = useState<number | null>(null);
 
   useEffect(() => {
@@ -3612,7 +3762,7 @@ function TotalBancoStatsBadge({ blocks }: { blocks: NotionBlockRow[] }) {
       })
       .catch(() => { if (active) setTotal(0); });
     return () => { active = false; };
-  }, [blocks]);
+  }, [blocks, builderRefreshSeq]);
 
   if (total === null) {
     return (
@@ -3718,6 +3868,7 @@ function GabaritoBloco({
   onAnswered: () => void;
   isAdmin?: boolean;
 }) {
+  const { builderRefreshSeq } = useContext(BuilderActionsContext);
   const [detalhes, setDetalhes] = useState<QuestaoDetalhesResult | null>(null);
   const [selecionada, setSelecionada] = useState<QuestaoResumo | null>(null);
   const [expandido, setExpandido] = useState<Set<string>>(new Set());
@@ -3739,7 +3890,7 @@ function GabaritoBloco({
       .then(res => { if (active) setDetalhes(res); })
       .catch(() => { if (active) setDetalhes({ itens: [], caseIcons: {} }); });
     return () => { active = false; };
-  }, [block.block_id]);
+  }, [block.block_id, builderRefreshSeq]);
 
   if (detalhes === null) {
     return (
@@ -4191,14 +4342,39 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   const [feitasHojeIds, setFeitasHojeIds] = useState<string[]>([]);
   const [respostasHojeMap, setRespostasHojeMap] = useState<Map<string, { data: string; horario: string; correto: string }>>(new Map());
   const [refreshKey, setRefreshKey] = useState(0);
+  const [builderRefreshSeq, setBuilderRefreshSeq] = useState(0);
   
   const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
   const handleAnswered = useCallback(() => setStatsRefreshTrigger(v => v + 1), []);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
 
+  const [createCasoModal, setCreateCasoModal] = useState<{
+    isOpen: boolean;
+    rootBlockId: string;
+    parentBlockId: string;
+    parentNome: string;
+    isSubcaso: boolean;
+    existingCasos?: { id: string; nome: string }[];
+  }>({ isOpen: false, rootBlockId: "", parentBlockId: "", parentNome: "", isSubcaso: false });
+
+  const [questaoModal, setQuestaoModal] = useState<{
+    isOpen: boolean;
+    defaultRootBlockId?: string;
+    defaultCasoId?: string;
+    editingQuestao?: QuestaoInitialEdit | null;
+  }>({ isOpen: false });
+
+  const [moveModal, setMoveModal] = useState<{
+    isOpen: boolean;
+    rootBlockId: string;
+    fromCasoId: string;
+    questao: Questao | null;
+  }>({ isOpen: false, rootBlockId: "", fromCasoId: "", questao: null });
+
   const [showForm, setShowForm] = useState(false);
   const [formId, setFormId] = useState(""); const [formNome, setFormNome] = useState(""); const [formDesc, setFormDesc] = useState(""); const [formMateria, setFormMateria] = useState("");
+  const [isLocalNewBlock, setIsLocalNewBlock] = useState(false);
   
   const [materiaFiltro, setMateriaFiltro] = useState("Todas");
   const [cadernoFiltro, setCadernoFiltro] = useState("Todos");
@@ -4519,11 +4695,126 @@ export default function NotionQuestionTab({ user }: { user: any }) {
         materia: formMateria.trim() || null,
       });
       if (error) throw error;
-      setFormId(""); setFormNome(""); setFormDesc(""); setFormMateria(""); setShowForm(false);
+      if (isLocalNewBlock) {
+        await writeSupabaseCacheBlocks(notionId, []).catch(() => {});
+      }
+      setFormId(""); setFormNome(""); setFormDesc(""); setFormMateria(""); setIsLocalNewBlock(false); setShowForm(false);
       await fetchBlocks();
     } catch (e: any) { setSaveErr(e.message); }
     finally { setSaving(false); }
   };
+
+  const triggerBuilderRefresh = useCallback(() => {
+    childrenCache.clear();
+    childrenInFlight.clear();
+    fullQuestaoCache.clear();
+    fullQuestaoInFlight.clear();
+    questoesDoBlocoCache.clear();
+    questoesDetalhesCache.clear();
+    setBuilderRefreshSeq(v => v + 1);
+    setStatsRefreshTrigger(v => v + 1);
+  }, []);
+
+  const builderContextValue = useMemo<BuilderActionsContextValue>(() => ({
+    builderRefreshSeq,
+    openCreateCaso: (rootBlockId, rootNome, existingCasos) => {
+      setCreateCasoModal({
+        isOpen: true,
+        rootBlockId,
+        parentBlockId: rootBlockId,
+        parentNome: rootNome,
+        isSubcaso: false,
+        existingCasos,
+      });
+    },
+    openCreateSubcaso: (rootBlockId, parentCasoId, parentCasoNome) => {
+      setCreateCasoModal({
+        isOpen: true,
+        rootBlockId,
+        parentBlockId: parentCasoId,
+        parentNome: parentCasoNome,
+        isSubcaso: true,
+      });
+    },
+    openCreateQuestao: (rootBlockId, defaultCasoId) => {
+      setQuestaoModal({
+        isOpen: true,
+        defaultRootBlockId: rootBlockId || selectedBlock?.block_id || blocks[0]?.block_id,
+        defaultCasoId,
+        editingQuestao: null,
+      });
+    },
+    openEditQuestao: (rootBlockId, casoId, casoNome, questao) => {
+      void (async () => {
+        let enriched = questao;
+        if (questao.imageUrls.length === 0 && !questao.enunciadoTexto && !questao.resposta) {
+          try {
+            const full = await fetchQuestaoFullData(questao.id);
+            enriched = {
+              ...questao,
+              enunciadoTexto: full.textEnunciado ?? questao.enunciadoTexto,
+              imageUrls: full.imgs.length > 0 ? full.imgs : questao.imageUrls,
+              resposta: full.textResp ?? questao.resposta,
+              respostaImageUrls: full.rImgs.length > 0 ? full.rImgs : questao.respostaImageUrls,
+            };
+          } catch {}
+        }
+        setQuestaoModal({
+          isOpen: true,
+          defaultRootBlockId: rootBlockId,
+          defaultCasoId: casoId,
+          editingQuestao: {
+            id: enriched.id,
+            rootBlockId,
+            casoId,
+            casoNome,
+            numero: enriched.numero,
+            topic: enriched.topic,
+            categoryKey: enriched.categoryKey as BuilderCategoryKey,
+            enunciadoTexto: enriched.enunciadoTexto,
+            imageUrls: enriched.imageUrls,
+            resposta: enriched.resposta,
+            respostaImageUrls: enriched.respostaImageUrls,
+          },
+        });
+      })();
+    },
+    openMoveQuestao: (rootBlockId, casoId, questao) => {
+      setMoveModal({
+        isOpen: true,
+        rootBlockId,
+        fromCasoId: casoId,
+        questao,
+      });
+    },
+    deleteQuestao: async (rootBlockId, casoId, questao) => {
+      if (!confirm(`Excluir a questão ${questao.numero || ""} "${questao.topic || ""}"?`)) return;
+      try {
+        await deleteQuestaoFromCaso({
+          rootBlockId,
+          parentCasoId: casoId,
+          questaoId: questao.id,
+        });
+        triggerBuilderRefresh();
+      } catch (e: any) {
+        alert(e?.message || "Erro ao excluir questão.");
+      }
+    },
+    deleteCaso: async (rootBlockId, parentBlockId, casoId, casoNome) => {
+      if (!confirm(`Remover "${casoNome}"? As questões cadastradas dentro dele também serão removidas.`)) return;
+      try {
+        await deleteCasoOrSubcaso({
+          rootBlockId,
+          parentBlockId,
+          casoId,
+          deleteQuestionsInside: true,
+        });
+        triggerBuilderRefresh();
+      } catch (e: any) {
+        alert(e?.message || "Erro ao remover caso.");
+      }
+    },
+  }), [builderRefreshSeq, blocks, selectedBlock?.block_id, triggerBuilderRefresh]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Remover?")) return;
@@ -4646,6 +4937,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           topic: b.topico || "",
           caseLabel: b.caso_nome || block.nome,
           categoryKey: b.categoria,
+          enunciadoTexto: b.enunciado_texto || undefined,
           imageUrls: Array.isArray(b.imagens_urls) ? b.imagens_urls : [],
           respostaText: b.gabarito_texto || undefined,
           respostaImageUrls: Array.isArray(b.gabarito_imagens_urls) ? b.gabarito_imagens_urls : [],
@@ -4679,6 +4971,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           topic: item.topic || "",
           caseLabel: item.caseLabel || block.nome,
           categoryKey: item.categoryKey,
+          enunciadoTexto: full.textEnunciado,
           imageUrls: full.imgs,
           respostaText: full.textResp,
           respostaImageUrls: full.rImgs,
@@ -4724,6 +5017,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           topic: b.topico || "",
           caseLabel: b.caso_nome || caso.nome,
           categoryKey: b.categoria,
+          enunciadoTexto: b.enunciado_texto || undefined,
           imageUrls: Array.isArray(b.imagens_urls) ? b.imagens_urls : [],
           respostaText: b.gabarito_texto || undefined,
           respostaImageUrls: Array.isArray(b.gabarito_imagens_urls) ? b.gabarito_imagens_urls : [],
@@ -4753,12 +5047,14 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           let imgs = q.imageUrls;
           let rImgs = q.respostaImageUrls;
           let textResp = q.resposta;
+          let textEnunc = q.enunciadoTexto;
 
           if (!imgs || imgs.length === 0) {
             const full = await fetchQuestaoFullData(q.id);
             imgs = full.imgs;
             rImgs = full.rImgs;
             textResp = full.textResp;
+            textEnunc = full.textEnunciado ?? textEnunc;
           }
 
           mapped.push({
@@ -4767,6 +5063,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
             topic: q.topic || "",
             caseLabel: q.caseLabel || caso.nome,
             categoryKey: q.categoryKey,
+            enunciadoTexto: textEnunc,
             imageUrls: imgs || [],
             respostaText: textResp,
             respostaImageUrls: rImgs || [],
@@ -4803,6 +5100,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               topic,
               caseLabel: label,
               categoryKey,
+              enunciadoTexto: full.textEnunciado,
               imageUrls: full.imgs,
               respostaText: full.textResp,
               respostaImageUrls: full.rImgs,
@@ -4829,6 +5127,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   }, []);
 
   return (
+    <BuilderActionsContext.Provider value={builderContextValue}>
     <ClassificationContext.Provider value={{ overrides: classificationOverrides, updateClassification: handleUpdateClassification, canEdit: !!user?.id, classificacaoFiltro, setClassificacaoFiltro }}>
     <div className="flex flex-col gap-4 bg-[#080d1a] rounded-2xl border border-white/[0.06] p-4 sm:p-5 shadow-2xl relative overflow-hidden">
       {/* Background ambient glow */}
@@ -4874,7 +5173,18 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           )}
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          {blocks.length > 0 && (
+            <button
+              type="button"
+              onClick={() => builderContextValue.openCreateQuestao(selectedBlock?.block_id ?? blocks[0]?.block_id)}
+              title="Criar questão (em Caso ou Subcaso), anexar imagem, escrever enunciado e resposta"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all active:scale-95 shrink-0 shadow-md shadow-emerald-600/20"
+            >
+              <FilePlus2 size={13} />
+              <span>+ Nova Questão</span>
+            </button>
+          )}
           <button
             onClick={toggleAntiBrilho}
             title={antiBrilho === 'noturno' ? "Modo Escuro (Dark Invertido) ativo para imagens — clique para alternar" : "Modo Original ativo para imagens — clique para alternar"}
@@ -4944,8 +5254,23 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">ID do Bloco *</label>
-              <input value={formId} onChange={e => setFormId(e.target.value)} placeholder="abc12345-..." className="px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40 transition-all font-mono" />
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">ID do Bloco *</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const id = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+                      ? crypto.randomUUID()
+                      : `${Date.now().toString(16)}-4000-8000-000000000000`;
+                    setFormId(id);
+                    setIsLocalNewBlock(true);
+                  }}
+                  className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300"
+                >
+                  Gerar ID local
+                </button>
+              </div>
+              <input value={formId} onChange={e => { setFormId(e.target.value); setIsLocalNewBlock(false); }} placeholder="abc12345-... ou gere um ID local" className="px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40 transition-all font-mono" />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Nome *</label>
@@ -5507,6 +5832,52 @@ export default function NotionQuestionTab({ user }: { user: any }) {
         </>
       )}
     </div>
+
+    <CreateCasoModal
+      isOpen={createCasoModal.isOpen}
+      onClose={() => setCreateCasoModal(prev => ({ ...prev, isOpen: false }))}
+      rootBlockId={createCasoModal.rootBlockId}
+      parentBlockId={createCasoModal.parentBlockId}
+      parentNome={createCasoModal.parentNome}
+      isSubcaso={createCasoModal.isSubcaso}
+      existingCasos={createCasoModal.existingCasos}
+      onCreated={() => {
+        triggerBuilderRefresh();
+      }}
+    />
+
+    <QuestaoBuilderModal
+      isOpen={questaoModal.isOpen}
+      onClose={() => setQuestaoModal(prev => ({ ...prev, isOpen: false }))}
+      blocks={blocks}
+      defaultRootBlockId={questaoModal.defaultRootBlockId}
+      defaultCasoId={questaoModal.defaultCasoId}
+      editingQuestao={questaoModal.editingQuestao}
+      onSaved={() => {
+        triggerBuilderRefresh();
+      }}
+    />
+
+    <MoveQuestaoModal
+      isOpen={moveModal.isOpen}
+      onClose={() => setMoveModal(prev => ({ ...prev, isOpen: false }))}
+      rootBlockId={moveModal.rootBlockId}
+      fromCasoId={moveModal.fromCasoId}
+      questao={moveModal.questao ? {
+        id: moveModal.questao.id,
+        numero: moveModal.questao.numero,
+        topic: moveModal.questao.topic,
+        categoryKey: moveModal.questao.categoryKey as BuilderCategoryKey,
+        enunciadoTexto: moveModal.questao.enunciadoTexto,
+        imageUrls: moveModal.questao.imageUrls,
+        resposta: moveModal.questao.resposta,
+        respostaImageUrls: moveModal.questao.respostaImageUrls,
+      } : null}
+      onMoved={() => {
+        triggerBuilderRefresh();
+      }}
+    />
     </ClassificationContext.Provider>
+    </BuilderActionsContext.Provider>
   );
 }
