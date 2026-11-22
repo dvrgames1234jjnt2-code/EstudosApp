@@ -1790,6 +1790,7 @@ const QuestaoRow = memo(function QuestaoRow({
   const [respostaText, setRespostaText] = useState<string | undefined>(questao.resposta);
   const [respostaToggleId, setRespostaToggleId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const loadingRef = useRef(false);
 
   const [recording, setRecording] = useState(false);
   const [recorded, setRecorded] = useState<'acerto' | 'erro' | null>(null);
@@ -2013,37 +2014,46 @@ const QuestaoRow = memo(function QuestaoRow({
     Boolean(q.resposta?.trim());
 
   const [loaded, setLoaded] = useState(() => hasInlineData(questao));
+  const prevQuestaoIdRef = useRef(questao.id);
 
   useEffect(() => {
-    setEnunciadoTexto(questao.enunciadoTexto);
-    setImageUrls(questao.imageUrls ?? []);
-    setRespostaText(questao.resposta);
-    setRespostaImageUrls(questao.respostaImageUrls ?? []);
-    setLoaded(hasInlineData(questao));
+    const idChanged = prevQuestaoIdRef.current !== questao.id;
+    prevQuestaoIdRef.current = questao.id;
+    if (idChanged || hasInlineData(questao)) {
+      setEnunciadoTexto(questao.enunciadoTexto);
+      setImageUrls(questao.imageUrls ?? []);
+      setRespostaText(questao.resposta);
+      setRespostaImageUrls(questao.respostaImageUrls ?? []);
+      setLoaded(hasInlineData(questao));
+    }
   }, [questao]);
 
   useEffect(() => {
-    if (open && !loaded && !loading) {
-      let active = true;
-      setLoading(true);
-      fetchQuestaoFullData(questao.id).then(result => {
-        if (!active) return;
-        setImageUrls(result.imgs);
-        if (result.textEnunciado) setEnunciadoTexto(result.textEnunciado);
-        setRespostaImageUrls(result.rImgs);
-        setRespostaText(result.textResp);
-        setRespostaToggleId(result.foundToggleId);
-        preloadImageUrls(result.imgs);
-        preloadImageUrls(result.rImgs);
-        setLoaded(true);
-      }).catch(e => {
-        console.error("Erro ao carregar detalhes da questão:", e);
-      }).finally(() => {
-        if (active) setLoading(false);
-      });
-      return () => { active = false; };
-    }
-  }, [open, questao.id, loaded, loading]);
+    if (!open || loaded || loadingRef.current) return;
+    let active = true;
+    loadingRef.current = true;
+    setLoading(true);
+    fetchQuestaoFullData(questao.id).then(result => {
+      if (!active) return;
+      setImageUrls(result.imgs);
+      if (result.textEnunciado) setEnunciadoTexto(result.textEnunciado);
+      setRespostaImageUrls(result.rImgs);
+      setRespostaText(result.textResp);
+      setRespostaToggleId(result.foundToggleId);
+      preloadImageUrls(result.imgs);
+      preloadImageUrls(result.rImgs);
+      setLoaded(true);
+    }).catch(e => {
+      console.error("Erro ao carregar detalhes da questão:", e);
+    }).finally(() => {
+      loadingRef.current = false;
+      if (active) setLoading(false);
+    });
+    return () => {
+      active = false;
+      loadingRef.current = false;
+    };
+  }, [open, questao.id, loaded]);
 
   const handlePrefetchQuestao = useCallback(() => {
     preloadImageUrls(questao.imageUrls);
@@ -2962,6 +2972,7 @@ const CasoCard = memo(function CasoCard({
   const [subcasos, setSubcasos] = useState<Caso[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
+  const loadingRef = useRef(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [zoomedQuestaoIndex, setZoomedQuestaoIndex] = useState<number | null>(null);
 
@@ -3071,118 +3082,134 @@ const CasoCard = memo(function CasoCard({
   };
 
   useEffect(() => {
-    if (open && !loaded && !loading) {
-      let active = true;
-      (async () => {
-        setLoading(true);
-        try {
-          const cleanCasoId = caso.id.replace(/-/g, "");
-          // 1. Buscar primeiro no Supabase (tabela estruturada + cache de blocos sem chamar Notion)
-          const [dbRes, sbChildren] = await Promise.all([
-            supabase
-              .from("notion_questoes_banco")
-              .select("*")
-              .in("caso_id", [caso.id, cleanCasoId])
-              .then(r => r.data ?? [], () => [] as any[]),
-            fetchChildren(caso.id, false, false).catch(() => [] as NotionAPIBlock[]),
-          ]);
+    if (!open || loaded || loadingRef.current) return;
+    let active = true;
+    loadingRef.current = true;
+    setLoading(true);
+    (async () => {
+      try {
+        const cleanCasoId = caso.id.replace(/-/g, "");
+        // 1. Buscar primeiro no Supabase (tabela estruturada + cache de blocos sem chamar Notion)
+        const [initialDbRes, sbChildren] = await Promise.all([
+          supabase
+            .from("notion_questoes_banco")
+            .select("*")
+            .in("caso_id", [caso.id, cleanCasoId])
+            .then(r => r.data ?? [], () => [] as any[]),
+          fetchChildren(caso.id, false, false).catch(() => [] as NotionAPIBlock[]),
+        ]);
 
-          // 2. Somente se não houver nada no Supabase para este caso, buscar no Notion
-          const children = (dbRes.length === 0 && sbChildren.length === 0)
-            ? await fetchChildren(caso.id, false, true).catch(() => [] as NotionAPIBlock[])
-            : sbChildren;
-
-          const mappedDb: Questao[] = (dbRes as any[]).map((b: any) => ({
-            id: b.id,
-            numero: b.numero || "",
-            topic: b.topico || "",
-            categoryKey: (b.categoria || "media") as CategoryKey,
-            enunciadoTexto: b.enunciado_texto || undefined,
-            imageUrls: Array.isArray(b.imagens_urls) ? b.imagens_urls : [],
-            resposta: b.gabarito_texto || undefined,
-            respostaImageUrls: Array.isArray(b.gabarito_imagens_urls) ? b.gabarito_imagens_urls : [],
-            caseLabel: b.caso_nome || caso.nome,
-          }));
-
-          const seedTime = Date.now();
-          for (const mq of mappedDb) {
-            const qClean = mq.id.replace(/-/g, "");
-            const qFull: FullQuestaoData = {
-              children: [],
-              imgs: mq.imageUrls,
-              rImgs: mq.respostaImageUrls ?? [],
-              textEnunciado: mq.enunciadoTexto,
-              textResp: mq.resposta,
-              foundToggleId: null,
-            };
-            if (hasFullQuestaoContent(qFull) && !isFullQuestaoExpired(qFull)) {
-              fullQuestaoCache.set(qClean, { data: qFull, timestamp: seedTime });
-            }
-          }
-          for (const mq of mappedDb.slice(0, 6)) {
-            preloadImageUrls(mq.imageUrls);
-          }
-
-          const seenQuestaoIds = new Set(mappedDb.map(q => q.id.replace(/-/g, "")));
-          const tempQuestoes: Questao[] = [...mappedDb];
-          const tempSubcasos: Caso[] = [];
-
-          for (const child of children) {
-            if (child.type !== "toggle") continue;
-
-            const rawTitle = richText(child.toggle?.rich_text ?? []);
-            const { emojis: textEmojis, numero, topic } = parseQuestaoTitle(rawTitle);
-            const iconEmoji = child.icon?.type === "emoji" && child.icon.emoji ? [child.icon.emoji] : [];
-            const emojis = [...iconEmoji, ...textEmojis];
-            const categoryKey = detectCategory(emojis);
-
-            if (categoryKey) {
-              const cleanChild = child.id.replace(/-/g, "");
-              if (!seenQuestaoIds.has(cleanChild)) {
-                seenQuestaoIds.add(cleanChild);
-                tempQuestoes.push({ id: child.id, numero, topic, categoryKey, imageUrls: [], respostaImageUrls: [] });
-              }
-            } else {
-              tempSubcasos.push({ id: child.id, nome: rawTitle || "Sem nome", questoes: [] });
-            }
-          }
-
-          if (active) {
-            try {
-              const savedSub = localStorage.getItem(`notion_subcasos_order_${caso.id}`);
-              if (savedSub) {
-                const orderIds: string[] = JSON.parse(savedSub);
-                const map = new Map<string, number>();
-                orderIds.forEach((id, i) => map.set(id, i));
-                tempSubcasos.sort((a, b) => {
-                  const idxA = map.has(a.id) ? map.get(a.id)! : 999;
-                  const idxB = map.has(b.id) ? map.get(b.id)! : 999;
-                  return idxA - idxB;
-                });
-              }
-            } catch (e) {}
-
-            let savedQuestionOrder: string[] = [];
-            try {
-              const savedQ = localStorage.getItem(`notion_questoes_order_${caso.id}`);
-              if (savedQ) savedQuestionOrder = JSON.parse(savedQ);
-            } catch (e) {
-              savedQuestionOrder = [];
-            }
-
-            setQuestoes(sortQuestoesPorDificuldade(tempQuestoes, savedQuestionOrder));
-            setSubcasos(tempSubcasos);
-            setLoaded(true);
-          }
-        } catch (e) {
-          console.error("Erro ao carregar caso:", e);
-        } finally {
-          if (active) setLoading(false);
+        let dbRes = initialDbRes;
+        if (dbRes.length === 0 && rootBlockId && caso.nome) {
+          const cleanRoot = rootBlockId.replace(/-/g, "");
+          const byName = await supabase
+            .from("notion_questoes_banco")
+            .select("*")
+            .or(`bloco_raiz_id.eq.${rootBlockId},bloco_raiz_id.eq.${cleanRoot}`)
+            .eq("caso_nome", caso.nome)
+            .then(r => r.data ?? [], () => [] as any[]);
+          if (byName.length > 0) dbRes = byName;
         }
-      })();
-      return () => { active = false; };
-    }
-  }, [open, caso.id, caso.nome, loaded, loading, showQuestionMap]);
+
+        // 2. Somente se não houver nada no Supabase para este caso, buscar no Notion
+        const children = (dbRes.length === 0 && sbChildren.length === 0)
+          ? await fetchChildren(caso.id, false, true).catch(() => [] as NotionAPIBlock[])
+          : sbChildren;
+
+        const mappedDb: Questao[] = (dbRes as any[]).map((b: any) => ({
+          id: b.id,
+          numero: b.numero || "",
+          topic: b.topico || "",
+          categoryKey: (b.categoria || "media") as CategoryKey,
+          enunciadoTexto: b.enunciado_texto || undefined,
+          imageUrls: Array.isArray(b.imagens_urls) ? b.imagens_urls : [],
+          resposta: b.gabarito_texto || undefined,
+          respostaImageUrls: Array.isArray(b.gabarito_imagens_urls) ? b.gabarito_imagens_urls : [],
+          caseLabel: b.caso_nome || caso.nome,
+        }));
+
+        const seedTime = Date.now();
+        for (const mq of mappedDb) {
+          const qClean = mq.id.replace(/-/g, "");
+          const qFull: FullQuestaoData = {
+            children: [],
+            imgs: mq.imageUrls,
+            rImgs: mq.respostaImageUrls ?? [],
+            textEnunciado: mq.enunciadoTexto,
+            textResp: mq.resposta,
+            foundToggleId: null,
+          };
+          if (hasFullQuestaoContent(qFull) && !isFullQuestaoExpired(qFull)) {
+            fullQuestaoCache.set(qClean, { data: qFull, timestamp: seedTime });
+          }
+        }
+        for (const mq of mappedDb.slice(0, 6)) {
+          preloadImageUrls(mq.imageUrls);
+        }
+
+        const seenQuestaoIds = new Set(mappedDb.map(q => q.id.replace(/-/g, "")));
+        const tempQuestoes: Questao[] = [...mappedDb];
+        const tempSubcasos: Caso[] = [];
+
+        for (const child of children) {
+          if (child.type !== "toggle") continue;
+
+          const rawTitle = richText(child.toggle?.rich_text ?? []);
+          const { emojis: textEmojis, numero, topic } = parseQuestaoTitle(rawTitle);
+          const iconEmoji = child.icon?.type === "emoji" && child.icon.emoji ? [child.icon.emoji] : [];
+          const emojis = [...iconEmoji, ...textEmojis];
+          const categoryKey = detectCategory(emojis);
+
+          if (categoryKey) {
+            const cleanChild = child.id.replace(/-/g, "");
+            if (!seenQuestaoIds.has(cleanChild)) {
+              seenQuestaoIds.add(cleanChild);
+              tempQuestoes.push({ id: child.id, numero, topic, categoryKey, imageUrls: [], respostaImageUrls: [] });
+            }
+          } else {
+            tempSubcasos.push({ id: child.id, nome: rawTitle || "Sem nome", questoes: [] });
+          }
+        }
+
+        if (active) {
+          try {
+            const savedSub = localStorage.getItem(`notion_subcasos_order_${caso.id}`);
+            if (savedSub) {
+              const orderIds: string[] = JSON.parse(savedSub);
+              const map = new Map<string, number>();
+              orderIds.forEach((id, i) => map.set(id, i));
+              tempSubcasos.sort((a, b) => {
+                const idxA = map.has(a.id) ? map.get(a.id)! : 999;
+                const idxB = map.has(b.id) ? map.get(b.id)! : 999;
+                return idxA - idxB;
+              });
+            }
+          } catch (e) {}
+
+          let savedQuestionOrder: string[] = [];
+          try {
+            const savedQ = localStorage.getItem(`notion_questoes_order_${caso.id}`);
+            if (savedQ) savedQuestionOrder = JSON.parse(savedQ);
+          } catch (e) {
+            savedQuestionOrder = [];
+          }
+
+          setQuestoes(sortQuestoesPorDificuldade(tempQuestoes, savedQuestionOrder));
+          setSubcasos(tempSubcasos);
+          setLoaded(true);
+        }
+      } catch (e) {
+        console.error("Erro ao carregar caso:", e);
+      } finally {
+        loadingRef.current = false;
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+      loadingRef.current = false;
+    };
+  }, [open, caso.id, caso.nome, loaded, rootBlockId]);
 
   const effectiveStatus = statusFiltro !== "todas" ? statusFiltro : (apenasComErros ? "erros" : "todas");
 
