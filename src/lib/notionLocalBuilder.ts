@@ -562,6 +562,19 @@ export async function deleteQuestaoFromCaso(params: {
       params.parentCasoId,
       parentBlocks.filter((b: any) => cleanBlockId(b.id) !== qClean)
     );
+  } else {
+    const rootBlocks = await readSupabaseCacheBlocks(params.rootBlockId);
+    if (rootBlocks) {
+      for (const casoBlock of rootBlocks) {
+        const cBlocks = await readSupabaseCacheBlocks(casoBlock.id);
+        if (cBlocks && cBlocks.some((b: any) => cleanBlockId(b.id) === qClean)) {
+          await writeSupabaseCacheBlocks(
+            casoBlock.id,
+            cBlocks.filter((b: any) => cleanBlockId(b.id) !== qClean)
+          );
+        }
+      }
+    }
   }
 
   await invalidateDerivedCaches(params.rootBlockId, params.questaoId);

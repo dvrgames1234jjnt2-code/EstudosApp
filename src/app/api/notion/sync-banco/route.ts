@@ -225,11 +225,21 @@ async function syncBlocoWithNotion(
           newlyFoundQuestions.push({ id: child.id, cleanId: cClean, casoNome, numero, topic });
         }
         const lastEdited = child.last_edited_time ?? '';
+        const notionTime = lastEdited ? new Date(lastEdited).getTime() : 0;
+        const dbTime = existing?.notion_last_edited_time 
+          ? new Date(existing.notion_last_edited_time).getTime() 
+          : (existing?.updated_at ? new Date(existing.updated_at).getTime() : 0);
+
         const hasExpired = [...(existing?.imagens_urls ?? []), ...(existing?.gabarito_imagens_urls ?? [])]
           .some((u: string) => isExpiredAwsUrl(u));
 
-        if (!existing || existing.notion_last_edited_time !== lastEdited || hasExpired) {
+        if (!existing || notionTime > dbTime || hasExpired) {
+          if (existing && notionTime > dbTime) {
+            logs.push(`  🔄 Atualizado no Notion (superior ao banco): Q${numero || '?'}`);
+          }
           toProcess.push({ child, casoId, casoNome });
+        } else {
+          logs.push(`  ⏸️ Inalterado (Notion anterior ou igual ao banco): Q${numero || '?'}`);
         }
       } else if (child.has_children) {
         subWalks.push({ id: child.id, label: rawTitle || 'Sem nome' });
@@ -640,9 +650,9 @@ async function syncBlocoFromSupabaseCache(
 }
 
 export async function POST(request: NextRequest) {
-  const token = process.env.NOTION_TOKEN;
   const supabaseClient = createSupabaseServiceClient();
   const body = await request.json().catch(() => ({}));
+  const token = body.notionToken || request.headers.get('x-notion-token') || process.env.NOTION_TOKEN;
   const requestedIds: string[] | undefined = Array.isArray(body.blocoIds) ? body.blocoIds : undefined;
 
   const logs: string[] = [];

@@ -3749,7 +3749,7 @@ function BlockViewer({
       }
     })();
     return () => { cancelled = true; };
-  }, [block.block_id, effectiveStatus, resultadosMap, feitasHojeIds, refreshKey, builder.builderRefreshSeq]);
+  }, [block.block_id, effectiveStatus, refreshKey, builder.builderRefreshSeq]);
 
   const displayFilteredItens = useMemo(() => {
     if (!filteredItens) return null;

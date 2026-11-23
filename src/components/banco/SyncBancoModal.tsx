@@ -33,6 +33,19 @@ export function SyncBancoModal({ blocos, onClose }: SyncBancoModalProps) {
   const [progressPct, setProgressPct] = useState(0);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(blocos.map(b => b.block_id)));
   const [showLogs, setShowLogs] = useState(false);
+  const [notionToken, setNotionToken] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("notion_user_token") || "";
+    }
+    return "";
+  });
+
+  const handleTokenChange = (val: string) => {
+    setNotionToken(val);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("notion_user_token", val);
+    }
+  };
 
   const toggleBloco = (blockId: string) => {
     setSelectedIds(prev => {
@@ -70,7 +83,7 @@ export function SyncBancoModal({ blocos, onClose }: SyncBancoModalProps) {
           const res = await fetch("/api/notion/sync-banco", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ blocoIds: [bloco.block_id] }),
+            body: JSON.stringify({ blocoIds: [bloco.block_id], notionToken: notionToken.trim() || undefined }),
           });
           const data = await res.json();
           if (!res.ok || !data.success) {
@@ -180,7 +193,7 @@ export function SyncBancoModal({ blocos, onClose }: SyncBancoModalProps) {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1 max-h-60 overflow-y-auto pr-1">
+              <div className="flex flex-col gap-1 max-h-48 overflow-y-auto pr-1">
                 {blocos.map(b => (
                   <label
                     key={b.block_id}
@@ -204,6 +217,20 @@ export function SyncBancoModal({ blocos, onClose }: SyncBancoModalProps) {
                     </div>
                   </label>
                 ))}
+              </div>
+
+              {/* Notion Token Optional Input */}
+              <div className="flex flex-col gap-1 mt-2">
+                <label className="text-[10.5px] font-black text-slate-400 uppercase tracking-wider">
+                  Token da Integração do Notion (Opcional)
+                </label>
+                <input
+                  type="password"
+                  value={notionToken}
+                  onChange={e => handleTokenChange(e.target.value)}
+                  placeholder="secret_..."
+                  className="w-full px-3 py-1.5 rounded-xl bg-black/40 border border-white/[0.08] text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 font-mono"
+                />
               </div>
             </div>
           )}
