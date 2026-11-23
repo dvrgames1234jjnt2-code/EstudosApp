@@ -27,6 +27,7 @@ import {
   X,
   BookMarked,
   CheckCheck,
+  LampDesk,
 } from "lucide-react";
 import { supabase, supabasePublic } from "../../lib/supabase";
 import { AuthModal } from "../../components/AuthModal";
@@ -38,6 +39,7 @@ import NotionQuestionTab from "../../components/banco/NotionQuestionTab";
 import CadernosTab from "../../components/banco/CadernosTab";
 import { ModalEditarQuestao } from "../../components/banco/ModalEditarQuestao";
 import VerificadorIDsTab from "../../components/banco/VerificadorIDsTab";
+import StudyCorner3DTab from "../../components/banco/StudyCorner3DTab";
 
 // ──────────────────────────────────────────────
 // Types
@@ -56,7 +58,7 @@ export interface QuestionStats {
 /** Mapa questao_id → stats (derivado do histórico completo) */
 type UserAnswers = Record<string, QuestionStats>;
 
-type ActiveTab = "banco" | "resolver" | "simulados" | "desempenho" | "fixacao" | "notion" | "cadernos" | "verificador";
+type ActiveTab = "banco" | "resolver" | "simulados" | "desempenho" | "fixacao" | "notion" | "cantinho" | "cadernos" | "verificador";
 
 // ──────────────────────────────────────────────
 // Helpers
@@ -528,6 +530,7 @@ export default function BancoPage() {
             { id: "simulados",  icon: <ClipboardList size={13} />,  label: "Simulados", count: provasDisponiveis.length },
             { id: "desempenho", icon: <BarChart3 size={13} />,      label: "Desempenho", badge: resolverQueue.length > 0 ? "●" : null },
             { id: "notion",     icon: <BookMarked size={13} />,     label: "Notion Question" },
+            { id: "cantinho",   icon: <LampDesk size={13} />,       label: "Cantinho 3D" },
             ...(isAdmin ? [{ id: "cadernos", icon: <Layers size={13} />, label: "Cadernos" }] : []),
             { id: "verificador", icon: <CheckCheck size={13} />, label: "Confrontar IDs" },
           ].map(tab => {
@@ -1491,6 +1494,19 @@ export default function BancoPage() {
               transition={{ duration: 0.2 }}
             >
               <NotionQuestionTab user={user} />
+            </motion.div>
+          )}
+
+          {/* ── CANTINHO 3D ── */}
+          {activeTab === "cantinho" && (
+            <motion.div
+              key="cantinho"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+            >
+              <StudyCorner3DTab user={user} onRequireAuth={() => setShowAuthModal(true)} />
             </motion.div>
           )}
 
