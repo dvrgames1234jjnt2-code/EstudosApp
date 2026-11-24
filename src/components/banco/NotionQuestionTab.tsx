@@ -111,6 +111,8 @@ interface Questao {
   resposta?: string;
   respostaImageUrls: string[];
   caseLabel?: string;
+  lastEditedTime?: string;
+  forceReload?: boolean;
 }
 
 function sortQuestoesPorDificuldade(questions: Questao[], savedOrderIds: string[] = []): Questao[] {
@@ -224,16 +226,56 @@ function useAntiBrilhoMode() {
 const childrenCache = new Map<string, { data: NotionAPIBlock[]; timestamp: number }>();
 const childrenInFlight = new Map<string, Promise<NotionAPIBlock[]>>();
 
+function getClientNotionToken(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return localStorage.getItem("notion_user_token")?.trim() || "";
+  } catch {
+    return "";
+  }
+}
+
+function getNotionHeaders(extra?: Record<string, string>): Record<string, string> {
+  const headers: Record<string, string> = { ...(extra ?? {}) };
+  const token = getClientNotionToken();
+  if (token) headers["x-notion-token"] = token;
+  return headers;
+}
+
+function extractNotionBlockId(rawInput: string): string {
+  const trimmed = rawInput.trim();
+  const hashMatch = trimmed.match(/#([0-9a-fA-F]{32}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/);
+  const candidate = hashMatch ? hashMatch[1] : trimmed;
+  const uuidMatches = candidate.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g);
+  if (uuidMatches && uuidMatches.length > 0) {
+    return uuidMatches[uuidMatches.length - 1].toLowerCase();
+  }
+  const hexMatches = candidate.match(/[0-9a-fA-F]{32}/g);
+  if (hexMatches && hexMatches.length > 0) {
+    const raw = hexMatches[hexMatches.length - 1].toLowerCase();
+    return `${raw.slice(0, 8)}-${raw.slice(8, 12)}-${raw.slice(12, 16)}-${raw.slice(16, 20)}-${raw.slice(20)}`;
+  }
+  return trimmed;
+}
+
+let serverNotionConfigured: boolean | null = null;
 let notionEnabledPromise: Promise<boolean> | null = null;
 async function isNotionEnabled(): Promise<boolean> {
+  if (getClientNotionToken()) return true;
+  if (serverNotionConfigured === true) return true;
   if (!notionEnabledPromise) {
-    notionEnabledPromise = fetch("/api/notion/builder")
+    notionEnabledPromise = fetch("/api/notion/builder", { headers: getNotionHeaders() })
       .then(async res => {
         if (!res.ok) return false;
         const data = await res.json();
-        return Boolean(data?.notionConfigured);
+        const configured = Boolean(data?.notionConfigured);
+        serverNotionConfigured = configured;
+        return configured;
       })
-      .catch(() => false);
+      .catch(() => false)
+      .finally(() => {
+        notionEnabledPromise = null;
+      });
   }
   return notionEnabledPromise;
 }
@@ -407,43 +449,75 @@ async function revalidateChildrenInBackground(clean: string, force = false): Pro
     return [];
   }
 
-  const url = `/api/notion/blocks/${clean}/children?page_size=100${force ? '&force=true&t=' + Date.now() : ''}`;
-  const req = fetch(url, {
-    headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
-  })
-    .then(async res => {
-      const payload = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        if (res.status === 404 || payload?.code === "object_not_found") {
-          emitNotionIdChangeAlert({
-            id: `missing:${clean}`,
-            tipo: "bloco_removido",
-            antigoId: clean,
-            detectedAt: new Date().toISOString(),
-            mensagem: `O bloco ${clean.slice(0, 8)} não foi encontrado no Notion (ID alterado ou bloco removido).`,
-          });
+  const req = (async () => {
+    try {
+      const data: NotionAPIBlock[] = [];
+      let cursor: string | undefined;
+      let page = 0;
+
+      do {
+        const cursorParam = cursor ? `&start_cursor=${encodeURIComponent(cursor)}` : "";
+        const forceParam = force ? `&force=true&t=${Date.now()}` : "";
+        const url = `/api/notion/blocks/${clean}/children?page_size=100${cursorParam}${forceParam}`;
+        const res = await fetch(url, {
+          headers: getNotionHeaders({
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+          }),
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          if (res.status === 404 || payload?.code === "object_not_found") {
+            emitNotionIdChangeAlert({
+              id: `missing:${clean}`,
+              tipo: "bloco_removido",
+              antigoId: clean,
+              detectedAt: new Date().toISOString(),
+              mensagem: `O bloco ${clean.slice(0, 8)} não foi encontrado no Notion (ID alterado ou bloco removido).`,
+            });
+          }
+          throw new Error(payload?.message || payload?.error || `Notion ${res.status}`);
         }
-        throw new Error(`Notion ${res.status}`);
-      }
-      const data: NotionAPIBlock[] = payload?.results ?? [];
+        if (Array.isArray(payload?.results)) {
+          data.push(...payload.results);
+        }
+        cursor = payload?.has_more && payload?.next_cursor ? String(payload.next_cursor) : undefined;
+        page++;
+      } while (cursor && page < 15);
+
       const now = Date.now();
       childrenCache.set(clean, { data, timestamp: now });
       setLocalNotionCache(clean, data);
       setSupabaseNotionCache(clean, data).catch(() => {});
-      childrenInFlight.delete(clean);
       return data;
-    })
-    .catch(e => {
+    } finally {
       childrenInFlight.delete(clean);
-      throw e;
-    });
+    }
+  })();
 
   childrenInFlight.set(clean, req);
   return req;
 }
 
+async function unwrapNotionContainers(blocks: NotionAPIBlock[], force = false, allowNotion = true, depth = 0): Promise<NotionAPIBlock[]> {
+  if (depth > 2) return blocks;
+  const out: NotionAPIBlock[] = [];
+  for (const b of blocks) {
+    if (b.type === "column_list" || b.type === "column" || b.type === "synced_block") {
+      if (b.has_children) {
+        const inner = await fetchChildren(b.id, force, allowNotion).catch(() => [] as NotionAPIBlock[]);
+        const unwrapped = await unwrapNotionContainers(inner, force, allowNotion, depth + 1);
+        out.push(...unwrapped);
+      }
+    } else {
+      out.push(b);
+    }
+  }
+  return out;
+}
+
 async function fetchChildren(blockId: string, force = false, allowNotionFallback = true): Promise<NotionAPIBlock[]> {
-  const clean = blockId.replace(/-/g, "");
+  const clean = extractNotionBlockId(blockId).replace(/-/g, "");
 
   if (force) {
     childrenCache.delete(clean);
@@ -631,7 +705,8 @@ function hasFullQuestaoContent(data?: FullQuestaoData | null): boolean {
 }
 
 async function fetchQuestaoFullData(blockId: string, force = false): Promise<FullQuestaoData> {
-  const clean = blockId.replace(/-/g, "");
+  const normalizedId = extractNotionBlockId(blockId);
+  const clean = normalizedId.replace(/-/g, "");
   const now = Date.now();
 
   if (force) {
@@ -640,25 +715,18 @@ async function fetchQuestaoFullData(blockId: string, force = false): Promise<Ful
     try {
       localStorage.removeItem(`notion_c_qfull_${clean}`);
       sessionStorage.removeItem(`notion_c_qfull_${clean}`);
-    } catch(e){}
-    if (await isNotionEnabled()) {
-      return revalidateQuestaoFullData(clean, true);
-    }
+      localStorage.removeItem(`notion_c_${clean}`);
+      sessionStorage.removeItem(`notion_c_${clean}`);
+    } catch {}
+    supabase.from("notion_cache_blocos").delete().in("block_id", [`qfull_${clean}`, clean]).then(() => {}, () => {});
   }
 
-  // 1. Ver no cache de memória (somente se não tiver URLs expiradas da AWS)
-  if (fullQuestaoCache.has(clean)) {
+  // 1. Cache de memória da sessão (somente se não for force e sem URLs AWS expiradas)
+  if (!force && fullQuestaoCache.has(clean)) {
     const cached = fullQuestaoCache.get(clean)!;
     if (!isFullQuestaoExpired(cached.data)) {
       return cached.data;
     }
-  }
-
-  // 2. Ver no localStorage (INSTANTÂNEO 0ms! Ignora se estiver com URL expirada da AWS)
-  const local = getLocalNotionCache(`qfull_${clean}`);
-  if (local && local.data && hasFullQuestaoContent(local.data) && !isFullQuestaoExpired(local.data)) {
-    fullQuestaoCache.set(clean, { data: local.data, timestamp: local.timestamp });
-    return local.data;
   }
 
   if (!force && fullQuestaoInFlight.has(clean)) {
@@ -666,15 +734,31 @@ async function fetchQuestaoFullData(blockId: string, force = false): Promise<Ful
   }
 
   const loadPromise = (async (): Promise<FullQuestaoData> => {
-    // 3. Supabase primeiro: tabela estruturada notion_questoes_banco (imagens permanentes no Storage!)
-    const bancoQuestao = await getQuestaoFromBancoTable(blockId);
+    // 2. Notion primeiro com timeout de 3s; se demorar >3s ou falhar, cai para o Supabase
+    if (await isNotionEnabled()) {
+      const notionPromise = revalidateQuestaoFullData(clean, true).catch(() => null);
+      const timeoutPromise = new Promise<null>(resolve => setTimeout(() => resolve(null), 3000));
+      const notionRes = await Promise.race([notionPromise, timeoutPromise]);
+      if (notionRes !== null && (notionRes.children.length > 0 || hasFullQuestaoContent(notionRes))) {
+        return notionRes;
+      }
+    }
+
+    // 3. Fallback Supabase: tabela estruturada notion_questoes_banco
+    const bancoQuestao = await getQuestaoFromBancoTable(normalizedId);
     if (bancoQuestao && hasFullQuestaoContent(bancoQuestao) && !isFullQuestaoExpired(bancoQuestao)) {
       fullQuestaoCache.set(clean, { data: bancoQuestao, timestamp: now });
       setLocalNotionCache(`qfull_${clean}`, bancoQuestao);
       return bancoQuestao;
     }
 
-    // 4. Supabase cache qfull_<clean> em notion_cache_blocos
+    // 4. Fallback localStorage / Supabase notion_cache_blocos (qfull_<clean>)
+    const local = getLocalNotionCache(`qfull_${clean}`);
+    if (local && local.data && hasFullQuestaoContent(local.data) && !isFullQuestaoExpired(local.data)) {
+      fullQuestaoCache.set(clean, { data: local.data, timestamp: local.timestamp });
+      return local.data;
+    }
+
     const sbCache = await getSupabaseNotionCache(`qfull_${clean}`);
     if (sbCache && sbCache.data && hasFullQuestaoContent(sbCache.data) && !isFullQuestaoExpired(sbCache.data)) {
       fullQuestaoCache.set(clean, { data: sbCache.data, timestamp: sbCache.timestamp });
@@ -682,18 +766,12 @@ async function fetchQuestaoFullData(blockId: string, force = false): Promise<Ful
       return sbCache.data;
     }
 
-    // 5. Supabase cache bruto de blocos (notion_cache_blocos/<clean>) antes de ir ao Notion
+    // 5. Fallback Supabase cache bruto de blocos
     const rawFromSb = await buildQuestaoFullData(clean, false, false);
     if (hasFullQuestaoContent(rawFromSb) && !isFullQuestaoExpired(rawFromSb)) {
       return rawFromSb;
     }
 
-    // 6. Somente se não existir no Supabase (ou estiver só com URL AWS expirada), buscar no Notion
-    if (await isNotionEnabled()) {
-      return buildQuestaoFullData(clean, force, true);
-    }
-
-    // 7. Sem NOTION_TOKEN: retorna o melhor registro disponível no Supabase sem gerar erro 500
     const fallback = bancoQuestao ?? sbCache?.data ?? local?.data ?? rawFromSb ?? {
       children: [],
       imgs: [],
@@ -719,19 +797,20 @@ interface QuestaoInfo { title: string; emoji?: string; blocoNome?: string }
 const questaoInfoCache = new Map<string, QuestaoInfo>();
 
 async function fetchNotionBlock(id: string): Promise<NotionAPIBlock> {
-  const res = await fetch(`/api/notion/blocks/${id}`);
+  const clean = extractNotionBlockId(id);
+  const res = await fetch(`/api/notion/blocks/${clean}`, { headers: getNotionHeaders() });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     if (res.status === 404 || data?.code === "object_not_found") {
       emitNotionIdChangeAlert({
-        id: `missing:${id.replace(/-/g, "")}`,
+        id: `missing:${clean.replace(/-/g, "")}`,
         tipo: "bloco_removido",
-        antigoId: id,
+        antigoId: clean,
         detectedAt: new Date().toISOString(),
-        mensagem: `O bloco ${id.slice(0, 8)} não foi encontrado no Notion (ID alterado ou removido).`,
+        mensagem: `O bloco ${clean.slice(0, 8)} não foi encontrado no Notion (ID alterado ou removido).`,
       });
     }
-    throw new Error(`Notion ${res.status}`);
+    throw new Error(data?.message || data?.error || `Notion ${res.status}`);
   }
   return data;
 }
@@ -792,16 +871,46 @@ async function resolveQuestaoInfo(questaoId: string, blocksMap: Map<string, stri
 const questoesDoBlocoCache = new Map<string, string[]>();
 const questoesDoBlocoInFlight = new Map<string, Promise<string[]>>();
 
-async function revalidateQuestaoIds(rootBlockId: string): Promise<string[]> {
-  const clean = rootBlockId.replace(/-/g, "");
+function getChildBlockTitle(child: NotionAPIBlock): string {
+  return (
+    richText(child.toggle?.rich_text) ||
+    richText(child.heading_1?.rich_text) ||
+    richText(child.heading_2?.rich_text) ||
+    richText(child.heading_3?.rich_text) ||
+    richText(child.callout?.rich_text) ||
+    richText(child.bulleted_list_item?.rich_text) ||
+    richText(child.numbered_list_item?.rich_text) ||
+    richText(child.paragraph?.rich_text) ||
+    child.child_page?.title ||
+    ""
+  );
+}
+
+function isNavigableNotionContainer(child: NotionAPIBlock): boolean {
+  if (child.type === "toggle" || child.type === "child_page") return true;
+  return Boolean(
+    child.has_children &&
+      (child.type === "heading_1" ||
+        child.type === "heading_2" ||
+        child.type === "heading_3" ||
+        child.type === "callout" ||
+        child.type === "bulleted_list_item" ||
+        child.type === "numbered_list_item")
+  );
+}
+
+async function revalidateQuestaoIds(rootBlockId: string, force = false): Promise<string[]> {
+  const clean = extractNotionBlockId(rootBlockId).replace(/-/g, "");
   const ids: string[] = [];
 
   async function walk(blockId: string) {
-    const children = await fetchChildren(blockId);
+    const rawChildren = await fetchChildren(blockId, force, true);
+    const children = await unwrapNotionContainers(rawChildren, force, true);
     const promises: Promise<void>[] = [];
     for (const child of children) {
-      if (child.type !== "toggle") continue;
-      const rawTitle = richText(child.toggle?.rich_text ?? []);
+      if (!isNavigableNotionContainer(child)) continue;
+      const rawTitle = getChildBlockTitle(child);
+      if (rawTitle.toLowerCase().includes("resposta")) continue;
       const { emojis: textEmojis } = parseQuestaoTitle(rawTitle);
       const iconEmoji = child.icon?.type === "emoji" && child.icon.emoji ? [child.icon.emoji] : [];
       const categoryKey = detectCategory([...iconEmoji, ...textEmojis]);
@@ -826,7 +935,7 @@ async function revalidateQuestaoIds(rootBlockId: string): Promise<string[]> {
 async function getIdsFromBancoTable(targetId: string): Promise<string[] | null> {
   try {
     await ensureBancoIdsLoaded();
-    const clean = targetId.replace(/-/g, "");
+    const clean = extractNotionBlockId(targetId).replace(/-/g, "");
     const byRoot = bancoIdsByRootCache.get(clean);
     if (byRoot && byRoot.length > 0) return byRoot;
     const byCaso = bancoIdsByCasoCache.get(clean);
@@ -836,7 +945,7 @@ async function getIdsFromBancoTable(targetId: string): Promise<string[] | null> 
 }
 
 async function collectQuestaoIds(rootBlockId: string, force = false): Promise<string[]> {
-  const clean = rootBlockId.replace(/-/g, "");
+  const clean = extractNotionBlockId(rootBlockId).replace(/-/g, "");
 
   if (force) {
     questoesDoBlocoCache.delete(clean);
@@ -846,7 +955,7 @@ async function collectQuestaoIds(rootBlockId: string, force = false): Promise<st
       sessionStorage.removeItem(`notion_c_ids_${clean}`);
     } catch(e){}
     if (await isNotionEnabled()) {
-      return revalidateQuestaoIds(rootBlockId);
+      return revalidateQuestaoIds(rootBlockId, true);
     }
   }
 
@@ -882,7 +991,7 @@ async function collectQuestaoIds(rootBlockId: string, force = false): Promise<st
     }
 
     // 3. Somente se não houver no Supabase, varre árvore (e busca do Notion se faltar)
-    return revalidateQuestaoIds(rootBlockId);
+    return revalidateQuestaoIds(rootBlockId, false);
   })().finally(() => {
     questoesDoBlocoInFlight.delete(clean);
   });
@@ -910,7 +1019,7 @@ const questoesDetalhesInFlight = new Map<string, Promise<QuestaoDetalhesResult>>
 
 async function getDetailsFromBancoTable(rootBlockId: string): Promise<QuestaoDetalhesResult | null> {
   try {
-    const clean = rootBlockId.replace(/-/g, "");
+    const clean = extractNotionBlockId(rootBlockId).replace(/-/g, "");
     const { data, error } = await supabase
       .from("notion_questoes_banco")
       .select("id, numero, topico, categoria, caso_nome")
@@ -931,17 +1040,19 @@ async function getDetailsFromBancoTable(rootBlockId: string): Promise<QuestaoDet
   return null;
 }
 
-async function revalidateQuestaoDetails(rootBlockId: string): Promise<QuestaoDetalhesResult> {
-  const clean = rootBlockId.replace(/-/g, "");
+async function revalidateQuestaoDetails(rootBlockId: string, force = false): Promise<QuestaoDetalhesResult> {
+  const clean = extractNotionBlockId(rootBlockId).replace(/-/g, "");
   const itens: QuestaoResumo[] = [];
   const caseIcons: Record<string, string> = {};
 
   async function walk(blockId: string, parentLabel: string) {
-    const children = await fetchChildren(blockId);
+    const rawChildren = await fetchChildren(blockId, force, true);
+    const children = await unwrapNotionContainers(rawChildren, force, true);
     const promises: Promise<void>[] = [];
     for (const child of children) {
-      if (child.type !== "toggle") continue;
-      const rawTitle = richText(child.toggle?.rich_text ?? []);
+      if (!isNavigableNotionContainer(child)) continue;
+      const rawTitle = getChildBlockTitle(child);
+      if (rawTitle.toLowerCase().includes("resposta")) continue;
       const { emojis: textEmojis, numero, topic } = parseQuestaoTitle(rawTitle);
       const iconEmoji = child.icon?.type === "emoji" && child.icon.emoji ? [child.icon.emoji] : [];
       const categoryKey = detectCategory([...iconEmoji, ...textEmojis]);
@@ -969,7 +1080,7 @@ async function revalidateQuestaoDetails(rootBlockId: string): Promise<QuestaoDet
 }
 
 async function collectQuestaoDetails(rootBlockId: string, force = false): Promise<QuestaoDetalhesResult> {
-  const clean = rootBlockId.replace(/-/g, "");
+  const clean = extractNotionBlockId(rootBlockId).replace(/-/g, "");
 
   if (force) {
     questoesDetalhesCache.delete(clean);
@@ -979,7 +1090,7 @@ async function collectQuestaoDetails(rootBlockId: string, force = false): Promis
       sessionStorage.removeItem(`notion_c_det_${clean}`);
     } catch(e){}
     if (await isNotionEnabled()) {
-      return revalidateQuestaoDetails(rootBlockId);
+      return revalidateQuestaoDetails(rootBlockId, true);
     }
   }
 
@@ -2033,7 +2144,7 @@ const QuestaoRow = memo(function QuestaoRow({
     let active = true;
     loadingRef.current = true;
     setLoading(true);
-    fetchQuestaoFullData(questao.id).then(result => {
+    fetchQuestaoFullData(questao.id, Boolean(questao.forceReload)).then(result => {
       if (!active) return;
       setImageUrls(result.imgs);
       if (result.textEnunciado) setEnunciadoTexto(result.textEnunciado);
@@ -2043,6 +2154,30 @@ const QuestaoRow = memo(function QuestaoRow({
       preloadImageUrls(result.imgs);
       preloadImageUrls(result.rImgs);
       setLoaded(true);
+
+      // Se carregou direto do Notion e temos o caminho raiz/caso, registra/atualiza no Supabase
+      if (rootBlockId && result.children && result.children.length > 0) {
+        const cleanRoot = extractNotionBlockId(rootBlockId).replace(/-/g, "");
+        supabase.from("notion_questoes_banco").upsert({
+          id: questao.id,
+          bloco_raiz_id: rootBlockId,
+          caso_id: casoId || null,
+          caso_nome: casoNome || questao.caseLabel || "Geral",
+          numero: questao.numero || "",
+          topico: questao.topic || "",
+          categoria: questao.categoryKey || "media",
+          enunciado_texto: result.textEnunciado || null,
+          imagens_urls: result.imgs,
+          gabarito_texto: result.textResp || null,
+          gabarito_imagens_urls: result.rImgs,
+          notion_last_edited_time: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "id" }).then(() => {
+          bancoIdsLoadedPromise = null;
+          questoesDoBlocoCache.delete(cleanRoot);
+          questoesDetalhesCache.delete(cleanRoot);
+        }, () => {});
+      }
     }).catch(e => {
       console.error("Erro ao carregar detalhes da questão:", e);
     }).finally(() => {
@@ -2053,7 +2188,7 @@ const QuestaoRow = memo(function QuestaoRow({
       active = false;
       loadingRef.current = false;
     };
-  }, [open, questao.id, loaded]);
+  }, [open, questao.id, questao.forceReload, loaded, rootBlockId, casoId, casoNome, questao.numero, questao.topic, questao.categoryKey, questao.caseLabel]);
 
   const handlePrefetchQuestao = useCallback(() => {
     preloadImageUrls(questao.imageUrls);
@@ -3089,86 +3224,321 @@ const CasoCard = memo(function CasoCard({
     (async () => {
       try {
         const cleanCasoId = caso.id.replace(/-/g, "");
-        // 1. Buscar primeiro no Supabase (tabela estruturada + cache de blocos sem chamar Notion)
-        const [initialDbRes, sbChildren] = await Promise.all([
-          supabase
+
+        // Se o caso já recebeu questões diretas da raiz do bloco cadastrado, reconcilia IDs/datas com o Supabase
+        if (caso.questoes && caso.questoes.length > 0) {
+          const directIds = caso.questoes.map(q => q.id);
+          const directCleanIds = new Set(directIds.map(id => id.replace(/-/g, "")));
+          const dbRows = await supabase
+            .from("notion_questoes_banco")
+            .select("*")
+            .or(`caso_id.eq.${caso.id},caso_id.eq.${cleanCasoId},id.in.(${directIds.join(",")})`)
+            .then(r => r.data ?? [], () => [] as any[]);
+          const dbById = new Map<string, any>((dbRows as any[]).map(r => [r.id.replace(/-/g, ""), r]));
+          const toDeleteDirect: string[] = (dbRows as any[])
+            .filter(r => r.notion_last_edited_time !== "local" && r.caso_id && r.caso_id.replace(/-/g, "") === cleanCasoId && !directCleanIds.has(r.id.replace(/-/g, "")))
+            .map(r => r.id);
+
+          const hydrated = caso.questoes.map(q => {
+            const qClean = q.id.replace(/-/g, "");
+            const dbRow = dbById.get(qClean);
+            const notionTime = q.lastEditedTime ? new Date(q.lastEditedTime).getTime() : 0;
+            const isLocalRow = dbRow?.notion_last_edited_time === "local";
+            const dbTime = dbRow?.notion_last_edited_time && !isLocalRow
+              ? new Date(dbRow.notion_last_edited_time).getTime()
+              : (dbRow?.updated_at ? new Date(dbRow.updated_at).getTime() : 0);
+            const hasExpired = dbRow
+              ? hasExpiredAwsUrl(dbRow.imagens_urls) || hasExpiredAwsUrl(dbRow.gabarito_imagens_urls)
+              : false;
+
+            if (dbRow && !isLocalRow && notionTime > dbTime) {
+              toDeleteDirect.push(dbRow.id);
+              fullQuestaoCache.delete(qClean);
+              try {
+                localStorage.removeItem(`notion_c_qfull_${qClean}`);
+                sessionStorage.removeItem(`notion_c_qfull_${qClean}`);
+              } catch {}
+              return { ...q, forceReload: true };
+            }
+            if (dbRow && !hasExpired) {
+              return {
+                ...q,
+                enunciadoTexto: dbRow.enunciado_texto || q.enunciadoTexto,
+                imageUrls: Array.isArray(dbRow.imagens_urls) ? dbRow.imagens_urls : q.imageUrls,
+                resposta: dbRow.gabarito_texto || q.resposta,
+                respostaImageUrls: Array.isArray(dbRow.gabarito_imagens_urls) ? dbRow.gabarito_imagens_urls : q.respostaImageUrls,
+              };
+            }
+            return { ...q, forceReload: !dbRow || hasExpired };
+          });
+
+          if (toDeleteDirect.length > 0) {
+            const uniqueDel = [...new Set(toDeleteDirect)];
+            const cacheKeysToDel = uniqueDel.flatMap(id => {
+              const c = id.replace(/-/g, "");
+              return [`qfull_${c}`, c];
+            });
+            await Promise.allSettled([
+              supabase.from("notion_questoes_banco").delete().in("id", uniqueDel),
+              supabase.from("notion_cache_blocos").delete().in("block_id", cacheKeysToDel),
+            ]);
+            if (rootBlockId) {
+              const cleanRoot = extractNotionBlockId(rootBlockId).replace(/-/g, "");
+              bancoIdsLoadedPromise = null;
+              questoesDoBlocoCache.delete(cleanRoot);
+              questoesDetalhesCache.delete(cleanRoot);
+            }
+          }
+
+          if (active) {
+            setQuestoes(hydrated);
+            setSubcasos([]);
+            setLoaded(true);
+          }
+          return;
+        }
+
+        // Busca registros salvos no Supabase para este caso (para usar dados rápidos ou como fallback após 3s)
+        const dbPromise = (async () => {
+          let rows = await supabase
             .from("notion_questoes_banco")
             .select("*")
             .in("caso_id", [caso.id, cleanCasoId])
-            .then(r => r.data ?? [], () => [] as any[]),
-          fetchChildren(caso.id, false, false).catch(() => [] as NotionAPIBlock[]),
-        ]);
-
-        let dbRes = initialDbRes;
-        if (dbRes.length === 0 && rootBlockId && caso.nome) {
-          const cleanRoot = rootBlockId.replace(/-/g, "");
-          const byName = await supabase
-            .from("notion_questoes_banco")
-            .select("*")
-            .or(`bloco_raiz_id.eq.${rootBlockId},bloco_raiz_id.eq.${cleanRoot}`)
-            .eq("caso_nome", caso.nome)
             .then(r => r.data ?? [], () => [] as any[]);
-          if (byName.length > 0) dbRes = byName;
-        }
-
-        // 2. Somente se não houver nada no Supabase para este caso, buscar no Notion
-        const children = (dbRes.length === 0 && sbChildren.length === 0)
-          ? await fetchChildren(caso.id, false, true).catch(() => [] as NotionAPIBlock[])
-          : sbChildren;
-
-        const mappedDb: Questao[] = (dbRes as any[]).map((b: any) => ({
-          id: b.id,
-          numero: b.numero || "",
-          topic: b.topico || "",
-          categoryKey: (b.categoria || "media") as CategoryKey,
-          enunciadoTexto: b.enunciado_texto || undefined,
-          imageUrls: Array.isArray(b.imagens_urls) ? b.imagens_urls : [],
-          resposta: b.gabarito_texto || undefined,
-          respostaImageUrls: Array.isArray(b.gabarito_imagens_urls) ? b.gabarito_imagens_urls : [],
-          caseLabel: b.caso_nome || caso.nome,
-        }));
-
-        const seedTime = Date.now();
-        for (const mq of mappedDb) {
-          const qClean = mq.id.replace(/-/g, "");
-          const qFull: FullQuestaoData = {
-            children: [],
-            imgs: mq.imageUrls,
-            rImgs: mq.respostaImageUrls ?? [],
-            textEnunciado: mq.enunciadoTexto,
-            textResp: mq.resposta,
-            foundToggleId: null,
-          };
-          if (hasFullQuestaoContent(qFull) && !isFullQuestaoExpired(qFull)) {
-            fullQuestaoCache.set(qClean, { data: qFull, timestamp: seedTime });
+          if (rows.length === 0 && rootBlockId && caso.nome) {
+            const cleanRoot = extractNotionBlockId(rootBlockId).replace(/-/g, "");
+            const byName = await supabase
+              .from("notion_questoes_banco")
+              .select("*")
+              .or(`bloco_raiz_id.eq.${rootBlockId},bloco_raiz_id.eq.${cleanRoot}`)
+              .eq("caso_nome", caso.nome)
+              .then(r => r.data ?? [], () => [] as any[]);
+            if (byName.length > 0) rows = byName;
           }
-        }
-        for (const mq of mappedDb.slice(0, 6)) {
-          preloadImageUrls(mq.imageUrls);
+          return rows as any[];
+        })();
+
+        const notionEnabled = await isNotionEnabled();
+        let notionChildren: NotionAPIBlock[] | null = null;
+
+        if (notionEnabled) {
+          const notionFetchPromise = fetchChildren(caso.id, true, true)
+            .then(res => unwrapNotionContainers(res, true, true))
+            .catch(() => null);
+          const timeoutPromise = new Promise<null>(resolve => setTimeout(() => resolve(null), 3000));
+          notionChildren = await Promise.race([notionFetchPromise, timeoutPromise]);
         }
 
-        const seenQuestaoIds = new Set(mappedDb.map(q => q.id.replace(/-/g, "")));
-        const tempQuestoes: Questao[] = [...mappedDb];
+        const dbRes = await dbPromise;
+        const dbMap = new Map<string, any>(dbRes.map(r => [r.id.replace(/-/g, ""), r]));
+
+        const tempQuestoes: Questao[] = [];
         const tempSubcasos: Caso[] = [];
 
-        for (const child of children) {
-          if (child.type !== "toggle") continue;
+        if (notionChildren !== null) {
+          // Notion respondeu em <= 3s: mostrar SOMENTE o que está no Notion e reconciliar IDs no Supabase
+          const foundCleanIds = new Set<string>();
+          const outdatedIdsToDelete: string[] = [];
 
-          const rawTitle = richText(child.toggle?.rich_text ?? []);
-          const { emojis: textEmojis, numero, topic } = parseQuestaoTitle(rawTitle);
-          const iconEmoji = child.icon?.type === "emoji" && child.icon.emoji ? [child.icon.emoji] : [];
-          const emojis = [...iconEmoji, ...textEmojis];
-          const categoryKey = detectCategory(emojis);
+          for (const child of notionChildren) {
+            if (!isNavigableNotionContainer(child)) continue;
+            const rawTitle = getChildBlockTitle(child);
+            const { emojis: textEmojis, numero, topic } = parseQuestaoTitle(rawTitle);
+            const iconEmoji = child.icon?.type === "emoji" && child.icon.emoji ? [child.icon.emoji] : [];
+            const categoryKey = detectCategory([...iconEmoji, ...textEmojis]);
 
-          if (categoryKey) {
-            const cleanChild = child.id.replace(/-/g, "");
-            if (!seenQuestaoIds.has(cleanChild)) {
-              seenQuestaoIds.add(cleanChild);
-              tempQuestoes.push({ id: child.id, numero, topic, categoryKey, imageUrls: [], respostaImageUrls: [] });
+            if (categoryKey) {
+              const cClean = child.id.replace(/-/g, "");
+              foundCleanIds.add(cClean);
+              const dbRow = dbMap.get(cClean);
+
+              const notionTime = child.last_edited_time ? new Date(child.last_edited_time).getTime() : 0;
+              const isLocalRow = dbRow?.notion_last_edited_time === "local";
+              const dbTime = dbRow?.notion_last_edited_time && !isLocalRow
+                ? new Date(dbRow.notion_last_edited_time).getTime()
+                : (dbRow?.updated_at ? new Date(dbRow.updated_at).getTime() : 0);
+              const hasExpired = dbRow
+                ? hasExpiredAwsUrl(dbRow.imagens_urls) || hasExpiredAwsUrl(dbRow.gabarito_imagens_urls)
+                : false;
+
+              if (dbRow && !isLocalRow && notionTime > dbTime) {
+                // Atualização mais recente no Notion: exclui do Supabase para refazer atualizado
+                outdatedIdsToDelete.push(dbRow.id);
+                fullQuestaoCache.delete(cClean);
+                try {
+                  localStorage.removeItem(`notion_c_qfull_${cClean}`);
+                  sessionStorage.removeItem(`notion_c_qfull_${cClean}`);
+                } catch {}
+                tempQuestoes.push({
+                  id: child.id,
+                  numero,
+                  topic,
+                  categoryKey,
+                  imageUrls: [],
+                  respostaImageUrls: [],
+                  lastEditedTime: child.last_edited_time,
+                  forceReload: true,
+                });
+              } else if (dbRow && !hasExpired) {
+                // ID igual e atualizado no Supabase: usa o registro do Supabase
+                const mq: Questao = {
+                  id: dbRow.id,
+                  numero: numero || dbRow.numero || "",
+                  topic: topic || dbRow.topico || "",
+                  categoryKey,
+                  enunciadoTexto: dbRow.enunciado_texto || undefined,
+                  imageUrls: Array.isArray(dbRow.imagens_urls) ? dbRow.imagens_urls : [],
+                  resposta: dbRow.gabarito_texto || undefined,
+                  respostaImageUrls: Array.isArray(dbRow.gabarito_imagens_urls) ? dbRow.gabarito_imagens_urls : [],
+                  caseLabel: caso.nome,
+                  lastEditedTime: child.last_edited_time,
+                };
+                tempQuestoes.push(mq);
+                const qFull: FullQuestaoData = {
+                  children: [],
+                  imgs: mq.imageUrls,
+                  rImgs: mq.respostaImageUrls ?? [],
+                  textEnunciado: mq.enunciadoTexto,
+                  textResp: mq.resposta,
+                  foundToggleId: null,
+                };
+                if (hasFullQuestaoContent(qFull)) {
+                  fullQuestaoCache.set(cClean, { data: qFull, timestamp: Date.now() });
+                }
+              } else {
+                // Ainda não tem no Supabase (ou imagem expirada): aparece do Notion
+                tempQuestoes.push({
+                  id: child.id,
+                  numero,
+                  topic,
+                  categoryKey,
+                  imageUrls: [],
+                  respostaImageUrls: [],
+                  lastEditedTime: child.last_edited_time,
+                  forceReload: true,
+                });
+              }
+            } else if (rawTitle || child.has_children) {
+              tempSubcasos.push({ id: child.id, nome: rawTitle || "Sem nome", questoes: [] });
             }
-          } else {
-            tempSubcasos.push({ id: child.id, nome: rawTitle || "Sem nome", questoes: [] });
           }
+
+          // Se este toggle tinha apenas enunciado/imagens/"Resposta" e nenhuma subquestão ou subcaso real,
+          // trata o próprio bloco como uma questão única
+          const onlyRespostaSub = tempSubcasos.length > 0 && tempSubcasos.every(s => s.nome.toLowerCase().includes("resposta"));
+          const hasDirectBody = notionChildren.some(c => c.type === "image" || (c.type === "paragraph" && richText(c.paragraph?.rich_text).trim().length > 0));
+          if (tempQuestoes.length === 0 && (onlyRespostaSub || (tempSubcasos.length === 0 && hasDirectBody))) {
+            if (onlyRespostaSub) tempSubcasos.length = 0;
+            const parsedSelf = parseQuestaoTitle(caso.nome);
+            const selfCat = detectCategory(parsedSelf.emojis) || "media";
+            foundCleanIds.add(cleanCasoId);
+            const selfDbRow = dbMap.get(cleanCasoId);
+            const selfHasExpired = selfDbRow
+              ? hasExpiredAwsUrl(selfDbRow.imagens_urls) || hasExpiredAwsUrl(selfDbRow.gabarito_imagens_urls)
+              : false;
+            if (selfDbRow && !selfHasExpired) {
+              tempQuestoes.push({
+                id: selfDbRow.id,
+                numero: parsedSelf.numero || selfDbRow.numero || "",
+                topic: parsedSelf.topic || selfDbRow.topico || caso.nome,
+                categoryKey: selfCat,
+                enunciadoTexto: selfDbRow.enunciado_texto || undefined,
+                imageUrls: Array.isArray(selfDbRow.imagens_urls) ? selfDbRow.imagens_urls : [],
+                resposta: selfDbRow.gabarito_texto || undefined,
+                respostaImageUrls: Array.isArray(selfDbRow.gabarito_imagens_urls) ? selfDbRow.gabarito_imagens_urls : [],
+                caseLabel: caso.nome,
+              });
+            } else {
+              tempQuestoes.push({
+                id: caso.id,
+                numero: parsedSelf.numero || "",
+                topic: parsedSelf.topic || caso.nome,
+                categoryKey: selfCat,
+                imageUrls: [],
+                respostaImageUrls: [],
+                forceReload: true,
+              });
+            }
+          }
+
+          // Remove do Supabase qualquer questão cujo ID deixou de existir ou foi alterado no Notion
+          const staleIds = dbRes
+            .filter(r => r.notion_last_edited_time !== "local" && !foundCleanIds.has(r.id.replace(/-/g, "")))
+            .map(r => r.id);
+          const allToDelete = [...new Set([...staleIds, ...outdatedIdsToDelete])];
+          if (allToDelete.length > 0) {
+            const cacheKeysToDel = allToDelete.flatMap(id => {
+              const c = id.replace(/-/g, "");
+              return [`qfull_${c}`, c];
+            });
+            await Promise.allSettled([
+              supabase.from("notion_questoes_banco").delete().in("id", allToDelete),
+              supabase.from("notion_cache_blocos").delete().in("block_id", cacheKeysToDel),
+            ]);
+            if (rootBlockId) {
+              const cleanRoot = extractNotionBlockId(rootBlockId).replace(/-/g, "");
+              bancoIdsLoadedPromise = null;
+              questoesDoBlocoCache.delete(cleanRoot);
+              questoesDetalhesCache.delete(cleanRoot);
+              try {
+                localStorage.removeItem(`notion_c_ids_${cleanRoot}`);
+                localStorage.removeItem(`notion_c_det_${cleanRoot}`);
+              } catch {}
+            }
+          }
+        } else {
+          // Notion demorou > 3s ou indisponível: pega do Supabase
+          const mappedDb: Questao[] = dbRes.map((b: any) => ({
+            id: b.id,
+            numero: b.numero || "",
+            topic: b.topico || "",
+            categoryKey: (b.categoria || "media") as CategoryKey,
+            enunciadoTexto: b.enunciado_texto || undefined,
+            imageUrls: Array.isArray(b.imagens_urls) ? b.imagens_urls : [],
+            resposta: b.gabarito_texto || undefined,
+            respostaImageUrls: Array.isArray(b.gabarito_imagens_urls) ? b.gabarito_imagens_urls : [],
+            caseLabel: b.caso_nome || caso.nome,
+          }));
+          const seedTime = Date.now();
+          for (const mq of mappedDb) {
+            const qClean = mq.id.replace(/-/g, "");
+            const qFull: FullQuestaoData = {
+              children: [],
+              imgs: mq.imageUrls,
+              rImgs: mq.respostaImageUrls ?? [],
+              textEnunciado: mq.enunciadoTexto,
+              textResp: mq.resposta,
+              foundToggleId: null,
+            };
+            if (hasFullQuestaoContent(qFull) && !isFullQuestaoExpired(qFull)) {
+              fullQuestaoCache.set(qClean, { data: qFull, timestamp: seedTime });
+            }
+          }
+          tempQuestoes.push(...mappedDb);
+
+          const rawSbChildren = await fetchChildren(caso.id, false, false).catch(() => [] as NotionAPIBlock[]);
+          const sbChildren = await unwrapNotionContainers(rawSbChildren, false, false).catch(() => rawSbChildren);
+          const seenIds = new Set(mappedDb.map(q => q.id.replace(/-/g, "")));
+          for (const child of sbChildren) {
+            if (!isNavigableNotionContainer(child)) continue;
+            const rawTitle = getChildBlockTitle(child);
+            const { emojis: textEmojis, numero, topic } = parseQuestaoTitle(rawTitle);
+            const iconEmoji = child.icon?.type === "emoji" && child.icon.emoji ? [child.icon.emoji] : [];
+            const categoryKey = detectCategory([...iconEmoji, ...textEmojis]);
+            if (categoryKey) {
+              const cClean = child.id.replace(/-/g, "");
+              if (!seenIds.has(cClean)) {
+                seenIds.add(cClean);
+                tempQuestoes.push({ id: child.id, numero, topic, categoryKey, imageUrls: [], respostaImageUrls: [] });
+              }
+            } else if (rawTitle || child.has_children) {
+              tempSubcasos.push({ id: child.id, nome: rawTitle || "Sem nome", questoes: [] });
+            }
+          }
+        }
+
+        for (const mq of tempQuestoes.slice(0, 6)) {
+          preloadImageUrls(mq.imageUrls);
         }
 
         if (active) {
@@ -3209,7 +3579,7 @@ const CasoCard = memo(function CasoCard({
       active = false;
       loadingRef.current = false;
     };
-  }, [open, caso.id, caso.nome, loaded, rootBlockId]);
+  }, [open, caso.id, caso.nome, caso.questoes, loaded, rootBlockId]);
 
   const effectiveStatus = statusFiltro !== "todas" ? statusFiltro : (apenasComErros ? "erros" : "todas");
 
@@ -3614,8 +3984,14 @@ function BlockViewer({
     (async () => {
       setLoading(true); setError("");
       try {
+        const blockUuid = extractNotionBlockId(block.block_id);
+        const clean = blockUuid.replace(/-/g, "");
+        const currentRefreshKey = refreshKey ?? 0;
+        const forceFetch = currentRefreshKey > prevRefreshKeyRef.current;
+        prevRefreshKeyRef.current = currentRefreshKey;
+
         if (effectiveStatus !== "todas") {
-          const details = await collectQuestaoDetails(block.block_id);
+          const details = await collectQuestaoDetails(blockUuid, forceFetch);
           let filtered: QuestaoResumo[] = [];
           if (effectiveStatus === "erros") {
             filtered = details.itens.filter(i => resultadosMap?.get(i.id)?.ultimo === "erro");
@@ -3633,94 +4009,221 @@ function BlockViewer({
           return;
         }
 
-        const currentRefreshKey = refreshKey ?? 0;
-        const forceFetch = currentRefreshKey > prevRefreshKeyRef.current;
-        prevRefreshKeyRef.current = currentRefreshKey;
         let built: Caso[] = [];
 
         try {
-          const clean = block.block_id.replace(/-/g, "");
+          let loadedFromNotion = false;
+          let notionErrorMsg = "";
 
-          // 1. Buscar primeiro no Supabase (cache de blocos + notion_questoes_banco)
-          const [sbRootChildren, dbCasosRes] = forceFetch
-            ? [await fetchChildren(block.block_id, true, true), [] as Array<{ caso_id: string | null; caso_nome: string | null }>]
-            : await Promise.all([
-                fetchChildren(block.block_id, false, false).catch(() => [] as NotionAPIBlock[]),
-                supabase
-                  .from("notion_questoes_banco")
-                  .select("caso_id, caso_nome")
-                  .or(`bloco_raiz_id.eq.${block.block_id},bloco_raiz_id.eq.${clean}`)
-                  .then(r => (r.data ?? []) as Array<{ caso_id: string | null; caso_nome: string | null }>, () => [] as Array<{ caso_id: string | null; caso_nome: string | null }>),
-              ]);
+          const notionEnabled = await isNotionEnabled();
+          if (notionEnabled) {
+            const notionPromise = (async () => {
+              const rawRoot = await fetchChildren(blockUuid, true, true);
+              const notionRootChildren = await unwrapNotionContainers(rawRoot, true, true);
+              const casosList: Caso[] = [];
+              const directRootQuestions: Questao[] = [];
 
-          if (sbRootChildren.length > 0) {
-            for (const casoBlock of sbRootChildren) {
-              const casoNome =
-                richText(casoBlock.toggle?.rich_text) ||
-                richText(casoBlock.heading_1?.rich_text) ||
-                richText(casoBlock.heading_2?.rich_text) ||
-                richText(casoBlock.heading_3?.rich_text) ||
-                richText(casoBlock.paragraph?.rich_text) ||
-                casoBlock.child_page?.title || "Sem nome";
+              for (const child of notionRootChildren) {
+                const rawTitle = getChildBlockTitle(child);
 
-              built.push({ id: casoBlock.id, nome: casoNome, questoes: [] });
-            }
-            const existingCleanCasos = new Set(built.map(c => c.id.replace(/-/g, "")));
-            for (const row of dbCasosRes) {
-              const cId = row.caso_id || row.caso_nome || "geral";
-              if (!existingCleanCasos.has(cId.replace(/-/g, ""))) {
-                existingCleanCasos.add(cId.replace(/-/g, ""));
-                built.push({ id: cId, nome: row.caso_nome || "Geral", questoes: [] });
+                if (child.type === "toggle") {
+                  const { emojis: textEmojis, numero, topic } = parseQuestaoTitle(rawTitle);
+                  const iconEmoji = child.icon?.type === "emoji" && child.icon.emoji ? [child.icon.emoji] : [];
+                  const categoryKey = detectCategory([...iconEmoji, ...textEmojis]);
+                  if (categoryKey) {
+                    directRootQuestions.push({
+                      id: child.id,
+                      numero,
+                      topic,
+                      categoryKey,
+                      imageUrls: [],
+                      respostaImageUrls: [],
+                      caseLabel: block.nome || "Geral",
+                      lastEditedTime: child.last_edited_time,
+                    });
+                    continue;
+                  }
+                  casosList.push({ id: child.id, nome: rawTitle || "Sem nome", questoes: [] });
+                } else if (isNavigableNotionContainer(child) && (rawTitle || child.has_children)) {
+                  const { emojis: textEmojis, numero, topic } = parseQuestaoTitle(rawTitle);
+                  const iconEmoji = child.icon?.type === "emoji" && child.icon.emoji ? [child.icon.emoji] : [];
+                  const categoryKey = detectCategory([...iconEmoji, ...textEmojis]);
+                  if (categoryKey) {
+                    directRootQuestions.push({
+                      id: child.id,
+                      numero,
+                      topic,
+                      categoryKey,
+                      imageUrls: [],
+                      respostaImageUrls: [],
+                      caseLabel: block.nome || "Geral",
+                      lastEditedTime: child.last_edited_time,
+                    });
+                  } else {
+                    casosList.push({ id: child.id, nome: rawTitle || "Sem nome", questoes: [] });
+                  }
+                }
               }
-            }
-          } else if (dbCasosRes.length > 0) {
-            const seenCasos = new Map<string, string>();
-            for (const row of dbCasosRes) {
-              const cId = row.caso_id || row.caso_nome || "geral";
-              if (!seenCasos.has(cId)) {
-                seenCasos.set(cId, row.caso_nome || "Geral");
+
+              // Se o próprio bloco cadastrado é uma única Questão (ex: link copiado direto de um toggle de questão,
+              // cujos filhos são parágrafos/imagens/toggle "Resposta"), encapsula o próprio bloco como questão única.
+              const onlyRespostaCasos =
+                casosList.length > 0 && casosList.every(c => c.nome.toLowerCase().includes("resposta"));
+              const hasQuestionBody = notionRootChildren.some(
+                c => c.type === "image" || (c.type === "paragraph" && richText(c.paragraph?.rich_text).trim().length > 0)
+              );
+              if (directRootQuestions.length === 0 && (onlyRespostaCasos || (casosList.length === 0 && hasQuestionBody))) {
+                const selfBlock = await fetchNotionBlock(blockUuid).catch(() => null);
+                const selfTitle = selfBlock ? getChildBlockTitle(selfBlock) : block.nome;
+                const parsedSelf = parseQuestaoTitle(selfTitle || block.nome);
+                const selfIconEmoji = selfBlock?.icon?.type === "emoji" && selfBlock.icon.emoji ? [selfBlock.icon.emoji] : [];
+                const selfCategory = detectCategory([...selfIconEmoji, ...parsedSelf.emojis]);
+                if (selfCategory || onlyRespostaCasos || hasQuestionBody) {
+                  if (onlyRespostaCasos) casosList.length = 0;
+                  directRootQuestions.push({
+                    id: blockUuid,
+                    numero: parsedSelf.numero || "1",
+                    topic: parsedSelf.topic || selfTitle || block.nome,
+                    categoryKey: selfCategory || "media",
+                    imageUrls: [],
+                    respostaImageUrls: [],
+                    caseLabel: block.nome || "Questão",
+                    lastEditedTime: selfBlock?.last_edited_time,
+                    forceReload: true,
+                  });
+                }
               }
-            }
-            built = Array.from(seenCasos.entries()).map(([id, nome]) => ({
-              id,
-              nome,
-              questoes: [],
-            }));
-          } else {
-            // 2. Se não houver nada no Supabase, aí sim busca do Notion
-            const notionRootChildren = await fetchChildren(block.block_id, forceFetch, true);
-            for (const casoBlock of notionRootChildren) {
-              const casoNome =
-                richText(casoBlock.toggle?.rich_text) ||
-                richText(casoBlock.heading_1?.rich_text) ||
-                richText(casoBlock.heading_2?.rich_text) ||
-                richText(casoBlock.heading_3?.rich_text) ||
-                richText(casoBlock.paragraph?.rich_text) ||
-                casoBlock.child_page?.title || "Sem nome";
-              built.push({ id: casoBlock.id, nome: casoNome, questoes: [] });
+
+              if (directRootQuestions.length > 0) {
+                casosList.unshift({
+                  id: blockUuid,
+                  nome: block.nome || "Questões",
+                  questoes: directRootQuestions,
+                });
+              }
+
+              // Reconcilia em background: remove casos/questões no Supabase que deixaram de existir neste bloco do Notion
+              const validCasoCleanIds = new Set(casosList.map(c => c.id.replace(/-/g, "")));
+              const validDirectQCleanIds = new Set(directRootQuestions.map(q => q.id.replace(/-/g, "")));
+              supabase
+                .from("notion_questoes_banco")
+                .select("id, caso_id, notion_last_edited_time")
+                .or(`bloco_raiz_id.eq.${block.block_id},bloco_raiz_id.eq.${blockUuid},bloco_raiz_id.eq.${clean}`)
+                .then(({ data: existingRows }) => {
+                  if (!existingRows || existingRows.length === 0) return;
+                  const staleIds = existingRows
+                    .filter((r: any) => {
+                      if (r.notion_last_edited_time === "local") return false;
+                      const rClean = String(r.id).replace(/-/g, "");
+                      const cClean = r.caso_id ? String(r.caso_id).replace(/-/g, "") : "";
+                      if (cClean && cClean !== clean && validCasoCleanIds.has(cClean)) return false;
+                      if ((!cClean || cClean === clean) && validDirectQCleanIds.has(rClean)) return false;
+                      return true;
+                    })
+                    .map((r: any) => r.id);
+                  if (staleIds.length > 0) {
+                    supabase.from("notion_questoes_banco").delete().in("id", staleIds).then(() => {
+                      bancoIdsLoadedPromise = null;
+                      questoesDoBlocoCache.delete(clean);
+                      questoesDetalhesCache.delete(clean);
+                      try {
+                        localStorage.removeItem(`notion_c_ids_${clean}`);
+                        localStorage.removeItem(`notion_c_det_${clean}`);
+                      } catch {}
+                    }, () => {});
+                  }
+                }, () => {});
+
+              return casosList;
+            })().catch((err: any) => {
+              notionErrorMsg = err?.message || "Erro ao consultar o Notion.";
+              return null;
+            });
+
+            const timeoutPromise = new Promise<null>((resolve) =>
+              setTimeout(() => resolve(null), 3000)
+            );
+
+            const result = await Promise.race([notionPromise, timeoutPromise]);
+            if (result !== null) {
+              built = result;
+              loadedFromNotion = true;
             }
           }
-        } catch {
-          // Fallback para tabela sincronizada notion_questoes_banco
-          const clean = block.block_id.replace(/-/g, "");
-          const { data: rows } = await supabase
-            .from("notion_questoes_banco")
-            .select("caso_id, caso_nome")
-            .or(`bloco_raiz_id.eq.${block.block_id},bloco_raiz_id.eq.${clean}`);
-          if (rows && rows.length > 0) {
-            const seenCasos = new Map<string, string>();
-            for (const row of rows as Array<{ caso_id: string | null; caso_nome: string | null }>) {
-              const cId = row.caso_id || row.caso_nome || "geral";
-              if (!seenCasos.has(cId)) {
-                seenCasos.set(cId, row.caso_nome || "Geral");
+
+          if (!loadedFromNotion) {
+            // Se Notion demorou > 3 segundos, falhou ou não está configurado -> pega do Supabase
+            const [rawSbRootChildren, dbRows] = await Promise.all([
+              fetchChildren(blockUuid, false, false).catch(() => [] as NotionAPIBlock[]),
+              supabase
+                .from("notion_questoes_banco")
+                .select("id, caso_id, caso_nome, numero, topico, categoria")
+                .or(`bloco_raiz_id.eq.${block.block_id},bloco_raiz_id.eq.${blockUuid},bloco_raiz_id.eq.${clean}`)
+                .then(r => (r.data ?? []) as any[], () => [] as any[]),
+            ]);
+            const sbRootChildren = await unwrapNotionContainers(rawSbRootChildren, false, false).catch(() => rawSbRootChildren);
+
+            if (sbRootChildren.length > 0) {
+              const directRootQuestions: Questao[] = [];
+              for (const child of sbRootChildren) {
+                const rawTitle = getChildBlockTitle(child);
+
+                if (isNavigableNotionContainer(child)) {
+                  const { emojis: textEmojis, numero, topic } = parseQuestaoTitle(rawTitle);
+                  const iconEmoji = child.icon?.type === "emoji" && child.icon.emoji ? [child.icon.emoji] : [];
+                  const categoryKey = detectCategory([...iconEmoji, ...textEmojis]);
+                  if (categoryKey) {
+                    directRootQuestions.push({
+                      id: child.id,
+                      numero,
+                      topic,
+                      categoryKey,
+                      imageUrls: [],
+                      respostaImageUrls: [],
+                      caseLabel: block.nome || "Geral",
+                    });
+                    continue;
+                  }
+                  if (rawTitle || child.has_children) {
+                    built.push({ id: child.id, nome: rawTitle || "Sem nome", questoes: [] });
+                  }
+                }
               }
+              if (directRootQuestions.length > 0) {
+                built.unshift({
+                  id: blockUuid,
+                  nome: block.nome || "Questões",
+                  questoes: directRootQuestions,
+                });
+              }
+            } else if (dbRows.length > 0) {
+              const seenCasos = new Map<string, Caso>();
+              for (const row of dbRows) {
+                const cId = row.caso_id || blockUuid;
+                const cNome = row.caso_nome || block.nome || "Geral";
+                const key = cId.replace(/-/g, "") || cNome;
+                if (!seenCasos.has(key)) {
+                  seenCasos.set(key, { id: cId, nome: cNome, questoes: [] });
+                }
+                if (!row.caso_id || row.caso_id.replace(/-/g, "") === clean) {
+                  seenCasos.get(key)!.questoes.push({
+                    id: row.id,
+                    numero: row.numero || "",
+                    topic: row.topico || "",
+                    categoryKey: (row.categoria || "media") as CategoryKey,
+                    imageUrls: [],
+                    respostaImageUrls: [],
+                    caseLabel: cNome,
+                  });
+                }
+              }
+              built = Array.from(seenCasos.values());
+            } else if (notionErrorMsg) {
+              if (!cancelled) setError(notionErrorMsg);
             }
-            built = Array.from(seenCasos.entries()).map(([id, nome]) => ({
-              id,
-              nome,
-              questoes: [],
-            }));
           }
+        } catch (e: any) {
+          if (!cancelled) setError(e.message);
         }
 
         // Ordenar casos com base na ordem salva
@@ -5240,10 +5743,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
     if (!formId.trim() || !formNome.trim()) { setSaveErr("Preencha o ID e o nome."); return; }
     setSaving(true); setSaveErr("");
     try {
-      const raw = formId.trim().replace(/-/g, "");
-      const notionId = raw.length === 32
-        ? `${raw.slice(0,8)}-${raw.slice(8,12)}-${raw.slice(12,16)}-${raw.slice(16,20)}-${raw.slice(20)}`
-        : formId.trim();
+      const notionId = extractNotionBlockId(formId);
       const { error } = await supabase.from("notion_blocks").insert({
         block_id: notionId,
         nome: formNome.trim(),
@@ -5254,6 +5754,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
       if (isLocalNewBlock) {
         await writeSupabaseCacheBlocks(notionId, []).catch(() => {});
       }
+      clearNotionClientCache();
       setFormId(""); setFormNome(""); setFormDesc(""); setFormMateria(""); setIsLocalNewBlock(false); setShowForm(false);
       await fetchBlocks();
     } catch (e: any) { setSaveErr(e.message); }
