@@ -3640,16 +3640,21 @@ function BlockViewer({
 
         try {
           const clean = block.block_id.replace(/-/g, "");
-          const notionEnabled = await isNotionEnabled();
 
-          if (notionEnabled) {
-            // Fonte absoluta de verdade: Notion em tempo real
-            const notionRootChildren = await fetchChildren(block.block_id, true, true);
-            const foundCasoIds = new Set<string>();
-            const foundQuestaoIds = new Set<string>();
+          // 1. Buscar primeiro no Supabase (cache de blocos + notion_questoes_banco)
+          const [sbRootChildren, dbCasosRes] = forceFetch
+            ? [await fetchChildren(block.block_id, true, true), [] as Array<{ caso_id: string | null; caso_nome: string | null }>]
+            : await Promise.all([
+                fetchChildren(block.block_id, false, false).catch(() => [] as NotionAPIBlock[]),
+                supabase
+                  .from("notion_questoes_banco")
+                  .select("caso_id, caso_nome")
+                  .or(`bloco_raiz_id.eq.${block.block_id},bloco_raiz_id.eq.${clean}`)
+                  .then(r => (r.data ?? []) as Array<{ caso_id: string | null; caso_nome: string | null }>, () => [] as Array<{ caso_id: string | null; caso_nome: string | null }>),
+              ]);
 
-            for (const casoBlock of notionRootChildren) {
-              if (casoBlock.type !== 'toggle') continue;
+          if (sbRootChildren.length > 0) {
+            for (const casoBlock of sbRootChildren) {
               const casoNome =
                 richText(casoBlock.toggle?.rich_text) ||
                 richText(casoBlock.heading_1?.rich_text) ||
@@ -3658,77 +3663,41 @@ function BlockViewer({
                 richText(casoBlock.paragraph?.rich_text) ||
                 casoBlock.child_page?.title || "Sem nome";
 
-              foundCasoIds.add(casoBlock.id);
               built.push({ id: casoBlock.id, nome: casoNome, questoes: [] });
-
-              const subChildren = await fetchChildren(casoBlock.id, true, true);
-              for (const sc of subChildren) {
-                if (sc.type === 'toggle') {
-                  const rawTitle = richText(sc.toggle?.rich_text ?? []);
-                  const { emojis: textEmojis } = parseQuestaoTitle(rawTitle);
-                  const iconEmoji = sc.icon?.type === 'emoji' && sc.icon.emoji ? [sc.icon.emoji] : [];
-                  const categoria = detectCategory([...iconEmoji, ...textEmojis]);
-                  if (categoria) {
-                    foundQuestaoIds.add(sc.id);
-                  }
-                }
+            }
+            const existingCleanCasos = new Set(built.map(c => c.id.replace(/-/g, "")));
+            for (const row of dbCasosRes) {
+              const cId = row.caso_id || row.caso_nome || "geral";
+              if (!existingCleanCasos.has(cId.replace(/-/g, ""))) {
+                existingCleanCasos.add(cId.replace(/-/g, ""));
+                built.push({ id: cId, nome: row.caso_nome || "Geral", questoes: [] });
               }
             }
-
-            // Exclui do Supabase tudo que deixou de existir no Notion
-            try {
-              const { data: existingDbRows } = await supabase
-                .from("notion_questoes_banco")
-                .select("id")
-                .or(`bloco_raiz_id.eq.${block.block_id},bloco_raiz_id.eq.${clean}`);
-
-              if (existingDbRows && existingDbRows.length > 0) {
-                const staleIds = existingDbRows
-                  .map((r: any) => r.id)
-                  .filter((id: string) => !foundQuestaoIds.has(id) && !foundQuestaoIds.has(id.replace(/-/g, "")));
-
-                if (staleIds.length > 0) {
-                  await supabase.from("notion_questoes_banco").delete().in("id", staleIds);
-                }
+          } else if (dbCasosRes.length > 0) {
+            const seenCasos = new Map<string, string>();
+            for (const row of dbCasosRes) {
+              const cId = row.caso_id || row.caso_nome || "geral";
+              if (!seenCasos.has(cId)) {
+                seenCasos.set(cId, row.caso_nome || "Geral");
               }
-            } catch (e) {}
-
+            }
+            built = Array.from(seenCasos.entries()).map(([id, nome]) => ({
+              id,
+              nome,
+              questoes: [],
+            }));
           } else {
-            // Fallback para Supabase se Notion não estiver configurado
-            const [sbRootChildren, dbCasosRes] = await Promise.all([
-              fetchChildren(block.block_id, false, false).catch(() => [] as NotionAPIBlock[]),
-              supabase
-                .from("notion_questoes_banco")
-                .select("caso_id, caso_nome")
-                .or(`bloco_raiz_id.eq.${block.block_id},bloco_raiz_id.eq.${clean}`)
-                .then(r => (r.data ?? []) as Array<{ caso_id: string | null; caso_nome: string | null }>, () => [] as Array<{ caso_id: string | null; caso_nome: string | null }>),
-            ]);
-
-            if (sbRootChildren.length > 0) {
-              for (const casoBlock of sbRootChildren) {
-                const casoNome =
-                  richText(casoBlock.toggle?.rich_text) ||
-                  richText(casoBlock.heading_1?.rich_text) ||
-                  richText(casoBlock.heading_2?.rich_text) ||
-                  richText(casoBlock.heading_3?.rich_text) ||
-                  richText(casoBlock.paragraph?.rich_text) ||
-                  casoBlock.child_page?.title || "Sem nome";
-
-                built.push({ id: casoBlock.id, nome: casoNome, questoes: [] });
-              }
-            } else if (dbCasosRes.length > 0) {
-              const seenCasos = new Map<string, string>();
-              for (const row of dbCasosRes) {
-                const cId = row.caso_id || row.caso_nome || "geral";
-                if (!seenCasos.has(cId)) {
-                  seenCasos.set(cId, row.caso_nome || "Geral");
-                }
-              }
-              built = Array.from(seenCasos.entries()).map(([id, nome]) => ({
-                id,
-                nome,
-                questoes: [],
-              }));
+            // 2. Se não houver nada no Supabase, aí sim busca do Notion
+            const notionRootChildren = await fetchChildren(block.block_id, forceFetch, true);
+            for (const casoBlock of notionRootChildren) {
+              const casoNome =
+                richText(casoBlock.toggle?.rich_text) ||
+                richText(casoBlock.heading_1?.rich_text) ||
+                richText(casoBlock.heading_2?.rich_text) ||
+                richText(casoBlock.heading_3?.rich_text) ||
+                richText(casoBlock.paragraph?.rich_text) ||
+                casoBlock.child_page?.title || "Sem nome";
+              built.push({ id: casoBlock.id, nome: casoNome, questoes: [] });
             }
           }
         } catch {
