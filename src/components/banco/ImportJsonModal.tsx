@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   X, FileJson, Upload, CheckCircle2, AlertCircle, Loader2,
   Sparkles, Copy, Check, FileText, FolderTree, AlertTriangle,
@@ -366,34 +365,30 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
   const podeImportar = analise && analise.totalNova > 0 && !isImporting;
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 15 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          className="w-full max-w-4xl bg-[#0F172A] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col my-8"
-        >
-          {/* ── Header ── */}
-          <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
-                <FileJson size={20} />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  Importar Questões via JSON
-                  <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">Admin</span>
-                </h3>
-                <p className="text-xs text-slate-400">
-                  Valida, detecta duplicatas e organiza hierarquicamente antes de salvar.
-                </p>
-              </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 overflow-y-auto">
+      <div
+        className="w-full max-w-4xl bg-[#0F172A] border border-white/10 rounded-2xl overflow-hidden flex flex-col my-8"
+      >
+        {/* ── Header ── */}
+        <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+              <FileJson size={20} />
             </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all">
-              <X size={16} />
-            </button>
+            <div>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                Importar Questões via JSON
+                <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">Admin</span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                Valida, detecta duplicatas e organiza hierarquicamente antes de salvar.
+              </p>
+            </div>
           </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+            <X size={16} />
+          </button>
+        </div>
 
           {/* ── Body ── */}
           <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto custom-scrollbar">
@@ -407,7 +402,7 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
                   <p className="text-[11px] text-slate-400">Formato oficial com Caminho_Organizacao, Ano e Imagens_Enunciado.</p>
                 </div>
               </div>
-              <button onClick={copyPrompt} className="shrink-0 px-3 py-1.5 bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 rounded-lg text-xs font-bold text-blue-200 flex items-center gap-1.5 transition-all">
+              <button onClick={copyPrompt} className="shrink-0 px-3 py-1.5 bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 rounded-lg text-xs font-bold text-blue-200 flex items-center gap-1.5 transition-colors">
                 {copiedPrompt ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
                 {copiedPrompt ? "Copiado!" : "Copiar Prompt"}
               </button>
@@ -429,7 +424,7 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">Arquivo JSON</label>
-                <label className="w-full px-3 py-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 rounded-xl text-xs text-slate-300 cursor-pointer flex items-center justify-center gap-2 transition-all">
+                <label className="w-full px-3 py-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 rounded-xl text-xs text-slate-300 cursor-pointer flex items-center justify-center gap-2 transition-colors">
                   <Upload size={14} className="text-blue-400" />
                   <span>Escolher arquivo .json</span>
                   <input type="file" accept=".json,application/json" onChange={handleFileUpload} className="hidden" />
@@ -455,15 +450,8 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
             </div>
 
             {/* ── PAINEL DE ANÁLISE ── */}
-            <AnimatePresence>
-              {analise && (
-                <motion.div
-                  key="analise"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="space-y-3"
-                >
+            {analise && (
+              <div className="space-y-3">
                   {/* Resumo do lote */}
                   <div className="grid grid-cols-3 gap-3">
                     <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
@@ -574,9 +562,8 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
                       </span>
                     </div>
                   )}
-                </motion.div>
+                </div>
               )}
-            </AnimatePresence>
 
             {/* Erros gerais */}
             {errorMsg && (
@@ -619,7 +606,7 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
               <button
                 onClick={onClose}
                 disabled={isImporting}
-                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-semibold transition-all disabled:opacity-50"
+                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -629,7 +616,7 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
                 <button
                   onClick={handleAnalisar}
                   disabled={!jsonText.trim() || isAnalyzing}
-                  className="px-5 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-5 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {isAnalyzing ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
                   {isAnalyzing ? "Analisando..." : "Analisar JSON"}
@@ -641,7 +628,7 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
                 <button
                   onClick={handleAnalisar}
                   disabled={isAnalyzing}
-                  className="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all"
+                  className="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors"
                 >
                   <FileText size={13} /> Re-analisar
                 </button>
@@ -652,7 +639,7 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
                 <button
                   onClick={handleImportar}
                   disabled={!podeImportar}
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {isImporting ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
                   {isImporting ? "Importando..." : `Confirmar (${analise.totalNova} novas)`}
@@ -660,8 +647,7 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
               )}
             </div>
           </div>
-        </motion.div>
       </div>
-    </AnimatePresence>
+    </div>
   );
 }

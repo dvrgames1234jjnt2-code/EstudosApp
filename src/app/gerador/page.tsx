@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import {
   Sparkles, Search, Loader2, CheckCircle2, Play, RotateCcw,
@@ -118,10 +117,9 @@ function UnitCard({
 }) {
   const pct = Math.min(100, Math.round((unit.score / 20) * 100));
   return (
-    <motion.button
-      layout
+    <button
       onClick={onSelect}
-      className={`w-full text-left p-3 rounded-xl border transition-all ${
+      className={`w-full text-left p-3 rounded-xl border transition-colors ${
         isSelected
           ? "border-blue-500 bg-blue-500/10"
           : "border-white/[0.06] bg-white/[0.02] hover:border-blue-500/40 hover:bg-blue-500/5"
@@ -143,10 +141,8 @@ function UnitCard({
       </div>
       <div className="mt-2 flex items-center gap-2">
         <div className="flex-1 h-1 bg-white/[0.06] rounded-full overflow-hidden">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${pct}%` }}
-            transition={{ duration: 0.6 }}
+          <div
+            style={{ width: `${pct}%` }}
             className={`h-full rounded-full ${pct >= 60 ? "bg-emerald-500" : pct >= 30 ? "bg-amber-500" : "bg-slate-600"}`}
           />
         </div>
@@ -154,7 +150,7 @@ function UnitCard({
           {pct}%
         </span>
       </div>
-    </motion.button>
+    </button>
   );
 }
 
@@ -195,11 +191,7 @@ function QuestionCard({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white/[0.02] border border-white/[0.06] rounded-2xl overflow-hidden"
-    >
+    <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-white/[0.05] bg-white/[0.02]">
         <div className="flex items-center gap-2">
@@ -216,7 +208,7 @@ function QuestionCard({
         <div className="flex items-center gap-2">
           <button
             onClick={onRegenerate}
-            className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] transition-all text-slate-400 hover:text-slate-200"
+            className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] transition-colors text-slate-400 hover:text-slate-200"
             title="Gerar nova questão"
           >
             <RotateCcw size={12} />
@@ -225,7 +217,7 @@ function QuestionCard({
             <button
               onClick={onSave}
               disabled={isSaving}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors"
             >
               {isSaving ? <Loader2 size={10} className="animate-spin" /> : <Database size={10} />}
               {isSaving ? "Salvando..." : "Salvar no Banco"}
@@ -256,7 +248,7 @@ function QuestionCard({
               if (revealed) return;
               setSelectedAnswer(key);
             }}
-            className={`w-full text-left flex items-start gap-3 p-3 rounded-xl border text-xs transition-all ${getAltStyle(key)}`}
+            className={`w-full text-left flex items-start gap-3 p-3 rounded-xl border text-xs transition-colors ${getAltStyle(key)}`}
           >
             <span className="font-black shrink-0 w-4">{key})</span>
             <span className="leading-relaxed">{text}</span>
@@ -273,28 +265,22 @@ function QuestionCard({
           <button
             onClick={() => setRevealed(true)}
             disabled={!selectedAnswer}
-            className="w-full py-2 bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-40 text-slate-300 rounded-xl text-xs font-bold border border-white/[0.06] transition-all"
+            className="w-full py-2 bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-40 text-slate-300 rounded-xl text-xs font-bold border border-white/[0.06] transition-colors"
           >
             {selectedAnswer ? "Ver gabarito" : "Selecione uma alternativa"}
           </button>
         ) : (
-          <AnimatePresence>
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20"
-            >
-              <p className="text-[10px] font-black uppercase text-emerald-400 mb-1.5">
-                Gabarito: {gabarito} · {selectedAnswer === gabarito ? "✓ Você acertou!" : "✗ Resposta incorreta"}
-              </p>
-              {question.Comentario && (
-                <p className="text-xs text-slate-300 leading-relaxed">{question.Comentario}</p>
-              )}
-            </motion.div>
-          </AnimatePresence>
+          <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+            <p className="text-[10px] font-black uppercase text-emerald-400 mb-1.5">
+              Gabarito: {gabarito} · {selectedAnswer === gabarito ? "✓ Você acertou!" : "✗ Resposta incorreta"}
+            </p>
+            {question.Comentario && (
+              <p className="text-xs text-slate-300 leading-relaxed">{question.Comentario}</p>
+            )}
+          </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -455,23 +441,17 @@ export default function GeradorPage() {
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans">
-      {/* Background glows */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[60%] bg-purple-600/[0.03] blur-[140px] rounded-full" />
-        <div className="absolute -bottom-[20%] -right-[10%] w-[40%] h-[50%] bg-blue-600/[0.03] blur-[140px] rounded-full" />
-      </div>
-
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 h-16 border-b border-white/[0.05] bg-[#020617]/80 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between gap-4">
+      <nav className="sticky top-0 z-50 h-16 border-b border-white/[0.05] bg-[#020617]/95 px-4 sm:px-8 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push("/banco")}
-            className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.06] text-slate-500 hover:text-white transition-all"
+            className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.06] text-slate-500 hover:text-white transition-colors"
           >
             <ArrowLeft size={14} />
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-900/30">
+            <div className="w-8 h-8 bg-purple-600 rounded-xl flex items-center justify-center">
               <Sparkles size={16} className="text-white" />
             </div>
             <div className="hidden sm:block">
@@ -512,7 +492,7 @@ export default function GeradorPage() {
               </div>
               <button
                 onClick={fetchPages}
-                className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-500 hover:text-slate-200 transition-all"
+                className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-500 hover:text-slate-200 transition-colors"
               >
                 <RefreshCw size={11} className={loadingPages ? "animate-spin" : ""} />
               </button>
@@ -525,7 +505,7 @@ export default function GeradorPage() {
                 placeholder="Buscar página..."
                 value={searchPage}
                 onChange={e => setSearchPage(e.target.value)}
-                className="w-full pl-8 pr-3 py-2 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white placeholder:text-slate-600 focus:ring-1 focus:ring-purple-500 outline-none transition-all"
+                className="w-full pl-8 pr-3 py-2 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white placeholder:text-slate-600 focus:ring-1 focus:ring-purple-500 outline-none"
               />
             </div>
 
@@ -545,7 +525,7 @@ export default function GeradorPage() {
                   <button
                     key={page.id}
                     onClick={() => setSelectedPage(page)}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-[11px] font-medium transition-all ${
+                    className={`w-full text-left px-3 py-2 rounded-lg text-[11px] font-medium transition-colors ${
                       selectedPage?.id === page.id
                         ? "bg-purple-600/20 text-purple-300 border border-purple-500/30"
                         : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
@@ -643,11 +623,7 @@ export default function GeradorPage() {
 
           {!selectedPage ? (
             // Estado vazio
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex flex-col items-center justify-center py-32 gap-6 text-center"
-            >
+            <div className="flex flex-col items-center justify-center py-32 gap-6 text-center">
               <div className="w-20 h-20 rounded-3xl bg-purple-600/10 border border-purple-500/20 flex items-center justify-center">
                 <Sparkles size={32} className="text-purple-400" />
               </div>
@@ -669,7 +645,7 @@ export default function GeradorPage() {
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </div>
           ) : (
             <>
               {/* Botão gerar */}
@@ -688,7 +664,7 @@ export default function GeradorPage() {
                     <button
                       onClick={generateQuestion}
                       disabled={generating}
-                      className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-purple-900/20 active:scale-95 whitespace-nowrap"
+                      className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-colors whitespace-nowrap"
                     >
                       {generating
                         ? <><Loader2 size={14} className="animate-spin" /> Gerando...</>
@@ -709,11 +685,7 @@ export default function GeradorPage() {
 
               {/* Error */}
               {generationError && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex items-start gap-3 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20"
-                >
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20">
                   <AlertTriangle size={16} className="text-rose-400 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-xs font-bold text-rose-300">Erro ao gerar questão</p>
@@ -724,41 +696,32 @@ export default function GeradorPage() {
                       </p>
                     )}
                   </div>
-                </motion.div>
+                </div>
               )}
 
               {/* Loading */}
               {generating && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex flex-col items-center justify-center py-24 gap-4"
-                >
-                  <div className="relative">
-                    <div className="w-16 h-16 rounded-2xl bg-purple-600/20 flex items-center justify-center">
-                      <Sparkles size={28} className="text-purple-400 animate-pulse" />
-                    </div>
-                    <div className="absolute inset-0 bg-purple-600/10 blur-xl animate-pulse" />
+                <div className="flex flex-col items-center justify-center py-24 gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-purple-600/20 flex items-center justify-center">
+                    <Loader2 size={28} className="text-purple-400 animate-spin" />
                   </div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-600 animate-pulse">
+                  <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-600">
                     Gemini está gerando...
                   </p>
-                </motion.div>
+                </div>
               )}
 
               {/* Questão gerada */}
-              <AnimatePresence mode="wait">
-                {question && !generating && (
-                  <QuestionCard
-                    key={JSON.stringify(question)}
-                    question={question}
-                    onSave={saveQuestion}
-                    onRegenerate={generateQuestion}
-                    isSaving={isSaving}
-                    saved={saved}
-                  />
-                )}
-              </AnimatePresence>
+              {question && !generating && (
+                <QuestionCard
+                  key={JSON.stringify(question)}
+                  question={question}
+                  onSave={saveQuestion}
+                  onRegenerate={generateQuestion}
+                  isSaving={isSaving}
+                  saved={saved}
+                />
+              )}
 
               {/* Estado sem unidade selecionada */}
               {!selectedUnit && !loadingUnits && (

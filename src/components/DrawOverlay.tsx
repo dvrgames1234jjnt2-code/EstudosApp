@@ -262,7 +262,7 @@ export function DrawOverlay({ questionKey }: Props) {
       />
 
       {/* Toolbar — always interactive */}
-      <div className="pointer-events-auto fixed lg:absolute bottom-6 left-1/2 -translate-x-1/2 lg:translate-x-0 lg:bottom-auto lg:top-0 lg:right-0 flex items-center gap-1.5 p-2 bg-[#0B1220]/90 backdrop-blur-xl border border-white/[0.08] rounded-2xl shadow-2xl z-[70] max-w-[95vw] overflow-x-auto no-scrollbar">
+      <div className="pointer-events-auto fixed lg:absolute bottom-6 left-1/2 -translate-x-1/2 lg:translate-x-0 lg:bottom-auto lg:top-0 lg:right-0 flex items-center gap-1.5 p-2 bg-[#0B1220]/95 border border-white/[0.08] rounded-2xl shadow-lg z-[70] max-w-[95vw] overflow-x-auto no-scrollbar">
         {/* Tools */}
         <div className="flex items-center gap-1.5 shrink-0">
           {TOOLS.map((t) => {
@@ -281,9 +281,9 @@ export function DrawOverlay({ questionKey }: Props) {
                     if (t.id === "laser") setColor("#ef4444"); // Default red for laser
                   }
                 }}
-                className={`w-9 h-9 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center transition-all ${
+                className={`w-9 h-9 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center transition-colors ${
                   isActive
-                    ? t.id === "laser" ? "bg-red-500 text-white shadow-lg shadow-red-900/40" : "bg-blue-600 text-white shadow-lg shadow-blue-900/40"
+                    ? t.id === "laser" ? "bg-red-500 text-white" : "bg-blue-600 text-white"
                     : "text-slate-500 hover:text-slate-200 hover:bg-white/5"
                 }`}
               >
@@ -304,8 +304,8 @@ export function DrawOverlay({ questionKey }: Props) {
                 key={c}
                 onClick={() => setColor(c)}
                 title={c}
-                className={`w-5 h-5 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${
-                  color === c ? "border-white scale-125 shadow-lg shadow-white/20" : "border-transparent scale-100 hover:scale-110"
+                className={`w-5 h-5 sm:w-4 sm:h-4 rounded-full border-2 ${
+                  color === c ? "border-white ring-2 ring-white/40" : "border-transparent"
                 }`}
                 style={{ background: c }}
               />
@@ -318,7 +318,7 @@ export function DrawOverlay({ questionKey }: Props) {
         <button
           title="Limpar tudo"
           onClick={clearAll}
-          className="w-9 h-9 sm:w-8 sm:h-8 shrink-0 rounded-xl flex items-center justify-center text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
+          className="w-9 h-9 sm:w-8 sm:h-8 shrink-0 rounded-xl flex items-center justify-center text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
         >
           <Trash2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
         </button>

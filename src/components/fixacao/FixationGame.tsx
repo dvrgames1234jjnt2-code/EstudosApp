@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import {
   Brain, Layers, Lightbulb, Zap, Rocket,
@@ -272,12 +271,9 @@ export default function FixationGame({
     const pct = Math.min((currentCognitiveLoad / maxCognitiveLoad) * 100, 100);
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-zinc-950">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-          className="w-20 h-20 bg-red-500/10 border border-red-500/50 rounded-full flex items-center justify-center mb-6"
-        >
-          <Brain size={40} className="text-red-500 animate-pulse" />
-        </motion.div>
+        <div className="w-20 h-20 bg-red-500/10 border border-red-500/50 rounded-full flex items-center justify-center mb-6">
+          <Brain size={40} className="text-red-500" />
+        </div>
         <h2 className="text-3xl font-black text-white mb-2 uppercase italic tracking-tighter">Sessão Encerrada</h2>
         <p className="text-red-400 font-bold uppercase tracking-widest text-xs mb-6">Limite de Carga Cognitiva Atingido</p>
         <div className="max-w-md w-full bg-zinc-900/50 border border-zinc-800 p-6 rounded-[2.5rem] mb-8">
@@ -289,10 +285,10 @@ export default function FixationGame({
             <span className="text-white">{Math.round(pct)}%</span>
           </div>
           <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
-            <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} className="h-full bg-red-500" />
+            <div style={{ width: `${pct}%` }} className="h-full bg-red-500" />
           </div>
         </div>
-        <button onClick={onBack} className="px-8 py-3 bg-white text-black font-black uppercase tracking-widest rounded-2xl hover:bg-zinc-200 transition-all active:scale-95">
+        <button onClick={onBack} className="px-8 py-3 bg-white text-black font-black uppercase tracking-widest rounded-2xl hover:bg-zinc-200 transition-colors">
           Voltar e Descansar
         </button>
       </div>
@@ -308,12 +304,9 @@ export default function FixationGame({
 
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-zinc-950">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-          className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
-        >
+        <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mb-4">
           <Trophy size={32} className="text-white" />
-        </motion.div>
+        </div>
 
         <h2 className="text-xl font-black text-white mb-1">Trilha Concluída! 🏆</h2>
         <p className="text-zinc-400 text-xs mb-6">Você percorreu todo o deck de <span className="text-white font-bold">{title}</span></p>
@@ -344,11 +337,11 @@ export default function FixationGame({
               setCurrentCognitiveLoad(0);
               setRevealed(false);
             }}
-            className="px-6 py-2.5 bg-indigo-600 text-white text-xs font-black rounded-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+            className="px-6 py-2.5 bg-indigo-600 text-white text-xs font-black rounded-xl hover:bg-indigo-500 transition-colors flex items-center gap-2"
           >
             <RefreshCw size={14} /> Recomeçar
           </button>
-          <button onClick={onBack} className="px-6 py-2.5 bg-white text-black text-xs font-black rounded-xl hover:scale-105 active:scale-95 transition-all">
+          <button onClick={onBack} className="px-6 py-2.5 bg-white text-black text-xs font-black rounded-xl hover:bg-zinc-200 transition-colors">
             Voltar
           </button>
         </div>
@@ -364,7 +357,7 @@ export default function FixationGame({
   return (
     <div className="flex-1 flex flex-col bg-zinc-950 text-white min-h-0 overflow-hidden">
       {/* ── Header ── */}
-      <div className="p-3 md:p-4 flex items-center gap-2 md:gap-3 border-b border-white/5 bg-zinc-950/80 backdrop-blur-xl sticky top-0 z-50 shrink-0">
+      <div className="p-3 md:p-4 flex items-center gap-2 md:gap-3 border-b border-white/5 bg-zinc-950 sticky top-0 z-50 shrink-0">
         <button onClick={onBack} className="p-2 hover:bg-white/5 rounded-xl transition-colors shrink-0">
           <ChevronLeft size={20} />
         </button>
@@ -376,7 +369,7 @@ export default function FixationGame({
             </h1>
             <button
               onClick={onToggleNoCommitment}
-              className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest transition-all shrink-0 ${
+              className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest transition-colors shrink-0 ${
                 isNoCommitment
                   ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
                   : 'bg-zinc-800 text-zinc-500'
@@ -397,7 +390,7 @@ export default function FixationGame({
             onClick={() => { setIsTypingMode(v => !v); setRevealed(false); setUserInput(''); }}
             className="w-8 h-4 bg-zinc-800 rounded-full relative p-0.5 border border-white/10"
           >
-            <motion.div animate={{ x: isTypingMode ? 16 : 0 }} className="w-3 h-3 bg-white rounded-full shadow-sm" />
+            <div className={`w-3 h-3 bg-white rounded-full ${isTypingMode ? 'translate-x-4' : 'translate-x-0'}`} />
           </button>
           <span className={`text-[8px] font-black uppercase tracking-widest ${isTypingMode ? 'text-indigo-400' : 'text-zinc-500'}`}>Digitar</span>
         </div>
@@ -413,9 +406,9 @@ export default function FixationGame({
             </span>
           </div>
           <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden border border-white/5">
-            <motion.div
-              animate={{ width: `${loadPct}%`, backgroundColor: loadColor }}
-              className="h-full transition-all duration-500"
+            <div
+              style={{ width: `${loadPct}%`, backgroundColor: loadColor }}
+              className="h-full"
             />
           </div>
         </div>
@@ -426,7 +419,7 @@ export default function FixationGame({
           </button>
           <button
             onClick={() => { setIsInverted(v => !v); setCurrentIndex(0); setRevealed(false); }}
-            className={`px-2.5 py-1 rounded-full text-[8px] font-black transition-all border ${
+            className={`px-2.5 py-1 rounded-full text-[8px] font-black transition-colors border ${
               isInverted ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-500'
             }`}
           >
@@ -438,9 +431,9 @@ export default function FixationGame({
       {/* ── Trilha Vertical ── */}
       <div
         ref={scrollRef}
-        className={`flex-1 overflow-y-auto no-scrollbar p-3 md:p-6 pb-32 transition-all duration-500 ${
-          isCracked ? 'scale-95 blur-sm grayscale opacity-30 rotate-1' : ''
-        } ${isReversing ? 'blur-[1px] opacity-80' : ''}`}
+        className={`flex-1 overflow-y-auto no-scrollbar p-3 md:p-6 pb-32 ${
+          isCracked ? 'opacity-30' : ''
+        } ${isReversing ? 'opacity-80' : ''}`}
       >
         <div className="max-w-xl mx-auto relative">
           {/* Linha de conexão */}
@@ -452,22 +445,20 @@ export default function FixationGame({
               const isPast = idx < currentIndex;
 
               return (
-                <motion.div
+                <div
                   key={`${item._stableId}-${idx}`}
                   data-active={isCurrent}
-                  initial={false}
-                  animate={{ opacity: isCurrent || isPast ? 1 : 0.2, scale: isCurrent ? 1 : 0.98, x: isCurrent ? 0 : isPast ? 0 : 4 }}
-                  className={`flex gap-3 md:gap-4 rounded-xl md:rounded-[1.5rem] p-3 md:p-5 border-2 transition-all duration-500 ${
+                  className={`flex gap-3 md:gap-4 rounded-xl md:rounded-[1.5rem] p-3 md:p-5 border-2 ${
                     isCurrent
-                      ? `bg-zinc-900 border-indigo-500/40 shadow-[0_15px_40px_rgba(0,0,0,0.6)] ring-4 ring-indigo-500/10 ${shake ? 'animate-shake' : ''}`
+                      ? `bg-zinc-900 border-indigo-500/40 ring-2 ring-indigo-500/15 opacity-100 ${shake ? 'animate-shake' : ''}`
                       : isPast
-                      ? 'bg-emerald-500/5 border-emerald-500/10 opacity-40 grayscale-[0.3]'
-                      : 'bg-transparent border-transparent'
+                      ? 'bg-emerald-500/5 border-emerald-500/10 opacity-40'
+                      : 'bg-transparent border-transparent opacity-25'
                   }`}
                 >
                   {/* Indicador de passo */}
                   <div className="shrink-0 flex flex-col items-center">
-                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-black text-xs md:text-sm transition-all duration-500 shadow-lg ${
+                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-black text-xs md:text-sm ${
                       isPast ? 'bg-emerald-500 text-white' :
                       isCurrent ? 'bg-indigo-600 text-white ring-2 ring-indigo-500/20' :
                       'bg-zinc-800 text-zinc-600'
@@ -479,7 +470,7 @@ export default function FixationGame({
                   {/* Conteúdo */}
                   <div className="flex-1 min-w-0">
                     <span
-                      className={`text-base md:text-xl font-black tracking-tight transition-colors duration-500 block mb-1 ${
+                      className={`text-base md:text-xl font-black tracking-tight block mb-1 ${
                         isCurrent ? 'text-white' : isPast ? 'text-emerald-400' : 'text-zinc-700'
                       }`}
                       dangerouslySetInnerHTML={{
@@ -493,13 +484,9 @@ export default function FixationGame({
                         {isInverted && !revealed && (
                           <div className="text-zinc-300 text-xs font-medium leading-relaxed bg-white/5 p-3 rounded-xl border border-white/5 italic">
                             <div dangerouslySetInnerHTML={{ __html: item.description }} />
-                            <motion.span
-                              animate={{ opacity: [0.4, 0.8, 0.4] }}
-                              transition={{ repeat: Infinity, duration: 1.5 }}
-                              className="block mt-2 text-indigo-400 font-black uppercase text-[8px] tracking-widest text-center"
-                            >
+                            <span className="block mt-2 text-indigo-400 font-black uppercase text-[8px] tracking-widest text-center">
                               {isTypingMode ? 'Digite o termo' : 'Qual é o termo?'}
-                            </motion.span>
+                            </span>
                           </div>
                         )}
 
@@ -515,12 +502,12 @@ export default function FixationGame({
                                     onChange={e => setUserInput(e.target.value)}
                                     onKeyDown={e => e.key === 'Enter' && handleTypeSubmit()}
                                     placeholder="Digite sua resposta..."
-                                    className="w-full bg-zinc-950 border-2 border-zinc-800 rounded-xl px-4 py-3 pr-14 text-white text-sm focus:outline-none focus:border-indigo-500/50 transition-all font-bold placeholder:text-zinc-700"
+                                    className="w-full bg-zinc-950 border-2 border-zinc-800 rounded-xl px-4 py-3 pr-14 text-white text-sm focus:outline-none focus:border-indigo-500/50 transition-colors font-bold placeholder:text-zinc-700"
                                     autoFocus
                                   />
                                   <button
                                     onClick={handleTypeSubmit}
-                                    className="absolute right-2 w-9 h-9 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-all flex items-center justify-center active:scale-90"
+                                    className="absolute right-2 w-9 h-9 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-colors flex items-center justify-center"
                                   >
                                     <ArrowRight size={18} />
                                   </button>
@@ -535,7 +522,7 @@ export default function FixationGame({
                             ) : (
                               <button
                                 onClick={() => setRevealed(true)}
-                                className="w-full py-2.5 md:py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black rounded-xl transition-all active:scale-95 uppercase tracking-widest ring-4 ring-indigo-500/10"
+                                className="w-full py-2.5 md:py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black rounded-xl transition-colors uppercase tracking-widest"
                               >
                                 Revelar
                               </button>
@@ -543,11 +530,8 @@ export default function FixationGame({
                           </div>
                         ) : (
                           /* ── Depois de revelar ── */
-                          <motion.div
-                            initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
-                            className="space-y-3"
-                          >
-                            <div className="p-3 md:p-5 bg-zinc-950 border border-indigo-500/20 rounded-xl text-center shadow-inner space-y-2">
+                          <div className="space-y-3">
+                            <div className="p-3 md:p-5 bg-zinc-950 border border-indigo-500/20 rounded-xl text-center space-y-2">
                               <span
                                 className="text-xs md:text-lg font-black text-indigo-100 leading-relaxed block"
                                 dangerouslySetInnerHTML={{ __html: isInverted ? item.term : item.description }}
@@ -572,7 +556,7 @@ export default function FixationGame({
                                     <button
                                       key={type}
                                       onClick={() => handleChoice(type)}
-                                      className="h-[65px] rounded-2xl border flex flex-col items-center justify-center group transition-all shadow-lg"
+                                      className="h-[65px] rounded-2xl border flex flex-col items-center justify-center group transition-colors"
                                       style={{
                                         background: `${color}0d`,
                                         borderColor: `${color}33`,
@@ -581,7 +565,7 @@ export default function FixationGame({
                                       onMouseEnter={e => (e.currentTarget.style.background = `${color}33`)}
                                       onMouseLeave={e => (e.currentTarget.style.background = `${color}0d`)}
                                     >
-                                      <Icon size={18} className="mb-1 group-hover:scale-110 transition-transform opacity-70" />
+                                      <Icon size={18} className="mb-1 opacity-70" />
                                       <span className="text-[9px] font-black uppercase tracking-tighter">{label}</span>
                                     </button>
                                   ))}
@@ -589,14 +573,14 @@ export default function FixationGame({
 
                                 <button
                                   onClick={() => handleChoice('mastered')}
-                                  className="w-full h-[60px] bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20 hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-3 group"
+                                  className="w-full h-[60px] bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center justify-center gap-3 group"
                                 >
-                                  <Rocket size={20} className="group-hover:scale-110 group-hover:-rotate-12 transition-transform" />
+                                  <Rocket size={20} />
                                   <span className="text-xs md:text-sm font-black uppercase tracking-widest">Automático</span>
                                 </button>
                               </>
                             )}
-                          </motion.div>
+                          </div>
                         )}
                       </div>
                     )}
@@ -608,7 +592,7 @@ export default function FixationGame({
                       />
                     )}
                   </div>
-                </motion.div>
+                </div>
               );
             })}
           </div>
@@ -616,21 +600,13 @@ export default function FixationGame({
       </div>
 
       {/* ── Overlay de Reset ── */}
-      <AnimatePresence>
-        {isCracked && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
-          >
-            <motion.div
-              initial={{ scale: 0 }} animate={{ scale: 1 }}
-              className="text-white font-black text-4xl md:text-6xl tracking-tighter drop-shadow-[0_0_20px_rgba(255,165,0,0.5)]"
-            >
-              RECOMEÇANDO...
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {isCracked && (
+        <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/50">
+          <div className="text-white font-black text-4xl md:text-6xl tracking-tighter">
+            RECOMEÇANDO...
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes shake {

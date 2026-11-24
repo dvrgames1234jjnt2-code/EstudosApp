@@ -301,7 +301,7 @@ export default function VerificadorIDsTab({
             <button
               type="button"
               onClick={() => setShowImportModal(true)}
-              className="px-3.5 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1.5"
+              className="px-3.5 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5"
             >
               <FileJson size={13} />
               <span>Importar Questão</span>
@@ -309,7 +309,7 @@ export default function VerificadorIDsTab({
           )}
           <button
             onClick={handleCarregarExemplo}
-            className="px-2.5 py-1.5 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.06] text-slate-400 hover:text-slate-200 text-[11px] font-medium transition-all"
+            className="px-2.5 py-1.5 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.06] text-slate-400 hover:text-slate-200 text-[11px] font-medium transition-colors"
           >
             Exemplo
           </button>
@@ -319,7 +319,7 @@ export default function VerificadorIDsTab({
                 setTextoIds("");
                 setUltimoResultado(null);
               }}
-              className="px-2.5 py-1.5 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-rose-500/10 hover:border-rose-500/20 text-slate-400 hover:text-rose-400 text-[11px] font-medium transition-all flex items-center gap-1.5"
+              className="px-2.5 py-1.5 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-rose-500/10 hover:border-rose-500/20 text-slate-400 hover:text-rose-400 text-[11px] font-medium transition-colors flex items-center gap-1.5"
             >
               <Trash2 size={11} />
               Limpar
@@ -349,7 +349,7 @@ export default function VerificadorIDsTab({
           value={textoIds}
           onChange={(e) => setTextoIds(e.target.value)}
           placeholder="Exemplo:&#10;Q2408218&#10;Q1987321&#10;Q2104921&#10;Q9999991&#10;&#10;Dica: Aceita listas do Excel, URLs ou trechos de JSON."
-          className="w-full bg-[#070b14] border border-white/[0.08] rounded-xl px-3.5 py-3 text-xs font-mono text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 transition-all custom-scrollbar resize-y"
+          className="w-full bg-[#070b14] border border-white/[0.08] rounded-xl px-3.5 py-3 text-xs font-mono text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 custom-scrollbar resize-y"
         />
 
         <div className="flex items-center justify-between pt-1">
@@ -364,7 +364,7 @@ export default function VerificadorIDsTab({
           <button
             onClick={executarConfronto}
             disabled={analisando || !textoIds.trim()}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-medium tracking-wide transition-all shadow-md shadow-blue-600/20 active:scale-95 flex items-center gap-2"
+            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-medium tracking-wide transition-colors flex items-center gap-2"
           >
             {analisando ? (
               <>
@@ -436,7 +436,7 @@ export default function VerificadorIDsTab({
             <div className="flex items-center gap-1.5 overflow-x-auto">
               <button
                 onClick={() => setFiltroStatus("todos")}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
                   filtroStatus === "todos"
                     ? "bg-blue-600/20 text-blue-300 border border-blue-500/30"
                     : "text-slate-400 hover:text-white bg-transparent"
@@ -446,7 +446,7 @@ export default function VerificadorIDsTab({
               </button>
               <button
                 onClick={() => setFiltroStatus("faltantes")}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
                   filtroStatus === "faltantes"
                     ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
                     : "text-slate-400 hover:text-white bg-transparent"
@@ -456,7 +456,7 @@ export default function VerificadorIDsTab({
               </button>
               <button
                 onClick={() => setFiltroStatus("cadastradas")}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
                   filtroStatus === "cadastradas"
                     ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                     : "text-slate-400 hover:text-white bg-transparent"
@@ -475,7 +475,7 @@ export default function VerificadorIDsTab({
                   value={buscaResultado}
                   onChange={(e) => setBuscaResultado(e.target.value)}
                   placeholder="Filtrar por ID ou texto..."
-                  className="w-full pl-8 pr-3 py-1.5 bg-[#070b14] border border-white/[0.08] rounded-lg text-[11px] text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/40 transition-all"
+                  className="w-full pl-8 pr-3 py-1.5 bg-[#070b14] border border-white/[0.08] rounded-lg text-[11px] text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/40"
                 />
               </div>
 
@@ -484,7 +484,7 @@ export default function VerificadorIDsTab({
                   <button
                     onClick={handleCopiarFaltantes}
                     title="Copiar lista de IDs faltantes"
-                    className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 text-amber-300 text-[11px] font-medium transition-all flex items-center gap-1.5"
+                    className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 text-amber-300 text-[11px] font-medium transition-colors flex items-center gap-1.5"
                   >
                     {copiadoTipo === "faltantes" ? (
                       <>
@@ -502,7 +502,7 @@ export default function VerificadorIDsTab({
                   <button
                     onClick={handleCopiarTemplateJSON}
                     title="Copiar template JSON para importar as questões faltantes"
-                    className="px-2.5 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/25 text-blue-300 text-[11px] font-medium transition-all flex items-center gap-1.5"
+                    className="px-2.5 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/25 text-blue-300 text-[11px] font-medium transition-colors flex items-center gap-1.5"
                   >
                     {copiadoTipo === "json" ? (
                       <>
@@ -656,7 +656,7 @@ export default function VerificadorIDsTab({
                                   <button
                                     onClick={() => onSelectQuestion(item.questao!)}
                                     title="Resolver questão"
-                                    className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-medium transition-all active:scale-95 flex items-center gap-1"
+                                    className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-medium transition-colors flex items-center gap-1"
                                   >
                                     <Play size={10} />
                                     <span>Resolver</span>
@@ -671,7 +671,7 @@ export default function VerificadorIDsTab({
                                     navigator.clipboard.writeText(item.idNormalizado);
                                   }}
                                   title="Copiar ID"
-                                  className="px-2.5 py-1 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] text-slate-400 hover:text-white text-[10px] font-medium transition-all"
+                                  className="px-2.5 py-1 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] text-slate-400 hover:text-white text-[10px] font-medium transition-colors"
                                 >
                                   Copiar
                                 </button>

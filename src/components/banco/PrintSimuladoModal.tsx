@@ -402,12 +402,12 @@ export function PrintSimuladoModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col bg-slate-950/90 backdrop-blur-md overflow-hidden text-slate-900">
+    <div className="fixed inset-0 z-[200] flex flex-col bg-slate-950/95 overflow-hidden text-slate-900">
 
       {/* ── Topbar de Controles ── */}
-      <div className="bg-[#0f172a] border-b border-slate-800 p-4 flex items-center justify-between gap-4 shrink-0 shadow-2xl text-white">
+      <div className="bg-[#0f172a] border-b border-slate-800 p-4 flex items-center justify-between gap-4 shrink-0 text-white">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
+          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white">
             <Printer size={20} />
           </div>
           <div>
@@ -422,7 +422,7 @@ export function PrintSimuladoModal({
           {/* Gabarito */}
           <button
             onClick={() => setIncludeAnswers(!includeAnswers)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 border ${
               includeAnswers
                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
                 : 'bg-slate-800 border-slate-700 text-slate-400'
@@ -435,7 +435,7 @@ export function PrintSimuladoModal({
           {/* Comentários */}
           <button
             onClick={() => setIncludeComments(!includeComments)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 border ${
               includeComments
                 ? 'bg-purple-500/10 border-purple-500/30 text-purple-400'
                 : 'bg-slate-800 border-slate-700 text-slate-400'
@@ -448,7 +448,7 @@ export function PrintSimuladoModal({
           {/* Botão principal */}
           <button
             onClick={handlePrint}
-            className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all shadow-lg shadow-blue-600/30 flex items-center gap-2 active:scale-95 uppercase tracking-wider"
+            className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-colors flex items-center gap-2 uppercase tracking-wider"
           >
             <Printer size={15} /> Abrir & Imprimir / PDF
           </button>
@@ -456,7 +456,7 @@ export function PrintSimuladoModal({
           {/* Fechar */}
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all"
+            className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
           >
             <X size={18} />
           </button>
@@ -465,7 +465,7 @@ export function PrintSimuladoModal({
 
       {/* ── Preview Visual da Prova ── */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-900">
-        <div className="max-w-4xl mx-auto bg-white text-slate-900 p-8 sm:p-12 rounded-2xl shadow-2xl font-serif text-sm leading-relaxed">
+        <div className="max-w-4xl mx-auto bg-white text-slate-900 p-8 sm:p-12 rounded-2xl font-serif text-sm leading-relaxed">
 
           {/* Cabeçalho */}
           <div className="border-b-2 border-slate-900 pb-4 mb-6">

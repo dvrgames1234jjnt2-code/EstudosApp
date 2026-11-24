@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   GraduationCap,
   ArrowLeft,
@@ -462,17 +461,11 @@ export default function BancoPage() {
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans">
 
-      {/* Background glows */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[60%] bg-blue-600/[0.03] blur-[140px] rounded-full" />
-        <div className="absolute -bottom-[20%] -right-[10%] w-[40%] h-[50%] bg-indigo-600/[0.03] blur-[140px] rounded-full" />
-      </div>
-
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 h-16 border-b border-white/[0.05] bg-[#020617]/80 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between gap-4">
+      <nav className="sticky top-0 z-50 h-16 border-b border-white/[0.05] bg-[#020617] px-4 sm:px-8 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/30">
+            <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center">
               <GraduationCap size={16} className="text-white" />
             </div>
             <div className="hidden sm:block">
@@ -490,19 +483,17 @@ export default function BancoPage() {
           {/* Botão de Destaque Imprimir Simulado na Topbar */}
           <button
             onClick={() => setShowGlobalPrintModal(true)}
-            className="flex items-center gap-2 px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-[11px] font-black uppercase tracking-wider shadow-lg shadow-blue-600/20 transition-all active:scale-95 shrink-0"
+            className="flex items-center gap-2 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[11px] font-black uppercase tracking-wider transition-colors shrink-0"
           >
             <Printer size={13} /> Imprimir Simulado
           </button>
 
           <button
             onClick={() => { fetchQuestions(); if (user) fetchUserAnswers(user.id); }}
-            className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.06] text-slate-600 hover:text-blue-400 transition-all"
+            className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.06] text-slate-600 hover:text-blue-400 transition-colors"
           >
             <RefreshCw size={13} className={loadingQuestions ? "animate-spin" : ""} />
           </button>
-
-
 
           {user ? (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.03] border border-white/[0.06] rounded-xl">
@@ -514,7 +505,7 @@ export default function BancoPage() {
           ) : (
             <button
               onClick={() => setShowAuthModal(true)}
-              className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95"
+              className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-colors"
             >
               <Lock size={11} /> Entrar
             </button>
@@ -523,7 +514,7 @@ export default function BancoPage() {
       </nav>
 
       {/* Sub-navbar / Tab Bar Sutil */}
-      <div className="sticky top-16 z-40 border-b border-white/[0.06] bg-[#020617]/90 backdrop-blur-md px-4 sm:px-8">
+      <div className="sticky top-16 z-40 border-b border-white/[0.06] bg-[#020617] px-4 sm:px-8">
         <div className="flex items-center gap-1.5 w-full max-w-[1920px] mx-auto overflow-x-auto py-2 custom-scrollbar">
           {[
             { id: "resolver",   icon: <Layers size={13} />,         label: "Questão Ativa", badge: selectedQuestion ? "●" : null },
@@ -546,9 +537,9 @@ export default function BancoPage() {
                   setActiveTab(tab.id as ActiveTab);
                 }}
                 disabled={isDisabled}
-                className={`relative px-3.5 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 ${
+                className={`relative px-3.5 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 ${
                   isSelected
-                    ? "bg-blue-600/15 text-blue-400 border border-blue-500/30 shadow-sm"
+                    ? "bg-blue-600/15 text-blue-400 border border-blue-500/30"
                     : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border border-transparent"
                 }`}
               >
@@ -564,7 +555,7 @@ export default function BancoPage() {
                   </span>
                 )}
                 {tab.badge && (
-                  <span className="text-[8px] text-blue-400 animate-pulse">{tab.badge}</span>
+                  <span className="text-[8px] text-blue-400">{tab.badge}</span>
                 )}
               </button>
             );
@@ -574,24 +565,13 @@ export default function BancoPage() {
 
       {/* Main */}
       <main className="w-full max-w-[1920px] mx-auto px-4 sm:px-8 py-6">
-        <AnimatePresence mode="wait">
-
           {/* ── BANCO ── */}
           {activeTab === "banco" && (
-            <motion.div
-              key="banco"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-            >
+            <div>
               {loadingQuestions || loadingUser ? (
                 <div className="flex flex-col items-center justify-center py-32 gap-6">
-                  <div className="relative">
-                    <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
-                    <div className="absolute inset-0 bg-blue-600/20 blur-xl animate-pulse" />
-                  </div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-700 animate-pulse">
+                  <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-700">
                     Carregando Banco de Questões...
                   </p>
                 </div>
@@ -608,7 +588,7 @@ export default function BancoPage() {
                       </div>
                       <button
                         onClick={() => setShowAuthModal(true)}
-                        className="shrink-0 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-black text-[10px] uppercase tracking-widest transition-all active:scale-95"
+                        className="shrink-0 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-black text-[10px] uppercase tracking-widest transition-colors"
                       >
                         Entrar
                       </button>
@@ -628,19 +608,12 @@ export default function BancoPage() {
                   />
                 </>
               )}
-            </motion.div>
+            </div>
           )}
 
           {/* ── RESOLVER ── */}
           {activeTab === "resolver" && selectedQuestion && (
-            <motion.div
-              key={`resolver-${resolverIndex}`}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-              className="w-full max-w-[1750px] mx-auto px-2 sm:px-4"
-            >
+            <div className="w-full max-w-[1750px] mx-auto px-2 sm:px-4">
               <div className="w-full h-full min-h-[calc(100vh-200px)] flex flex-col">
                 <QuestionResolver
                   question={resolverQueue[resolverIndex]}
@@ -670,7 +643,7 @@ export default function BancoPage() {
                   }}
                 />
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* ── DESEMPENHO ── */}
@@ -703,15 +676,8 @@ export default function BancoPage() {
               : `${questions.length} questões`;
 
             return (
-              <motion.div
-                key="desempenho"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-                className="w-full max-w-6xl mx-auto px-4"
-              >
-                <div className="flex flex-col h-full min-h-0 w-full bg-[#0b0f19]/80 rounded-[2rem] border border-white/[0.04] p-6 sm:p-8 relative overflow-x-hidden gap-6">
+              <div className="w-full max-w-6xl mx-auto px-4">
+                <div className="flex flex-col h-full min-h-0 w-full bg-[#0b0f19] rounded-[2rem] border border-white/[0.04] p-6 sm:p-8 relative overflow-x-hidden gap-6">
                   {/* Header */}
                   <div className="flex items-center justify-between px-4 py-3 bg-[#121626] rounded-2xl border border-white/[0.04] gap-3">
                     <div className="flex items-center gap-3">
@@ -723,10 +689,10 @@ export default function BancoPage() {
                         <div className="flex items-center gap-2 mt-1">
                           <div className="relative group cursor-pointer">
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 transition-colors ${isQueueFiltered ? 'text-blue-300 bg-blue-500/20 border border-blue-500/30' : 'text-slate-400 bg-[#1e2436] hover:text-slate-200'}`}>
-                              {isQueueFiltered && <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse shrink-0" />}
+                              {isQueueFiltered && <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />}
                               {currentProvaName} <ChevronDown size={10} className="opacity-50" />
                             </span>
-                            <div className="absolute top-full left-0 mt-1.5 w-max bg-[#1e2436] border border-white/[0.04] rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 max-h-56 overflow-y-auto custom-scrollbar">
+                            <div className="absolute top-full left-0 mt-1.5 w-max bg-[#1e2436] border border-white/[0.04] rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible z-50 max-h-56 overflow-y-auto custom-scrollbar">
                               <div className="p-1.5 space-y-0.5">
                                 {provasDisponiveis?.map((prova) => (
                                   <button key={prova} onClick={() => {
@@ -762,7 +728,7 @@ export default function BancoPage() {
                     {isQueueFiltered && (
                       <button
                         onClick={() => { setResolverQueue(questions); setResolverIndex(0); }}
-                        className="px-3 py-1.5 rounded-lg bg-blue-600/10 border border-blue-500/20 text-[10px] font-medium text-blue-400 hover:bg-blue-600/20 transition-all flex items-center gap-1.5"
+                        className="px-3 py-1.5 rounded-lg bg-blue-600/10 border border-blue-500/20 text-[10px] font-medium text-blue-400 hover:bg-blue-600/20 transition-colors flex items-center gap-1.5"
                       >
                         <RefreshCw size={10} /> Ver Todas
                       </button>
@@ -820,7 +786,7 @@ export default function BancoPage() {
                           const errQueue = resolverQueue.filter(q => userAnswers[String(q.id)] && !userAnswers[String(q.id)]?.isCorrect);
                           setResolverQueue(errQueue); setResolverIndex(0); setSelectedQuestion(errQueue[0]); setActiveTab("resolver");
                         }}
-                        className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg text-[11px] font-medium text-rose-300 transition-all flex items-center gap-1.5 outline-none"
+                        className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg text-[11px] font-medium text-rose-300 transition-colors flex items-center gap-1.5 outline-none"
                       >
                         Refazer Erros ({errorCount})
                       </button>
@@ -831,7 +797,7 @@ export default function BancoPage() {
                           const unQueue = resolverQueue.filter(q => !userAnswers[String(q.id)]);
                           setResolverQueue(unQueue); setResolverIndex(0); setSelectedQuestion(unQueue[0]); setActiveTab("resolver");
                         }}
-                        className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg text-[11px] font-medium text-blue-300 transition-all flex items-center gap-1.5 outline-none"
+                        className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg text-[11px] font-medium text-blue-300 transition-colors flex items-center gap-1.5 outline-none"
                       >
                         Resolver Pendentes ({resolverQueue.length - answeredCount})
                       </button>
@@ -842,7 +808,7 @@ export default function BancoPage() {
                           const duvQueue = resolverQueue.filter(q => duvidas.has(String(q.id)));
                           setResolverQueue(duvQueue); setResolverIndex(0); setSelectedQuestion(duvQueue[0]); setActiveTab("resolver");
                         }}
-                        className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-lg text-[11px] font-medium text-amber-300 transition-all flex items-center gap-1.5 outline-none"
+                        className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-lg text-[11px] font-medium text-amber-300 transition-colors flex items-center gap-1.5 outline-none"
                       >
                         Praticar Dúvidas ({resolverQueue.filter(q => duvidas.has(String(q.id))).length})
                       </button>
@@ -906,7 +872,7 @@ export default function BancoPage() {
                                       <button
                                         key={q.id}
                                         onClick={() => { setResolverIndex(idx); setSelectedQuestion(q); setActiveTab("resolver"); }}
-                                        className={`relative w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-medium transition-all border shrink-0 outline-none ${boxStyle}`}
+                                        className={`relative w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-medium border shrink-0 outline-none ${boxStyle}`}
                                       >
                                         {idx + 1}
                                         {isMarkedDuvida && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 border border-[#111623]" />}
@@ -936,7 +902,7 @@ export default function BancoPage() {
                               </div>
                               <div className="h-1.5 w-full bg-white/[0.05] rounded-full overflow-hidden">
                                 <div
-                                  className={`h-full rounded-full transition-all duration-300 ${
+                                  className={`h-full rounded-full ${
                                     topicAcc >= 70 ? "bg-emerald-500" : topicAcc >= 50 ? "bg-amber-500" : "bg-rose-500"
                                   }`}
                                   style={{ width: `${topicAcc}%` }}
@@ -949,7 +915,7 @@ export default function BancoPage() {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             );
           })()}
 
@@ -1072,11 +1038,11 @@ export default function BancoPage() {
               const status = answered === 0 ? "nao_iniciado" : answered === total ? "concluido" : "em_andamento";
 
               return (
-                <motion.div key="simulado-detail" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+                <div>
                   <div className="flex items-center gap-3 mb-6">
                     <button
                       onClick={() => setSelectedSimulado(null)}
-                      className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center text-slate-400 hover:text-slate-200 transition-all"
+                      className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center text-slate-400 hover:text-slate-200 transition-colors"
                     >
                       <ArrowLeft size={14} />
                     </button>
@@ -1094,7 +1060,7 @@ export default function BancoPage() {
                           setSelectedQuestion(d.questions[startIdx]);
                           setActiveTab("resolver");
                         }}
-                        className={`px-4 py-2 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 transition-all ${
+                        className={`px-4 py-2 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 transition-colors ${
                           status === "nao_iniciado" ? "bg-blue-600 hover:bg-blue-500 text-white"
                           : status === "concluido" ? "bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.1] text-slate-300"
                           : "bg-amber-500/20 border border-amber-500/20 hover:bg-amber-500/30 text-amber-300"
@@ -1130,7 +1096,7 @@ export default function BancoPage() {
                     </div>
                     <div className="h-2 w-full bg-white/[0.05] rounded-full overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all duration-500 ${accuracy >= 70 ? "bg-emerald-500" : accuracy >= 50 ? "bg-amber-500" : answered === 0 ? "bg-slate-700" : "bg-rose-500"}`}
+                        className={`h-full rounded-full ${accuracy >= 70 ? "bg-emerald-500" : accuracy >= 50 ? "bg-amber-500" : answered === 0 ? "bg-slate-700" : "bg-rose-500"}`}
                         style={{ width: `${progress}%` }}
                       />
                     </div>
@@ -1155,7 +1121,7 @@ export default function BancoPage() {
                               setSelectedQuestion(q);
                               setActiveTab("resolver");
                             }}
-                            className={`w-9 h-9 rounded-xl border text-[11px] font-bold transition-all hover:scale-110 ${cls}`}
+                            className={`w-9 h-9 rounded-xl border text-[11px] font-bold transition-colors ${cls}`}
                           >
                             {qi + 1}
                           </button>
@@ -1163,7 +1129,7 @@ export default function BancoPage() {
                       })}
                     </div>
                   </div>
-                </motion.div>
+                </div>
               );
             }
 
@@ -1172,9 +1138,9 @@ export default function BancoPage() {
 
             // ─── Renderização Principal: Réplica idêntica do Dashboard da Imagem (Versão Compacta + Filtros) ─────
             return (
-              <motion.div key="simulados-dashboard" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }} className="space-y-5">
+              <div className="space-y-5">
                 {/* BARRA DE FILTROS SUPERIOR COMPACTA */}
-                <div className="bg-[#0b0f1d] border border-white/[0.08] rounded-2xl p-3 flex flex-col md:flex-row items-center justify-between gap-3 shadow-lg">
+                <div className="bg-[#0b0f1d] border border-white/[0.08] rounded-2xl p-3 flex flex-col md:flex-row items-center justify-between gap-3">
                   {/* Busca por texto */}
                   <div className="relative flex-1 w-full">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
@@ -1183,7 +1149,7 @@ export default function BancoPage() {
                       placeholder="Buscar por prova, nº, concurso, família..."
                       value={simuladoSearch}
                       onChange={(e) => setSimuladoSearch(e.target.value)}
-                      className="w-full bg-[#151b2d] border border-white/10 rounded-xl pl-9 pr-8 py-1.5 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/50 transition-all"
+                      className="w-full bg-[#151b2d] border border-white/10 rounded-xl pl-9 pr-8 py-1.5 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/50 transition-colors"
                     />
                     {simuladoSearch && (
                       <button
@@ -1200,7 +1166,7 @@ export default function BancoPage() {
                     <select
                       value={simuladoFamiliaFilter}
                       onChange={(e) => setSimuladoFamiliaFilter(e.target.value)}
-                      className="bg-[#151b2d] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/50 transition-all"
+                      className="bg-[#151b2d] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/50 transition-colors"
                     >
                       <option value="todas">Todas as Famílias</option>
                       {todasFamilias.map(f => (
@@ -1219,9 +1185,9 @@ export default function BancoPage() {
                         <button
                           key={st.id}
                           onClick={() => setSimuladoStatusFilter(st.id as any)}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors ${
                             simuladoStatusFilter === st.id
-                              ? "bg-blue-600 text-white shadow-sm"
+                              ? "bg-blue-600 text-white"
                               : "text-slate-400 hover:text-slate-200"
                           }`}
                         >
@@ -1300,7 +1266,7 @@ export default function BancoPage() {
                     return (
                       <div
                         key={blocoKey}
-                        className="bg-[#0b0f1d] border border-white/[0.08] rounded-2xl p-3.5 sm:p-4 space-y-3 shadow-xl backdrop-blur-xl flex flex-col justify-between"
+                        className="bg-[#0b0f1d] border border-white/[0.08] rounded-2xl p-3.5 sm:p-4 space-y-3 flex flex-col justify-between"
                       >
                         {/* 1. TOPO SUPERIOR (Familiaridade / Concurso | Status Globais) */}
                         <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-white/[0.05]">
@@ -1454,7 +1420,7 @@ export default function BancoPage() {
                                                   setActiveTab("desempenho");
                                                 }}
                                                 title={`${prova.rawName} — ${prova.answered}/${qTot} feitas · clique para ver o desempenho`}
-                                                className={`w-7 h-7 rounded-md border font-mono font-bold text-[10px] transition-all hover:scale-105 active:scale-95 flex items-center justify-center ${tileStyle}`}
+                                                className={`w-7 h-7 rounded-md border font-mono font-bold text-[10px] transition-colors flex items-center justify-center ${tileStyle}`}
                                               >
                                                 {prova.numero}
                                               </button>
@@ -1473,58 +1439,38 @@ export default function BancoPage() {
                     );
                   })}
                 </div>
-              </motion.div>
+              </div>
             );
           })()}
 
           {/* ── FIXAÇÃO (oculta) ── */}
           {activeTab === "fixacao" && (
-            <motion.div key="fixacao" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <div>
               <FixationDashboardView />
-            </motion.div>
+            </div>
           )}
 
           {/* ── NOTION QUESTION ── */}
           {activeTab === "notion" && (
-            <motion.div
-              key="notion"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-            >
+            <div>
               <NotionQuestionTab user={user} />
-            </motion.div>
+            </div>
           )}
 
           {/* ── CANTINHO 3D ── */}
           {activeTab === "cantinho" && (
-            <motion.div
-              key="cantinho"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-            >
+            <div>
               <StudyCorner3DTab user={user} onRequireAuth={() => setShowAuthModal(true)} />
-            </motion.div>
+            </div>
           )}
-
-
 
           {/* ── CADERNOS (ADMIN APENAS) ── */}
           {activeTab === "cadernos" && isAdmin && (
-            <motion.div
-              key="cadernos"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-            >
+            <div>
               {loadingQuestions ? (
                 <div className="flex flex-col items-center justify-center py-32 gap-6">
                   <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
-                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-700 animate-pulse">
+                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-700">
                     Carregando Cadernos...
                   </p>
                 </div>
@@ -1550,19 +1496,12 @@ export default function BancoPage() {
                   isAdmin={isAdmin}
                 />
               )}
-            </motion.div>
+            </div>
           )}
 
           {/* ── VERIFICADOR / CONFRONTAR IDS ── */}
           {activeTab === "verificador" && (
-            <motion.div
-              key="verificador"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="w-full max-w-6xl mx-auto"
-            >
+            <div className="w-full max-w-6xl mx-auto">
               <VerificadorIDsTab
                 questions={questions}
                 isAdmin={isAdmin}
@@ -1575,10 +1514,8 @@ export default function BancoPage() {
                 onEditQuestion={(q) => setEditingQuestion(q)}
                 onRefreshQuestions={fetchQuestions}
               />
-            </motion.div>
+            </div>
           )}
-
-        </AnimatePresence>
       </main>
 
       <AuthModal

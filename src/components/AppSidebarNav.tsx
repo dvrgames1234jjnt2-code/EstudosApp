@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   GraduationCap,
   Layers,
@@ -92,54 +91,46 @@ export function AppSidebarNav({
 
   ];
 
+  if (!isOpen) return null;
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Fundo Escuro com Blur Soft */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={onClose}
-            className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm"
-          />
+    <>
+      {/* Fundo Escuro */}
+      <div
+        onClick={onClose}
+        className="fixed inset-0 z-[90] bg-black/70"
+      />
 
-          {/* Drawer Lateral */}
-          <motion.aside
-            initial={{ x: "-100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
-            transition={{ type: "spring", stiffness: 350, damping: 32 }}
-            onMouseEnter={onMouseEnter}
-            onMouseLeave={onMouseLeave}
-            className="fixed left-0 top-0 bottom-0 z-[100] w-80 sm:w-84 bg-[#070b19]/95 backdrop-blur-2xl border-r border-white/10 shadow-[25px_0_60px_rgba(0,0,0,0.85)] flex flex-col justify-between overflow-hidden"
-          >
-            {/* Header da Sidebar */}
-            <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-600/30">
-                  <GraduationCap className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-black text-white tracking-tight leading-none flex items-center gap-1.5">
-                    Navegação <span className="text-blue-400">Banco</span>
-                  </h2>
-                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">
-                    Estação de Treinamento
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={onClose}
-                className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/10 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-all"
-                title="Fechar Menu (Esc)"
-              >
-                <X size={15} />
-              </button>
+      {/* Drawer Lateral */}
+      <aside
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        className="fixed left-0 top-0 bottom-0 z-[100] w-80 sm:w-84 bg-[#070b19] border-r border-white/10 shadow-lg flex flex-col justify-between overflow-hidden"
+      >
+        {/* Header da Sidebar */}
+        <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
+              <GraduationCap className="w-5 h-5 text-white" />
             </div>
+            <div>
+              <h2 className="text-sm font-black text-white tracking-tight leading-none flex items-center gap-1.5">
+                Navegação <span className="text-blue-400">Banco</span>
+              </h2>
+              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+                Estação de Treinamento
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/10 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+            title="Fechar Menu (Esc)"
+          >
+            <X size={15} />
+          </button>
+        </div>
 
             {/* Conteúdo com Scroll */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
@@ -163,14 +154,14 @@ export function AppSidebarNav({
                         if (onSelectTab) onSelectTab(item.id);
                         onClose();
                       }}
-                      className={`w-full group relative flex items-center gap-3 p-3 rounded-2xl border text-left transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
+                      className={`w-full group relative flex items-center gap-3 p-3 rounded-2xl border text-left transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                         isSelected
-                          ? "bg-blue-600/15 border-blue-500/40 shadow-lg shadow-blue-500/10"
+                          ? "bg-blue-600/15 border-blue-500/40"
                           : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.06] hover:border-white/15"
                       }`}
                     >
                       <div
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br ${item.color} shadow-md transition-transform group-hover:scale-105`}
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br ${item.color}`}
                       >
                         <Icon className="w-4 h-4 text-white" />
                       </div>
@@ -202,7 +193,7 @@ export function AppSidebarNav({
 
                       <ChevronRight
                         size={14}
-                        className={`shrink-0 transition-transform group-hover:translate-x-0.5 ${
+                        className={`shrink-0 ${
                           isSelected ? "text-blue-400 opacity-100" : "text-slate-600 opacity-0 group-hover:opacity-100"
                         }`}
                       />
@@ -221,9 +212,7 @@ export function AppSidebarNav({
                 v2.0
               </span>
             </div>
-          </motion.aside>
-        </>
-      )}
-    </AnimatePresence>
+      </aside>
+    </>
   );
 }

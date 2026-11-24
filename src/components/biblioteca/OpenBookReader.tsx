@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
   ChevronRight,
@@ -235,7 +234,7 @@ function QuestionPageContent({
 
         <button
           onClick={onToggleDuvida}
-          className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-serif transition-all shrink-0 ${
+          className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-serif transition-colors shrink-0 ${
             isCurrentDuvida
               ? "bg-amber-100 text-amber-800 border border-amber-300 font-semibold"
               : "text-stone-500 hover:bg-stone-200/80"
@@ -296,7 +295,7 @@ function QuestionPageContent({
             <div
               key={alt.letter}
               onClick={() => !isAnswered && onAnswer(alt.letter)}
-              className={`flex items-start gap-2.5 px-3 py-2 rounded-lg border transition-all ${rowStyle}`}
+              className={`flex items-start gap-2.5 px-3 py-2 rounded-lg border transition-colors ${rowStyle}`}
             >
               <span
                 className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold shrink-0 mt-0.5 border ${
@@ -510,20 +509,14 @@ export default function OpenBookReader({
   const progressAngle = (stats.respondidas / Math.max(1, caderno.questoes.length)) * 360;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/82 backdrop-blur-md overflow-hidden select-none"
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/88 overflow-hidden select-none">
       {/* ── BARRA DE CONTROLES ──────────────────────────────────────────────── */}
       <div className="absolute top-3 inset-x-4 z-60 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           {/* Fechar */}
           <button
             onClick={onClose}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-900/90 hover:bg-stone-800 text-stone-300 hover:text-white border border-stone-700/60 shadow-lg transition-all text-xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-900/90 hover:bg-stone-800 text-stone-300 hover:text-white border border-stone-700/60 transition-colors text-xs"
           >
             <ChevronLeft size={13} />
             <span>Fechar Livro</span>
@@ -539,7 +532,7 @@ export default function OpenBookReader({
           {/* Botão sumário */}
           <button
             onClick={() => setShowSummary((v) => !v)}
-            className={`p-1.5 rounded-lg border shadow transition-all text-xs ${
+            className={`p-1.5 rounded-lg border transition-colors text-xs ${
               showSummary
                 ? "bg-amber-900/30 text-amber-300 border-amber-700/50"
                 : "bg-stone-900/90 text-stone-400 hover:text-amber-300 border-stone-700/50"
@@ -561,7 +554,7 @@ export default function OpenBookReader({
 
           <button
             onClick={() => setSoundEnabled((v) => !v)}
-            className="p-1.5 rounded-lg bg-stone-900/90 hover:bg-stone-800 text-stone-400 hover:text-amber-300 border border-stone-700/50 shadow transition-all"
+            className="p-1.5 rounded-lg bg-stone-900/90 hover:bg-stone-800 text-stone-400 hover:text-amber-300 border border-stone-700/50 transition-colors"
             title={soundEnabled ? "Desativar som de papel" : "Ativar som de papel"}
           >
             {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
@@ -569,7 +562,7 @@ export default function OpenBookReader({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg bg-stone-900/90 hover:bg-rose-900/60 text-stone-400 hover:text-rose-300 border border-stone-700/50 shadow transition-all"
+            className="p-1.5 rounded-lg bg-stone-900/90 hover:bg-rose-900/60 text-stone-400 hover:text-rose-300 border border-stone-700/50 transition-colors"
             title="Fechar"
           >
             <X size={15} />
@@ -578,15 +571,8 @@ export default function OpenBookReader({
       </div>
 
       {/* ── SUMÁRIO LATERAL (Drawer) ─────────────────────────────────────────── */}
-      <AnimatePresence>
-        {showSummary && (
-          <motion.div
-            initial={{ x: -320, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -320, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed left-0 top-0 bottom-0 w-72 z-50 bg-stone-900/98 border-r border-stone-700/60 shadow-2xl overflow-y-auto flex flex-col"
-          >
+      {showSummary && (
+        <div className="fixed left-0 top-0 bottom-0 w-72 z-50 bg-stone-900 border-r border-stone-700/60 shadow-lg overflow-y-auto flex flex-col">
             <div className="p-4 border-b border-stone-800 flex items-center justify-between">
               <h3 className="font-serif font-bold text-stone-100 text-sm">{caderno.nome}</h3>
               <button
@@ -623,7 +609,7 @@ export default function OpenBookReader({
               <div className="space-y-1">
                 <button
                   onClick={() => { setSelectedCasoId("todos"); setCurrentIndex(0); }}
-                  className={`w-full text-left px-2 py-1.5 rounded text-xs transition-all flex items-center justify-between ${
+                  className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors flex items-center justify-between ${
                     selectedCasoId === "todos"
                       ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                       : "text-stone-400 hover:bg-stone-800 hover:text-stone-200"
@@ -636,7 +622,7 @@ export default function OpenBookReader({
                   <button
                     key={c.id}
                     onClick={() => { setSelectedCasoId(c.id); setCurrentIndex(0); }}
-                    className={`w-full text-left px-2 py-1.5 rounded text-xs transition-all flex items-center justify-between ${
+                    className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors flex items-center justify-between ${
                       selectedCasoId === c.id
                         ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                         : "text-stone-400 hover:bg-stone-800 hover:text-stone-200"
@@ -657,7 +643,7 @@ export default function OpenBookReader({
                   <button
                     key={f}
                     onClick={() => { setFilterMode(f); setCurrentIndex(0); }}
-                    className={`py-1.5 rounded text-[10px] font-bold uppercase tracking-wide transition-all ${
+                    className={`py-1.5 rounded text-[10px] font-bold uppercase tracking-wide transition-colors ${
                       filterMode === f
                         ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                         : "text-stone-500 hover:bg-stone-800 hover:text-stone-300"
@@ -692,7 +678,7 @@ export default function OpenBookReader({
                         setCurrentIndex(idx);
                         setShowSummary(false);
                       }}
-                      className={`relative h-7 rounded text-[10px] font-mono flex items-center justify-center border transition-all ${cls} ${
+                      className={`relative h-7 rounded text-[10px] font-mono flex items-center justify-center border transition-colors ${cls} ${
                         isCur ? "ring-2 ring-amber-400 ring-offset-1 ring-offset-stone-900" : "hover:opacity-80"
                       }`}
                     >
@@ -705,9 +691,8 @@ export default function OpenBookReader({
                 })}
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
 
       {/* ── O LIVRO ABERTO ──────────────────────────────────────────────────── */}
       <div
@@ -738,7 +723,7 @@ export default function OpenBookReader({
 
         {/* Pilha de folhas à esquerda (já lidas) */}
         <div
-          className="absolute left-4 top-6 bottom-6 rounded-l pointer-events-none transition-all duration-500"
+          className="absolute left-4 top-6 bottom-6 rounded-l pointer-events-none"
           style={{
             width: `${leftPx}px`,
             background: "repeating-linear-gradient(to right, #d9cfb3, #d9cfb3 1px, #f0e8d4 1px, #f0e8d4 2px)",
@@ -749,7 +734,7 @@ export default function OpenBookReader({
 
         {/* Pilha de folhas à direita (por ler) */}
         <div
-          className="absolute right-4 top-6 bottom-6 rounded-r pointer-events-none transition-all duration-500"
+          className="absolute right-4 top-6 bottom-6 rounded-r pointer-events-none"
           style={{
             width: `${rightPx}px`,
             background: "repeating-linear-gradient(to left, #d9cfb3, #d9cfb3 1px, #f0e8d4 1px, #f0e8d4 2px)",
@@ -780,9 +765,7 @@ export default function OpenBookReader({
           >
             {/* Corner peel na borda esquerda ao hover — volta página */}
             {edgeHover === "left" && currentIndex > 0 && !flip && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.6 }}
-                animate={{ opacity: 1, scale: 1 }}
+              <div
                 className="absolute bottom-2 left-2 w-12 h-12 z-30 cursor-pointer flex items-end justify-start p-1.5"
                 style={{
                   clipPath: "polygon(0 0, 0 100%, 100% 100%)",
@@ -793,7 +776,7 @@ export default function OpenBookReader({
                 title="Clique para voltar"
               >
                 <ChevronLeft size={12} className="text-amber-900" />
-              </motion.div>
+              </div>
             )}
 
             <QuestionPageContent
@@ -839,9 +822,7 @@ export default function OpenBookReader({
           >
             {/* Corner peel na borda direita ao hover — avança página */}
             {edgeHover === "right" && currentIndex < filteredQuestions.length - 1 && !flip && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.6 }}
-                animate={{ opacity: 1, scale: 1 }}
+              <div
                 className="absolute bottom-2 right-2 w-12 h-12 z-30 cursor-pointer flex items-end justify-end p-1.5"
                 style={{
                   clipPath: "polygon(100% 0, 0 100%, 100% 100%)",
@@ -852,7 +833,7 @@ export default function OpenBookReader({
                 title="Clique para virar"
               >
                 <ChevronRight size={12} className="text-amber-900" />
-              </motion.div>
+              </div>
             )}
 
             <QuestionPageContent
@@ -905,7 +886,7 @@ export default function OpenBookReader({
           <button
             onClick={() => executeFlip("prev")}
             disabled={currentIndex === 0 || !!flip}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-stone-900/85 hover:bg-stone-800 text-stone-300 hover:text-white border border-stone-700/60 shadow-lg transition-all text-xs disabled:opacity-35 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-stone-900/85 hover:bg-stone-800 text-stone-300 hover:text-white border border-stone-700/60 transition-colors text-xs disabled:opacity-35 disabled:cursor-not-allowed"
           >
             <ChevronLeft size={14} />
             <span>Anterior</span>
@@ -918,7 +899,7 @@ export default function OpenBookReader({
           <button
             onClick={() => executeFlip("next")}
             disabled={currentIndex >= filteredQuestions.length - 1 || !!flip}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-900/20 hover:bg-amber-900/35 text-amber-200 border border-amber-800/40 shadow-lg transition-all text-xs font-medium disabled:opacity-35 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-900/20 hover:bg-amber-900/35 text-amber-200 border border-amber-800/40 transition-colors text-xs font-medium disabled:opacity-35 disabled:cursor-not-allowed"
           >
             <span>Próxima</span>
             <ChevronRight size={14} />
@@ -934,6 +915,6 @@ export default function OpenBookReader({
           <span>Esc Fechar</span>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

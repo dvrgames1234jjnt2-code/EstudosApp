@@ -2,7 +2,6 @@
 
 import React from "react";
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import {
   CheckCircle2,
@@ -292,7 +291,6 @@ export default function QuestionResolver({
   const [showFeedback, setShowFeedback] = useState<boolean>(false);
   const [showComment, setShowComment] = useState<boolean>(false);
   const [showTextoApoio, setShowTextoApoio] = useState<boolean>(false);
-  const [isShaking, setIsShaking] = useState<boolean>(false);
   const [strikethroughs, setStrikethroughs] = useState<Record<string, boolean>>({});
   const [showHistory, setShowHistory] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
@@ -312,7 +310,6 @@ export default function QuestionResolver({
     setShowComment(false);
     setShowTextoApoio(false);
     setStrikethroughs({});
-    setIsShaking(false);
   }, [question.id]);
 
   const gabarito = question.respostaCorreta || question.Gabarito || "";
@@ -360,8 +357,6 @@ export default function QuestionResolver({
       }
     } else {
       playErrorSound();
-      setIsShaking(true);
-      setTimeout(() => setIsShaking(false), 600);
     }
   };
 
@@ -376,7 +371,6 @@ export default function QuestionResolver({
     setShowComment(false);
     setShowTextoApoio(false);
     setStrikethroughs({});
-    setIsShaking(false);
     onNext();
   };
 
@@ -386,7 +380,6 @@ export default function QuestionResolver({
     setShowComment(false);
     setShowTextoApoio(false);
     setStrikethroughs({});
-    setIsShaking(false);
     onPrev();
   };
 
@@ -426,7 +419,7 @@ export default function QuestionResolver({
             <button
               onClick={() => setShowPrintModal(true)}
               title="Imprimir / gerar PDF"
-              className="px-2.5 py-1.5 rounded-lg border border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200 text-[11px] font-medium transition-all flex items-center gap-1.5"
+              className="px-2.5 py-1.5 rounded-lg border border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200 text-[11px] font-medium transition-colors flex items-center gap-1.5"
             >
               <Printer size={13} /> Imprimir
             </button>
@@ -435,54 +428,49 @@ export default function QuestionResolver({
             <div className="relative">
               <button
                 onClick={() => setShowHistory(!showHistory)}
-                className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-medium transition-all flex items-center gap-1.5 ${
+                className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-medium transition-colors flex items-center gap-1.5 ${
                   showHistory
                     ? "border-blue-500/30 bg-blue-500/10 text-blue-300"
                     : "border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200"
                 }`}
               >
-                Histórico <ChevronDown size={11} className={`transition-transform ${showHistory ? "rotate-180" : ""}`} />
+                Histórico <ChevronDown size={11} className={showHistory ? "rotate-180" : ""} />
               </button>
-              <AnimatePresence>
-                {showHistory && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    className="absolute top-full right-0 mt-2 w-60 bg-[#181f2e] border border-white/[0.08] rounded-xl shadow-xl z-50 overflow-hidden"
-                  >
-                    <div className="px-4 py-2.5 border-b border-white/[0.06]">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Histórico desta questão</p>
+              {showHistory && (
+                <div
+                  className="absolute top-full right-0 mt-2 w-60 bg-[#181f2e] border border-white/[0.08] rounded-xl z-50 overflow-hidden"
+                >
+                  <div className="px-4 py-2.5 border-b border-white/[0.06]">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Histórico desta questão</p>
+                  </div>
+                  {stats ? (
+                    <div className="p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-slate-400">Tentativas</span>
+                        <span className="text-[11px] font-semibold text-white">{stats.totalAttempts}×</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-slate-400">Acertos</span>
+                        <span className="text-[11px] font-semibold text-emerald-400">{stats.correctCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-slate-400">Erros</span>
+                        <span className="text-[11px] font-semibold text-rose-400">{stats.errorCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-slate-400">Última resposta</span>
+                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
+                          stats.isCorrect ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
+                        }`}>{stats.lastAnswer} – {stats.isCorrect ? "Certo" : "Errado"}</span>
+                      </div>
                     </div>
-                    {stats ? (
-                      <div className="p-3 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] text-slate-400">Tentativas</span>
-                          <span className="text-[11px] font-semibold text-white">{stats.totalAttempts}×</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] text-slate-400">Acertos</span>
-                          <span className="text-[11px] font-semibold text-emerald-400">{stats.correctCount}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] text-slate-400">Erros</span>
-                          <span className="text-[11px] font-semibold text-rose-400">{stats.errorCount}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] text-slate-400">Última resposta</span>
-                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
-                            stats.isCorrect ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
-                          }`}>{stats.lastAnswer} – {stats.isCorrect ? "Certo" : "Errado"}</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-4 text-center">
-                        <p className="text-[12px] text-slate-500">Nenhuma resposta registrada ainda.</p>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                  ) : (
+                    <div className="p-4 text-center">
+                      <p className="text-[12px] text-slate-500">Nenhuma resposta registrada ainda.</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Progresso + Prev/Next */}
@@ -511,7 +499,7 @@ export default function QuestionResolver({
             {/* Barra de progresso fina */}
             <div className="h-0.5 bg-white/[0.06] rounded-full mb-2 overflow-hidden">
               <div
-                className="h-full bg-emerald-300/70 rounded-full transition-all duration-500"
+                className="h-full bg-emerald-300/70 rounded-full"
                 style={{ width: `${totalQuestions > 0 ? ((questionIndex + 1) / totalQuestions) * 100 : 0}%` }}
               />
             </div>
@@ -536,7 +524,7 @@ export default function QuestionResolver({
                   href={question.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[11px] font-medium text-blue-400 hover:text-blue-300 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5"
+                  className="text-[11px] font-medium text-blue-400 hover:text-blue-300 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-md transition-colors flex items-center gap-1.5"
                   title="Abrir página original da questão"
                 >
                   <ExternalLink size={11} />
@@ -546,7 +534,7 @@ export default function QuestionResolver({
               {isAdmin && onEditQuestion && (
                 <button
                   onClick={() => onEditQuestion(question)}
-                  className="text-[11px] font-medium text-amber-400 hover:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5"
+                  className="text-[11px] font-medium text-amber-400 hover:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-md transition-colors flex items-center gap-1.5"
                   title="Editar esta questão (Admin)"
                 >
                   <Pencil size={11} />
@@ -556,7 +544,7 @@ export default function QuestionResolver({
               {textoApoio && (
                 <button
                   onClick={() => setShowTextoApoio(!showTextoApoio)}
-                  className={`text-[11px] font-medium px-2.5 py-1 rounded-md border transition-all flex items-center gap-1.5 ${
+                  className={`text-[11px] font-medium px-2.5 py-1 rounded-md border transition-colors flex items-center gap-1.5 ${
                     showTextoApoio
                       ? "bg-blue-600/20 border-blue-500/30 text-blue-300"
                       : "bg-white/[0.03] border-white/[0.06] text-slate-400 hover:text-slate-200"
@@ -569,26 +557,17 @@ export default function QuestionResolver({
             </div>
 
             {/* Texto de Apoio colapsável */}
-            {textoApoio && (
-              <AnimatePresence>
-                {showTextoApoio && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="overflow-hidden mb-6"
-                  >
-                    <div className="p-4 sm:p-5 rounded-xl bg-[#111623] border-l-[3px] border-blue-500 border border-white/[0.06]">
-                      <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-blue-400 mb-2.5">
-                        <FileText size={12} /> Texto de Apoio
-                      </div>
-                      <div className="text-[13.5px] text-slate-300 leading-relaxed">
-                        {formatQuestionText(textoApoio)}
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+            {textoApoio && showTextoApoio && (
+              <div className="overflow-hidden mb-6">
+                <div className="p-4 sm:p-5 rounded-xl bg-[#111623] border-l-[3px] border-blue-500 border border-white/[0.06]">
+                  <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-blue-400 mb-2.5">
+                    <FileText size={12} /> Texto de Apoio
+                  </div>
+                  <div className="text-[13.5px] text-slate-300 leading-relaxed">
+                    {formatQuestionText(textoApoio)}
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* ── Enunciado ── */}
@@ -606,37 +585,28 @@ export default function QuestionResolver({
             )}
 
             {/* Banner de Feedback */}
-            <AnimatePresence>
-              {showFeedback && selectedOption && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border mb-5 text-[13px] font-medium ${
-                    isCorrect
-                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-                      : "bg-rose-500/10 border-rose-500/30 text-rose-300"
-                  }`}
-                >
+            {showFeedback && selectedOption && (
+              <div
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl border mb-5 text-[13px] font-medium ${
+                  isCorrect
+                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+                    : "bg-rose-500/10 border-rose-500/30 text-rose-300"
+                }`}
+              >
+                {isCorrect
+                  ? <CheckCircle2 size={17} className="shrink-0" />
+                  : <XCircle size={17} className="shrink-0" />
+                }
+                <span>
                   {isCorrect
-                    ? <CheckCircle2 size={17} className="shrink-0" />
-                    : <XCircle size={17} className="shrink-0" />
-                  }
-                  <span>
-                    {isCorrect
-                      ? "Resposta correta!"
-                      : `Incorreto. O gabarito é a alternativa ${gabarito}.`}
-                  </span>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    ? "Resposta correta!"
+                    : `Incorreto. O gabarito é a alternativa ${gabarito}.`}
+                </span>
+              </div>
+            )}
 
             {/* ── Alternativas ── */}
-            <motion.div
-              animate={isShaking ? { x: [0, -10, 10, -6, 6, -2, 2, 0] } : { x: 0 }}
-              transition={{ duration: 0.45 }}
-              className="overflow-hidden rounded-lg border border-white/[0.07]"
-            >
+            <div className="overflow-hidden rounded-lg border border-white/[0.07]">
               {hasAlternativas ? LETTERS.filter(l => alternativas[l]).map(letter => {
                 const text = alternativas[letter];
                 const isSelected = selectedOption === letter;
@@ -676,12 +646,12 @@ export default function QuestionResolver({
                     } ${cardCls}`}
                   >
                     {/* Badge circular */}
-                    <div className={`w-6 h-6 rounded-sm border flex items-center justify-center shrink-0 text-[10px] font-normal transition-all mt-0.5 ${badgeCls}`}>
+                    <div className={`w-6 h-6 rounded-sm border flex items-center justify-center shrink-0 text-[10px] font-normal mt-0.5 ${badgeCls}`}>
                       {letter}
                     </div>
 
                     {/* Texto */}
-                      <span className={`text-xs leading-[1.15rem] flex-1 font-normal transition-colors pt-0.5 ${
+                      <span className={`text-xs leading-[1.15rem] flex-1 font-normal pt-0.5 ${
                         strikethroughs[letter] ? "line-through text-slate-700" : textCls
                       }`}>
                       {formatQuestionText(text)}
@@ -703,7 +673,7 @@ export default function QuestionResolver({
                         onClick={(e) => { e.stopPropagation(); toggleStrikethrough(letter); }}
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); toggleStrikethrough(letter); } }}
                         title={strikethroughs[letter] ? "Restaurar alternativa" : "Eliminar alternativa"}
-                        className={`mt-1.5 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100 cursor-pointer ${
+                        className={`mt-1.5 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 cursor-pointer ${
                           strikethroughs[letter]
                             ? "text-rose-400 opacity-100 bg-rose-500/10"
                             : "text-slate-600 hover:text-rose-400 hover:bg-rose-500/5"
@@ -715,7 +685,7 @@ export default function QuestionResolver({
                   </button>
                 );
               }) : null}
-            </motion.div>
+            </div>
 
             {/* ── Botões de Ação ── */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 pb-1 mt-3 border-t border-white/[0.05]">
@@ -746,9 +716,9 @@ export default function QuestionResolver({
                   <button
                     onClick={handleConfirm}
                     disabled={isSaving || !selectedOption}
-                    className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${
+                    className={`px-4 py-2 rounded-lg text-xs font-medium transition-colors ${
                       selectedOption
-                        ? "bg-blue-600 hover:bg-blue-500 text-white active:scale-95"
+                        ? "bg-blue-600 hover:bg-blue-500 text-white"
                         : "bg-white/[0.04] text-slate-600 border border-white/[0.05] cursor-not-allowed"
                     }`}
                   >
@@ -758,14 +728,14 @@ export default function QuestionResolver({
 
                 <button
                   onClick={() => setShowFeedback(!showFeedback)}
-                  className="px-3 py-2 rounded-lg border border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200 text-xs font-medium transition-all"
+                  className="px-3 py-2 rounded-lg border border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200 text-xs font-medium transition-colors"
                 >
                   {showFeedback ? "Ocultar gabarito" : "Ver gabarito"}
                 </button>
 
                 <button
                   onClick={() => setShowComment(!showComment)}
-                  className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all flex items-center gap-2 ${
+                  className={`px-3 py-2 rounded-lg border text-xs font-medium transition-colors flex items-center gap-2 ${
                     showComment
                       ? "border-purple-500/30 bg-purple-500/10 text-purple-300"
                       : "border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200"
@@ -781,33 +751,26 @@ export default function QuestionResolver({
             </div>
 
             {/* ── Comentário ── */}
-            <AnimatePresence>
-              {showComment && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="mt-4 p-5 rounded-xl bg-[#111623] border-l-[3px] border-purple-500 border border-white/[0.06]">
-                    <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-purple-400 mb-3">
-                      <BrainCircuit size={13} />
-                      Comentário da questão
-                    </div>
-                    {comentarioTexto ? (
-                      <div className="text-[13.5px] text-[#D6D6D6] leading-relaxed">
-                        {formatQuestionText(comentarioTexto)}
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 text-[12px] text-slate-500">
-                        <AlertCircle size={13} className="text-amber-400" />
-                        Esta questão ainda não possui comentário cadastrado.
-                      </div>
-                    )}
+            {showComment && (
+              <div className="overflow-hidden">
+                <div className="mt-4 p-5 rounded-xl bg-[#111623] border-l-[3px] border-purple-500 border border-white/[0.06]">
+                  <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-purple-400 mb-3">
+                    <BrainCircuit size={13} />
+                    Comentário da questão
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  {comentarioTexto ? (
+                    <div className="text-[13.5px] text-[#D6D6D6] leading-relaxed">
+                      {formatQuestionText(comentarioTexto)}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-[12px] text-slate-500">
+                      <AlertCircle size={13} className="text-amber-400" />
+                      Esta questão ainda não possui comentário cadastrado.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="h-6" />
 
@@ -816,11 +779,11 @@ export default function QuestionResolver({
 
         {/* Coluna Direita: Qconcursos Lado a Lado */}
         {splitView && targetQconcursosUrl && (
-          <div className="w-full lg:w-1/2 flex flex-col h-[560px] lg:h-full rounded-2xl border border-white/[0.08] bg-[#0c1220] overflow-hidden shadow-2xl shrink-0">
+          <div className="w-full lg:w-1/2 flex flex-col h-[560px] lg:h-full rounded-2xl border border-white/[0.08] bg-[#0c1220] overflow-hidden shrink-0">
             {/* Header da divisão */}
             <div className="flex items-center justify-between px-3.5 py-2.5 bg-slate-900/90 border-b border-white/[0.08] shrink-0">
               <div className="flex items-center gap-2 min-w-0">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                <div className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
                 <span className="text-[11px] font-semibold text-slate-300 truncate">
                   Qconcursos Integrado
                 </span>
@@ -837,7 +800,7 @@ export default function QuestionResolver({
                     window.open(targetQconcursosUrl, "_blank", "width=780,height=900,left=800,top=50");
                   }}
                   title="Abrir em janela destacada lado a lado"
-                  className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all"
+                  className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-colors"
                 >
                   <ExternalLink size={10} />
                   <span className="hidden sm:inline">Janela Pop-up</span>
@@ -847,7 +810,7 @@ export default function QuestionResolver({
                   target="_blank"
                   rel="noopener noreferrer"
                   title="Abrir em nova aba do navegador"
-                  className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition-all"
+                  className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition-colors"
                 >
                   <ExternalLink size={10} />
                   <span className="hidden sm:inline">Nova Aba</span>
@@ -858,14 +821,14 @@ export default function QuestionResolver({
                     if (frame) frame.src = targetQconcursosUrl;
                   }}
                   title="Recarregar quadro"
-                  className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+                  className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
                 >
                   <RotateCcw size={11} />
                 </button>
                 <button
                   onClick={() => setSplitView(false)}
                   title="Fechar visualização lado a lado"
-                  className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-white/[0.06] transition-all ml-1"
+                  className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-white/[0.06] transition-colors ml-1"
                 >
                   <X size={13} />
                 </button>

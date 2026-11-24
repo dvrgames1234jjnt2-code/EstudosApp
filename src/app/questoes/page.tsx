@@ -82,7 +82,7 @@ export default function QuestoesPage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#020617] text-slate-200">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-[#020617]/90 backdrop-blur-md">
+      <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-[#020617]/95">
         <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/" className="text-slate-400 hover:text-white transition-colors">
@@ -101,7 +101,7 @@ export default function QuestoesPage() {
         
         {/* Left Column - Form */}
         <aside className="w-full lg:w-96 shrink-0 flex flex-col gap-4">
-          <div className="bg-[#0F172A] rounded-2xl border border-white/10 p-6 shadow-xl">
+          <div className="bg-[#0F172A] rounded-2xl border border-white/10 p-6">
             <h3 className="text-lg font-bold text-white mb-6">Criar Nova Questão</h3>
             
             <form onSubmit={generateQuestion} className="space-y-4">
@@ -147,7 +147,7 @@ export default function QuestoesPage() {
               <button 
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold text-sm shadow-lg shadow-indigo-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold text-sm transition-colors disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
               >
                 {isLoading ? (
                   <>
@@ -166,7 +166,7 @@ export default function QuestoesPage() {
         </aside>
 
         {/* Right Column - Question View */}
-        <main className="flex-1 w-full bg-[#0F172A] border border-white/5 rounded-2xl shadow-2xl text-slate-200 overflow-hidden min-h-[500px] flex flex-col">
+        <main className="flex-1 w-full bg-[#0F172A] border border-white/5 rounded-2xl text-slate-200 overflow-hidden min-h-[500px] flex flex-col">
           {!question && !isLoading && (
             <div className="flex-1 flex flex-col items-center justify-center text-slate-500 p-8 text-center space-y-4">
               <div className="w-16 h-16 rounded-2xl bg-indigo-500/5 flex items-center justify-center border border-white/5 mb-4">
@@ -180,7 +180,7 @@ export default function QuestoesPage() {
           {isLoading && (
             <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8 space-y-4">
               <Loader2 className="w-12 h-12 animate-spin text-indigo-500" />
-              <p className="font-medium animate-pulse">A IA está analisando o texto e criando alternativas...</p>
+              <p className="font-medium">A IA está analisando o texto e criando alternativas...</p>
             </div>
           )}
 
@@ -226,7 +226,7 @@ export default function QuestoesPage() {
                         key={idx}
                         onClick={() => handleSelectAnswer(opt)}
                         disabled={isAnswered}
-                        className={`w-full flex items-start gap-4 p-4 rounded-xl border text-left transition-all duration-200 ${optionClass}`}
+                        className={`w-full flex items-start gap-4 p-4 rounded-xl border text-left transition-colors ${optionClass}`}
                       >
                         <span className={`flex-shrink-0 w-8 h-8 rounded-full border text-sm flex items-center justify-center font-bold ${isSelected ? 'bg-indigo-500 text-white border-indigo-500' : 'border-slate-600 text-slate-400'} ${isAnswered && isActualCorrect ? 'bg-emerald-500 text-white border-emerald-500' : ''} ${isAnswered && isSelected && !isActualCorrect ? 'bg-red-500/20 text-red-400 border-red-500/50' : ''}`}>
                           {letter}
@@ -240,14 +240,14 @@ export default function QuestoesPage() {
                 {!isAnswered && selectedOption && (
                   <button 
                     onClick={handleConfirmAnswer}
-                    className="mt-6 w-full md:w-auto px-8 py-3 rounded-xl bg-white text-[#020617] font-bold text-sm hover:bg-slate-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                    className="mt-6 w-full md:w-auto px-8 py-3 rounded-xl bg-white text-[#020617] font-bold text-sm hover:bg-slate-200 transition-colors"
                   >
                     Confirmar Resposta
                   </button>
                 )}
 
                 {isAnswered && (
-                  <div className="mt-8 space-y-4 animate-fade-in">
+                  <div className="mt-8 space-y-4">
                     <div className={`p-6 rounded-xl border ${isCorrect ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
                       <div className="flex items-center gap-2 font-bold mb-3 text-lg">
                         {isCorrect ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}

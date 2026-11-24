@@ -8,7 +8,7 @@ import {
   Triangle, Flag, History, LayoutGrid, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Moon, Sun,
   Clock, HelpCircle, Filter, Flame, Calendar, BarChart3, Target, AlertTriangle,
   GripVertical, ArrowUp, ArrowDown, MoreVertical, Database, Printer, ListTree, Tag,
-  Ban, Trophy, FolderPlus, FolderInput, Pencil, FilePlus2
+  Ban, Trophy, FolderPlus, FolderInput, Pencil, FilePlus2, Folder, FileText
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { SyncBancoModal, type NotionIdChangeAlert } from "./SyncBancoModal";
@@ -30,6 +30,240 @@ const CATEGORIES = [
 ] as const;
 
 type CategoryKey = typeof CATEGORIES[number]["key"];
+
+function ClassificationValidationDropdown({
+  value,
+  onChange,
+  compact = false,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  compact?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  const selectedCat = CATEGORIES.find(c => c.key === value);
+  const isCustom = value === "personalizadas";
+  const isPadrao = value === "padrao";
+  const isFiltered = value !== "todas";
+
+  const renderSwatch = (cat: typeof CATEGORIES[number]) => {
+    if (cat.icon) return <span className="text-xs leading-none shrink-0">{cat.icon}</span>;
+    if (cat.dot) {
+      return (
+        <span
+          className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/15"
+          style={{ backgroundColor: cat.color }}
+        />
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div ref={containerRef} className="relative inline-block">
+      <div
+        className={`flex items-center rounded-xl border transition-colors ${
+          isFiltered
+            ? "bg-indigo-500/10 border-indigo-500/40 text-white"
+            : "bg-[#0d1220] border-white/[0.10] hover:border-white/[0.20] text-slate-200"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={() => setOpen(v => !v)}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          className={`flex items-center justify-between gap-2 text-left focus:outline-none ${
+            compact ? "px-2.5 py-1.5 min-w-[175px]" : "px-3 py-1.5 min-w-[225px]"
+          }`}
+        >
+          <span className="flex items-center gap-2 min-w-0">
+            <Tag size={12} className={isFiltered ? "text-amber-400 shrink-0" : "text-indigo-400 shrink-0"} />
+            {!compact && (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 shrink-0">
+                Classificação:
+              </span>
+            )}
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold truncate">
+              {selectedCat ? (
+                <>
+                  {renderSwatch(selectedCat)}
+                  <span style={{ color: selectedCat.textColor }} className="font-bold truncate">
+                    {selectedCat.label}
+                  </span>
+                </>
+              ) : isCustom ? (
+                <>
+                  <span className="text-xs leading-none">✨</span>
+                  <span className="text-purple-300 font-bold truncate">Personalizadas</span>
+                </>
+              ) : isPadrao ? (
+                <>
+                  <span className="text-xs leading-none">📋</span>
+                  <span className="text-slate-200 font-bold truncate">Padrão</span>
+                </>
+              ) : (
+                <span className="text-slate-300 truncate">Todas as classificações</span>
+              )}
+            </span>
+          </span>
+          <ChevronDown size={13} className={`text-slate-400 shrink-0 ${open ? "rotate-180" : ""}`} />
+        </button>
+
+        {isFiltered && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onChange("todas");
+              setOpen(false);
+            }}
+            title="Limpar filtro de classificação"
+            className="pr-2 pl-0.5 py-1.5 text-slate-400 hover:text-white transition-colors"
+          >
+            <X size={12} />
+          </button>
+        )}
+      </div>
+
+      {open && (
+        <div
+          role="listbox"
+          aria-label="Lista de validação de classificação"
+          className="absolute left-0 top-full mt-1.5 z-50 w-64 rounded-xl border border-white/[0.14] bg-[#0b101c] py-1.5 shadow-lg"
+        >
+          <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/[0.06] mb-1">
+            <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-500">
+              Lista de Validação
+            </span>
+            {isFiltered && (
+              <button
+                type="button"
+                onClick={() => {
+                  onChange("todas");
+                  setOpen(false);
+                }}
+                className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                Limpar
+              </button>
+            )}
+          </div>
+
+          <div className="max-h-[300px] overflow-y-auto px-1 flex flex-col gap-0.5">
+            <button
+              type="button"
+              role="option"
+              aria-selected={value === "todas"}
+              onClick={() => { onChange("todas"); setOpen(false); }}
+              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
+                value === "todas"
+                  ? "bg-indigo-600/20 text-white"
+                  : "text-slate-300 hover:bg-white/[0.05]"
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full border border-slate-500/70 shrink-0" />
+                <span>Todas as classificações</span>
+              </span>
+              {value === "todas" && <Check size={12} className="text-indigo-400 shrink-0" />}
+            </button>
+
+            <div className="px-2.5 pt-1.5 pb-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500">
+              Níveis e Marcadores
+            </div>
+
+            {CATEGORIES.map(cat => {
+              const active = value === cat.key;
+              return (
+                <button
+                  key={cat.key}
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  onClick={() => { onChange(active ? "todas" : cat.key); setOpen(false); }}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] transition-colors ${
+                    active
+                      ? "bg-indigo-600/20 text-white font-bold"
+                      : "text-slate-200 hover:bg-white/[0.05] font-medium"
+                  }`}
+                >
+                  <span className="flex items-center gap-2 min-w-0">
+                    {renderSwatch(cat)}
+                    <span style={{ color: active ? "#ffffff" : cat.textColor }} className="truncate">
+                      {cat.label}
+                    </span>
+                  </span>
+                  {active && <Check size={12} className="text-indigo-400 shrink-0" />}
+                </button>
+              );
+            })}
+
+            <div className="px-2.5 pt-1.5 pb-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 border-t border-white/[0.06] mt-1">
+              Origem da Classificação
+            </div>
+
+            <button
+              type="button"
+              role="option"
+              aria-selected={isCustom}
+              onClick={() => { onChange(isCustom ? "todas" : "personalizadas"); setOpen(false); }}
+              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] transition-colors ${
+                isCustom
+                  ? "bg-purple-500/20 text-white font-bold"
+                  : "text-purple-300 hover:bg-white/[0.05] font-medium"
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <span className="text-xs leading-none">✨</span>
+                <span>Apenas Personalizadas</span>
+              </span>
+              {isCustom && <Check size={12} className="text-purple-400 shrink-0" />}
+            </button>
+
+            <button
+              type="button"
+              role="option"
+              aria-selected={isPadrao}
+              onClick={() => { onChange(isPadrao ? "todas" : "padrao"); setOpen(false); }}
+              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] transition-colors ${
+                isPadrao
+                  ? "bg-slate-600/30 text-white font-bold"
+                  : "text-slate-300 hover:bg-white/[0.05] font-medium"
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <span className="text-xs leading-none">📋</span>
+                <span>Apenas Padrão</span>
+              </span>
+              {isPadrao && <Check size={12} className="text-slate-300 shrink-0" />}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface ClassificationContextValue {
   overrides: Map<string, CategoryKey>;
@@ -113,6 +347,7 @@ interface Questao {
   caseLabel?: string;
   lastEditedTime?: string;
   forceReload?: boolean;
+  tagEmojis?: string[];
 }
 
 function sortQuestoesPorDificuldade(questions: Questao[], savedOrderIds: string[] = []): Questao[] {
@@ -152,7 +387,12 @@ function imgUrl(b: NotionAPIBlock) {
   return rawUrl && rawUrl.trim() !== "" ? rawUrl.trim() : undefined;
 }
 
-const ALL_EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F000}-\u{1FFFF}\u{FE00}-\u{FEFF}][\uFE0F\u20E3]?/gu;
+const EMOJI_BASE = String.raw`[\u{1F000}-\u{1FAFF}\u{2300}-\u{27BF}\u{2B00}-\u{2BFF}\u{3030}\u{3297}\u{3299}]`;
+const ALL_EMOJI_RE = new RegExp(`${EMOJI_BASE}(?:\\uFE0F|\\u20E3)?(?:\\u200D${EMOJI_BASE}(?:\\uFE0F|\\u20E3)?)*`, "gu");
+
+function normalizeTagEmojiKey(emoji: string): string {
+  return emoji.replace(/\uFE0F/g, "");
+}
 
 function parseQuestaoTitle(text: string): { emojis: string[]; numero: string; topic: string } {
   const t = text.trim();
@@ -160,8 +400,39 @@ function parseQuestaoTitle(text: string): { emojis: string[]; numero: string; to
   const stripped = t.replace(ALL_EMOJI_RE, "").trim();
   const numM = stripped.match(/(\d+)/);
   const numero = numM ? numM[1] : "";
-  const topic = numM ? stripped.slice(stripped.indexOf(numM[1]) + numM[1].length).trim() : stripped;
+  const rawTopic = numM ? stripped.slice(stripped.indexOf(numM[1]) + numM[1].length).trim() : stripped;
+  const topic = rawTopic.replace(/^[\s\-–—:·•]+|[\s\-–—:·•]+$/g, "").trim();
   return { emojis, numero, topic };
+}
+
+function extractQuestionTagEmojis(rawTitle: string, iconEmoji?: string, fallbackTopic?: string): string[] {
+  const tags: string[] = [];
+  const pushUnique = (e: string) => {
+    const norm = normalizeTagEmojiKey(e);
+    if (!norm) return;
+    if (!tags.some(t => normalizeTagEmojiKey(t) === norm)) {
+      tags.push(e);
+    }
+  };
+
+  if (rawTitle) {
+    const { emojis } = parseQuestaoTitle(rawTitle);
+    const hasIconCat = Boolean(iconEmoji && detectCategory([iconEmoji]));
+    let skippedCategoryEmoji = hasIconCat;
+    for (const e of emojis) {
+      if (!skippedCategoryEmoji && detectCategory([e])) {
+        skippedCategoryEmoji = true;
+        continue;
+      }
+      pushUnique(e);
+    }
+  } else if (fallbackTopic) {
+    const topicEmojis = [...fallbackTopic.matchAll(ALL_EMOJI_RE)].map(m => m[0]);
+    for (const e of topicEmojis) {
+      pushUnique(e);
+    }
+  }
+  return tags;
 }
 
 function detectCategory(emojis: string[]): CategoryKey | null {
@@ -1148,7 +1419,7 @@ function QuestaoTitleLabel({ questaoId, blocksMap }: { questaoId: string; blocks
   }, [questaoId, blocksMap]);
 
   return (
-    <div className="flex items-center gap-2 py-1.5 px-2 text-[11px] rounded-md hover:bg-white/[0.03] transition-all">
+    <div className="flex items-center gap-2 py-1.5 px-2 text-[11px] rounded-md hover:bg-white/[0.03] transition-colors">
       <span className="shrink-0">{info?.emoji ?? "📄"}</span>
       {failed ? (
         <span className="text-slate-600 italic truncate">Questão indisponível ({questaoId.slice(0, 8)}…)</span>
@@ -1335,9 +1606,9 @@ function ImagemLightbox({
 
   const getImageCardBgClass = () => {
     if (antiBrilho === 'noturno') {
-      return 'bg-[#0b101d] border border-white/10 shadow-2xl';
+      return 'bg-[#0b101d] border border-white/10';
     }
-    return 'bg-slate-900/90 border border-slate-700/60 shadow-2xl opacity-95';
+    return 'bg-slate-900/95 border border-slate-700/60';
   };
 
   const handleWheel = (e: React.WheelEvent) => {
@@ -1367,17 +1638,12 @@ function ImagemLightbox({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-3xl flex flex-col items-center justify-between select-none animate-in fade-in duration-200"
-      style={{
-        backdropFilter: "blur(30px) brightness(0.7)",
-        WebkitBackdropFilter: "blur(30px) brightness(0.7)",
-        backgroundColor: "rgba(5, 8, 15, 0.85)",
-      }}
+      className="fixed inset-0 z-[9999] bg-[#05080f]/95 flex flex-col items-center justify-between select-none"
       onWheel={handleWheel}
       onMouseUp={handleMouseUp}
     >
       {/* Top Bar Controls */}
-      <div className="w-full px-2 sm:px-4 py-2 flex items-center gap-2 bg-black/70 backdrop-blur-md border-b border-white/10 z-30 overflow-hidden" style={{ minHeight: 44 }}>
+      <div className="w-full px-2 sm:px-4 py-2 flex items-center gap-2 bg-[#070b14] border-b border-white/10 z-30 overflow-hidden" style={{ minHeight: 44 }}>
         {/* Left Info — shrink aggressively */}
         <div className="flex items-center gap-1.5 text-white font-bold text-xs shrink min-w-0 overflow-hidden">
           <Maximize2 size={14} className="text-indigo-400 shrink-0" />
@@ -1393,12 +1659,12 @@ function ImagemLightbox({
         </div>
 
         {/* Toolbar Center — scrollable horizontally, no wrap */}
-        <div className="flex items-center gap-1 bg-white/10 p-1 rounded-xl backdrop-blur-md border border-white/10 shrink-0 overflow-x-auto max-w-[55vw] sm:max-w-none" style={{ scrollbarWidth: 'none' }}>
+        <div className="flex items-center gap-1 bg-white/10 p-1 rounded-xl border border-white/10 shrink-0 overflow-x-auto max-w-[55vw] sm:max-w-none" style={{ scrollbarWidth: 'none' }}>
           {hasPrev && onPrev && (
             <button
               onClick={onPrev}
               title="Questão Anterior (←)"
-              className="px-2 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/60 text-indigo-200 hover:text-white border border-indigo-500/40 transition-all text-xs font-bold flex items-center gap-1 active:scale-95 shrink-0"
+              className="px-2 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/60 text-indigo-200 hover:text-white border border-indigo-500/40 transition-colors text-xs font-bold flex items-center gap-1 shrink-0"
             >
               <ChevronLeft size={14} />
             </button>
@@ -1407,7 +1673,7 @@ function ImagemLightbox({
           <button
             onClick={handleZoomOut}
             title="Diminuir zoom (-)"
-            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/20 text-white transition-all shrink-0"
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/20 text-white transition-colors shrink-0"
           >
             <ZoomOut size={14} />
           </button>
@@ -1419,7 +1685,7 @@ function ImagemLightbox({
           <button
             onClick={handleZoomIn}
             title="Aumentar zoom (+)"
-            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/20 text-white transition-all shrink-0"
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/20 text-white transition-colors shrink-0"
           >
             <ZoomIn size={14} />
           </button>
@@ -1430,9 +1696,9 @@ function ImagemLightbox({
           <button
             onClick={toggleFullWidth}
             title="Alternar Modo de Visualização (Tecla F)"
-            className={`px-2 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all shrink-0 ${
+            className={`px-2 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors shrink-0 ${
               !isFullWidth
-                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 border border-indigo-400/40"
+                ? "bg-indigo-600 text-white border border-indigo-400/40"
                 : "hover:bg-white/20 text-slate-200"
             }`}
           >
@@ -1444,7 +1710,7 @@ function ImagemLightbox({
           <button
             onClick={toggleAntiBrilho}
             title="Alternar Filtro Anti-Brilho / Modo Noturno (Tecla B)"
-            className={`px-2 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all active:scale-95 border shrink-0 ${
+            className={`px-2 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors border shrink-0 ${
               antiBrilho === 'noturno'
                 ? "bg-indigo-500/25 text-indigo-300 border-indigo-500/40"
                 : "bg-amber-500/20 text-amber-300 border-amber-500/40"
@@ -1461,7 +1727,7 @@ function ImagemLightbox({
           <button
             onClick={handleReset}
             title="Resetar Zoom (0)"
-            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/20 text-slate-400 hover:text-white transition-all shrink-0"
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/20 text-slate-400 hover:text-white transition-colors shrink-0"
           >
             <RotateCcw size={12} />
           </button>
@@ -1470,7 +1736,7 @@ function ImagemLightbox({
             <button
               onClick={onNext}
               title="Próxima Questão (→)"
-              className="px-2 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/60 text-indigo-200 hover:text-white border border-indigo-500/40 transition-all text-xs font-bold flex items-center gap-1 active:scale-95 shrink-0"
+              className="px-2 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/60 text-indigo-200 hover:text-white border border-indigo-500/40 transition-colors text-xs font-bold flex items-center gap-1 shrink-0"
             >
               <ChevronRight size={14} />
             </button>
@@ -1482,7 +1748,7 @@ function ImagemLightbox({
           <button
             onClick={() => setShowResposta(v => !v)}
             title="Revelar ou Ocultar Resposta (Tecla R)"
-            className={`px-2.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all active:scale-95 border shrink-0 ${
+            className={`px-2.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors border shrink-0 ${
               showResposta
                 ? "bg-slate-800 text-emerald-400 border-slate-700"
                 : "bg-slate-800/90 hover:bg-slate-700/90 text-slate-300 border-slate-700"
@@ -1496,7 +1762,7 @@ function ImagemLightbox({
           <button
             onClick={onClose}
             title="Fechar (Esc)"
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-300 border border-red-500/30 transition-all active:scale-95 shrink-0"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-300 border border-red-500/30 transition-colors shrink-0"
           >
             <X size={18} />
           </button>
@@ -1508,7 +1774,7 @@ function ImagemLightbox({
       <div className="relative flex-1 w-full h-full overflow-hidden flex flex-row items-center justify-between min-h-0">
         {/* Left Question Image Container (Fixed 50% when showResposta is true) */}
         <div
-          className={`relative h-full overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing p-2 sm:p-4 min-w-0 transition-all ${
+          className={`relative h-full overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing p-2 sm:p-4 min-w-0 ${
             showResposta ? "w-1/2 flex-1 border-r border-white/10" : "w-full flex-1"
           }`}
           onMouseDown={handleMouseDown}
@@ -1522,9 +1788,9 @@ function ImagemLightbox({
             <button
               onClick={(e) => { e.stopPropagation(); onPrev(); }}
               title="Questão Anterior (←)"
-              className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-900/85 hover:bg-slate-800 text-slate-200 hover:text-white flex items-center justify-center border border-slate-700 shadow-xl backdrop-blur-md transition-all active:scale-90 group"
+              className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-900/95 hover:bg-slate-800 text-slate-200 hover:text-white flex items-center justify-center border border-slate-700 transition-colors"
             >
-              <ChevronLeft size={24} className="group-hover:-translate-x-0.5 transition-transform" />
+              <ChevronLeft size={24} />
             </button>
           )}
 
@@ -1532,16 +1798,16 @@ function ImagemLightbox({
             <button
               onClick={(e) => { e.stopPropagation(); onNext(); }}
               title="Próxima Questão (→)"
-              className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-900/85 hover:bg-slate-800 text-slate-200 hover:text-white flex items-center justify-center border border-slate-700 shadow-xl backdrop-blur-md transition-all active:scale-90 group"
+              className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-900/95 hover:bg-slate-800 text-slate-200 hover:text-white flex items-center justify-center border border-slate-700 transition-colors"
             >
-              <ChevronRight size={24} className="group-hover:translate-x-0.5 transition-transform" />
+              <ChevronRight size={24} />
             </button>
           )}
 
           {loading ? (
-            <div className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl bg-slate-900/90 border border-white/10 shadow-2xl backdrop-blur-md">
+            <div className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl bg-slate-900/95 border border-white/10">
               <Loader2 size={36} className="animate-spin text-indigo-400" />
-              <span className="text-xs font-semibold text-slate-300 animate-pulse">Carregando questão...</span>
+              <span className="text-xs font-semibold text-slate-300">Carregando questão...</span>
             </div>
           ) : (() => {
             const allImgs = (imageUrls && imageUrls.length > 0 ? imageUrls : url ? [url] : []).filter(u => u && u.trim() !== "");
@@ -1555,7 +1821,7 @@ function ImagemLightbox({
             }
             if (hasText && allImgs.length === 0) {
               return (
-                <div className="max-w-2xl w-full max-h-[80vh] overflow-y-auto custom-scrollbar p-6 sm:p-8 rounded-2xl bg-[#0d1323] border border-white/10 shadow-2xl select-text">
+                <div className="max-w-2xl w-full max-h-[80vh] overflow-y-auto custom-scrollbar p-6 sm:p-8 rounded-2xl bg-[#0d1323] border border-white/10 select-text">
                   <p className="text-sm sm:text-base text-slate-100 whitespace-pre-wrap leading-relaxed">
                     {enunciadoText}
                   </p>
@@ -1565,7 +1831,7 @@ function ImagemLightbox({
             return (
               <div className={`w-full h-full flex flex-col items-center ${hasText || allImgs.length > 1 ? "overflow-y-auto custom-scrollbar gap-4 py-4 px-2" : "justify-center"}`}>
                 {hasText && (
-                  <div className="max-w-3xl w-full p-4 sm:p-5 rounded-2xl bg-[#0d1323]/95 border border-white/10 shadow-xl shrink-0 select-text">
+                  <div className="max-w-3xl w-full p-4 sm:p-5 rounded-2xl bg-[#0d1323] border border-white/10 shrink-0 select-text">
                     <p className="text-xs sm:text-sm text-slate-100 whitespace-pre-wrap leading-relaxed">
                       {enunciadoText}
                     </p>
@@ -1584,12 +1850,11 @@ function ImagemLightbox({
                       allImgs.length === 1 && !hasText
                         ? {
                             transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-                            transition: isDragging ? "none" : "transform 0.15s ease-out",
                             ...getImageFilterStyle(),
                           }
                         : getImageFilterStyle()
                     }
-                    className={`${getImageCardBgClass()} rounded-xl object-contain transition-all ${
+                    className={`${getImageCardBgClass()} rounded-xl object-contain ${
                       allImgs.length > 1 || hasText
                         ? "max-w-[92%] max-h-[70vh]"
                         : showResposta
@@ -1607,7 +1872,7 @@ function ImagemLightbox({
 
         {/* Right Side Answer Screen Panel (Fixed 50% Width, Scrollable Content) */}
         {showResposta && (
-          <div className="w-1/2 flex-1 h-full bg-[#0b101d] backdrop-blur-2xl p-4 sm:p-6 shadow-2xl z-40 text-white flex flex-col gap-4 overflow-y-auto custom-scrollbar shrink-0 min-w-0 border-l border-white/10 animate-in slide-in-from-right duration-200">
+          <div className="w-1/2 flex-1 h-full bg-[#0b101d] p-4 sm:p-6 z-40 text-white flex flex-col gap-4 overflow-y-auto custom-scrollbar shrink-0 min-w-0 border-l border-white/10">
             <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
               <span className="text-sm sm:text-base font-bold text-emerald-400 flex items-center gap-2">
                 <span>✨</span> Resposta e Gabarito {questaoNumero ? `— Questão ${questaoNumero}` : ""}
@@ -1632,7 +1897,7 @@ function ImagemLightbox({
                     decoding="async"
                     fetchPriority="high"
                     style={getImageFilterStyle()}
-                    className={`w-full rounded-xl border border-white/10 object-contain shadow-md max-h-[55vh] ${
+                    className={`w-full rounded-xl border border-white/10 object-contain max-h-[55vh] ${
                       antiBrilho === 'noturno' ? 'bg-[#0b101d]' : 'bg-slate-900/90'
                     }`}
                   />
@@ -1662,7 +1927,7 @@ function ImagemLightbox({
                   <button
                     onClick={handleToggleDuvidaLocal}
                     disabled={recordingDuvida}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all disabled:opacity-50 active:scale-95 border ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors disabled:opacity-50 border ${
                       localDuvida 
                         ? 'bg-slate-800 text-amber-300 border-slate-700' 
                         : 'bg-slate-800/80 hover:bg-slate-700/80 border-slate-700 text-slate-300'
@@ -1675,20 +1940,20 @@ function ImagemLightbox({
                 <button
                   onClick={() => handleRecordAnswer(true)}
                   disabled={recording}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-200 hover:text-emerald-400 text-xs font-semibold transition-all disabled:opacity-50 active:scale-95"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-200 hover:text-emerald-400 text-xs font-semibold transition-colors disabled:opacity-50"
                 >
                   <Check size={14} className="text-emerald-400" /> Acertei
                 </button>
                 <button
                   onClick={() => handleRecordAnswer(false)}
                   disabled={recording}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-200 hover:text-rose-400 text-xs font-semibold transition-all disabled:opacity-50 active:scale-95"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-200 hover:text-rose-400 text-xs font-semibold transition-colors disabled:opacity-50"
                 >
                   <X size={14} className="text-rose-400" /> Errei
                 </button>
 
                 {recorded && (
-                  <span className={`text-xs font-bold ml-1 animate-pulse ${recorded === 'acerto' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  <span className={`text-xs font-bold ml-1 ${recorded === 'acerto' ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {recorded === 'acerto' ? 'Salvo! 🎉' : 'Salvo! ❌'}
                   </span>
                 )}
@@ -1699,7 +1964,7 @@ function ImagemLightbox({
       </div>
 
       {/* Footer hint */}
-      <div className="w-full px-4 py-2 bg-black/85 backdrop-blur-md text-[11px] text-slate-400 font-medium z-20 flex items-center justify-center gap-3 sm:gap-6 text-center flex-wrap">
+      <div className="w-full px-4 py-2 bg-[#070b14] border-t border-white/5 text-[11px] text-slate-400 font-medium z-20 flex items-center justify-center gap-3 sm:gap-6 text-center flex-wrap">
         <span>💡 Dica: <span className="text-indigo-300 font-bold">Modo Ajustado</span> ativo por padrão</span>
         <span>• <kbd className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 rounded font-mono">B</kbd> Anti-Brilho</span>
         <span>• <kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-slate-200">←</kbd> / <kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-slate-200">→</kbd> Pular Questão</span>
@@ -2164,7 +2429,9 @@ const QuestaoRow = memo(function QuestaoRow({
           caso_id: casoId || null,
           caso_nome: casoNome || questao.caseLabel || "Geral",
           numero: questao.numero || "",
-          topico: questao.topic || "",
+          topico: questao.tagEmojis && questao.tagEmojis.length > 0
+            ? `${questao.topic ? `${questao.topic} ` : ""}${questao.tagEmojis.join(" ")}`.trim()
+            : (questao.topic || ""),
           categoria: questao.categoryKey || "media",
           enunciado_texto: result.textEnunciado || null,
           imagens_urls: result.imgs,
@@ -2259,13 +2526,13 @@ const QuestaoRow = memo(function QuestaoRow({
           }
         }
       }}
-      className={`flex flex-col py-0.5 rounded-lg ${
+      className={`flex flex-col py-0 rounded-md ${
         isDraggingOver ? "ring-2 ring-indigo-500/50 bg-indigo-500/10" : ""
       }`}
     >
       <div
         onMouseEnter={handlePrefetchQuestao}
-        className={`flex items-center gap-2 py-1 px-2.5 transition-colors duration-150 rounded-lg group ${
+        className={`flex items-center gap-1.5 py-[2px] px-2 min-h-[24px] rounded-md group ${
         showHighlightStyle ? "bg-rose-500/[0.05]" : bgClass
       }`}>
         {isAdmin && (
@@ -2273,29 +2540,29 @@ const QuestaoRow = memo(function QuestaoRow({
             className="cursor-grab active:cursor-grabbing p-0.5 text-slate-600 hover:text-indigo-400 transition-colors shrink-0 select-none" 
             title="Arrastar para reordenar questão"
           >
-            <GripVertical size={13} />
+            <GripVertical size={11} />
           </span>
         )}
 
         <button
           onClick={() => { setOpen(v => !v); setShowResp(false); }}
-          className="text-slate-500 hover:text-slate-300 transition-colors w-4 h-4 flex items-center justify-center shrink-0"
+          className="text-slate-500 hover:text-slate-300 w-3.5 h-3.5 flex items-center justify-center shrink-0"
         >
           {loading && imageUrls.filter(u => u && u.trim() !== "").length === 0 ? (
-            <Loader2 size={10} className="animate-spin text-slate-500" />
+            <Loader2 size={9} className="animate-spin text-slate-500" />
           ) : (
-            <ChevronRight size={12} className={`text-slate-500 transition-transform duration-150 shrink-0 ${open ? "rotate-90" : ""}`} />
+            <ChevronRight size={10} className={`text-slate-500 shrink-0 ${open ? "rotate-90" : ""}`} />
           )}
         </button>
 
-        <span className="text-[11px] font-normal text-slate-400 bg-white/[0.04] border border-white/[0.07] px-2 py-0.5 rounded-md shrink-0 tabular-nums">
+        <span className="text-[10px] font-normal text-slate-400 bg-white/[0.04] border border-white/[0.07] px-1.5 py-0 rounded leading-[16px] shrink-0 tabular-nums">
           {questao.numero}
         </span>
 
-        <span className="w-2 h-2 rounded-full shrink-0 select-none shadow-sm" style={{ backgroundColor: catColor }} title={catLabel} />
+        <span className="w-1.5 h-1.5 rounded-full shrink-0 select-none shadow-sm" style={{ backgroundColor: catColor }} title={catLabel} />
 
         <span
-          className="text-[11px] font-normal px-2 py-0.5 rounded-md bg-black/20 border border-white/[0.06] shrink-0"
+          className="text-[10px] font-normal px-1.5 py-0 leading-[16px] rounded bg-black/20 border border-white/[0.06] shrink-0"
           style={{ color: catColor }}
         >
           {catLabel}
@@ -2311,7 +2578,7 @@ const QuestaoRow = memo(function QuestaoRow({
             const value = event.target.value as CategoryKey | "";
             void updateClassification(questao.id, value || null);
           }}
-          className="max-w-[118px] rounded-md border border-white/[0.08] bg-[#0b1019] px-1.5 py-1 text-[10px] text-slate-300 outline-none focus:border-indigo-500/60 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-[18px] max-w-[100px] rounded border border-white/[0.08] bg-[#0b1019] px-1 py-0 text-[9.5px] leading-none text-slate-300 outline-none focus:border-indigo-500/60 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <option value="">Padrão</option>
           {CATEGORIES.map(category => (
@@ -2319,24 +2586,35 @@ const QuestaoRow = memo(function QuestaoRow({
           ))}
         </select>
 
+        {questao.tagEmojis && questao.tagEmojis.length > 0 && (
+          <span
+            className="inline-flex items-center gap-0.5 px-1 py-0 rounded bg-amber-500/10 border border-amber-500/20 text-[10px] leading-[15px] shrink-0"
+            title="Questões com este mesmo emoji compartilham a mesma resolução e raciocínio"
+          >
+            {questao.tagEmojis.map((em, i) => (
+              <span key={`${em}-${i}`}>{em}</span>
+            ))}
+          </span>
+        )}
+
         {questao.topic && (
-          <span className="text-[12px] sm:text-[13px] font-normal text-slate-300 leading-relaxed truncate ml-0.5">
+          <span className="text-[11px] sm:text-[11.5px] font-normal text-slate-300 leading-tight truncate ml-0.5">
             — {questao.topic}
           </span>
         )}
 
         {questao.caseLabel && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-800/40 border border-slate-700/50 text-[10px] font-medium text-slate-400 truncate shrink-0 ml-1">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0 leading-[15px] rounded-full bg-slate-800/40 border border-slate-700/50 text-[9.5px] font-medium text-slate-400 truncate shrink-0 ml-1">
             <span className="text-slate-600 font-normal">in</span> {questao.caseLabel}
           </span>
         )}
 
         {isDuvida && (
-          <Flag size={11} className="fill-red-500 text-red-500 shrink-0 ml-1" />
+          <Flag size={10} className="fill-red-500 text-red-500 shrink-0 ml-1" />
         )}
 
         {rootBlockId && casoId && (
-          <div className="flex items-center gap-0.5 opacity-45 group-hover:opacity-100 transition-opacity ml-auto mr-1 shrink-0">
+          <div className="flex items-center gap-0.5 opacity-45 group-hover:opacity-100 ml-auto mr-1 shrink-0">
             <button
               type="button"
               onClick={(e) => {
@@ -2350,9 +2628,9 @@ const QuestaoRow = memo(function QuestaoRow({
                 });
               }}
               title="Jogar questão em outro Caso ou Subcaso"
-              className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06] transition-all"
+              className="flex items-center gap-1 px-1 py-0 h-4 rounded text-[9.5px] font-medium text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06]"
             >
-              <FolderInput size={11} />
+              <FolderInput size={10} />
               <span className="hidden md:inline">Subcaso</span>
             </button>
             <button
@@ -2368,9 +2646,9 @@ const QuestaoRow = memo(function QuestaoRow({
                 });
               }}
               title="Editar pergunta, imagem ou resposta"
-              className="w-5 h-5 flex items-center justify-center rounded text-slate-400 hover:text-amber-300 hover:bg-white/[0.06] transition-all"
+              className="w-4 h-4 flex items-center justify-center rounded text-slate-400 hover:text-amber-300 hover:bg-white/[0.06]"
             >
-              <Pencil size={10} />
+              <Pencil size={9.5} />
             </button>
             <button
               type="button"
@@ -2379,50 +2657,50 @@ const QuestaoRow = memo(function QuestaoRow({
                 void builder.deleteQuestao(rootBlockId, casoId, questao);
               }}
               title="Excluir questão"
-              className="w-5 h-5 flex items-center justify-center rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+              className="w-4 h-4 flex items-center justify-center rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10"
             >
-              <Trash2 size={10} />
+              <Trash2 size={9.5} />
             </button>
           </div>
         )}
 
         {isAdmin && (
-          <div className={`flex items-center gap-0.5 opacity-30 group-hover:opacity-100 transition-opacity ${!(rootBlockId && casoId) ? "ml-auto" : ""} mr-1`}>
+          <div className={`flex items-center gap-0.5 opacity-35 group-hover:opacity-100 ${!(rootBlockId && casoId) ? "ml-auto" : ""} mr-1`}>
             <button
               onClick={(e) => { e.stopPropagation(); onMoveUp?.(questao.id); }}
               disabled={isFirst}
               title="Mover questão para cima"
-              className="w-5 h-5 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent transition-all"
+              className="w-4 h-4 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent"
             >
-              <ArrowUp size={10} />
+              <ArrowUp size={9.5} />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onMoveDown?.(questao.id); }}
               disabled={isLast}
               title="Mover questão para baixo"
-              className="w-5 h-5 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent transition-all"
+              className="w-4 h-4 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent"
             >
-              <ArrowDown size={10} />
+              <ArrowDown size={9.5} />
             </button>
           </div>
         )}
 
         {stats && stats.totalErros > 0 && (
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-rose-300 bg-rose-950/60 border border-rose-500/30 shrink-0 ${!isAdmin && !isErro && !isAcerto ? "ml-auto" : ""}`} title={`${stats.totalErros} erro(s) no histórico`}>
+          <span className={`inline-flex items-center gap-1 px-1.5 py-0 leading-[15px] rounded-full text-[9.5px] font-bold text-rose-300 bg-rose-950/60 border border-rose-500/30 shrink-0 ${!isAdmin && !isErro && !isAcerto ? "ml-auto" : ""}`} title={`${stats.totalErros} erro(s) no histórico`}>
             <span>🔥</span>
             <span>{stats.totalErros} {stats.totalErros === 1 ? "erro" : "erros"}</span>
           </span>
         )}
 
         {isErro && (
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-rose-300 bg-rose-950/50 border border-rose-700/60 shrink-0 ${!isAdmin && !(stats && stats.totalErros > 0) ? "ml-auto" : ""}`}>
-            <span className="w-2 h-2 rounded-full bg-rose-500 border border-rose-400/50 shrink-0 shadow-sm shadow-rose-500/50" />
+          <span className={`inline-flex items-center gap-1 px-2 py-0 leading-[15px] rounded-full text-[9.5px] font-medium text-rose-300 bg-rose-950/50 border border-rose-700/60 shrink-0 ${!isAdmin && !(stats && stats.totalErros > 0) ? "ml-auto" : ""}`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 border border-rose-400/50 shrink-0 shadow-sm shadow-rose-500/50" />
             Errou
           </span>
         )}
         {isAcerto && (
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium text-emerald-300 bg-emerald-950/50 border border-emerald-700/60 shrink-0 ${!isAdmin && !(stats && stats.totalErros > 0) ? "ml-auto" : ""}`}>
-            <span className="w-2 h-2 rounded-full bg-emerald-500 border border-emerald-400/50 shrink-0 shadow-sm shadow-emerald-500/50" />
+          <span className={`inline-flex items-center gap-1 px-2 py-0 leading-[15px] rounded-full text-[9.5px] font-medium text-emerald-300 bg-emerald-950/50 border border-emerald-700/60 shrink-0 ${!isAdmin && !(stats && stats.totalErros > 0) ? "ml-auto" : ""}`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 border border-emerald-400/50 shrink-0 shadow-sm shadow-emerald-500/50" />
             Acertou
           </span>
         )}
@@ -2446,7 +2724,7 @@ const QuestaoRow = memo(function QuestaoRow({
                     <button
                       type="button"
                       onClick={() => setZoomTextOnly(true)}
-                      className="self-start px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-slate-300 text-[10px] font-bold flex items-center gap-1.5 border border-white/[0.08] transition-all"
+                      className="self-start px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-slate-300 text-[10px] font-bold flex items-center gap-1.5 border border-white/[0.08] transition-colors"
                     >
                       <Maximize2 size={11} className="text-indigo-400" />
                       Tela Cheia
@@ -2466,13 +2744,13 @@ const QuestaoRow = memo(function QuestaoRow({
                       fetchPriority="high"
                       onClick={() => setZoomedImage(url.trim())}
                       style={getNotionImageFilterStyle(antiBrilho)}
-                      className={`w-full rounded-xl border object-contain cursor-zoom-in hover:brightness-105 transition-all shadow-md ${
+                      className={`w-full rounded-xl border object-contain cursor-zoom-in ${
                         antiBrilho === 'noturno' ? 'bg-[#0b101d] border-white/10' : 'bg-slate-900/90 border-slate-700/60'
                       }`}
                     />
                     <button
                       onClick={() => setZoomedImage(url.trim())}
-                      className="absolute top-2 right-2 opacity-90 group-hover:opacity-100 transition-all px-2.5 py-1 rounded-lg bg-black/75 hover:bg-black/95 text-white text-[10px] font-bold flex items-center gap-1.5 backdrop-blur-md border border-white/20 shadow-xl active:scale-95"
+                      className="absolute top-2 right-2 px-2.5 py-1 rounded-lg bg-black/85 hover:bg-black text-white text-[10px] font-bold flex items-center gap-1.5 border border-white/20"
                     >
                       <Maximize2 size={12} className="text-indigo-400" />
                       Expandir 100%
@@ -2485,7 +2763,7 @@ const QuestaoRow = memo(function QuestaoRow({
 
               <button
                 onClick={() => setShowResp(v => !v)}
-                className="flex items-center gap-2 self-start px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.04] text-slate-300 hover:text-white hover:bg-white/[0.08] text-[11px] font-medium transition-all shadow-sm active:scale-95"
+                className="flex items-center gap-2 self-start px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.04] text-slate-300 hover:text-white hover:bg-white/[0.08] text-[11px] font-medium transition-colors"
               >
                 {showResp ? <EyeOff size={11} /> : <Eye size={11} />}
                 {showResp ? "Ocultar Resposta" : "✨ Ver Resposta"}
@@ -2494,7 +2772,7 @@ const QuestaoRow = memo(function QuestaoRow({
               {user && (
                 <button
                   onClick={toggleHistorico}
-                  className="flex items-center gap-2 self-start px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] text-[10px] font-medium transition-all"
+                  className="flex items-center gap-2 self-start px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] text-[10px] font-medium transition-colors"
                 >
                   <History size={10} />
                   {showHistorico ? "Ocultar Histórico" : "Ver Histórico de Tentativas"}
@@ -2562,13 +2840,13 @@ const QuestaoRow = memo(function QuestaoRow({
                           fetchPriority="high"
                           onClick={() => setZoomedImage(url.trim())}
                           style={getNotionImageFilterStyle(antiBrilho)}
-                          className={`w-full rounded-xl border object-contain cursor-zoom-in hover:brightness-105 transition-all shadow-md ${
+                          className={`w-full rounded-xl border object-contain cursor-zoom-in ${
                             antiBrilho === 'noturno' ? 'bg-[#0b101d] border-white/10' : 'bg-slate-900/90 border-slate-700/60'
                           }`}
                         />
                         <button
                           onClick={() => setZoomedImage(url)}
-                          className="absolute top-2 right-2 opacity-90 group-hover:opacity-100 transition-all px-2.5 py-1 rounded-lg bg-black/75 hover:bg-black/95 text-white text-[10px] font-bold flex items-center gap-1.5 backdrop-blur-md border border-white/20 shadow-xl active:scale-95"
+                          className="absolute top-2 right-2 px-2.5 py-1 rounded-lg bg-black/85 hover:bg-black text-white text-[10px] font-bold flex items-center gap-1.5 border border-white/20"
                         >
                           <Maximize2 size={12} className="text-emerald-400" />
                           Expandir 100%
@@ -2591,7 +2869,7 @@ const QuestaoRow = memo(function QuestaoRow({
                       <button
                         onClick={handleToggleDuvidaLocal}
                         disabled={recordingDuvida}
-                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium transition-all disabled:opacity-50 active:scale-95 border ${
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium transition-colors disabled:opacity-50 border ${
                           isDuvida 
                             ? 'bg-slate-800 text-amber-300 border-slate-700' 
                             : 'bg-slate-800/80 hover:bg-slate-700/80 border-slate-700 text-slate-300'
@@ -2603,19 +2881,19 @@ const QuestaoRow = memo(function QuestaoRow({
                       <button
                         onClick={() => handleRecordAnswer(true)}
                         disabled={recording}
-                        className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-300 hover:text-emerald-400 text-[10px] font-medium transition-all disabled:opacity-50 active:scale-95"
+                        className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-300 hover:text-emerald-400 text-[10px] font-medium transition-colors disabled:opacity-50"
                       >
                         <Check size={11} className="text-emerald-400" /> Acertei
                       </button>
                       <button
                         onClick={() => handleRecordAnswer(false)}
                         disabled={recording}
-                        className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-300 hover:text-rose-400 text-[10px] font-medium transition-all disabled:opacity-50 active:scale-95"
+                        className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-300 hover:text-rose-400 text-[10px] font-medium transition-colors disabled:opacity-50"
                       >
                         <X size={11} className="text-rose-400" /> Errei
                       </button>
                       {recorded && (
-                        <span className={`text-[10px] font-medium ml-1 animate-pulse ${recorded === 'acerto' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        <span className={`text-[10px] font-medium ml-1 ${recorded === 'acerto' ? 'text-emerald-400' : 'text-rose-400'}`}>
                           {recorded === 'acerto' ? 'Salvo! 🎉' : 'Salvo! ❌'}
                         </span>
                       )}
@@ -2627,7 +2905,7 @@ const QuestaoRow = memo(function QuestaoRow({
                       <div className="mt-2 pt-2 border-t border-amber-500/20 pl-4">
                         <button
                           onClick={() => setShowAdminPanel(v => !v)}
-                          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold transition-all border ${
+                          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold transition-colors border ${
                             showAdminPanel
                               ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
                               : 'bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/20'
@@ -2647,7 +2925,7 @@ const QuestaoRow = memo(function QuestaoRow({
                                 <button
                                   key={l}
                                   onClick={() => setAdminGabarito(adminGabarito === l ? '' : l)}
-                                  className={`w-8 h-8 rounded-lg text-[12px] font-black border transition-all active:scale-95 ${
+                                  className={`w-8 h-8 rounded-lg text-[12px] font-black border transition-colors ${
                                     adminGabarito === l
                                       ? 'bg-amber-500/30 border-amber-400/60 text-amber-200'
                                       : 'bg-white/[0.03] border-white/[0.08] text-slate-400 hover:border-amber-500/30 hover:text-amber-300'
@@ -2669,7 +2947,7 @@ const QuestaoRow = memo(function QuestaoRow({
                               onChange={e => setAdminText(e.target.value)}
                               placeholder="Digite a explicação ou comentário da resposta..."
                               rows={3}
-                              className="w-full px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500/40 transition-all resize-none"
+                              className="w-full px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500/40 resize-none"
                             />
                           </div>
 
@@ -2680,7 +2958,7 @@ const QuestaoRow = memo(function QuestaoRow({
                               value={adminImageUrl}
                               onChange={e => setAdminImageUrl(e.target.value)}
                               placeholder="https://..."
-                              className="w-full px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500/40 transition-all font-mono"
+                              className="w-full px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500/40 font-mono"
                             />
                             {adminImageUrl?.trim() ? (
                               <img src={adminImageUrl} alt="preview" className="mt-1 max-h-32 rounded-lg border border-white/10 object-contain bg-white/5" />
@@ -2689,12 +2967,12 @@ const QuestaoRow = memo(function QuestaoRow({
 
                           <div className="flex items-center gap-2 justify-end">
                             {adminSaved && (
-                              <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider animate-pulse">✓ Salvo!</span>
+                              <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">✓ Salvo!</span>
                             )}
                             <button
                               onClick={handleAdminSave}
                               disabled={adminSaving}
-                              className="flex items-center gap-1.5 px-4 py-1.5 bg-amber-600/80 hover:bg-amber-600 disabled:opacity-50 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95"
+                              className="flex items-center gap-1.5 px-4 py-1.5 bg-amber-600/80 hover:bg-amber-600 disabled:opacity-50 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-colors"
                             >
                               {adminSaving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} Salvar
                             </button>
@@ -2858,22 +3136,31 @@ function CasoProgressMap({
   const columnConfigs: Array<{
     key: MapColumnBucket;
     title: string;
+    accentText: string;
+    accentBar: string;
+    badgeBg: string;
     icon: ReactNode;
   }> = [
     {
       key: "nao_dominadas",
       title: "Não Dominadas",
+      accentText: "text-slate-200",
+      accentBar: "bg-slate-600/80",
+      badgeBg: "bg-slate-800/80 text-slate-300 border-white/[0.08]",
       icon: (
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-400/15 text-slate-300 ring-1 ring-slate-400/30">
-          <Ban size={13} strokeWidth={2.2} />
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-slate-500/15 text-slate-300 border border-slate-400/20">
+          <Ban size={11} strokeWidth={2.2} />
         </span>
       ),
     },
     {
       key: "duvidas",
       title: "Dúvidas",
+      accentText: "text-amber-300",
+      accentBar: "bg-amber-500",
+      badgeBg: "bg-amber-500/15 text-amber-300 border-amber-500/25",
       icon: (
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#ca8a04] text-[13px] font-black text-[#0b111e] shadow-sm">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-amber-500/20 text-[11px] font-bold text-amber-300 border border-amber-500/30">
           ?
         </span>
       ),
@@ -2881,146 +3168,261 @@ function CasoProgressMap({
     {
       key: "dominadas",
       title: "Dominadas",
+      accentText: "text-emerald-300",
+      accentBar: "bg-emerald-500",
+      badgeBg: "bg-emerald-500/15 text-emerald-300 border-emerald-500/25",
       icon: (
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center text-slate-300">
-          <Trophy size={18} strokeWidth={2} />
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">
+          <Trophy size={11} strokeWidth={2.1} />
         </span>
       ),
     },
   ];
 
+  const columnsWithItems = columnConfigs.map((col) => {
+    const colRows = grouped.columns[col.key];
+    const colAllItems = visibleCategories.flatMap(cat => colRows[cat.key]);
+    return { col, colRows, colAllItems };
+  });
+
+  const activeColumns = columnsWithItems.filter(c => c.colAllItems.length > 0);
+  const totalCount = questoes.length;
+  const dominadasCount = columnsWithItems.find(c => c.col.key === "dominadas")?.colAllItems.length ?? 0;
+  const duvidasCount = columnsWithItems.find(c => c.col.key === "duvidas")?.colAllItems.length ?? 0;
+  const naoDominadasCount = columnsWithItems.find(c => c.col.key === "nao_dominadas")?.colAllItems.length ?? 0;
+  const pctDominadas = totalCount > 0 ? Math.round((dominadasCount / totalCount) * 100) : 0;
+
+  // Detecta grupos com emoji igual para exibir legenda rápida no modo mapa
+  const sharedEmojiLegend = useMemo(() => {
+    const byKey = new Map<string, { emoji: string; nums: string[] }>();
+    for (const q of questoes) {
+      const tags = q.tagEmojis && q.tagEmojis.length > 0
+        ? q.tagEmojis
+        : extractQuestionTagEmojis("", undefined, q.topic);
+      for (const em of tags) {
+        const key = normalizeTagEmojiKey(em);
+        if (!key) continue;
+        const curr = byKey.get(key);
+        const label = q.numero ? `Q${q.numero}` : "?";
+        if (curr) curr.nums.push(label);
+        else byKey.set(key, { emoji: em, nums: [label] });
+      }
+    }
+    return [...byKey.values()].filter(g => g.nums.length >= 2);
+  }, [questoes]);
+
+  const gridColsClass =
+    activeColumns.length <= 1
+      ? "grid-cols-1"
+      : activeColumns.length === 2
+      ? "grid-cols-1 md:grid-cols-2"
+      : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
+
   return (
-    <div className="my-2 flex flex-col gap-3">
-      {/* Grade das 3 Colunas Principais dentro do Caso */}
-      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-3">
-          {columnConfigs.map((col) => {
-            const colRows = grouped.columns[col.key];
-            const colAllItems = visibleCategories.flatMap(cat => colRows[cat.key]);
-
-            return (
-              <section
+    <div className="my-1.5 flex flex-col gap-2">
+      {/* Barra compacta de resumo e progresso do Caso */}
+      <div className="flex flex-col gap-1.5 rounded-xl border border-white/[0.07] bg-[#0b111d]/90 px-3 py-2">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            {columnsWithItems.map(({ col, colAllItems }) => (
+              <span
                 key={col.key}
-                className="flex flex-col rounded-2xl border border-white/[0.08] bg-[#0e1523]/95 p-4 shadow-lg"
+                className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-medium tabular-nums ${
+                  colAllItems.length > 0
+                    ? col.badgeBg
+                    : "border-white/[0.05] bg-white/[0.02] text-slate-500"
+                }`}
               >
-                {/* Cabeçalho da Coluna */}
-                <div className="flex items-center justify-between gap-2.5 border-b border-white/[0.07] pb-3">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    {col.icon}
-                    <h5 className="text-[15px] font-semibold tracking-tight text-slate-100 truncate">
-                      {col.title}
-                    </h5>
-                  </div>
-                  <span className="text-xs font-medium text-slate-500 tabular-nums shrink-0">
-                    {colAllItems.length}
-                  </span>
-                </div>
+                <span className={`h-1.5 w-1.5 rounded-full ${colAllItems.length > 0 ? col.accentBar : "bg-slate-700"}`} />
+                <span>{col.title}:</span>
+                <span className="font-semibold">{colAllItems.length}</span>
+              </span>
+            ))}
+          </div>
 
-                {/* Linhas dinâmicas pelas classificações reais do Caso */}
-                <div className="flex flex-1 flex-col divide-y divide-white/[0.06]">
-                  {visibleCategories.map((cat) => {
-                    const items = colRows[cat.key];
-                    return (
-                      <div key={cat.key} className="flex items-start gap-3 py-3">
-                        <div className="flex w-[92px] sm:w-[98px] shrink-0 flex-col pt-0.5">
-                          <span
-                            className="flex items-center gap-1.5 text-[12px] font-medium truncate"
-                            style={{ color: cat.textColor }}
-                          >
-                            {cat.icon ? (
-                              <span className="text-[11px] leading-none shrink-0">{cat.icon}</span>
-                            ) : (
-                              <span
-                                className="h-2 w-2 rounded-full shrink-0"
-                                style={{ backgroundColor: cat.color }}
-                              />
-                            )}
-                            <span className="truncate">{cat.label}</span>
-                          </span>
-                          <span className="text-[10px] text-slate-500 tabular-nums pl-3.5">
-                            {items.length}
-                          </span>
-                        </div>
-
-                        <div className="w-px self-stretch shrink-0 bg-white/[0.08]" />
-
-                        <div className="flex flex-1 flex-wrap items-center content-start gap-1.5 min-h-[24px]">
-                          {items.length === 0 ? (
-                            <span className="text-[11px] italic text-slate-600">
-                              Nenhuma
-                            </span>
-                          ) : (
-                            items.map((item) => {
-                              const stats = getMapRowLookup(resultadosMap, item.id);
-                              const isDuvida = hasMapId(duvidasIds, item.id);
-                              const statusTexto =
-                                stats?.ultimo === "acerto"
-                                  ? "Acertou"
-                                  : stats?.ultimo === "erro"
-                                  ? "Errou"
-                                  : isDuvida
-                                  ? "Em Dúvida"
-                                  : "Pendente";
-
-                              const tileClasses =
-                                stats?.ultimo === "acerto"
-                                  ? "bg-[#22c55e] text-white shadow-sm hover:brightness-110"
-                                  : stats?.ultimo === "erro"
-                                  ? "bg-[#b91c1c] text-white shadow-sm hover:brightness-110"
-                                  : isDuvida
-                                  ? "bg-[#ca8a04] text-[#111827] shadow-sm hover:brightness-110"
-                                  : "border border-white/[0.15] bg-slate-800/85 text-slate-400 hover:border-slate-400/60 hover:text-slate-200";
-
-                              const numShort = item.numero ? `Q${item.numero}` : "";
-                              const tooltipParts = [
-                                cat.label,
-                                numShort || null,
-                                item.topic || null,
-                                statusTexto,
-                              ].filter(Boolean);
-
-                              const colIndex = colAllItems.findIndex(q => q.id === item.id);
-
-                              return (
-                                <button
-                                  key={item.id}
-                                  type="button"
-                                  onMouseEnter={() => {
-                                    preloadImageUrls(item.imageUrls);
-                                    preloadImageUrls(item.respostaImageUrls);
-                                    fetchQuestaoFullData(item.id).then(res => {
-                                      preloadImageUrls(res.imgs);
-                                      preloadImageUrls(res.rImgs);
-                                    }).catch(() => {});
-                                  }}
-                                  onClick={() => setZoomSession({ items: colAllItems, index: colIndex >= 0 ? colIndex : 0 })}
-                                  title={tooltipParts.join(" · ")}
-                                  aria-label={tooltipParts.join(" - ")}
-                                  className={`flex h-[22px] w-[22px] items-center justify-center rounded-[4px] transition-all hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-sky-400/70 ${tileClasses}`}
-                                >
-                                  {stats?.ultimo === "acerto" ? (
-                                    <Check size={13} strokeWidth={3} />
-                                  ) : stats?.ultimo === "erro" ? (
-                                    <X size={13} strokeWidth={3} />
-                                  ) : isDuvida ? (
-                                    <span className="text-[12px] font-black leading-none">?</span>
-                                  ) : (
-                                    <span className="text-[8px] font-semibold leading-none tabular-nums">
-                                      {item.numero ? item.numero.slice(0, 3) : "·"}
-                                    </span>
-                                  )}
-                                </button>
-                              );
-                            })
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            );
-          })}
+          <div className="flex items-center gap-2.5 text-[10px] text-slate-400">
+            <span className="hidden sm:inline-flex items-center gap-1">
+              <span className="h-2 w-2 rounded-[2px] bg-[#22c55e]" /> Acerto
+            </span>
+            <span className="hidden sm:inline-flex items-center gap-1">
+              <span className="h-2 w-2 rounded-[2px] bg-[#b91c1c]" /> Erro
+            </span>
+            <span className="hidden sm:inline-flex items-center gap-1">
+              <span className="h-2 w-2 rounded-[2px] bg-[#ca8a04]" /> Dúvida
+            </span>
+            <span className="hidden sm:inline-flex items-center gap-1">
+              <span className="h-2 w-2 rounded-[2px] border border-white/20 bg-slate-800" /> Aberta
+            </span>
+            <span className="font-semibold text-emerald-400/90 tabular-nums">
+              {pctDominadas}% dominado
+            </span>
+          </div>
         </div>
+
+        {totalCount > 0 && (
+          <div className="flex h-1 w-full overflow-hidden rounded-full bg-slate-800/90">
+            {dominadasCount > 0 && (
+              <div
+                className="bg-emerald-500"
+                style={{ width: `${(dominadasCount / totalCount) * 100}%` }}
+              />
+            )}
+            {duvidasCount > 0 && (
+              <div
+                className="bg-amber-500"
+                style={{ width: `${(duvidasCount / totalCount) * 100}%` }}
+              />
+            )}
+            {naoDominadasCount > 0 && (
+              <div
+                className="bg-slate-600/70"
+                style={{ width: `${(naoDominadasCount / totalCount) * 100}%` }}
+              />
+            )}
+          </div>
+        )}
+
+        {sharedEmojiLegend.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+            <span className="text-[10px] text-amber-300/80 font-medium">Mesma resolução e raciocínio:</span>
+            {sharedEmojiLegend.map((g, i) => (
+              <span
+                key={`${g.emoji}-${i}`}
+                className="inline-flex items-center gap-1 rounded-md border border-amber-500/20 bg-amber-500/[0.07] px-1.5 py-0.5 text-[10px] text-amber-200/90 tabular-nums"
+              >
+                <span>{g.emoji}</span>
+                <span className="text-slate-300">{g.nums.join(", ")}</span>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Colunas ativas (apenas colunas com questões para evitar espaços vazios) */}
+      <div className={`grid gap-2.5 ${gridColsClass}`}>
+        {activeColumns.map(({ col, colRows, colAllItems }) => {
+          const nonEmptyCategories = visibleCategories.filter(cat => colRows[cat.key].length > 0);
+
+          return (
+            <section
+              key={col.key}
+              className="flex flex-col rounded-xl border border-white/[0.08] bg-[#0e1523]/95 px-3 py-2.5 shadow-md"
+            >
+              {/* Cabeçalho compacto da Coluna */}
+              <div className="flex items-center justify-between gap-2 border-b border-white/[0.07] pb-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  {col.icon}
+                  <h5 className={`text-[12.5px] font-semibold tracking-tight truncate ${col.accentText}`}>
+                    {col.title}
+                  </h5>
+                </div>
+                <span className={`rounded-md border px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums shrink-0 ${col.badgeBg}`}>
+                  {colAllItems.length}
+                </span>
+              </div>
+
+              {/* Linhas por classificação (somente as que possuem questões) */}
+              <div className="flex flex-1 flex-col divide-y divide-white/[0.05]">
+                {nonEmptyCategories.map((cat) => {
+                  const items = colRows[cat.key];
+                  return (
+                    <div key={cat.key} className="flex items-center gap-2.5 py-2">
+                      <div className="flex w-[84px] sm:w-[92px] shrink-0 items-center justify-between gap-1">
+                        <span
+                          className="flex items-center gap-1.5 text-[11.5px] font-medium truncate"
+                          style={{ color: cat.textColor }}
+                        >
+                          {cat.icon ? (
+                            <span className="text-[11px] leading-none shrink-0">{cat.icon}</span>
+                          ) : (
+                            <span
+                              className="h-2 w-2 rounded-full shrink-0"
+                              style={{ backgroundColor: cat.color }}
+                            />
+                          )}
+                          <span className="truncate">{cat.label}</span>
+                        </span>
+                        <span className="text-[10px] text-slate-500 tabular-nums shrink-0">
+                          {items.length}
+                        </span>
+                      </div>
+
+                      <div className="w-px self-stretch shrink-0 bg-white/[0.08]" />
+
+                      <div className="flex flex-1 flex-wrap items-center gap-1.5">
+                        {items.map((item) => {
+                          const stats = getMapRowLookup(resultadosMap, item.id);
+                          const isDuvida = hasMapId(duvidasIds, item.id);
+                          const statusTexto =
+                            stats?.ultimo === "acerto"
+                              ? "Acertou"
+                              : stats?.ultimo === "erro"
+                              ? "Errou"
+                              : isDuvida
+                              ? "Em Dúvida"
+                              : "Pendente";
+
+                          const tileClasses =
+                            stats?.ultimo === "acerto"
+                              ? "bg-[#16a34a]/90 border border-emerald-400/40 text-white shadow-sm hover:brightness-110"
+                              : stats?.ultimo === "erro"
+                              ? "bg-[#b91c1c]/90 border border-rose-400/40 text-white shadow-sm hover:brightness-110"
+                              : isDuvida
+                              ? "bg-[#ca8a04] border border-amber-300/40 text-[#111827] shadow-sm hover:brightness-110"
+                              : "border border-white/[0.14] bg-slate-800/80 text-slate-200 hover:border-indigo-400/60 hover:bg-slate-700/80 hover:text-white";
+
+                          const numShort = item.numero ? `Q${item.numero}` : "";
+                          const tags = item.tagEmojis && item.tagEmojis.length > 0
+                            ? item.tagEmojis
+                            : extractQuestionTagEmojis("", undefined, item.topic);
+                          const tooltipParts = [
+                            cat.label,
+                            numShort || null,
+                            item.topic || null,
+                            tags.length > 0 ? `${tags.join(" ")} (Mesma resolução e raciocínio)` : null,
+                            statusTexto,
+                          ].filter(Boolean);
+
+                          const colIndex = colAllItems.findIndex(q => q.id === item.id);
+
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onMouseEnter={() => {
+                                preloadImageUrls(item.imageUrls);
+                                preloadImageUrls(item.respostaImageUrls);
+                                fetchQuestaoFullData(item.id).then(res => {
+                                  preloadImageUrls(res.imgs);
+                                  preloadImageUrls(res.rImgs);
+                                }).catch(() => {});
+                              }}
+                              onClick={() => setZoomSession({ items: colAllItems, index: colIndex >= 0 ? colIndex : 0 })}
+                              title={tooltipParts.join(" · ")}
+                              aria-label={tooltipParts.join(" - ")}
+                              className={`inline-flex h-[26px] min-w-[28px] items-center justify-center gap-1 rounded-md px-1.5 text-[11px] font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-sky-400/70 ${tileClasses}`}
+                            >
+                              {stats?.ultimo === "acerto" && <Check size={10} strokeWidth={3} className="shrink-0" />}
+                              {stats?.ultimo === "erro" && <X size={10} strokeWidth={3} className="shrink-0" />}
+                              {isDuvida && stats?.ultimo !== "acerto" && stats?.ultimo !== "erro" && (
+                                <span className="text-[10px] font-black leading-none shrink-0">?</span>
+                              )}
+                              <span>{item.numero ? item.numero.slice(0, 4) : "·"}</span>
+                              {tags.length > 0 && (
+                                <span className="text-[10px] leading-none shrink-0">{tags[0]}</span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
+      </div>
 
       {activeZoomQuestion && zoomSession && (
         <ZoomedQuestaoWrapper
@@ -3110,6 +3512,7 @@ const CasoCard = memo(function CasoCard({
   const loadingRef = useRef(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [zoomedQuestaoIndex, setZoomedQuestaoIndex] = useState<number | null>(null);
+  const [collapsedEmojiGroups, setCollapsedEmojiGroups] = useState<Set<string>>(() => new Set());
 
   // Reseta estado carregado quando houver sincronização forçada
   useEffect(() => {
@@ -3251,6 +3654,10 @@ const CasoCard = memo(function CasoCard({
               ? hasExpiredAwsUrl(dbRow.imagens_urls) || hasExpiredAwsUrl(dbRow.gabarito_imagens_urls)
               : false;
 
+            const extractedTags = extractQuestionTagEmojis("", undefined, q.topic || dbRow?.topico);
+            const cleanedTopic = dbRow?.topico
+              ? parseQuestaoTitle(dbRow.topico).topic
+              : q.topic;
             if (dbRow && !isLocalRow && notionTime > dbTime) {
               toDeleteDirect.push(dbRow.id);
               fullQuestaoCache.delete(qClean);
@@ -3258,18 +3665,20 @@ const CasoCard = memo(function CasoCard({
                 localStorage.removeItem(`notion_c_qfull_${qClean}`);
                 sessionStorage.removeItem(`notion_c_qfull_${qClean}`);
               } catch {}
-              return { ...q, forceReload: true };
+              return { ...q, tagEmojis: q.tagEmojis?.length ? q.tagEmojis : extractedTags, forceReload: true };
             }
             if (dbRow && !hasExpired) {
               return {
                 ...q,
+                topic: q.topic || cleanedTopic,
+                tagEmojis: q.tagEmojis?.length ? q.tagEmojis : extractedTags,
                 enunciadoTexto: dbRow.enunciado_texto || q.enunciadoTexto,
                 imageUrls: Array.isArray(dbRow.imagens_urls) ? dbRow.imagens_urls : q.imageUrls,
                 resposta: dbRow.gabarito_texto || q.resposta,
                 respostaImageUrls: Array.isArray(dbRow.gabarito_imagens_urls) ? dbRow.gabarito_imagens_urls : q.respostaImageUrls,
               };
             }
-            return { ...q, forceReload: !dbRow || hasExpired };
+            return { ...q, tagEmojis: q.tagEmojis?.length ? q.tagEmojis : extractedTags, forceReload: !dbRow || hasExpired };
           });
 
           if (toDeleteDirect.length > 0) {
@@ -3351,6 +3760,7 @@ const CasoCard = memo(function CasoCard({
               const cClean = child.id.replace(/-/g, "");
               foundCleanIds.add(cClean);
               const dbRow = dbMap.get(cClean);
+              const tagEmojis = extractQuestionTagEmojis(rawTitle, child.icon?.type === "emoji" ? child.icon.emoji : undefined, dbRow?.topico);
 
               const notionTime = child.last_edited_time ? new Date(child.last_edited_time).getTime() : 0;
               const isLocalRow = dbRow?.notion_last_edited_time === "local";
@@ -3378,13 +3788,15 @@ const CasoCard = memo(function CasoCard({
                   respostaImageUrls: [],
                   lastEditedTime: child.last_edited_time,
                   forceReload: true,
+                  tagEmojis,
                 });
               } else if (dbRow && !hasExpired) {
                 // ID igual e atualizado no Supabase: usa o registro do Supabase
+                const dbTopicParsed = dbRow.topico ? parseQuestaoTitle(dbRow.topico).topic : "";
                 const mq: Questao = {
                   id: dbRow.id,
                   numero: numero || dbRow.numero || "",
-                  topic: topic || dbRow.topico || "",
+                  topic: topic || dbTopicParsed || "",
                   categoryKey,
                   enunciadoTexto: dbRow.enunciado_texto || undefined,
                   imageUrls: Array.isArray(dbRow.imagens_urls) ? dbRow.imagens_urls : [],
@@ -3392,6 +3804,7 @@ const CasoCard = memo(function CasoCard({
                   respostaImageUrls: Array.isArray(dbRow.gabarito_imagens_urls) ? dbRow.gabarito_imagens_urls : [],
                   caseLabel: caso.nome,
                   lastEditedTime: child.last_edited_time,
+                  tagEmojis,
                 };
                 tempQuestoes.push(mq);
                 const qFull: FullQuestaoData = {
@@ -3416,6 +3829,7 @@ const CasoCard = memo(function CasoCard({
                   respostaImageUrls: [],
                   lastEditedTime: child.last_edited_time,
                   forceReload: true,
+                  tagEmojis,
                 });
               }
             } else if (rawTitle || child.has_children) {
@@ -3433,6 +3847,7 @@ const CasoCard = memo(function CasoCard({
             const selfCat = detectCategory(parsedSelf.emojis) || "media";
             foundCleanIds.add(cleanCasoId);
             const selfDbRow = dbMap.get(cleanCasoId);
+            const selfTags = extractQuestionTagEmojis(caso.nome, undefined, selfDbRow?.topico);
             const selfHasExpired = selfDbRow
               ? hasExpiredAwsUrl(selfDbRow.imagens_urls) || hasExpiredAwsUrl(selfDbRow.gabarito_imagens_urls)
               : false;
@@ -3440,13 +3855,14 @@ const CasoCard = memo(function CasoCard({
               tempQuestoes.push({
                 id: selfDbRow.id,
                 numero: parsedSelf.numero || selfDbRow.numero || "",
-                topic: parsedSelf.topic || selfDbRow.topico || caso.nome,
+                topic: parsedSelf.topic || (selfDbRow.topico ? parseQuestaoTitle(selfDbRow.topico).topic : "") || caso.nome,
                 categoryKey: selfCat,
                 enunciadoTexto: selfDbRow.enunciado_texto || undefined,
                 imageUrls: Array.isArray(selfDbRow.imagens_urls) ? selfDbRow.imagens_urls : [],
                 resposta: selfDbRow.gabarito_texto || undefined,
                 respostaImageUrls: Array.isArray(selfDbRow.gabarito_imagens_urls) ? selfDbRow.gabarito_imagens_urls : [],
                 caseLabel: caso.nome,
+                tagEmojis: selfTags,
               });
             } else {
               tempQuestoes.push({
@@ -3457,6 +3873,7 @@ const CasoCard = memo(function CasoCard({
                 imageUrls: [],
                 respostaImageUrls: [],
                 forceReload: true,
+                tagEmojis: selfTags,
               });
             }
           }
@@ -3488,17 +3905,22 @@ const CasoCard = memo(function CasoCard({
           }
         } else {
           // Notion demorou > 3s ou indisponível: pega do Supabase
-          const mappedDb: Questao[] = dbRes.map((b: any) => ({
-            id: b.id,
-            numero: b.numero || "",
-            topic: b.topico || "",
-            categoryKey: (b.categoria || "media") as CategoryKey,
-            enunciadoTexto: b.enunciado_texto || undefined,
-            imageUrls: Array.isArray(b.imagens_urls) ? b.imagens_urls : [],
-            resposta: b.gabarito_texto || undefined,
-            respostaImageUrls: Array.isArray(b.gabarito_imagens_urls) ? b.gabarito_imagens_urls : [],
-            caseLabel: b.caso_nome || caso.nome,
-          }));
+          const mappedDb: Questao[] = dbRes.map((b: any) => {
+            const dbTopicParsed = b.topico ? parseQuestaoTitle(b.topico).topic : "";
+            const tagEmojis = extractQuestionTagEmojis("", undefined, b.topico);
+            return {
+              id: b.id,
+              numero: b.numero || "",
+              topic: dbTopicParsed || "",
+              categoryKey: (b.categoria || "media") as CategoryKey,
+              enunciadoTexto: b.enunciado_texto || undefined,
+              imageUrls: Array.isArray(b.imagens_urls) ? b.imagens_urls : [],
+              resposta: b.gabarito_texto || undefined,
+              respostaImageUrls: Array.isArray(b.gabarito_imagens_urls) ? b.gabarito_imagens_urls : [],
+              caseLabel: b.caso_nome || caso.nome,
+              tagEmojis,
+            };
+          });
           const seedTime = Date.now();
           for (const mq of mappedDb) {
             const qClean = mq.id.replace(/-/g, "");
@@ -3529,7 +3951,8 @@ const CasoCard = memo(function CasoCard({
               const cClean = child.id.replace(/-/g, "");
               if (!seenIds.has(cClean)) {
                 seenIds.add(cClean);
-                tempQuestoes.push({ id: child.id, numero, topic, categoryKey, imageUrls: [], respostaImageUrls: [] });
+                const tagEmojis = extractQuestionTagEmojis(rawTitle, child.icon?.type === "emoji" ? child.icon.emoji : undefined);
+                tempQuestoes.push({ id: child.id, numero, topic, categoryKey, imageUrls: [], respostaImageUrls: [], tagEmojis });
               }
             } else if (rawTitle || child.has_children) {
               tempSubcasos.push({ id: child.id, nome: rawTitle || "Sem nome", questoes: [] });
@@ -3614,6 +4037,85 @@ const CasoCard = memo(function CasoCard({
     });
   }, [sortedQuestoes, classificacaoFiltro, overrides]);
 
+  type QuestaoRenderEntry =
+    | { type: "group"; key: string; emoji: string; items: { q: Questao; flatIdx: number }[] }
+    | { type: "single"; q: Questao; flatIdx: number };
+
+  const questaoRenderEntries = useMemo<QuestaoRenderEntry[]>(() => {
+    const emojiCounts = new Map<string, { display: string; count: number }>();
+    for (const q of filteredQuestoes) {
+      const tags = q.tagEmojis && q.tagEmojis.length > 0
+        ? q.tagEmojis
+        : extractQuestionTagEmojis("", undefined, q.topic);
+      const seenInQ = new Set<string>();
+      for (const em of tags) {
+        const key = normalizeTagEmojiKey(em);
+        if (!key || seenInQ.has(key)) continue;
+        seenInQ.add(key);
+        const curr = emojiCounts.get(key);
+        if (curr) curr.count++;
+        else emojiCounts.set(key, { display: em, count: 1 });
+      }
+    }
+
+    const sharedKeys = new Set<string>();
+    for (const [k, info] of emojiCounts.entries()) {
+      if (info.count >= 2) sharedKeys.add(k);
+    }
+
+    if (sharedKeys.size === 0) {
+      return filteredQuestoes.map((q, flatIdx) => ({ type: "single", q, flatIdx }));
+    }
+
+    const groupBuckets = new Map<string, { emoji: string; items: { q: Questao; flatIdx: number }[] }>();
+    const assignedGroupByFlatIdx = new Map<number, string>();
+
+    filteredQuestoes.forEach((q, flatIdx) => {
+      const tags = q.tagEmojis && q.tagEmojis.length > 0
+        ? q.tagEmojis
+        : extractQuestionTagEmojis("", undefined, q.topic);
+      const matchedKey = tags.map(normalizeTagEmojiKey).find(k => sharedKeys.has(k));
+      if (matchedKey) {
+        assignedGroupByFlatIdx.set(flatIdx, matchedKey);
+        const existing = groupBuckets.get(matchedKey);
+        if (existing) {
+          existing.items.push({ q, flatIdx });
+        } else {
+          groupBuckets.set(matchedKey, {
+            emoji: emojiCounts.get(matchedKey)!.display,
+            items: [{ q, flatIdx }],
+          });
+        }
+      }
+    });
+
+    const entries: QuestaoRenderEntry[] = [];
+    const emittedGroups = new Set<string>();
+    filteredQuestoes.forEach((q, flatIdx) => {
+      const gKey = assignedGroupByFlatIdx.get(flatIdx);
+      if (gKey) {
+        if (!emittedGroups.has(gKey)) {
+          emittedGroups.add(gKey);
+          const bucket = groupBuckets.get(gKey)!;
+          entries.push({ type: "group", key: gKey, emoji: bucket.emoji, items: bucket.items });
+        }
+      } else {
+        entries.push({ type: "single", q, flatIdx });
+      }
+    });
+
+    return entries;
+  }, [filteredQuestoes]);
+
+  const toggleEmojiGroup = useCallback((groupKey: string) => {
+    setCollapsedEmojiGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(groupKey)) next.delete(groupKey);
+      else next.add(groupKey);
+      return next;
+    });
+  }, []);
+
   const errosInCaso = loaded && resultadosMap
     ? (effectiveStatus === "mais_erros"
         ? questoes.filter(q => (resultadosMap.get(q.id)?.totalErros ?? 0) > 0).length
@@ -3630,8 +4132,9 @@ const CasoCard = memo(function CasoCard({
 
   const hasErrosInCaso = (effectiveStatus === "erros" || effectiveStatus === "mais_erros") && errosInCaso > 0;
   const hasContent = filteredQuestoes.length > 0 || subcasos.length > 0;
-  const total = loaded ? (filteredQuestoes.length + subcasos.length) || undefined : undefined;
-  const indent = depth > 0 ? "pl-4 border-l border-indigo-500/[0.15] ml-3" : "";
+  const hasSubcasos = subcasos.length > 0;
+  const hasDirectQuestoes = filteredQuestoes.length > 0;
+  const isSubcaso = depth > 0;
 
   return (
     <div
@@ -3659,16 +4162,20 @@ const CasoCard = memo(function CasoCard({
           }
         }
       }}
-      className={`flex flex-col gap-0.5 ${indent} rounded-lg ${
+      className={`flex flex-col gap-0.5 ${
+        isSubcaso
+          ? "rounded-xl border border-indigo-500/20 bg-indigo-950/[0.16] px-1.5 py-1"
+          : "rounded-lg"
+      } ${
         isDraggingOver ? "ring-2 ring-indigo-500/50 bg-indigo-500/10" : ""
       }`}
     >
-      <div className={`flex items-center justify-between py-1 px-2 transition-colors duration-150 rounded-lg group ${
+      <div className={`flex items-center justify-between py-1.5 px-2.5 min-h-[30px] rounded-lg group ${
         hasErrosInCaso ? "bg-rose-500/[0.03] border border-rose-500/20" : "hover:bg-white/[0.02]"
       }`}>
         {isAdmin && (
           <span 
-            className="cursor-grab active:cursor-grabbing p-0.5 text-slate-600 hover:text-indigo-400 transition-colors shrink-0 select-none" 
+            className="cursor-grab active:cursor-grabbing p-0.5 text-slate-600 hover:text-indigo-400 shrink-0 select-none" 
             title="Arrastar para reordenar caso"
           >
             <GripVertical size={13} />
@@ -3677,18 +4184,26 @@ const CasoCard = memo(function CasoCard({
 
         <button
           onClick={() => setOpenState({ open: !open, seq: expandSignal?.seq ?? openState.seq })}
-          className="flex items-center gap-2 text-left flex-1"
+          className="flex items-center gap-2 text-left flex-1 min-w-0"
         >
           <span className="text-[10px] text-slate-500 w-4 h-4 flex items-center justify-center shrink-0 select-none">
             {loading ? (
               <Loader2 size={10} className="animate-spin text-slate-500" />
             ) : (
-              <ChevronRight size={12} className={`text-slate-500 transition-transform duration-150 shrink-0 ${open ? "rotate-90" : ""}`} />
+              <ChevronRight size={12} className={`text-slate-500 shrink-0 ${open ? "rotate-90" : ""}`} />
             )}
           </span>
-          <span className={`font-medium transition-colors ${hasErrosInCaso ? "text-rose-300 font-bold" : "text-[#8E97A8] group-hover:text-white"} ${depth === 0 ? "text-[14px]" : "text-[13px]"}`}>
+          {isSubcaso && (
+            <Folder size={13} className="text-indigo-400/80 shrink-0" />
+          )}
+          <span className={`font-semibold truncate ${hasErrosInCaso ? "text-rose-300 font-bold" : isSubcaso ? "text-indigo-100 group-hover:text-white" : "text-[#a4adc0] group-hover:text-white"} ${depth === 0 ? "text-[14px]" : "text-[13px]"}`}>
             {caso.nome}
           </span>
+          {isSubcaso && (
+            <span className="hidden sm:inline-flex items-center px-1.5 py-0 leading-[15px] rounded bg-indigo-500/15 border border-indigo-500/25 text-[9px] font-bold uppercase tracking-wider text-indigo-300 shrink-0">
+              Subcaso
+            </span>
+          )}
 
           {hasErrosInCaso && (
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium text-rose-300 bg-rose-950/30 border border-rose-500/20 shrink-0 ml-1.5">
@@ -3699,12 +4214,12 @@ const CasoCard = memo(function CasoCard({
         </button>
 
         {isAdmin && (
-          <div className="flex items-center gap-0.5 opacity-30 group-hover:opacity-100 transition-opacity ml-2">
+          <div className="flex items-center gap-0.5 opacity-35 group-hover:opacity-100 ml-2">
             <button
               onClick={(e) => { e.stopPropagation(); onMoveUp?.(caso.id); }}
               disabled={isFirst}
               title="Mover caso para cima"
-              className="w-5 h-5 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent transition-all"
+              className="w-5 h-5 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent"
             >
               <ArrowUp size={10} />
             </button>
@@ -3712,7 +4227,7 @@ const CasoCard = memo(function CasoCard({
               onClick={(e) => { e.stopPropagation(); onMoveDown?.(caso.id); }}
               disabled={isLast}
               title="Mover caso para baixo"
-              className="w-5 h-5 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent transition-all"
+              className="w-5 h-5 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent"
             >
               <ArrowDown size={10} />
             </button>
@@ -3721,7 +4236,7 @@ const CasoCard = memo(function CasoCard({
 
         <div className="flex items-center gap-1 shrink-0 ml-1">
           {rootBlockId && (
-            <div className="flex items-center gap-0.5 opacity-45 group-hover:opacity-100 transition-opacity mr-0.5">
+            <div className="flex items-center gap-0.5 opacity-50 group-hover:opacity-100 mr-0.5">
               <button
                 type="button"
                 onClick={(e) => {
@@ -3729,7 +4244,7 @@ const CasoCard = memo(function CasoCard({
                   openCreateSubcaso(rootBlockId, caso.id, caso.nome);
                 }}
                 title={`Criar subcaso dentro de "${caso.nome}"`}
-                className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06] transition-all"
+                className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06]"
               >
                 <FolderPlus size={11} />
                 <span className="hidden lg:inline">Subcaso</span>
@@ -3741,7 +4256,7 @@ const CasoCard = memo(function CasoCard({
                   openCreateQuestao(rootBlockId, caso.id);
                 }}
                 title={`Nova questão dentro de "${caso.nome}"`}
-                className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-emerald-300 hover:bg-white/[0.06] transition-all"
+                className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-emerald-300 hover:bg-white/[0.06]"
               >
                 <FilePlus2 size={11} />
                 <span className="hidden lg:inline">Questão</span>
@@ -3753,7 +4268,7 @@ const CasoCard = memo(function CasoCard({
                   void deleteCaso(rootBlockId, parentBlockId || rootBlockId, caso.id, caso.nome);
                 }}
                 title={`Remover "${caso.nome}"`}
-                className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10"
               >
                 <Trash2 size={11} />
               </button>
@@ -3766,7 +4281,7 @@ const CasoCard = memo(function CasoCard({
               onPrintCaso?.(caso, questoes);
             }}
             title={`Imprimir caso "${caso.nome}" (com gabarito no final)`}
-            className="opacity-40 hover:opacity-100 group-hover:opacity-75 p-1 text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06] rounded-md transition-all"
+            className="opacity-45 hover:opacity-100 group-hover:opacity-80 p-1 text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06] rounded-md"
           >
             <Printer size={12} />
           </button>
@@ -3779,7 +4294,11 @@ const CasoCard = memo(function CasoCard({
       </div>
 
       {open && (
-        <div className="flex flex-col gap-0.5 pl-4 border-l border-indigo-500/[0.15] ml-4 my-0.5">
+        <div className={`flex flex-col gap-1.5 border-l my-1 ${
+          isSubcaso
+            ? "ml-10 pl-5 border-indigo-400/25"
+            : "ml-6 pl-4 border-indigo-500/20"
+        }`}>
           {loading && !loaded ? (
             <div className="flex items-center gap-2 text-[11px] text-slate-500 italic py-2">
               <Loader2 size={12} className="animate-spin" />
@@ -3811,75 +4330,174 @@ const CasoCard = memo(function CasoCard({
             </div>
           ) : (
             <>
-              {subcasos.map((sub, idx) => (
-                <CasoCard 
-                  key={sub.id} 
-                  caso={sub} 
-                  depth={depth + 1} 
-                  user={user} 
-                  duvidasIds={duvidasIds}
-                  onToggleDuvida={onToggleDuvida}
-                  onAnswered={onAnswered}
-                  resultadosMap={resultadosMap}
-                  apenasComErros={apenasComErros}
-                  statusFiltro={statusFiltro}
-                  feitasHojeIds={feitasHojeIds}
-                  isAdmin={isAdmin}
-                  showQuestionMap={showQuestionMap}
-                  expandSignal={expandSignal}
-                  onMoveUp={(id) => handleMoveSubcaso(id, "up")}
-                  onMoveDown={(id) => handleMoveSubcaso(id, "down")}
-                  onDropCaso={handleDropSubcaso}
-                  isFirst={idx === 0}
-                  isLast={idx === subcasos.length - 1}
-                  refreshKey={refreshKey}
-                  onPrintCaso={onPrintCaso}
-                  rootBlockId={rootBlockId}
-                  parentBlockId={caso.id}
-                />
-              ))}
-
-              {showQuestionMap && filteredQuestoes.length > 0 && (
-                <CasoProgressMap
-                  questoes={filteredQuestoes}
-                  originalCategoryById={originalCategoryById}
-                  casoNome={caso.nome}
-                  user={user}
-                  duvidasIds={duvidasIds}
-                  onToggleDuvida={onToggleDuvida}
-                  onAnswered={onAnswered}
-                  resultadosMap={resultadosMap}
-                />
+              {hasSubcasos && (
+                <div className="flex flex-col gap-2">
+                  {hasDirectQuestoes && (
+                    <div className="flex items-center gap-1.5 px-1 pt-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-300/80">
+                      <Folder size={11} className="text-indigo-400 shrink-0" />
+                      <span>Subcasos ({subcasos.length})</span>
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-2">
+                    {subcasos.map((sub, idx) => (
+                      <CasoCard 
+                        key={sub.id} 
+                        caso={sub} 
+                        depth={depth + 1} 
+                        user={user} 
+                        duvidasIds={duvidasIds}
+                        onToggleDuvida={onToggleDuvida}
+                        onAnswered={onAnswered}
+                        resultadosMap={resultadosMap}
+                        apenasComErros={apenasComErros}
+                        statusFiltro={statusFiltro}
+                        feitasHojeIds={feitasHojeIds}
+                        isAdmin={isAdmin}
+                        showQuestionMap={showQuestionMap}
+                        expandSignal={expandSignal}
+                        onMoveUp={(id) => handleMoveSubcaso(id, "up")}
+                        onMoveDown={(id) => handleMoveSubcaso(id, "down")}
+                        onDropCaso={handleDropSubcaso}
+                        isFirst={idx === 0}
+                        isLast={idx === subcasos.length - 1}
+                        refreshKey={refreshKey}
+                        onPrintCaso={onPrintCaso}
+                        rootBlockId={rootBlockId}
+                        parentBlockId={caso.id}
+                      />
+                    ))}
+                  </div>
+                </div>
               )}
 
-              {!showQuestionMap && filteredQuestoes.map((q, idx) => (
-                <div key={q.id} className={idx < filteredQuestoes.length - 1 ? "border-b border-white/[0.06] pb-1 mb-1" : ""}>
-                  <QuestaoRow 
-                    questao={q} 
-                    user={user} 
-                    isDuvida={duvidasIds.has(q.id)}
-                    onToggleDuvida={onToggleDuvida}
-                    onAnswered={onAnswered}
-                    stats={resultadosMap?.get(q.id)}
-                    apenasComErros={apenasComErros}
-                    statusFiltro={statusFiltro}
-                    feitasHojeIds={feitasHojeIds}
-                    isAdmin={isAdmin}
-                    onMoveUp={(id) => handleMoveQuestao(id, "up")}
-                    onMoveDown={(id) => handleMoveQuestao(id, "down")}
-                    onDropQuestao={handleDropQuestao}
-                    isFirst={idx === 0}
-                    isLast={idx === filteredQuestoes.length - 1}
-                    onNextQuestion={idx < filteredQuestoes.length - 1 ? () => setZoomedQuestaoIndex(idx + 1) : undefined}
-                    onPrevQuestion={idx > 0 ? () => setZoomedQuestaoIndex(idx - 1) : undefined}
-                    hasNextQuestion={idx < filteredQuestoes.length - 1}
-                    hasPrevQuestion={idx > 0}
-                    rootBlockId={rootBlockId}
-                    casoId={caso.id}
-                    casoNome={caso.nome}
-                  />
+              {hasDirectQuestoes && (
+                <div className={hasSubcasos ? "mt-1 pt-2 border-t border-white/[0.08] flex flex-col gap-1.5" : "flex flex-col gap-0.5"}>
+                  {hasSubcasos && (
+                    <div className="flex items-center gap-1.5 px-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      <FileText size={11} className="text-slate-500 shrink-0" />
+                      <span>Questões diretas de &ldquo;{caso.nome}&rdquo; ({filteredQuestoes.length})</span>
+                    </div>
+                  )}
+
+                  <div className={hasSubcasos ? "ml-8 pl-4 border-l border-white/[0.10] flex flex-col gap-0.5" : "pl-2 flex flex-col gap-0.5"}>
+                    {showQuestionMap && (
+                      <CasoProgressMap
+                        questoes={filteredQuestoes}
+                        originalCategoryById={originalCategoryById}
+                        casoNome={caso.nome}
+                        user={user}
+                        duvidasIds={duvidasIds}
+                        onToggleDuvida={onToggleDuvida}
+                        onAnswered={onAnswered}
+                        resultadosMap={resultadosMap}
+                      />
+                    )}
+
+                    {!showQuestionMap && questaoRenderEntries.map((entry, entryIdx) => {
+                      if (entry.type === "group") {
+                        const isGroupCollapsed = collapsedEmojiGroups.has(entry.key);
+                        return (
+                          <div
+                            key={`emoji-group-${entry.key}`}
+                            className="rounded-lg border border-amber-500/20 bg-amber-500/[0.03] px-1.5 py-1 my-0.5"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => toggleEmojiGroup(entry.key)}
+                              className="w-full flex items-center gap-1.5 px-1.5 py-0.5 text-left rounded hover:bg-white/[0.03] transition-colors"
+                            >
+                              <ChevronRight
+                                size={10}
+                                className={`text-amber-400/80 shrink-0 ${!isGroupCollapsed ? "rotate-90" : ""}`}
+                              />
+                              <span className="text-[12px] leading-none shrink-0">{entry.emoji}</span>
+                              <span className="text-[10.5px] font-semibold text-amber-300/95 truncate">
+                                Mesma resolução e raciocínio
+                              </span>
+                              <span className="text-[9.5px] text-amber-200/75 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0 leading-[15px] rounded shrink-0 tabular-nums">
+                                {entry.items.length} questões
+                              </span>
+                              <span className="text-[9.5px] text-slate-500 truncate ml-auto hidden sm:inline tabular-nums">
+                                Q{entry.items.map(i => i.q.numero || "?").slice(0, 8).join(", ")}
+                                {entry.items.length > 8 ? "…" : ""}
+                              </span>
+                            </button>
+
+                            {!isGroupCollapsed && (
+                              <div className="flex flex-col gap-0.5 mt-0.5 pl-3 border-l border-amber-500/20 ml-3">
+                                {entry.items.map(({ q, flatIdx }, subIdx) => (
+                                  <div
+                                    key={q.id}
+                                    className={subIdx < entry.items.length - 1 ? "border-b border-white/[0.04]" : ""}
+                                  >
+                                    <QuestaoRow
+                                      questao={q}
+                                      user={user}
+                                      isDuvida={duvidasIds.has(q.id)}
+                                      onToggleDuvida={onToggleDuvida}
+                                      onAnswered={onAnswered}
+                                      stats={resultadosMap?.get(q.id)}
+                                      apenasComErros={apenasComErros}
+                                      statusFiltro={statusFiltro}
+                                      feitasHojeIds={feitasHojeIds}
+                                      isAdmin={isAdmin}
+                                      onMoveUp={(id) => handleMoveQuestao(id, "up")}
+                                      onMoveDown={(id) => handleMoveQuestao(id, "down")}
+                                      onDropQuestao={handleDropQuestao}
+                                      isFirst={flatIdx === 0}
+                                      isLast={flatIdx === filteredQuestoes.length - 1}
+                                      onNextQuestion={flatIdx < filteredQuestoes.length - 1 ? () => setZoomedQuestaoIndex(flatIdx + 1) : undefined}
+                                      onPrevQuestion={flatIdx > 0 ? () => setZoomedQuestaoIndex(flatIdx - 1) : undefined}
+                                      hasNextQuestion={flatIdx < filteredQuestoes.length - 1}
+                                      hasPrevQuestion={flatIdx > 0}
+                                      rootBlockId={rootBlockId}
+                                      casoId={caso.id}
+                                      casoNome={caso.nome}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+
+                      const { q, flatIdx } = entry;
+                      return (
+                        <div
+                          key={q.id}
+                          className={entryIdx < questaoRenderEntries.length - 1 ? "border-b border-white/[0.04]" : ""}
+                        >
+                          <QuestaoRow 
+                            questao={q} 
+                            user={user} 
+                            isDuvida={duvidasIds.has(q.id)}
+                            onToggleDuvida={onToggleDuvida}
+                            onAnswered={onAnswered}
+                            stats={resultadosMap?.get(q.id)}
+                            apenasComErros={apenasComErros}
+                            statusFiltro={statusFiltro}
+                            feitasHojeIds={feitasHojeIds}
+                            isAdmin={isAdmin}
+                            onMoveUp={(id) => handleMoveQuestao(id, "up")}
+                            onMoveDown={(id) => handleMoveQuestao(id, "down")}
+                            onDropQuestao={handleDropQuestao}
+                            isFirst={flatIdx === 0}
+                            isLast={flatIdx === filteredQuestoes.length - 1}
+                            onNextQuestion={flatIdx < filteredQuestoes.length - 1 ? () => setZoomedQuestaoIndex(flatIdx + 1) : undefined}
+                            onPrevQuestion={flatIdx > 0 ? () => setZoomedQuestaoIndex(flatIdx - 1) : undefined}
+                            hasNextQuestion={flatIdx < filteredQuestoes.length - 1}
+                            hasPrevQuestion={flatIdx > 0}
+                            rootBlockId={rootBlockId}
+                            casoId={caso.id}
+                            casoNome={caso.nome}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              ))}
+              )}
             </>
           )}
         </div>
@@ -4031,6 +4649,7 @@ function BlockViewer({
                   const iconEmoji = child.icon?.type === "emoji" && child.icon.emoji ? [child.icon.emoji] : [];
                   const categoryKey = detectCategory([...iconEmoji, ...textEmojis]);
                   if (categoryKey) {
+                    const tagEmojis = extractQuestionTagEmojis(rawTitle, child.icon?.type === "emoji" ? child.icon.emoji : undefined);
                     directRootQuestions.push({
                       id: child.id,
                       numero,
@@ -4040,6 +4659,7 @@ function BlockViewer({
                       respostaImageUrls: [],
                       caseLabel: block.nome || "Geral",
                       lastEditedTime: child.last_edited_time,
+                      tagEmojis,
                     });
                     continue;
                   }
@@ -4049,6 +4669,7 @@ function BlockViewer({
                   const iconEmoji = child.icon?.type === "emoji" && child.icon.emoji ? [child.icon.emoji] : [];
                   const categoryKey = detectCategory([...iconEmoji, ...textEmojis]);
                   if (categoryKey) {
+                    const tagEmojis = extractQuestionTagEmojis(rawTitle, child.icon?.type === "emoji" ? child.icon.emoji : undefined);
                     directRootQuestions.push({
                       id: child.id,
                       numero,
@@ -4058,6 +4679,7 @@ function BlockViewer({
                       respostaImageUrls: [],
                       caseLabel: block.nome || "Geral",
                       lastEditedTime: child.last_edited_time,
+                      tagEmojis,
                     });
                   } else {
                     casosList.push({ id: child.id, nome: rawTitle || "Sem nome", questoes: [] });
@@ -4080,6 +4702,7 @@ function BlockViewer({
                 const selfCategory = detectCategory([...selfIconEmoji, ...parsedSelf.emojis]);
                 if (selfCategory || onlyRespostaCasos || hasQuestionBody) {
                   if (onlyRespostaCasos) casosList.length = 0;
+                  const selfTags = extractQuestionTagEmojis(selfTitle || block.nome, selfIconEmoji[0]);
                   directRootQuestions.push({
                     id: blockUuid,
                     numero: parsedSelf.numero || "1",
@@ -4090,6 +4713,7 @@ function BlockViewer({
                     caseLabel: block.nome || "Questão",
                     lastEditedTime: selfBlock?.last_edited_time,
                     forceReload: true,
+                    tagEmojis: selfTags,
                   });
                 }
               }
@@ -4173,6 +4797,7 @@ function BlockViewer({
                   const iconEmoji = child.icon?.type === "emoji" && child.icon.emoji ? [child.icon.emoji] : [];
                   const categoryKey = detectCategory([...iconEmoji, ...textEmojis]);
                   if (categoryKey) {
+                    const tagEmojis = extractQuestionTagEmojis(rawTitle, child.icon?.type === "emoji" ? child.icon.emoji : undefined);
                     directRootQuestions.push({
                       id: child.id,
                       numero,
@@ -4181,6 +4806,7 @@ function BlockViewer({
                       imageUrls: [],
                       respostaImageUrls: [],
                       caseLabel: block.nome || "Geral",
+                      tagEmojis,
                     });
                     continue;
                   }
@@ -4206,14 +4832,17 @@ function BlockViewer({
                   seenCasos.set(key, { id: cId, nome: cNome, questoes: [] });
                 }
                 if (!row.caso_id || row.caso_id.replace(/-/g, "") === clean) {
+                  const tagEmojis = extractQuestionTagEmojis("", undefined, row.topico);
+                  const cleanTopic = row.topico ? parseQuestaoTitle(row.topico).topic : "";
                   seenCasos.get(key)!.questoes.push({
                     id: row.id,
                     numero: row.numero || "",
-                    topic: row.topico || "",
+                    topic: cleanTopic || "",
                     categoryKey: (row.categoria || "media") as CategoryKey,
                     imageUrls: [],
                     respostaImageUrls: [],
                     caseLabel: cNome,
+                    tagEmojis,
                   });
                 }
               }
@@ -4265,7 +4894,7 @@ function BlockViewer({
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-12 gap-3">
       <Loader2 className="w-7 h-7 text-indigo-500 animate-spin" />
-      <p className="text-[10px] text-slate-700 font-black uppercase tracking-widest animate-pulse">Carregando questões...</p>
+      <p className="text-[10px] text-slate-700 font-black uppercase tracking-widest">Carregando questões...</p>
     </div>
   );
 
@@ -4362,7 +4991,7 @@ function BlockViewer({
           <button
             type="button"
             onClick={() => builder.openCreateCaso(block.block_id, block.nome, casos.map(c => ({ id: c.id, nome: c.nome })))}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/35 border border-indigo-500/30 text-indigo-300 text-[11px] font-bold transition-all active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/35 border border-indigo-500/30 text-indigo-300 text-[11px] font-bold transition-colors"
           >
             <FolderPlus size={13} />
             <span>+ Novo Caso</span>
@@ -4370,7 +4999,7 @@ function BlockViewer({
           <button
             type="button"
             onClick={() => builder.openCreateQuestao(block.block_id, casos[0]?.id)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/35 border border-emerald-500/30 text-emerald-300 text-[11px] font-bold transition-all active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/35 border border-emerald-500/30 text-emerald-300 text-[11px] font-bold transition-colors"
           >
             <FilePlus2 size={13} />
             <span>+ Nova Questão</span>
@@ -4631,7 +5260,7 @@ function TotalBancoStatsBadge({ blocks }: { blocks: NotionBlockRow[] }) {
   if (total === null) {
     return (
       <span className="text-[10px] font-normal text-slate-300 flex items-center gap-1 bg-slate-900/60 border border-slate-800 px-2 py-0.5 rounded-lg" title="Total de questões cadastradas no banco">
-        <BookMarked size={11} className="text-indigo-400/80 animate-pulse" />
+        <BookMarked size={11} className="text-indigo-400/80" />
         <span className="text-indigo-300/80 font-medium">... questões</span>
       </span>
     );
@@ -4680,7 +5309,7 @@ function QuestaoBloquinho({
     <button
       onClick={onClick}
       title={q.topic || `Questão ${q.numero}`}
-      className={`relative flex flex-col gap-1 p-2 rounded-lg border text-left transition-all shrink-0 w-[92px] ${tierClasses} ${
+      className={`relative flex flex-col gap-1 p-2 rounded-lg border text-left transition-colors shrink-0 w-[92px] ${tierClasses} ${
         isSelected ? "ring-2 ring-blue-500" : ""
       }`}
     >
@@ -4811,7 +5440,7 @@ function GabaritoBloco({
             <div key={caseLabel} className="relative flex flex-col gap-2">
               <button
                 onClick={() => toggleExpandido(caseLabel)}
-                className="relative z-10 w-full flex items-center gap-3 px-2.5 py-2 rounded-xl border border-white/[0.06] bg-[#111623] hover:border-white/[0.14] transition-all text-left"
+                className="relative z-10 w-full flex items-center gap-3 px-2.5 py-2 rounded-xl border border-white/[0.06] bg-[#111623] hover:border-white/[0.14] transition-colors text-left"
               >
                 <span className="w-7 h-7 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-sm shrink-0">
                   {icon}
@@ -4826,7 +5455,7 @@ function GabaritoBloco({
                   <span className="text-amber-400 flex items-center gap-0.5"><Flag size={9} />{cDuvidas}</span>
                   <span className={`px-1.5 py-0.5 rounded border text-[9px] ${aproveitamentoClasses}`}>{cPct === null ? "—" : `${cPct}%`}</span>
                 </div>
-                <ChevronDown size={13} className={`text-slate-500 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                <ChevronDown size={13} className={`text-slate-500 shrink-0 ${isOpen ? "rotate-180" : ""}`} />
               </button>
 
               {isOpen && (
@@ -5022,26 +5651,26 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
           }
         }
       }}
-      className={`flex flex-col gap-1.5 p-2 sm:p-2.5 rounded-xl border transition-all ${
+      className={`flex flex-col gap-1.5 p-2 sm:p-2.5 rounded-xl border transition-colors ${
         isDraggingOver ? "ring-2 ring-indigo-500/50 bg-indigo-500/10" : ""
       } ${
         showRedHighlight
-          ? "bg-rose-500/[0.03] border-rose-500/25 shadow-md shadow-rose-500/5"
-          : "bg-[#111623]/90 border-white/[0.06] hover:border-white/[0.12] shadow-sm"
+          ? "bg-rose-500/[0.03] border-rose-500/25"
+          : "bg-[#111623]/95 border-white/[0.06] hover:border-white/[0.12]"
       }`}
     >
       {/* Header do Card */}
       <div className="flex items-center justify-between gap-1.5 min-w-0 flex-nowrap whitespace-nowrap overflow-hidden">
         <button
           onClick={() => onSelect ? onSelect(block) : setOpen(v => !v)}
-          className="flex items-center gap-1.5 text-left transition-all flex-1 min-w-0 group flex-nowrap whitespace-nowrap overflow-hidden"
+          className="flex items-center gap-1.5 text-left flex-1 min-w-0 group flex-nowrap whitespace-nowrap overflow-hidden"
         >
           <span className="text-[9px] text-slate-500 w-3.5 h-3.5 flex items-center justify-center shrink-0 select-none">
             {onSelect ? "→" : open ? "▼" : "▶"}
           </span>
           <span className="text-sm shrink-0 select-none">{blockIcon}</span>
           <div className="flex items-center gap-1.5 min-w-0 flex-nowrap whitespace-nowrap overflow-hidden">
-            <span className={`text-[12px] sm:text-[13px] font-normal transition-colors truncate shrink-0 ${
+            <span className={`text-[12px] sm:text-[13px] font-normal truncate shrink-0 ${
               showRedHighlight ? "text-rose-300" : "text-slate-400 group-hover:text-slate-200"
             }`}>
               {block.nome}
@@ -5062,7 +5691,7 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
               onPrintCaderno?.(block);
             }}
             title={`Imprimir caderno "${block.nome}" inteiro (com gabarito no final)`}
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.03] text-slate-400 hover:text-indigo-300 hover:bg-white/[0.08] hover:border-white/[0.15] transition-all"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.03] text-slate-400 hover:text-indigo-300 hover:bg-white/[0.08] hover:border-white/[0.15] transition-colors"
           >
             <Printer size={12} />
           </button>
@@ -5082,7 +5711,7 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
                   setShowMenu(v => !v);
                 }}
                 title="Opções do Caderno (Admin)"
-                className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-all ${
+                className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-colors ${
                   showMenu
                     ? "bg-indigo-600/30 border-indigo-500/50 text-indigo-300"
                     : "bg-white/[0.03] border-white/[0.07] text-slate-500 hover:text-slate-200 hover:border-white/[0.15]"
@@ -5099,7 +5728,7 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
                   />
                   
                   <div 
-                    className="absolute right-0 top-full mt-1.5 w-60 z-50 bg-[#111623] border border-white/[0.12] rounded-2xl p-3 shadow-2xl flex flex-col gap-2.5 backdrop-blur-xl"
+                    className="absolute right-0 top-full mt-1.5 w-60 z-50 bg-[#111623] border border-white/[0.12] rounded-2xl p-3 shadow-lg flex flex-col gap-2.5"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
@@ -5131,14 +5760,14 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
                             }
                           }}
                           placeholder="Ex: 1"
-                          className="w-full text-center text-[12px] font-mono font-black text-indigo-300 bg-black/50 border border-indigo-500/30 rounded-lg py-1 focus:outline-none focus:border-indigo-400 transition-all"
+                          className="w-full text-center text-[12px] font-mono font-black text-indigo-300 bg-black/50 border border-indigo-500/30 rounded-lg py-1 focus:outline-none focus:border-indigo-400"
                         />
                         <button
                           onClick={() => {
                             handleSaveOrdem();
                             setShowMenu(false);
                           }}
-                          className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all shrink-0"
+                          className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shrink-0"
                         >
                           Salvar
                         </button>
@@ -5150,14 +5779,14 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
                       <button
                         onClick={() => { onMoveUp?.(block.id); }}
                         disabled={isFirst}
-                        className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-[#0d1220] hover:bg-white/[0.06] border border-white/[0.06] rounded-xl text-[10px] font-bold text-slate-300 disabled:opacity-30 disabled:hover:bg-[#0d1220] transition-all"
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-[#0d1220] hover:bg-white/[0.06] border border-white/[0.06] rounded-xl text-[10px] font-bold text-slate-300 disabled:opacity-30 disabled:hover:bg-[#0d1220] transition-colors"
                       >
                         <ArrowUp size={12} className="text-indigo-400" /> Subir
                       </button>
                       <button
                         onClick={() => { onMoveDown?.(block.id); }}
                         disabled={isLast}
-                        className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-[#0d1220] hover:bg-white/[0.06] border border-white/[0.06] rounded-xl text-[10px] font-bold text-slate-300 disabled:opacity-30 disabled:hover:bg-[#0d1220] transition-all"
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-[#0d1220] hover:bg-white/[0.06] border border-white/[0.06] rounded-xl text-[10px] font-bold text-slate-300 disabled:opacity-30 disabled:hover:bg-[#0d1220] transition-colors"
                       >
                         <ArrowDown size={12} className="text-indigo-400" /> Descer
                       </button>
@@ -5170,7 +5799,7 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
                           setShowMenu(false);
                           onDelete(block.id);
                         }}
-                        className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 rounded-xl text-[10px] font-bold transition-all"
+                        className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 rounded-xl text-[10px] font-bold transition-colors"
                       >
                         <Trash2 size={12} /> Excluir Caderno
                       </button>
@@ -6181,9 +6810,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   return (
     <BuilderActionsContext.Provider value={builderContextValue}>
     <ClassificationContext.Provider value={{ overrides: classificationOverrides, updateClassification: handleUpdateClassification, canEdit: !!user?.id, classificacaoFiltro, setClassificacaoFiltro }}>
-    <div className="flex flex-col gap-4 bg-[#080d1a] rounded-2xl border border-white/[0.06] p-4 sm:p-5 shadow-2xl relative overflow-hidden">
-      {/* Background ambient glow */}
-      <div className="absolute top-0 right-1/4 w-80 h-80 bg-indigo-600/[0.03] blur-[120px] rounded-full pointer-events-none" />
+    <div className="flex flex-col gap-4 bg-[#080d1a] rounded-2xl border border-white/[0.06] p-4 sm:p-5 relative overflow-hidden">
 
       {/* Sleek Ultra-Compact Header Toolbar */}
       <div className="flex items-center justify-between flex-wrap gap-2.5 pb-2.5 border-b border-white/[0.06] relative z-10">
@@ -6231,7 +6858,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               type="button"
               onClick={() => builderContextValue.openCreateQuestao(selectedBlock?.block_id ?? blocks[0]?.block_id)}
               title="Criar questão (em Caso ou Subcaso), anexar imagem, escrever enunciado e resposta"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all active:scale-95 shrink-0 shadow-md shadow-emerald-600/20"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors shrink-0"
             >
               <FilePlus2 size={13} />
               <span>+ Nova Questão</span>
@@ -6240,7 +6867,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           <button
             onClick={toggleAntiBrilho}
             title={antiBrilho === 'noturno' ? "Modo Escuro (Dark Invertido) ativo para imagens — clique para alternar" : "Modo Original ativo para imagens — clique para alternar"}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95 shrink-0 ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors shrink-0 ${
               antiBrilho === 'noturno'
                 ? 'bg-purple-950/40 hover:bg-purple-900/50 text-purple-300 border-purple-500/40'
                 : 'bg-slate-800/60 hover:bg-slate-700/60 text-slate-300 border-slate-700'
@@ -6252,7 +6879,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           <button
             onClick={handleForceSyncNotion}
             title="Forçar sincronização em tempo real com o Notion (Limpa todos os caches)"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 text-xs font-bold transition-all active:scale-95 shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 text-xs font-bold transition-colors shrink-0"
           >
             <RefreshCw size={13} className={loadingBlocks ? "animate-spin text-indigo-400" : "text-indigo-400"} />
             <span className="hidden sm:inline">Sincronizar Notion</span>
@@ -6260,7 +6887,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           <button
             onClick={() => setShowSyncModal(true)}
             title="Espelhar questões e salvar imagens permanentemente no Supabase (Carregamento ultra-rápido de 0ms)"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all active:scale-95 shrink-0 shadow-md shadow-indigo-600/20"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-colors shrink-0"
           >
             <Database size={13} className="text-white" />
             <span>Sincronizar Banco</span>
@@ -6268,7 +6895,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           {isAdmin && (
             <button
               onClick={() => setShowForm(v => !v)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-md shadow-indigo-600/20"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
             >
               <Plus size={11} /> Novo Bloco
             </button>
@@ -6300,14 +6927,14 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               <button
                 type="button"
                 onClick={() => setShowSyncModal(true)}
-                className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/35 text-amber-200 text-[10px] font-bold transition-all"
+                className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/35 text-amber-200 text-[10px] font-bold transition-colors"
               >
                 Sincronizar Banco
               </button>
               <button
                 type="button"
                 onClick={handleDismissAllAlerts}
-                className="px-2 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white text-[10px] font-medium transition-all"
+                className="px-2 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white text-[10px] font-medium transition-colors"
               >
                 Dispensar todos
               </button>
@@ -6337,7 +6964,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                       type="button"
                       disabled={migratingAlertId === alertItem.id}
                       onClick={() => handleMigrateAlertHistory(alertItem)}
-                      className="px-2.5 py-1 rounded-lg bg-emerald-600/25 hover:bg-emerald-600/40 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold transition-all disabled:opacity-50"
+                      className="px-2.5 py-1 rounded-lg bg-emerald-600/25 hover:bg-emerald-600/40 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold transition-colors disabled:opacity-50"
                     >
                       {migratingAlertId === alertItem.id ? "Atualizando..." : "Atualizar meu histórico"}
                     </button>
@@ -6346,7 +6973,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                     type="button"
                     onClick={() => handleDismissAlert(alertItem.id)}
                     title="Dispensar este aviso"
-                    className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+                    className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
                   >
                     <X size={13} />
                   </button>
@@ -6368,7 +6995,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
       />
 
       {showForm && (
-        <div className="border border-indigo-500/20 rounded-2xl bg-[#101526]/90 p-5 flex flex-col gap-4 backdrop-blur-xl relative z-10 shadow-2xl">
+        <div className="border border-indigo-500/20 rounded-2xl bg-[#101526] p-5 flex flex-col gap-4 relative z-10 shadow-lg">
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-black text-indigo-300 uppercase tracking-widest">
               Cadastrar Bloco Notion
@@ -6393,11 +7020,11 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                   Gerar ID local
                 </button>
               </div>
-              <input value={formId} onChange={e => { setFormId(e.target.value); setIsLocalNewBlock(false); }} placeholder="abc12345-... ou gere um ID local" className="px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40 transition-all font-mono" />
+              <input value={formId} onChange={e => { setFormId(e.target.value); setIsLocalNewBlock(false); }} placeholder="abc12345-... ou gere um ID local" className="px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40 font-mono" />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Nome *</label>
-              <input value={formNome} onChange={e => setFormNome(e.target.value)} placeholder="Ex: Caderno Azul" className="px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40 transition-all" />
+              <input value={formNome} onChange={e => setFormNome(e.target.value)} placeholder="Ex: Caderno Azul" className="px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40" />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Matéria</label>
@@ -6406,7 +7033,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                 onChange={e => setFormMateria(e.target.value)}
                 placeholder="Ex: Matemática Financeira"
                 list="materias-cadastradas"
-                className="px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40 transition-all"
+                className="px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40"
               />
               <datalist id="materias-cadastradas">
                 {materiasDisponiveis.map(m => <option key={m} value={m} />)}
@@ -6414,13 +7041,13 @@ export default function NotionQuestionTab({ user }: { user: any }) {
             </div>
             <div className="flex flex-col gap-1.5 sm:col-span-3">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Descrição (opcional)</label>
-              <input value={formDesc} onChange={e => setFormDesc(e.target.value)} placeholder="Ex: BB 2024 — Edital completo" className="px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40 transition-all" />
+              <input value={formDesc} onChange={e => setFormDesc(e.target.value)} placeholder="Ex: BB 2024 — Edital completo" className="px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40" />
             </div>
           </div>
           {saveErr && <p className="text-[11px] text-red-400 font-bold">{saveErr}</p>}
           <div className="flex items-center gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-4 py-1.5 rounded-xl text-[11px] font-black text-slate-500 hover:text-slate-300 transition-all">Cancelar</button>
-            <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95">
+            <button onClick={() => setShowForm(false)} className="px-4 py-1.5 rounded-xl text-[11px] font-black text-slate-500 hover:text-slate-300 transition-colors">Cancelar</button>
+            <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-colors">
               {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} Salvar
             </button>
           </div>
@@ -6428,10 +7055,10 @@ export default function NotionQuestionTab({ user }: { user: any }) {
       )}
 
       {!selectedBlock && !loadingBlocks && blocks.length > 0 && (
-        <div className="flex items-center gap-3 flex-wrap justify-between bg-[#101526] p-3 rounded-2xl border border-white/[0.08] relative z-10 shadow-xl">
+        <div className="flex items-center gap-3 flex-wrap justify-between bg-[#101526] p-3 rounded-2xl border border-white/[0.08] relative z-10">
           <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
             {/* Filtro por Caderno */}
-            <div className="flex items-center gap-1.5 bg-[#0d1220] border border-white/[0.08] hover:border-white/[0.18] px-3 py-1.5 rounded-xl transition-all">
+            <div className="flex items-center gap-1.5 bg-[#0d1220] border border-white/[0.08] hover:border-white/[0.18] px-3 py-1.5 rounded-xl transition-colors">
               <BookMarked size={13} className="text-indigo-400 shrink-0" />
               <select
                 value={cadernoFiltro}
@@ -6469,7 +7096,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
             </div>
 
             {/* Filtro por Matéria em lista suspensa */}
-            <label className="flex items-center gap-1.5 bg-[#0d1220] border border-white/[0.08] hover:border-white/[0.18] px-2.5 py-1.5 rounded-xl transition-all">
+            <label className="flex items-center gap-1.5 bg-[#0d1220] border border-white/[0.08] hover:border-white/[0.18] px-2.5 py-1.5 rounded-xl transition-colors">
               <Filter size={12} className="text-indigo-400 shrink-0" />
               <span className="text-[10px] text-slate-500 shrink-0">Matéria</span>
               <select
@@ -6492,67 +7119,54 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] shrink-0 flex-wrap">
             <button
               onClick={() => setStatusFiltro("todas")}
-              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                statusFiltro === "todas" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
+              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+                statusFiltro === "todas" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
               }`}
             >
               Todas
             </button>
             <button
               onClick={() => setStatusFiltro("erros")}
-              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                statusFiltro === "erros" ? "bg-rose-600 text-white shadow" : "text-rose-400/70 hover:text-rose-300"
+              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+                statusFiltro === "erros" ? "bg-rose-600 text-white" : "text-rose-400/70 hover:text-rose-300"
               }`}
             >
               🔴 Últs. Erros
             </button>
             <button
               onClick={() => setStatusFiltro("mais_erros")}
-              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                statusFiltro === "mais_erros" ? "bg-amber-600 text-white shadow" : "text-amber-400/70 hover:text-amber-300"
+              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+                statusFiltro === "mais_erros" ? "bg-amber-600 text-white" : "text-amber-400/70 hover:text-amber-300"
               }`}
             >
               🔥 Mais Erros
             </button>
             <button
               onClick={() => setStatusFiltro("nao_feitas")}
-              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                statusFiltro === "nao_feitas" ? "bg-purple-600 text-white shadow" : "text-purple-400/70 hover:text-purple-300"
+              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+                statusFiltro === "nao_feitas" ? "bg-purple-600 text-white" : "text-purple-400/70 hover:text-purple-300"
               }`}
             >
               ⭕ Não Feitas
             </button>
             <button
               onClick={() => setStatusFiltro("feitas_hoje")}
-              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                statusFiltro === "feitas_hoje" ? "bg-sky-600 text-white shadow" : "text-sky-400/70 hover:text-sky-300"
+              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+                statusFiltro === "feitas_hoje" ? "bg-sky-600 text-white" : "text-sky-400/70 hover:text-sky-300"
               }`}
             >
               ⚡ Feitas Hoje
             </button>
           </div>
 
-          {/* Filtro por Classificação */}
-          <label className="flex items-center gap-1.5 bg-[#0d1220] border border-white/[0.08] hover:border-white/[0.18] px-2.5 py-1.5 rounded-xl transition-all shrink-0">
-            <Tag size={12} className={classificacaoFiltro !== "todas" ? "text-amber-400" : "text-indigo-400"} />
-            <span className="text-[10px] text-slate-500 shrink-0">Classificação</span>
-            <select
+          {/* Filtro por Classificação (Lista de Validação de Dados) */}
+          <div className="shrink-0 relative z-30">
+            <ClassificationValidationDropdown
               value={classificacaoFiltro}
-              onChange={e => setClassificacaoFiltro(e.target.value)}
-              aria-label="Filtrar por classificação"
-              className="bg-transparent text-slate-200 text-[11px] focus:outline-none cursor-pointer border-none max-w-[190px]"
-              style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}
-            >
-              <option value="todas" style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}>Todas as classificações</option>
-              <option value="personalizadas" style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}>✨ Apenas Personalizadas</option>
-              <option value="padrao" style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}>📋 Apenas Padrão</option>
-              {CATEGORIES.map(cat => (
-                <option key={cat.key} value={cat.key} style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}>
-                  {cat.icon || (cat.dot ? "●" : "")} {cat.label}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={setClassificacaoFiltro}
+              compact
+            />
+          </div>
           <div className="flex items-center gap-1 rounded-xl border border-white/[0.08] bg-[#0d1220] p-1 shrink-0">
             <button type="button" onClick={() => setNotionViewMode("quadros")} aria-pressed={notionViewMode === "quadros"} className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold transition-colors ${notionViewMode === "quadros" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"}`}>
               <LayoutGrid size={11} /> Quadros
@@ -6574,16 +7188,16 @@ export default function NotionQuestionTab({ user }: { user: any }) {
       )}
 
       {selectedBlock ? (
-        <div className="flex flex-col gap-4 relative z-10 animate-in fade-in duration-200">
+        <div className="flex flex-col gap-4 relative z-10">
           {/* Header da visão dedicada do caderno */}
-          <div className="flex items-center justify-between gap-3 bg-[#101526] p-3.5 sm:p-4 rounded-2xl border border-white/[0.08] shadow-xl flex-wrap">
+          <div className="flex items-center justify-between gap-3 bg-[#101526] p-3.5 sm:p-4 rounded-2xl border border-white/[0.08] flex-wrap">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => {
                   setSelectedBlock(null);
                   setCadernoFiltro("Todos");
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white text-xs font-bold transition-all active:scale-95 shrink-0"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white text-xs font-bold transition-colors shrink-0"
               >
                 <ChevronLeft size={15} className="text-indigo-400" />
                 <span>Voltar aos Cadernos</span>
@@ -6636,7 +7250,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                 type="button"
                 onClick={() => handlePrintCaderno(selectedBlock)}
                 title="Imprimir caderno inteiro com máximo de questões por folha e gabarito no final"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-slate-300 hover:text-white text-xs font-semibold transition-all active:scale-95 shadow-sm"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-slate-300 hover:text-white text-xs font-semibold transition-colors"
               >
                 <Printer size={13} className="text-indigo-400" />
                 <span>Imprimir Caderno</span>
@@ -6650,140 +7264,84 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           </div>
 
           {/* Barra de Filtro interna do Caderno */}
-          <div className="flex flex-col gap-2.5 bg-[#101526] p-3 rounded-2xl border border-white/[0.06]">
-            {/* Linha 1: Status da Questão */}
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+          <div className="flex items-center justify-between gap-3 flex-wrap bg-[#101526] p-3 rounded-2xl border border-white/[0.06] relative z-20">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5 shrink-0">
                 <Filter size={14} className="text-indigo-400" />
-                Filtrar questões neste caderno:
+                Filtrar questões:
               </span>
-              <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] shrink-0 flex-wrap">
+
+              <ClassificationValidationDropdown
+                value={classificacaoFiltro}
+                onChange={setClassificacaoFiltro}
+              />
+
+              {(statusFiltro !== "todas" || classificacaoFiltro !== "todas") && (
                 <button
                   type="button"
-                  onClick={() => setStatusFiltro("todas")}
-                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                    statusFiltro === "todas" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
-                  }`}
+                  onClick={() => {
+                    setStatusFiltro("todas");
+                    setClassificacaoFiltro("todas");
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10.5px] font-bold text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-colors"
                 >
-                  Todas
+                  <X size={11} />
+                  Limpar
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setStatusFiltro("erros")}
-                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                    statusFiltro === "erros" ? "bg-rose-600 text-white shadow" : "text-rose-400/70 hover:text-rose-300"
-                  }`}
-                >
-                  🔴 Últs. Erros
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatusFiltro("mais_erros")}
-                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                    statusFiltro === "mais_erros" ? "bg-amber-600 text-white shadow" : "text-amber-400/70 hover:text-amber-300"
-                  }`}
-                >
-                  🔥 Mais Erros
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatusFiltro("nao_feitas")}
-                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                    statusFiltro === "nao_feitas" ? "bg-purple-600 text-white shadow" : "text-purple-400/70 hover:text-purple-300"
-                  }`}
-                >
-                  ⭕ Não Feitas
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatusFiltro("feitas_hoje")}
-                  className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                    statusFiltro === "feitas_hoje" ? "bg-sky-600 text-white shadow" : "text-sky-400/70 hover:text-sky-300"
-                  }`}
-                >
-                  ⚡ Feitas Hoje
-                </button>
-              </div>
+              )}
             </div>
 
-            {/* Linha 2: Filtro por Classificação / Dificuldade */}
-            <div className="flex items-center gap-1.5 pt-2 border-t border-white/[0.04] overflow-x-auto pb-0.5 no-scrollbar flex-nowrap">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 shrink-0 flex items-center gap-1 mr-1">
-                <Tag size={11} className={classificacaoFiltro !== "todas" ? "text-amber-400" : "text-indigo-400"} />
-                Classificação:
-              </span>
-
+            <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] shrink-0 flex-wrap">
               <button
                 type="button"
-                onClick={() => setClassificacaoFiltro("todas")}
-                className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all shrink-0 ${
-                  classificacaoFiltro === "todas"
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "bg-[#0d1220] text-slate-400 hover:text-slate-200 border border-white/[0.06]"
+                onClick={() => setStatusFiltro("todas")}
+                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+                  statusFiltro === "todas" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
                 }`}
               >
                 Todas
               </button>
-
-              {CATEGORIES.map(cat => {
-                const isSelected = classificacaoFiltro === cat.key;
-                return (
-                  <button
-                    key={cat.key}
-                    type="button"
-                    onClick={() => setClassificacaoFiltro(isSelected ? "todas" : cat.key)}
-                    style={{
-                      color: isSelected ? "#ffffff" : cat.textColor,
-                      backgroundColor: isSelected ? cat.color : "#0d1220",
-                      borderColor: isSelected ? cat.color : "rgba(255,255,255,0.06)",
-                    }}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10.5px] font-semibold border transition-all shrink-0 hover:brightness-110 active:scale-95 ${
-                      isSelected ? "shadow-sm shadow-black/40 font-bold ring-1 ring-white/20" : ""
-                    }`}
-                  >
-                    {cat.icon ? (
-                      <span className="text-xs">{cat.icon}</span>
-                    ) : cat.dot ? (
-                      <span
-                        className="w-2 h-2 rounded-full shrink-0"
-                        style={{ backgroundColor: isSelected ? "#ffffff" : cat.color }}
-                      />
-                    ) : null}
-                    <span>{cat.label}</span>
-                  </button>
-                );
-              })}
-
               <button
                 type="button"
-                onClick={() => setClassificacaoFiltro(classificacaoFiltro === "personalizadas" ? "todas" : "personalizadas")}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10.5px] font-semibold border transition-all shrink-0 active:scale-95 ${
-                  classificacaoFiltro === "personalizadas"
-                    ? "bg-purple-600 border-purple-500 text-white shadow-sm font-bold ring-1 ring-white/20"
-                    : "bg-[#0d1220] text-purple-400/80 hover:text-purple-300 border-white/[0.06]"
+                onClick={() => setStatusFiltro("erros")}
+                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+                  statusFiltro === "erros" ? "bg-rose-600 text-white" : "text-rose-400/70 hover:text-rose-300"
                 }`}
               >
-                <span>✨</span>
-                <span>Personalizadas</span>
+                🔴 Últs. Erros
               </button>
-
               <button
                 type="button"
-                onClick={() => setClassificacaoFiltro(classificacaoFiltro === "padrao" ? "todas" : "padrao")}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10.5px] font-semibold border transition-all shrink-0 active:scale-95 ${
-                  classificacaoFiltro === "padrao"
-                    ? "bg-slate-700 border-slate-600 text-white shadow-sm font-bold ring-1 ring-white/20"
-                    : "bg-[#0d1220] text-slate-400 hover:text-slate-200 border-white/[0.06]"
+                onClick={() => setStatusFiltro("mais_erros")}
+                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+                  statusFiltro === "mais_erros" ? "bg-amber-600 text-white" : "text-amber-400/70 hover:text-amber-300"
                 }`}
               >
-                <span>📋</span>
-                <span>Padrão</span>
+                🔥 Mais Erros
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFiltro("nao_feitas")}
+                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+                  statusFiltro === "nao_feitas" ? "bg-purple-600 text-white" : "text-purple-400/70 hover:text-purple-300"
+                }`}
+              >
+                ⭕ Não Feitas
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFiltro("feitas_hoje")}
+                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+                  statusFiltro === "feitas_hoje" ? "bg-sky-600 text-white" : "text-sky-400/70 hover:text-sky-300"
+                }`}
+              >
+                ⚡ Feitas Hoje
               </button>
             </div>
           </div>
 
           {/* Conteúdo do caderno selecionado */}
-          <div className="bg-[#101526]/80 border border-white/[0.06] rounded-2xl p-4 sm:p-5 shadow-2xl ml-2 sm:ml-5">
+          <div className="bg-[#101526] border border-white/[0.06] rounded-2xl p-4 sm:p-5 ml-2 sm:ml-5">
             <BlockViewer
               block={selectedBlock}
               user={user}
@@ -6835,7 +7393,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                         return next;
                       })} className="flex w-full flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-left transition-colors hover:bg-white/[0.025]">
                         <span className="flex min-w-0 items-center gap-2">
-                          <ChevronRight size={12} className={`shrink-0 text-slate-500 transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                          <ChevronRight size={12} className={`shrink-0 text-slate-500 ${isOpen ? "rotate-90" : ""}`} />
                           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
                           <span className="truncate text-[11px] font-medium uppercase tracking-wide text-slate-300">{materiaName}</span>
                           <span className="shrink-0 text-[10px] text-slate-500">{mBlocks.length} cadernos</span>
@@ -6900,7 +7458,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               {[...blocksPorMateria.entries()].map(([materiaName, mBlocks]) => (
                 <div 
                   key={materiaName} 
-                  className="flex flex-col bg-[#101526]/80 border border-white/[0.06] rounded-xl p-2.5 sm:p-3 shadow-lg gap-1.5 transition-all hover:border-white/[0.10]"
+                  className="flex flex-col bg-[#101526]/90 border border-white/[0.06] rounded-xl p-2.5 sm:p-3 gap-1.5 transition-colors hover:border-white/[0.10]"
                 >
                   <div className="flex items-center justify-between border-b border-white/[0.06] pb-1.5 px-0.5 flex-wrap gap-1.5">
                     <div className="flex items-center gap-1.5 min-w-0">

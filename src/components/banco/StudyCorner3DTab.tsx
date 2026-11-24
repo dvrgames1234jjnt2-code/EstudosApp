@@ -727,7 +727,7 @@ export default function StudyCorner3DTab({ user, onRequireAuth }: StudyCorner3DT
   }, [binderState, closeBinderToDesk]);
 
   return (
-    <div className="relative w-full h-[calc(100vh-148px)] min-h-[580px] rounded-2xl overflow-hidden border border-white/[0.08] bg-[#0b0d17] shadow-2xl">
+    <div className="relative w-full h-[calc(100vh-148px)] min-h-[580px] rounded-2xl overflow-hidden border border-white/[0.08] bg-[#0b0d17]">
       {/* Isolated WebGL Mount Container */}
       <div ref={canvasMountRef} className="relative w-full h-full" />
 
@@ -830,7 +830,7 @@ export default function StudyCorner3DTab({ user, onRequireAuth }: StudyCorner3DT
           </button>
 
           {!dockCollapsed && (
-            <div className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 rounded-2xl bg-[#16101b]/95 border border-[#d4af6a]/30 shadow-2xl flex-wrap justify-center">
+            <div className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 rounded-2xl bg-[#16101b]/95 border border-[#d4af6a]/30 flex-wrap justify-center">
               <button
                 type="button"
                 onClick={openBinderView}

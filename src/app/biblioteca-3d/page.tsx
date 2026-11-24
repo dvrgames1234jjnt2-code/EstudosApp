@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   BookOpen,
@@ -361,12 +360,12 @@ export default function Biblioteca3DPage() {
       />
 
       {/* ── BARRA SUPERIOR ELEGANTE DA BIBLIOTECA ───────────────────────────── */}
-      <header className="absolute top-0 inset-x-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5 bg-gradient-to-b from-black/80 via-black/40 to-transparent backdrop-blur-xs border-b border-amber-950/20">
+      <header className="absolute top-0 inset-x-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5 bg-gradient-to-b from-black/85 via-black/50 to-transparent border-b border-amber-950/20">
         <div className="flex items-center gap-3">
           {/* Voltar ao Banco */}
           <button
             onClick={() => router.push("/banco")}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-stone-900/80 hover:bg-stone-800 text-stone-300 hover:text-white border border-stone-700/60 shadow transition-all text-xs"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-stone-900/90 hover:bg-stone-800 text-stone-300 hover:text-white border border-stone-700/60 transition-colors text-xs"
           >
             <ArrowLeft size={14} />
             <span>Voltar ao Banco</span>
@@ -440,64 +439,56 @@ export default function Biblioteca3DPage() {
       )}
 
       {/* ── TOOLTIP HUD 3D DINÂMICO AO PASSAR O MOUSE NO LIVRO ─────────────── */}
-      <AnimatePresence>
-        {hoveredCaderno && !selectedCaderno && hoverPos && (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="fixed pointer-events-none z-40 p-3.5 rounded-xl bg-stone-900/95 backdrop-blur-md border border-amber-500/30 shadow-[0_15px_35px_rgba(0,0,0,0.8)] text-white w-64"
-            style={{
-              left: Math.min(window.innerWidth - 270, hoverPos.x + 18),
-              top: Math.min(window.innerHeight - 170, hoverPos.y - 40),
-            }}
-          >
-            <div className="flex items-center gap-1.5 text-[10px] font-serif text-amber-400 uppercase tracking-wider mb-1">
-              <span>✦</span>
-              <span>{hoveredCaderno.materia}</span>
-            </div>
+      {hoveredCaderno && !selectedCaderno && hoverPos && (
+        <div
+          className="fixed pointer-events-none z-40 p-3.5 rounded-xl bg-stone-900/95 border border-amber-500/30 shadow-lg text-white w-64"
+          style={{
+            left: Math.min(window.innerWidth - 270, hoverPos.x + 18),
+            top: Math.min(window.innerHeight - 170, hoverPos.y - 40),
+          }}
+        >
+          <div className="flex items-center gap-1.5 text-[10px] font-serif text-amber-400 uppercase tracking-wider mb-1">
+            <span>✦</span>
+            <span>{hoveredCaderno.materia}</span>
+          </div>
 
-            <h3 className="font-serif font-bold text-sm text-stone-100 leading-snug mb-2">
-              {hoveredCaderno.nome}
-            </h3>
+          <h3 className="font-serif font-bold text-sm text-stone-100 leading-snug mb-2">
+            {hoveredCaderno.nome}
+          </h3>
 
-            <div className="grid grid-cols-2 gap-2 text-xs font-serif pt-2 border-t border-stone-800 text-stone-400">
-              <div>
-                <span className="block text-[10px] text-stone-500 uppercase">Questões</span>
-                <span className="font-mono text-amber-300 font-bold">
-                  {hoveredCaderno.questoes.length}
-                </span>
-              </div>
-              <div>
-                <span className="block text-[10px] text-stone-500 uppercase">Ação</span>
-                <span className="text-[11px] text-stone-300 flex items-center gap-1">
-                  <span>Clique p/ abrir</span>
-                  <span className="text-amber-400">→</span>
-                </span>
-              </div>
+          <div className="grid grid-cols-2 gap-2 text-xs font-serif pt-2 border-t border-stone-800 text-stone-400">
+            <div>
+              <span className="block text-[10px] text-stone-500 uppercase">Questões</span>
+              <span className="font-mono text-amber-300 font-bold">
+                {hoveredCaderno.questoes.length}
+              </span>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div>
+              <span className="block text-[10px] text-stone-500 uppercase">Ação</span>
+              <span className="text-[11px] text-stone-300 flex items-center gap-1">
+                <span>Clique p/ abrir</span>
+                <span className="text-amber-400">→</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── LEITOR DE LIVRO ABERTO 3D COM FOLHEAMENTO REALISTA ──────────────── */}
-      <AnimatePresence>
-        {selectedCaderno && isReading && (
-          <OpenBookReader
-            caderno={selectedCaderno}
-            userAnswers={userAnswers}
-            duvidas={duvidas}
-            onClose={() => {
-              setIsReading(false);
-              setSelectedCaderno(null);
-            }}
-            onAnswer={handleAnswerQuestion}
-            onToggleDuvida={handleToggleDuvida}
-            isAdmin={isAdmin}
-          />
-        )}
-      </AnimatePresence>
+      {selectedCaderno && isReading && (
+        <OpenBookReader
+          caderno={selectedCaderno}
+          userAnswers={userAnswers}
+          duvidas={duvidas}
+          onClose={() => {
+            setIsReading(false);
+            setSelectedCaderno(null);
+          }}
+          onAnswer={handleAnswerQuestion}
+          onToggleDuvida={handleToggleDuvida}
+          isAdmin={isAdmin}
+        />
+      )}
 
       {/* ── RODAPÉ SUTIL COM DICAS DE NAVEGAÇÃO ─────────────────────────────── */}
       <footer className="absolute bottom-3 inset-x-4 z-20 flex items-center justify-between text-[11px] text-stone-400 pointer-events-none">

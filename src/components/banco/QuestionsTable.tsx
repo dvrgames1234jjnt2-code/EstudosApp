@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback, memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   CheckCircle2,
   XCircle,
@@ -108,32 +107,27 @@ const CustomDropdown = ({ value, onChange, options }: any) => {
     <div className="relative" ref={ref}>
       <button 
         onClick={() => setOpen(!open)}
-        className="px-3 py-1.5 bg-[#0F172A] border border-white/[0.08] rounded-xl text-[11px] font-bold text-slate-300 hover:bg-white/[0.06] hover:text-white transition-all flex items-center justify-between gap-2 min-w-[120px]"
+        className="px-3 py-1.5 bg-[#0F172A] border border-white/[0.08] rounded-xl text-[11px] font-bold text-slate-300 hover:bg-white/[0.06] hover:text-white transition-colors flex items-center justify-between gap-2 min-w-[120px]"
       >
         <span className="truncate max-w-[150px] text-left">{selectedOption.label}</span> 
-        <ChevronDown size={12} className={`opacity-50 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown size={12} className={`opacity-50 shrink-0 ${open ? 'rotate-180' : ''}`} />
       </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div 
-            initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
-            className="absolute top-full mt-1 right-0 w-72 max-w-[calc(100vw-2rem)] bg-[#1e2436] border border-white/[0.08] rounded-xl overflow-hidden z-50 shadow-xl max-h-64 overflow-y-auto custom-scrollbar"
-          >
-            <div className="p-1.5 space-y-0.5">
-              {options.map((o: any) => (
-                <button 
-                  key={o.value} 
-                  onClick={() => { onChange(o.value); setOpen(false); }}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-[11px] font-bold transition-colors block truncate ${o.value === value ? 'bg-blue-500/10 text-blue-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'}`}
-                  title={o.label}
-                >
-                  {o.label}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {open && (
+        <div className="absolute top-full mt-1 right-0 w-72 max-w-[calc(100vw-2rem)] bg-[#1e2436] border border-white/[0.08] rounded-xl overflow-hidden z-50 max-h-64 overflow-y-auto custom-scrollbar">
+          <div className="p-1.5 space-y-0.5">
+            {options.map((o: any) => (
+              <button 
+                key={o.value} 
+                onClick={() => { onChange(o.value); setOpen(false); }}
+                className={`w-full text-left px-3 py-2 rounded-lg text-[11px] font-bold transition-colors block truncate ${o.value === value ? 'bg-blue-500/10 text-blue-400' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'}`}
+                title={o.label}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -428,9 +422,7 @@ export default function QuestionsTable({
 
       {/* Guide tip */}
       <div className="bg-blue-500/5 border border-blue-500/15 p-3 rounded-xl flex items-center gap-3 text-xs text-blue-300">
-        <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse shrink-0 relative">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-        </span>
+        <span className="flex h-2 w-2 rounded-full bg-blue-500 shrink-0" />
         <span className="leading-relaxed">
           <strong>Banco Interativo:</strong> Clique em qualquer questão para abrí-la na aba de resolução.
         </span>
@@ -446,7 +438,7 @@ export default function QuestionsTable({
             <button
               key={mode}
               onClick={() => setViewMode(mode as any)}
-              className={`px-4 py-2.5 text-[11px] font-bold transition-all border-b-2 flex items-center gap-2 -mb-px ${
+              className={`px-4 py-2.5 text-[11px] font-bold transition-colors border-b-2 flex items-center gap-2 -mb-px ${
                 viewMode === mode
                   ? 'border-blue-500 text-blue-400'
                   : 'border-transparent text-slate-500 hover:text-slate-300'
@@ -462,7 +454,7 @@ export default function QuestionsTable({
           {isAdmin && (
             <button
               onClick={() => setShowImportModal(true)}
-              className="px-4 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-95 flex items-center gap-2"
+              className="px-4 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-2"
             >
               <FileJson size={14} /> Importar JSON
             </button>
@@ -470,7 +462,7 @@ export default function QuestionsTable({
 
           <button
             onClick={() => setShowPrintModal(true)}
-            className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-600/20 transition-all active:scale-95 flex items-center gap-2"
+            className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-colors flex items-center gap-2"
           >
             <Printer size={14} /> Imprimir Simulado ({filteredQuestions.length})
           </button>
@@ -484,7 +476,7 @@ export default function QuestionsTable({
           <input
             type="text"
             placeholder="Pesquisar enunciados, temas ou matérias..."
-            className="w-full pl-9 pr-4 py-2 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white placeholder:text-slate-600 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+            className="w-full pl-9 pr-4 py-2 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs text-white placeholder:text-slate-600 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none"
             value={searchInput}
             onChange={e => setSearchInput(e.target.value)}
           />
@@ -526,7 +518,7 @@ export default function QuestionsTable({
           <button
             onClick={() => setShowPrintModal(true)}
             title="Imprimir simulado / gerar PDF organizado"
-            className="px-3.5 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 rounded-xl text-[11px] font-black text-blue-400 hover:text-blue-300 transition-all flex items-center gap-1.5 shrink-0 shadow-sm active:scale-95 uppercase tracking-wider"
+            className="px-3.5 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 rounded-xl text-[11px] font-black text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1.5 shrink-0 uppercase tracking-wider"
           >
             <Printer size={13} /> Imprimir Simulado
           </button>
@@ -648,7 +640,7 @@ export default function QuestionsTable({
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-2.5 py-1 rounded-lg border border-white/[0.08] hover:bg-white/[0.05] disabled:opacity-30 disabled:cursor-not-allowed text-xs text-slate-300 transition-all flex items-center gap-1"
+                className="px-2.5 py-1 rounded-lg border border-white/[0.08] hover:bg-white/[0.05] disabled:opacity-30 disabled:cursor-not-allowed text-xs text-slate-300 transition-colors flex items-center gap-1"
               >
                 <ChevronLeft size={13} />
                 <span>Anterior</span>
@@ -661,7 +653,7 @@ export default function QuestionsTable({
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="px-2.5 py-1 rounded-lg border border-white/[0.08] hover:bg-white/[0.05] disabled:opacity-30 disabled:cursor-not-allowed text-xs text-slate-300 transition-all flex items-center gap-1"
+                className="px-2.5 py-1 rounded-lg border border-white/[0.08] hover:bg-white/[0.05] disabled:opacity-30 disabled:cursor-not-allowed text-xs text-slate-300 transition-colors flex items-center gap-1"
               >
                 <span>Próxima</span>
                 <ChevronRight size={13} />
@@ -709,152 +701,136 @@ export default function QuestionsTable({
       />
 
       {/* ── BARRA FLUTUANTE DE AÇÕES EM LOTE (SELEÇÃO MÚLTIPLA) ── */}
-      <AnimatePresence>
-        {selectedIds.size > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 25, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 25, scale: 0.95 }}
-            transition={{ duration: 0.18 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#0c1220]/95 border border-blue-500/30 shadow-[0_10px_35px_rgba(0,0,0,0.7)] rounded-2xl px-4 py-2.5 flex items-center gap-2.5 backdrop-blur-xl flex-wrap max-w-[95vw]"
+      {selectedIds.size > 0 && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#0c1220] border border-blue-500/30 rounded-2xl px-4 py-2.5 flex items-center gap-2.5 flex-wrap max-w-[95vw]"
+        >
+          <div className="flex items-center gap-2 pr-3 border-r border-white/10 text-xs font-bold text-white shrink-0">
+            <span className="w-2 h-2 rounded-full bg-blue-400" />
+            <span>{selectedIds.size} selecionada{selectedIds.size > 1 ? 's' : ''}</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={clearSelection}
+            className="text-xs text-slate-400 hover:text-white px-2.5 py-1.5 rounded-xl hover:bg-white/[0.06] transition-colors shrink-0"
           >
-            <div className="flex items-center gap-2 pr-3 border-r border-white/10 text-xs font-bold text-white shrink-0">
-              <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-              <span>{selectedIds.size} selecionada{selectedIds.size > 1 ? 's' : ''}</span>
-            </div>
+            Desmarcar
+          </button>
 
+          <button
+            type="button"
+            onClick={handlePrintSelected}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.10] text-xs font-bold text-slate-200 border border-white/[0.08] transition-colors shrink-0"
+            title="Imprimir simulado com as questões selecionadas"
+          >
+            <Printer size={13} />
+            <span>Imprimir</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleResolveSelected}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition-colors shrink-0"
+            title="Iniciar resolução com as questões selecionadas"
+          >
+            <Play size={12} fill="currentColor" />
+            <span>Resolver</span>
+          </button>
+
+          {isAdmin && (
             <button
               type="button"
-              onClick={clearSelection}
-              className="text-xs text-slate-400 hover:text-white px-2.5 py-1.5 rounded-xl hover:bg-white/[0.06] transition-all shrink-0"
+              onClick={handlePromptDeleteBulk}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 text-xs font-bold transition-colors ml-1 shrink-0"
+              title="Excluir permanentemente todas as questões selecionadas (Admin)"
             >
-              Desmarcar
+              <Trash2 size={13} />
+              <span>Excluir</span>
             </button>
-
-            <button
-              type="button"
-              onClick={handlePrintSelected}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.10] text-xs font-bold text-slate-200 border border-white/[0.08] transition-all shrink-0"
-              title="Imprimir simulado com as questões selecionadas"
-            >
-              <Printer size={13} />
-              <span>Imprimir</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleResolveSelected}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow transition-all shrink-0 active:scale-95"
-              title="Iniciar resolução com as questões selecionadas"
-            >
-              <Play size={12} fill="currentColor" />
-              <span>Resolver</span>
-            </button>
-
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={handlePromptDeleteBulk}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 text-xs font-bold transition-all ml-1 shrink-0 active:scale-95"
-                title="Excluir permanentemente todas as questões selecionadas (Admin)"
-              >
-                <Trash2 size={13} />
-                <span>Excluir</span>
-              </button>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </div>
+      )}
 
       {/* ── MODAL DE CONFIRMAÇÃO DE EXCLUSÃO (ADMIN) ── */}
-      <AnimatePresence>
-        {showDeleteModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-md bg-[#0c1220] border border-rose-500/30 rounded-2xl shadow-2xl p-6 flex flex-col gap-4 text-left"
-            >
-              <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
-                  <AlertTriangle size={20} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-bold text-white">
-                    {questionToDelete
-                      ? `Excluir Questão #${questionToDelete.id}?`
-                      : `Excluir ${selectedIds.size} Questões Selecionadas?`}
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                    Esta ação é <strong className="text-rose-400">permanente e irreversível</strong>. As questões serão removidas definitivamente do banco de dados Supabase.
-                  </p>
-                  {questionToDelete && (
-                    <div className="mt-2.5 p-2.5 bg-white/[0.02] border border-white/[0.06] rounded-xl text-[11px] text-slate-300 line-clamp-2">
-                      <span className="text-slate-500 font-mono">[{questionToDelete.materia}]</span> {questionToDelete.title || questionToDelete.perguntaProblema}
-                    </div>
-                  )}
-                </div>
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4">
+          <div
+            className="relative w-full max-w-md bg-[#0c1220] border border-rose-500/30 rounded-2xl p-6 flex flex-col gap-4 text-left"
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+                <AlertTriangle size={20} />
               </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold text-white">
+                  {questionToDelete
+                    ? `Excluir Questão #${questionToDelete.id}?`
+                    : `Excluir ${selectedIds.size} Questões Selecionadas?`}
+                </h3>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  Esta ação é <strong className="text-rose-400">permanente e irreversível</strong>. As questões serão removidas definitivamente do banco de dados Supabase.
+                </p>
+                {questionToDelete && (
+                  <div className="mt-2.5 p-2.5 bg-white/[0.02] border border-white/[0.06] rounded-xl text-[11px] text-slate-300 line-clamp-2">
+                    <span className="text-slate-500 font-mono">[{questionToDelete.materia}]</span> {questionToDelete.title || questionToDelete.perguntaProblema}
+                  </div>
+                )}
+              </div>
+            </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-white/[0.08]">
-                <button
-                  type="button"
-                  disabled={isDeleting}
-                  onClick={() => {
-                    setShowDeleteModal(false);
-                    setQuestionToDelete(null);
-                  }}
-                  className="px-4 py-2 rounded-xl border border-white/[0.10] text-slate-400 hover:text-white text-xs font-semibold transition-all disabled:opacity-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  disabled={isDeleting}
-                  onClick={handleConfirmDelete}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-rose-600/30 active:scale-95"
-                >
-                  {isDeleting ? (
-                    <>
-                      <Loader2 size={13} className="animate-spin" />
-                      <span>Excluindo...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 size={13} />
-                      <span>Sim, Excluir Definitivamente</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </motion.div>
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-white/[0.08]">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setQuestionToDelete(null);
+                }}
+                className="px-4 py-2 rounded-xl border border-white/[0.10] text-slate-400 hover:text-white text-xs font-semibold transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleConfirmDelete}
+                className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-colors"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin" />
+                    <span>Excluindo...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={13} />
+                    <span>Sim, Excluir Definitivamente</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
 
       {/* ── TOAST NOTIFICATION ── */}
-      <AnimatePresence>
-        {toastMsg && (
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 15 }}
-            className={`fixed bottom-6 right-6 z-[110] flex items-center gap-2.5 px-4 py-2.5 rounded-xl shadow-2xl border text-xs font-medium ${
-              toastMsg.type === 'success'
-                ? 'bg-[#0b1628] border-emerald-500/40 text-emerald-300'
-                : 'bg-[#251016] border-rose-500/40 text-rose-300'
-            }`}
-          >
-            {toastMsg.type === 'success' ? (
-              <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
-            ) : (
-              <XCircle size={15} className="text-rose-400 shrink-0" />
-            )}
-            <span>{toastMsg.text}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {toastMsg && (
+        <div
+          className={`fixed bottom-6 right-6 z-[110] flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-xs font-medium ${
+            toastMsg.type === 'success'
+              ? 'bg-[#0b1628] border-emerald-500/40 text-emerald-300'
+              : 'bg-[#251016] border-rose-500/40 text-rose-300'
+          }`}
+        >
+          {toastMsg.type === 'success' ? (
+            <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+          ) : (
+            <XCircle size={15} className="text-rose-400 shrink-0" />
+          )}
+          <span>{toastMsg.text}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -891,7 +867,7 @@ const QuestionRow = memo(function QuestionRow({
   return (
     <tr
       onClick={() => onSelect(q)}
-      className={`group transition-all duration-150 cursor-pointer ${
+      className={`group cursor-pointer ${
         isSelected ? 'bg-blue-600/[0.08] hover:bg-blue-600/[0.12]' : 'hover:bg-blue-500/5'
       }`}
     >
@@ -916,7 +892,7 @@ const QuestionRow = memo(function QuestionRow({
         </div>
       </td>
       <td className="px-4 py-3.5">
-        <p className="text-xs font-medium text-slate-400 leading-relaxed group-hover:text-blue-300 transition-colors line-clamp-2 max-w-[500px]">
+        <p className="text-xs font-medium text-slate-400 leading-relaxed group-hover:text-blue-300 line-clamp-2 max-w-[500px]">
           {q.title || q.perguntaProblema || "Sem enunciado"}
         </p>
       </td>
@@ -934,7 +910,7 @@ const QuestionRow = memo(function QuestionRow({
                 onToggleDuvida(q.id);
               }}
               title={isDuvida ? "Em Dúvida (Clique para desmarcar)" : "Marcar dúvida nesta questão"}
-              className={`p-1 rounded-md transition-all ${
+              className={`p-1 rounded-md ${
                 isDuvida
                   ? "text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/30"
                   : "text-slate-600 hover:text-slate-400 opacity-40 hover:opacity-100"
@@ -958,7 +934,7 @@ const QuestionRow = memo(function QuestionRow({
             <button
               onClick={() => onEdit(q)}
               title="Editar questão (Admin)"
-              className="p-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-amber-400 hover:bg-white/[0.08] transition-colors"
+              className="p-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-amber-400 hover:bg-white/[0.08]"
             >
               <Pencil size={11} />
             </button>
@@ -967,17 +943,17 @@ const QuestionRow = memo(function QuestionRow({
             <button
               onClick={() => onDelete(q)}
               title="Excluir questão permanentemente (Admin)"
-              className="p-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-rose-400 hover:border-rose-500/30 hover:bg-rose-500/10 transition-colors"
+              className="p-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-rose-400 hover:border-rose-500/30 hover:bg-rose-500/10"
             >
               <Trash2 size={11} />
             </button>
           )}
           <button
             onClick={() => onSelect(q)}
-            className={`px-3 py-1.5 text-[10px] font-black rounded-lg uppercase tracking-wider transition-all flex items-center gap-1 ${
+            className={`px-3 py-1.5 text-[10px] font-black rounded-lg uppercase tracking-wider flex items-center gap-1 ${
               status === 'Pendente'
-                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm active:scale-95'
-                : 'bg-white/[0.05] text-slate-300 hover:bg-white/[0.1] active:scale-95'
+                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-white/[0.05] text-slate-300 hover:bg-white/[0.1]'
             }`}
           >
             {status === 'Pendente' ? <><Play size={9} fill="currentColor" /> Responder</> : <><RotateCcw size={9} /> Refazer</>}
@@ -1077,7 +1053,7 @@ const MobileQuestionRow = memo(function MobileQuestionRow({
           )}
           <button
             onClick={e => { e.stopPropagation(); onSelect(q); }}
-            className="px-3 py-1 bg-blue-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all"
+            className="px-3 py-1 bg-blue-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest"
           >
             {status === 'Pendente' ? 'Responder' : 'Refazer'}
           </button>

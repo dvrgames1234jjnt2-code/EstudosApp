@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Folder, 
   Terminal, 
@@ -125,10 +124,10 @@ export function LinuxMemorization() {
             <button
               key={mode.id}
               onClick={() => startGame(mode.id as any)}
-              className="group relative p-8 rounded-[32px] bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all text-left overflow-hidden"
+              className="group relative p-8 rounded-[32px] bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors text-left overflow-hidden"
             >
               <div className={`absolute inset-0 bg-gradient-to-br ${mode.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
-              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${mode.color} flex items-center justify-center text-white mb-6 shadow-lg shadow-black/20`}>
+              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${mode.color} flex items-center justify-center text-white mb-6`}>
                 {mode.icon}
               </div>
               <h3 className="text-xl font-bold text-white mb-2">{mode.title}</h3>
@@ -166,10 +165,9 @@ export function LinuxMemorization() {
         </div>
 
         <div className="relative h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-          <motion.div 
+          <div
             className="absolute top-0 left-0 h-full bg-blue-600"
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
+            style={{ width: `${progress}%` }}
           />
         </div>
 
@@ -185,12 +183,12 @@ export function LinuxMemorization() {
                 key={opt}
                 disabled={showFeedback}
                 onClick={() => handleAnswer(opt)}
-                className={`p-6 rounded-2xl border text-left font-mono transition-all
+                className={`p-6 rounded-2xl border text-left font-mono transition-colors
                   ${showFeedback 
                     ? opt === q.a 
-                      ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]'
+                      ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
                       : 'bg-white/[0.01] border-white/5 text-slate-600'
-                    : 'bg-white/[0.03] border-white/5 text-slate-300 hover:bg-white/[0.06] hover:border-white/10 hover:scale-[1.02]'
+                    : 'bg-white/[0.03] border-white/5 text-slate-300 hover:bg-white/[0.06] hover:border-white/10'
                   }
                 `}
               >
@@ -199,33 +197,27 @@ export function LinuxMemorization() {
             ))}
           </div>
 
-          <AnimatePresence>
-            {showFeedback && (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6"
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${lastResult?.correct ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>
-                    {lastResult?.correct ? <Trophy className="w-6 h-6" /> : <ShieldAlert className="w-6 h-6" />}
-                  </div>
-                  <div>
-                    <p className={`text-sm font-bold ${lastResult?.correct ? 'text-emerald-500' : 'text-rose-500'}`}>
-                      {lastResult?.correct ? 'Excelente, Agente!' : 'Sincronização Falhou'}
-                    </p>
-                    <p className="text-xs text-slate-500">A resposta correta era <span className="text-white font-mono">{lastResult?.answer}</span></p>
-                  </div>
+          {showFeedback && (
+            <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${lastResult?.correct ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>
+                  {lastResult?.correct ? <Trophy className="w-6 h-6" /> : <ShieldAlert className="w-6 h-6" />}
                 </div>
-                <button
-                  onClick={nextQuestion}
-                  className="w-full sm:w-auto px-8 py-4 bg-white text-black font-black uppercase text-[10px] tracking-widest rounded-2xl hover:scale-105 transition-all"
-                >
-                  Próximo Desafio
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                <div>
+                  <p className={`text-sm font-bold ${lastResult?.correct ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    {lastResult?.correct ? 'Excelente, Agente!' : 'Sincronização Falhou'}
+                  </p>
+                  <p className="text-xs text-slate-500">A resposta correta era <span className="text-white font-mono">{lastResult?.answer}</span></p>
+                </div>
+              </div>
+              <button
+                onClick={nextQuestion}
+                className="w-full sm:w-auto px-8 py-4 bg-white text-black font-black uppercase text-[10px] tracking-widest rounded-2xl hover:bg-slate-200 transition-colors"
+              >
+                Próximo Desafio
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -235,7 +227,7 @@ export function LinuxMemorization() {
     return (
       <div className="max-w-2xl mx-auto py-24 text-center space-y-12">
         <div className="relative inline-block">
-          <div className="w-32 h-32 bg-blue-600 rounded-[40px] rotate-12 flex items-center justify-center mx-auto shadow-2xl shadow-blue-900/40">
+          <div className="w-32 h-32 bg-blue-600 rounded-[40px] rotate-12 flex items-center justify-center mx-auto shadow-lg">
             <Trophy className="w-16 h-16 text-white -rotate-12" />
           </div>
           <div className="absolute -top-4 -right-4 w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center text-white border-4 border-[#020617] font-bold">
@@ -266,12 +258,12 @@ export function LinuxMemorization() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <button 
             onClick={() => setGameState('start')}
-            className="w-full sm:w-auto px-10 py-5 bg-blue-600 text-white font-black uppercase text-[10px] tracking-widest rounded-2xl hover:bg-blue-500 transition-all flex items-center justify-center gap-3"
+            className="w-full sm:w-auto px-10 py-5 bg-blue-600 text-white font-black uppercase text-[10px] tracking-widest rounded-2xl hover:bg-blue-500 transition-colors flex items-center justify-center gap-3"
           >
             <RotateCcw className="w-4 h-4" /> Reiniciar Módulo
           </button>
           <button 
-            className="w-full sm:w-auto px-10 py-5 bg-white/[0.03] border border-white/5 text-slate-400 font-black uppercase text-[10px] tracking-widest rounded-2xl hover:bg-white/10 transition-all"
+            className="w-full sm:w-auto px-10 py-5 bg-white/[0.03] border border-white/5 text-slate-400 font-black uppercase text-[10px] tracking-widest rounded-2xl hover:bg-white/10 transition-colors"
             onClick={() => window.location.reload()}
           >
             Voltar ao Dashboard

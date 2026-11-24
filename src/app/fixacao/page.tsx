@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import FixationGame from '@/components/fixacao/FixationGame';
 import {
@@ -171,10 +170,10 @@ export default function FixacaoPage() {
   return (
     <div className="min-h-screen bg-[#060912] text-white">
       {/* Header */}
-      <div className="sticky top-0 z-40 border-b border-white/[0.04] bg-[#060912]/90 backdrop-blur-xl">
+      <div className="sticky top-0 z-40 border-b border-white/[0.04] bg-[#060912]/95">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
               <Flame size={18} className="text-white" />
             </div>
             <div>
@@ -220,23 +219,19 @@ export default function FixacaoPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <AnimatePresence>
-              {decks.map((deck, i) => {
+            {decks.map((deck) => {
                 const prog = deckProgress[deck.id];
                 const pct = prog ? Math.round((prog.mastered / prog.total) * 100) : 0;
                 const isLocked = !user;
 
                 return (
-                  <motion.div
+                  <div
                     key={deck.id}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.06 }}
                     onClick={() => !isLocked && !loadingItems && handleOpenDeck(deck)}
-                    className={`group relative bg-[#0b0f19] border border-white/[0.06] rounded-2xl p-5 flex flex-col gap-4 transition-all duration-300 ${
+                    className={`group relative bg-[#0b0f19] border border-white/[0.06] rounded-2xl p-5 flex flex-col gap-4 transition-colors ${
                       isLocked
                         ? 'opacity-50 cursor-not-allowed'
-                        : 'cursor-pointer hover:border-indigo-500/40 hover:shadow-[0_8px_32px_rgba(99,102,241,0.12)]'
+                        : 'cursor-pointer hover:border-indigo-500/40'
                     }`}
                   >
                     {/* Categoria */}
@@ -275,10 +270,8 @@ export default function FixacaoPage() {
                           </span>
                         </div>
                         <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${pct}%` }}
-                            transition={{ duration: 0.6, ease: 'easeOut' }}
+                          <div
+                            style={{ width: `${pct}%` }}
                             className={`h-full rounded-full ${pct === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`}
                           />
                         </div>
@@ -291,10 +284,9 @@ export default function FixacaoPage() {
                         <Loader2 size={20} className="animate-spin text-indigo-400" />
                       </div>
                     )}
-                  </motion.div>
+                  </div>
                 );
               })}
-            </AnimatePresence>
           </div>
         )}
 
@@ -309,7 +301,7 @@ export default function FixacaoPage() {
               </p>
               <a
                 href="/banco"
-                className="inline-block px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl transition-all uppercase tracking-widest"
+                className="inline-block px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl transition-colors uppercase tracking-widest"
               >
                 Fazer Login
               </a>

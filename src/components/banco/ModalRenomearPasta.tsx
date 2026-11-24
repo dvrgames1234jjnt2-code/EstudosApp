@@ -75,8 +75,8 @@ export function ModalRenomearPasta({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-sm bg-[#0d1220] border border-white/[0.08] rounded-2xl shadow-2xl p-5 flex flex-col gap-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-black/80">
+      <div className="relative w-full max-w-sm bg-[#0d1220] border border-white/[0.08] rounded-2xl p-5 flex flex-col gap-4">
         
         <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
           <div className="flex items-center gap-2">
@@ -126,7 +126,7 @@ export function ModalRenomearPasta({
             <button
               type="submit"
               disabled={salvando || !nome.trim()}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium shadow-md transition-all disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition-colors disabled:opacity-40"
             >
               {salvando ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
               <span>Salvar</span>

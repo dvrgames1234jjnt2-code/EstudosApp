@@ -141,10 +141,10 @@ export function SyncBancoModal({ blocos, onClose }: SyncBancoModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-xl animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80"
       onClick={e => { if (e.target === e.currentTarget && !syncing) onClose(); }}
     >
-      <div className="relative w-full max-w-xl mx-4 bg-[#0d1220] border border-white/[0.10] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+      <div className="relative w-full max-w-xl mx-4 bg-[#0d1220] border border-white/[0.10] rounded-2xl flex flex-col overflow-hidden">
 
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-white/[0.08]">
@@ -197,7 +197,7 @@ export function SyncBancoModal({ blocos, onClose }: SyncBancoModalProps) {
                 {blocos.map(b => (
                   <label
                     key={b.block_id}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border cursor-pointer transition-all select-none ${
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border cursor-pointer transition-colors select-none ${
                       selectedIds.has(b.block_id)
                         ? "bg-indigo-600/10 border-indigo-500/30 text-white"
                         : "bg-white/[0.02] border-white/[0.06] text-slate-400"
@@ -247,7 +247,7 @@ export function SyncBancoModal({ blocos, onClose }: SyncBancoModalProps) {
                 <p className="text-xs font-bold text-white text-center">{progressText || "Sincronizando..."}</p>
                 <div className="w-full h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
                   <div
-                    className="h-full bg-indigo-500 transition-all duration-300"
+                    className="h-full bg-indigo-500"
                     style={{ width: `${progressPct}%` }}
                   />
                 </div>
@@ -341,7 +341,7 @@ export function SyncBancoModal({ blocos, onClose }: SyncBancoModalProps) {
               <button
                 onClick={handleSync}
                 disabled={syncing || selectedIds.size === 0}
-                className="ml-auto flex items-center gap-2 px-5 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95"
+                className="ml-auto flex items-center gap-2 px-5 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-colors"
               >
                 {syncing ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
                 {syncing ? "Sincronizando..." : `Sincronizar ${selectedIds.size} caderno(s)`}
@@ -350,7 +350,7 @@ export function SyncBancoModal({ blocos, onClose }: SyncBancoModalProps) {
           ) : (
             <button
               onClick={onClose}
-              className="ml-auto flex items-center gap-2 px-5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95"
+              className="ml-auto flex items-center gap-2 px-5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-colors"
             >
               <CheckCircle2 size={12} /> Fechar
             </button>

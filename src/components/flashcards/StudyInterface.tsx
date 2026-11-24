@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, Info, RotateCcw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Flashcard, SRSConfig } from '@/types/flashcards';
 import SubtleFeedbackEffects, { FeedbackEvent } from './SubtleFeedbackEffects';
 import { updateCardSRS } from '@/services/notionService';
@@ -58,9 +57,9 @@ export default function StudyInterface({ cards, onExit, configLevels }: StudyInt
       <SubtleFeedbackEffects event={feedbackEvent} />
 
       {/* Header */}
-      <header className="h-20 px-8 flex items-center justify-between border-b border-white/5 bg-black/40 backdrop-blur-2xl">
+      <header className="h-20 px-8 flex items-center justify-between border-b border-white/5 bg-black/80">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
             <span className="font-black text-xs">BB</span>
           </div>
           <div>
@@ -75,10 +74,9 @@ export default function StudyInterface({ cards, onExit, configLevels }: StudyInt
               Progresso: <span className="text-white">{currentIndex + 1}</span> / {cards.length}
             </div>
             <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-              <motion.div 
-                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]"
-                initial={{ width: 0 }}
-                animate={{ width: `${((currentIndex + 1) / cards.length) * 100}%` }}
+              <div
+                className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                style={{ width: `${((currentIndex + 1) / cards.length) * 100}%` }}
               />
             </div>
           </div>
@@ -86,7 +84,7 @@ export default function StudyInterface({ cards, onExit, configLevels }: StudyInt
 
         <button 
           onClick={onExit}
-          className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-500 transition-all"
+          className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-500 transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
@@ -95,90 +93,83 @@ export default function StudyInterface({ cards, onExit, configLevels }: StudyInt
       {/* Main Content */}
       <main className="flex-1 relative flex items-center justify-center p-8">
         <div className="w-full max-w-2xl aspect-[4/3] perspective-2000">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentCard.id}
-              initial={{ opacity: 0, scale: 0.9, x: 100 }}
-              animate={{ opacity: 1, scale: 1, x: 0 }}
-              exit={{ opacity: 0, scale: 0.9, x: -100 }}
-              transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-              className="w-full h-full relative preserve-3d"
+          <div
+            key={currentCard.id}
+            className="w-full h-full relative preserve-3d"
+          >
+            {/* The Card */}
+            <div
+              className="w-full h-full relative preserve-3d cursor-pointer"
+              onClick={() => !isUpdating && setIsFlipped(!isFlipped)}
+              style={{ transform: `rotateY(${isFlipped ? 180 : 0}deg)` }}
             >
-              {/* The Card */}
-              <motion.div 
-                className="w-full h-full relative preserve-3d"
-                onClick={() => !isUpdating && setIsFlipped(!isFlipped)}
-                animate={{ rotateY: isFlipped ? 180 : 0 }}
-                transition={{ type: 'spring', damping: 20, stiffness: 100 }}
+              {/* Front */}
+              <div className="absolute inset-0 backface-hidden rounded-[2.5rem] bg-gradient-to-br from-[#1e293b] to-[#0f172a] border border-white/10 p-12 flex flex-col items-center justify-center text-center shadow-lg">
+                <div className="absolute top-10 flex flex-col items-center gap-1 opacity-60">
+                  <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">{currentCard.materia}</span>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{currentCard.topico}</span>
+                </div>
+                
+                <h2 className="text-2xl md:text-4xl font-black leading-tight text-white max-w-lg">
+                  {currentCard.pergunta}
+                </h2>
+
+                <div className="absolute bottom-10 text-[10px] font-black text-blue-500/40 uppercase tracking-[0.4em]">
+                  Toque para girar
+                </div>
+              </div>
+
+              {/* Back */}
+              <div 
+                className="absolute inset-0 backface-hidden rounded-[2.5rem] bg-gradient-to-br from-[#1e1b4b] to-[#020617] border border-blue-500/30 p-12 flex flex-col items-center justify-center text-center shadow-lg overflow-hidden"
+                style={{ transform: 'rotateY(180deg)' }}
               >
-                {/* Front */}
-                <div className="absolute inset-0 backface-hidden rounded-[2.5rem] bg-gradient-to-br from-[#1e293b] to-[#0f172a] border border-white/10 p-12 flex flex-col items-center justify-center text-center shadow-2xl">
-                  <div className="absolute top-10 flex flex-col items-center gap-1 opacity-60">
-                    <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">{currentCard.materia}</span>
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{currentCard.topico}</span>
-                  </div>
-                  
-                  <h2 className="text-2xl md:text-4xl font-black leading-tight text-white max-w-lg">
-                    {currentCard.pergunta}
-                  </h2>
-
-                  <div className="absolute bottom-10 text-[10px] font-black text-blue-500/40 uppercase tracking-[0.4em] animate-pulse">
-                    Toque para girar
-                  </div>
-                </div>
-
-                {/* Back */}
-                <div 
-                  className="absolute inset-0 backface-hidden rounded-[2.5rem] bg-gradient-to-br from-[#1e1b4b] to-[#020617] border border-blue-500/30 p-12 flex flex-col items-center justify-center text-center shadow-2xl overflow-hidden"
-                  style={{ transform: 'rotateY(180deg)' }}
-                >
-                  <div className="w-full h-full flex flex-col">
-                    <div className="flex-1 flex flex-col justify-center gap-8">
-                      <div>
-                        <p className="text-[10px] font-black text-blue-400/50 uppercase tracking-[0.4em] mb-4">RESPOSTA</p>
-                        <h2 className="text-2xl md:text-4xl font-black text-white leading-tight">
-                          {currentCard.resposta}
-                        </h2>
-                      </div>
-                      
-                      {currentCard.explicacao && (
-                        <div className="mt-4 p-6 bg-blue-500/5 border border-blue-500/20 rounded-3xl text-left max-h-[40%] overflow-y-auto custom-scrollbar">
-                          <p className="text-[9px] font-black text-blue-400 mb-3 uppercase tracking-widest">Explicação</p>
-                          <p className="text-sm text-slate-300 leading-relaxed font-medium">
-                            {currentCard.explicacao}
-                          </p>
-                        </div>
-                      )}
+                <div className="w-full h-full flex flex-col">
+                  <div className="flex-1 flex flex-col justify-center gap-8">
+                    <div>
+                      <p className="text-[10px] font-black text-blue-400/50 uppercase tracking-[0.4em] mb-4">RESPOSTA</p>
+                      <h2 className="text-2xl md:text-4xl font-black text-white leading-tight">
+                        {currentCard.resposta}
+                      </h2>
                     </div>
+                    
+                    {currentCard.explicacao && (
+                      <div className="mt-4 p-6 bg-blue-500/5 border border-blue-500/20 rounded-3xl text-left max-h-[40%] overflow-y-auto custom-scrollbar">
+                        <p className="text-[9px] font-black text-blue-400 mb-3 uppercase tracking-widest">Explicação</p>
+                        <p className="text-sm text-slate-300 leading-relaxed font-medium">
+                          {currentCard.explicacao}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </motion.div>
-            </motion.div>
-          </AnimatePresence>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 
       {/* Footer Controls */}
-      <footer className="h-32 px-8 flex items-center justify-center border-t border-white/5 bg-black/40 backdrop-blur-2xl">
+      <footer className="h-32 px-8 flex items-center justify-center border-t border-white/5 bg-black/80">
         <div className="w-full max-w-4xl flex items-center justify-between">
           <div className="flex items-center gap-4">
              <button 
               onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
               disabled={currentIndex === 0 || isUpdating}
-              className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 disabled:opacity-20 transition-all"
+              className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 disabled:opacity-20 transition-colors"
             >
               <ChevronLeft />
             </button>
             <button 
               onClick={() => setIsFlipped(!isFlipped)}
-              className="bg-white text-black font-black text-sm px-8 py-3 rounded-2xl hover:scale-105 transition-all uppercase tracking-widest"
+              className="bg-white text-black font-black text-sm px-8 py-3 rounded-2xl hover:bg-slate-200 transition-colors uppercase tracking-widest"
             >
               {isFlipped ? 'Ver Pergunta' : 'Ver Resposta'}
             </button>
             <button 
               onClick={() => setCurrentIndex(prev => Math.min(cards.length - 1, prev + 1))}
               disabled={currentIndex === cards.length - 1 || isUpdating}
-              className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 disabled:opacity-20 transition-all"
+              className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 disabled:opacity-20 transition-colors"
             >
               <ChevronRight />
             </button>
@@ -186,13 +177,11 @@ export default function StudyInterface({ cards, onExit, configLevels }: StudyInt
 
           <div className="flex items-center gap-2">
             {configLevels.map(level => (
-              <motion.button
+              <button
                 key={level.id}
-                whileHover={{ y: -4, scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
                 onClick={() => handleFeedback(level.name)}
                 disabled={!isFlipped || isUpdating}
-                className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-20 disabled:grayscale`}
+                className="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-colors disabled:opacity-20 disabled:grayscale"
                 style={{ 
                   backgroundColor: `${level.color}20`,
                   border: `1px solid ${level.color}40`,
@@ -200,7 +189,7 @@ export default function StudyInterface({ cards, onExit, configLevels }: StudyInt
                 }}
               >
                 {level.name}
-              </motion.button>
+              </button>
             ))}
           </div>
         </div>

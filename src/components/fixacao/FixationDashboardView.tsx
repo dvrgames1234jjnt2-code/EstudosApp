@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import FixationGame from '@/components/fixacao/FixationGame';
 import {
@@ -288,19 +287,12 @@ export default function FixationDashboardView() {
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Carregando...</p>
         </div>
       ) : (
-        <AnimatePresence mode="wait">
-
+        <>
           {/* ──────────────────────────────────────────────────────────────────
               PASSO 1: SUAS COLEÇÕES
              ────────────────────────────────────────────────────────────────── */}
           {step === 'collections' && (
-            <motion.div
-              key="step-collections"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="space-y-6"
-            >
+            <div className="space-y-6">
               <div className="space-y-1">
                 <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 mb-2">
                   <Flame size={12} /> FIXAÇÃO MINIGAME
@@ -313,11 +305,10 @@ export default function FixationDashboardView() {
 
               <div className="space-y-3">
                 {collections.map(col => (
-                  <motion.div
+                  <div
                     key={col.id}
-                    whileHover={{ scale: 1.01, x: 4 }}
                     onClick={() => handleSelectCollection(col)}
-                    className="group bg-[#0c101d] border border-white/[0.06] hover:border-indigo-500/40 rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all shadow-lg"
+                    className="group bg-[#0c101d] border border-white/[0.06] hover:border-indigo-500/40 rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-colors"
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-xl bg-indigo-600/15 border border-indigo-500/20 flex items-center justify-center shrink-0 group-hover:bg-indigo-600 transition-colors">
@@ -333,23 +324,17 @@ export default function FixationDashboardView() {
                       </div>
                     </div>
                     <ChevronRight size={18} className="text-slate-600 group-hover:text-indigo-400 transition-colors" />
-                  </motion.div>
+                  </div>
                 ))}
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* ──────────────────────────────────────────────────────────────────
               PASSO 2: QUAL É A MATÉRIA
              ────────────────────────────────────────────────────────────────── */}
           {step === 'subjects' && (
-            <motion.div
-              key="step-subjects"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="space-y-6"
-            >
+            <div className="space-y-6">
               <div className="space-y-1">
                 <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 mb-2">
                   <Flame size={12} /> FIXAÇÃO MINIGAME
@@ -362,11 +347,10 @@ export default function FixationDashboardView() {
 
               <div className="space-y-3">
                 {subjects.map(sub => (
-                  <motion.div
+                  <div
                     key={sub.id}
-                    whileHover={{ scale: 1.01, x: 4 }}
                     onClick={() => handleSelectSubject(sub)}
-                    className="group bg-[#0c101d] border border-white/[0.06] hover:border-indigo-500/40 rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all shadow-lg"
+                    className="group bg-[#0c101d] border border-white/[0.06] hover:border-indigo-500/40 rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-colors"
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0 group-hover:bg-emerald-600 transition-colors">
@@ -382,23 +366,17 @@ export default function FixationDashboardView() {
                       </div>
                     </div>
                     <ChevronRight size={18} className="text-slate-600 group-hover:text-emerald-400 transition-colors" />
-                  </motion.div>
+                  </div>
                 ))}
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* ──────────────────────────────────────────────────────────────────
               PASSO 3: TÓPICOS DA MATÉRIA
              ────────────────────────────────────────────────────────────────── */}
           {step === 'topics' && (
-            <motion.div
-              key="step-topics"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="space-y-6"
-            >
+            <div className="space-y-6">
               <div className="space-y-1">
                 <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 mb-2">
                   <BookOpen size={12} /> {selectedSubject?.title}
@@ -411,11 +389,10 @@ export default function FixationDashboardView() {
 
               <div className="space-y-3">
                 {topics.map(top => (
-                  <motion.div
+                  <div
                     key={top.id}
-                    whileHover={{ scale: 1.01, x: 4 }}
                     onClick={() => handleSelectTopic(top)}
-                    className="group bg-[#0c101d] border border-white/[0.06] hover:border-emerald-500/40 rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all shadow-lg"
+                    className="group bg-[#0c101d] border border-white/[0.06] hover:border-emerald-500/40 rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-colors"
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl bg-blue-600/15 border border-blue-500/20 flex items-center justify-center shrink-0 group-hover:bg-blue-600 transition-colors">
@@ -431,23 +408,17 @@ export default function FixationDashboardView() {
                       </div>
                     </div>
                     <ChevronRight size={18} className="text-slate-600 group-hover:text-blue-400 transition-colors" />
-                  </motion.div>
+                  </div>
                 ))}
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* ──────────────────────────────────────────────────────────────────
               PASSO 4: FILTRAR FEEDBACKS & ESCOLHER PACOTE DE CARD (TITLE)
              ────────────────────────────────────────────────────────────────── */}
           {step === 'decks' && (
-            <motion.div
-              key="step-decks"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="space-y-8"
-            >
+            <div className="space-y-8">
               {/* Card de Filtro de Feedbacks */}
               <div className="bg-[#0c101d] border border-white/[0.06] rounded-3xl p-6 space-y-4">
                 <div>
@@ -474,7 +445,7 @@ export default function FixationDashboardView() {
                         key={fb.key}
                         onClick={() => handleSelectFeedbackFilter(fb.key)}
                         disabled={fb.count === 0}
-                        className={`p-3.5 rounded-2xl border flex items-center justify-between transition-all disabled:opacity-40 disabled:cursor-not-allowed ${fb.color} ${
+                        className={`p-3.5 rounded-2xl border flex items-center justify-between transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${fb.color} ${
                           isSelected ? 'ring-2 ring-indigo-500 bg-white/5' : 'bg-black/20'
                         }`}
                       >
@@ -494,11 +465,10 @@ export default function FixationDashboardView() {
 
                 <div className="space-y-3">
                   {packages.map(pkg => (
-                    <motion.div
+                    <div
                       key={pkg.id}
-                      whileHover={{ scale: 1.01, x: 4 }}
                       onClick={() => handleSelectPackage(pkg)}
-                      className="group bg-[#0c101d] border border-white/[0.06] hover:border-indigo-500/40 rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all shadow-lg"
+                      className="group bg-[#0c101d] border border-white/[0.06] hover:border-indigo-500/40 rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-colors"
                     >
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl bg-indigo-600/15 border border-indigo-500/20 flex items-center justify-center shrink-0 group-hover:bg-indigo-600 transition-colors">
@@ -514,14 +484,14 @@ export default function FixationDashboardView() {
                         </div>
                       </div>
                       <ChevronRight size={18} className="text-slate-600 group-hover:text-indigo-400 transition-colors" />
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               </div>
-            </motion.div>
+            </div>
           )}
 
-        </AnimatePresence>
+        </>
       )}
 
       {/* Banner de aviso para visitante */}

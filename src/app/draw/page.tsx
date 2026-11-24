@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -11,7 +11,6 @@ import {
   Minus,
   GripHorizontal,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 
 // Carrega o canvas de desenho de forma estrita no lado do cliente
 const DrawCanvas = dynamic(() => import("./DrawComponent"), {
@@ -149,11 +148,11 @@ function CalcBtn({
   label: string; onClick: () => void; wide?: boolean;
   variant?: "default" | "op" | "equals" | "clear" | "func";
 }) {
-  const base = "flex items-center justify-center rounded-xl font-bold text-sm select-none transition-all duration-100 active:scale-95 cursor-pointer h-12";
+  const base = "flex items-center justify-center rounded-xl font-bold text-sm select-none transition-colors cursor-pointer h-12";
   const variants: Record<string, string> = {
     default: "bg-[#1a2035] border border-white/[0.06] text-slate-200 hover:bg-[#1e2840] hover:border-white/10",
     op: "bg-blue-600/20 border border-blue-500/30 text-blue-400 hover:bg-blue-600/30",
-    equals: "bg-blue-600 border border-blue-500 text-white hover:bg-blue-500 shadow-lg shadow-blue-900/40",
+    equals: "bg-blue-600 border border-blue-500 text-white hover:bg-blue-500",
     clear: "bg-red-600/20 border border-red-500/30 text-red-400 hover:bg-red-600/30",
     func: "bg-white/[0.04] border border-white/[0.06] text-slate-400 hover:bg-white/[0.08] text-xs",
   };
@@ -167,23 +166,51 @@ function CalcBtn({
 function FloatingCalculator({ onClose }: { onClose: () => void }) {
   const c = useCalculator();
   const [minimized, setMinimized] = useState(false);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
+
+  const handleDragStart = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragRef.current = { startX: e.clientX, startY: e.clientY, origX: offset.x, origY: offset.y };
+  };
+
+  const handleDragMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current) return;
+    setOffset({
+      x: dragRef.current.origX + (e.clientX - dragRef.current.startX),
+      y: dragRef.current.origY + (e.clientY - dragRef.current.startY),
+    });
+  };
+
+  const handleDragEnd = () => {
+    dragRef.current = null;
+  };
 
   return (
-    <motion.div
-      drag
-      dragMomentum={false}
-      dragElastic={0}
+    <div
       onPointerDown={(e) => e.stopPropagation()}
-      initial={{ opacity: 0, scale: 0.92 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.88 }}
-      style={{ position: "fixed", right: 24, bottom: 24, zIndex: 9999, touchAction: "none" }}
-      className="w-72 bg-[#0B1220]/95 border border-white/10 rounded-[28px] shadow-2xl shadow-black/60 overflow-hidden backdrop-blur-xl"
+      style={{
+        position: "fixed",
+        right: 24,
+        bottom: 24,
+        zIndex: 9999,
+        touchAction: "none",
+        transform: `translate3d(${offset.x}px, ${offset.y}px, 0)`,
+      }}
+      className="w-72 bg-[#0B1220] border border-white/10 rounded-[28px] shadow-lg overflow-hidden"
     >
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/60 to-transparent" />
 
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing select-none" style={{ touchAction: "none" }}>
+      <div
+        onPointerDown={handleDragStart}
+        onPointerMove={handleDragMove}
+        onPointerUp={handleDragEnd}
+        onPointerCancel={handleDragEnd}
+        className="flex items-center justify-between px-4 pt-3 pb-2 cursor-grab active:cursor-grabbing select-none"
+        style={{ touchAction: "none" }}
+      >
         <div className="flex items-center gap-2">
           <GripHorizontal className="w-4 h-4 text-slate-600" />
           <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em]">Calculadora</span>
@@ -194,9 +221,8 @@ function FloatingCalculator({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-      <AnimatePresence initial={false}>
-        {!minimized && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: "hidden" }}>
+      {!minimized && (
+        <div>
             {c.history.length > 0 && (
               <div className="px-4 max-h-12 overflow-hidden">
                 {c.history.slice(0, 2).map((h, i) => <p key={i} className="text-[10px] text-slate-700 font-mono text-right truncate">{h}</p>)}
@@ -237,10 +263,9 @@ function FloatingCalculator({ onClose }: { onClose: () => void }) {
               <CalcBtn label="." onClick={c.inputDecimal} />
               <CalcBtn label="=" onClick={c.equals} variant="equals" />
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }
 
@@ -252,17 +277,17 @@ export default function DrawPage() {
   return (
     <div className="fixed inset-0 flex flex-col bg-[#020617] overflow-hidden" suppressHydrationWarning>
       {/* Top bar */}
-      <div className="h-14 flex items-center justify-between px-4 sm:px-6 shrink-0 bg-[#0B1220]/95 backdrop-blur-md border-b border-white/[0.06] z-50" suppressHydrationWarning>
+      <div className="h-14 flex items-center justify-between px-4 sm:px-6 shrink-0 bg-[#0B1220] border-b border-white/[0.06] z-50" suppressHydrationWarning>
         <div className="flex items-center gap-3" suppressHydrationWarning>
-          <button onClick={() => { window.location.href = '/'; }} className="w-9 h-9 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center text-slate-500 hover:text-white transition-all" suppressHydrationWarning><ArrowLeft className="w-4 h-4" suppressHydrationWarning /></button>
+          <button onClick={() => { window.location.href = '/'; }} className="w-9 h-9 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center text-slate-500 hover:text-white transition-colors" suppressHydrationWarning><ArrowLeft className="w-4 h-4" suppressHydrationWarning /></button>
           <div className="flex items-center gap-2" suppressHydrationWarning>
-            <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-600/20" suppressHydrationWarning><GraduationCap className="text-white w-3.5 h-3.5" suppressHydrationWarning /></div>
+            <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center" suppressHydrationWarning><GraduationCap className="text-white w-3.5 h-3.5" suppressHydrationWarning /></div>
             <span className="text-sm font-bold text-white tracking-tight" suppressHydrationWarning>My <span className="text-blue-500" suppressHydrationWarning>Study.</span></span>
           </div>
         </div>
 
-        <button onClick={() => setShowCalc((v) => !v)} className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 border rounded-xl transition-all group ${showCalc ? "bg-blue-600/30 border-blue-500/60 text-blue-300" : "bg-blue-600/10 border-blue-500/25 text-blue-400 hover:bg-blue-600/20"}`} title="Calculadora" suppressHydrationWarning>
-          <Calculator className="w-4 h-4 group-hover:scale-110 transition-transform" suppressHydrationWarning />
+        <button onClick={() => setShowCalc((v) => !v)} className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 border rounded-xl transition-colors group ${showCalc ? "bg-blue-600/30 border-blue-500/60 text-blue-300" : "bg-blue-600/10 border-blue-500/25 text-blue-400 hover:bg-blue-600/20"}`} title="Calculadora" suppressHydrationWarning>
+          <Calculator className="w-4 h-4" suppressHydrationWarning />
           <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block" suppressHydrationWarning>Calculadora</span>
         </button>
       </div>
@@ -271,9 +296,7 @@ export default function DrawPage() {
       <DrawCanvas />
 
       {/* Floating Calculator overlays DrawCanvas */}
-      <AnimatePresence>
-        {showCalc && <FloatingCalculator onClose={() => setShowCalc(false)} />}
-      </AnimatePresence>
+      {showCalc && <FloatingCalculator onClose={() => setShowCalc(false)} />}
     </div>
   );
 }

@@ -363,7 +363,7 @@ export function BinderLeftSurface({ state }: { state: BinderStudyState }) {
 
         <div className="mt-3 h-1.5 w-full rounded-full bg-[#1a0b17] overflow-hidden border border-[#e3be76]/25">
           <div
-            className="h-full bg-[#e3be76] transition-all duration-300"
+            className="h-full bg-[#e3be76]"
             style={{
               width: `${globalTotals.total > 0 ? Math.min(100, (globalTotals.answered / globalTotals.total) * 100) : 0}%`,
             }}
@@ -416,7 +416,7 @@ export function BinderLeftSurface({ state }: { state: BinderStudyState }) {
                 </div>
                 <div className="mt-1 h-[2px] w-full bg-[#4a2342] rounded-full overflow-hidden">
                   <div
-                    className={`h-full transition-all ${
+                    className={`h-full ${
                       isSelected ? "bg-[#f0cb7e]" : "bg-[#c79e59]/75"
                     }`}
                     style={{ width: `${pct}%` }}
@@ -547,7 +547,7 @@ export function BinderRightSurface({
                   key={entry.block.id}
                   type="button"
                   onClick={() => openBlockSheet(entry.block)}
-                  className={`group rounded-lg border border-[#e3be76]/28 hover:border-[#f0ce86] bg-gradient-to-br ${palette} p-2.5 flex flex-col justify-between text-left transition-transform hover:-translate-y-0.5 cursor-pointer`}
+                  className={`group rounded-lg border border-[#e3be76]/28 hover:border-[#f0ce86] bg-gradient-to-br ${palette} p-2.5 flex flex-col justify-between text-left transition-colors cursor-pointer`}
                 >
                   <div className="flex items-start justify-between gap-1">
                     <span className="text-[9px] text-[#e7cf9e]/85 truncate">
@@ -571,7 +571,7 @@ export function BinderRightSurface({
 
                   <div className="h-1 w-full rounded-full bg-black/40 overflow-hidden">
                     <div
-                      className="h-full bg-[#ecc87c] transition-all"
+                      className="h-full bg-[#ecc87c]"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -589,7 +589,7 @@ export function BinderRightSurface({
                   key={q.id}
                   type="button"
                   onClick={() => handleOpenQuestionCard(q)}
-                  className={`group rounded-lg border p-2.5 flex flex-col justify-between text-left transition-transform hover:-translate-y-0.5 cursor-pointer bg-gradient-to-br ${palette} ${
+                  className={`group rounded-lg border p-2.5 flex flex-col justify-between text-left transition-colors cursor-pointer bg-gradient-to-br ${palette} ${
                     st?.ultimo === "acerto"
                       ? "border-emerald-400/55"
                       : st?.ultimo === "erro"
@@ -786,7 +786,7 @@ export function BinderHudAndSheet({
       {/* Center: ONLY shown when user clicked a Caderno / Questão to open the Case Sheet ("Folha") */}
       {activeBlockId && (
         <div className="flex-1 min-h-0 flex items-center justify-center my-2 pointer-events-none">
-          <div className="pointer-events-auto w-full max-w-6xl h-full max-h-[680px] rounded-2xl bg-[#19121e]/98 border border-[#d4af6a]/35 shadow-2xl flex flex-col overflow-hidden">
+          <div className="pointer-events-auto w-full max-w-6xl h-full max-h-[680px] rounded-2xl bg-[#19121e]/98 border border-[#d4af6a]/35 shadow-lg flex flex-col overflow-hidden">
             {/* Sheet Header */}
             <div className="px-5 py-3.5 border-b border-[#d4af6a]/20 bg-[#231426] flex items-center justify-between gap-4 flex-wrap">
               <div className="min-w-0">
@@ -869,7 +869,7 @@ export function BinderHudAndSheet({
                             <span>{caso.questions.length} q</span>
                             <ChevronDown
                               size={13}
-                              className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                              className={isExpanded ? "rotate-180" : ""}
                             />
                           </div>
                         </button>
@@ -903,7 +903,7 @@ export function BinderHudAndSheet({
                                     setShowGabarito(false);
                                   }}
                                   title={`Questão ${q.numero || "?"} ${q.topico ? "— " + q.topico : ""}`}
-                                  className={`relative px-2.5 py-1.5 rounded-lg border text-[11px] font-medium flex items-center gap-1.5 transition-all cursor-pointer tabular-nums ${tileClass}`}
+                                  className={`relative px-2.5 py-1.5 rounded-lg border text-[11px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer tabular-nums ${tileClass}`}
                                 >
                                   <span>{cat.emoji}</span>
                                   <span>{q.numero || "Q"}</span>

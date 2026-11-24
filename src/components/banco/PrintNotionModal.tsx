@@ -617,10 +617,10 @@ export function PrintNotionModal({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="relative w-full max-w-3xl mx-3 sm:mx-4 bg-[#0d1220] border border-white/[0.12] rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden text-slate-200">
+      <div className="relative w-full max-w-3xl mx-3 sm:mx-4 bg-[#0d1220] border border-white/[0.12] rounded-2xl flex flex-col max-h-[90vh] overflow-hidden text-slate-200">
 
         {/* ── Header ── */}
         <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-white/[0.08] bg-[#111627] shrink-0">
@@ -647,7 +647,7 @@ export function PrintNotionModal({
 
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all"
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:text-white hover:bg-white/[0.06] transition-colors"
           >
             <X size={16} />
           </button>
@@ -665,9 +665,9 @@ export function PrintNotionModal({
                   type="button"
                   onClick={() => setColumns('2')}
                   title="2 Colunas (Economiza até 60% de papel, mais questões por folha)"
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10.5px] font-bold transition-all ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10.5px] font-bold transition-colors ${
                     columns === '2'
-                      ? 'bg-indigo-600 text-white shadow-sm'
+                      ? 'bg-indigo-600 text-white'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -679,9 +679,9 @@ export function PrintNotionModal({
                   type="button"
                   onClick={() => setColumns('1')}
                   title="1 Coluna tradicional"
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10.5px] font-bold transition-all ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10.5px] font-bold transition-colors ${
                     columns === '1'
-                      ? 'bg-indigo-600 text-white shadow-sm'
+                      ? 'bg-indigo-600 text-white'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -698,7 +698,7 @@ export function PrintNotionModal({
                 <button
                   type="button"
                   onClick={() => setImageDensity('compacto')}
-                  className={`px-2 py-1 rounded-md text-[10.5px] font-bold transition-all ${
+                  className={`px-2 py-1 rounded-md text-[10.5px] font-bold transition-colors ${
                     imageDensity === 'compacto' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -707,7 +707,7 @@ export function PrintNotionModal({
                 <button
                   type="button"
                   onClick={() => setImageDensity('medio')}
-                  className={`px-2 py-1 rounded-md text-[10.5px] font-bold transition-all ${
+                  className={`px-2 py-1 rounded-md text-[10.5px] font-bold transition-colors ${
                     imageDensity === 'medio' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -724,7 +724,7 @@ export function PrintNotionModal({
                   type="button"
                   onClick={() => setGabaritoMode('completo')}
                   title="Tabela de respostas + Resoluções completas na última folha"
-                  className={`px-2 py-1 rounded-md text-[10.5px] font-bold transition-all ${
+                  className={`px-2 py-1 rounded-md text-[10.5px] font-bold transition-colors ${
                     gabaritoMode === 'completo' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -734,7 +734,7 @@ export function PrintNotionModal({
                   type="button"
                   onClick={() => setGabaritoMode('tabela')}
                   title="Apenas a grade compacta de letras na última folha"
-                  className={`px-2 py-1 rounded-md text-[10.5px] font-bold transition-all ${
+                  className={`px-2 py-1 rounded-md text-[10.5px] font-bold transition-colors ${
                     gabaritoMode === 'tabela' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -743,7 +743,7 @@ export function PrintNotionModal({
                 <button
                   type="button"
                   onClick={() => setGabaritoMode('nenhum')}
-                  className={`px-2 py-1 rounded-md text-[10.5px] font-bold transition-all ${
+                  className={`px-2 py-1 rounded-md text-[10.5px] font-bold transition-colors ${
                     gabaritoMode === 'nenhum' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -758,7 +758,7 @@ export function PrintNotionModal({
           <button
             onClick={handlePrint}
             disabled={isLoading || questions.length === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95 shadow-lg shadow-indigo-600/30 ml-auto"
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-colors ml-auto"
           >
             <Printer size={14} />
             <span>Imprimir / PDF</span>
@@ -807,7 +807,7 @@ export function PrintNotionModal({
                   return (
                     <div
                       key={q.id || idx}
-                      className="bg-[#111627] border border-white/[0.06] rounded-xl p-3 flex flex-col gap-2 relative group hover:border-white/[0.12] transition-all"
+                      className="bg-[#111627] border border-white/[0.06] rounded-xl p-3 flex flex-col gap-2 relative group hover:border-white/[0.12] transition-colors"
                     >
                       <div className="flex items-center justify-between gap-1.5">
                         <div className="flex items-center gap-1.5 min-w-0">
@@ -858,14 +858,14 @@ export function PrintNotionModal({
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition-all"
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition-colors"
             >
               Fechar
             </button>
             <button
               onClick={handlePrint}
               disabled={isLoading || questions.length === 0}
-              className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95 shadow-md shadow-indigo-600/20"
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-colors"
             >
               <Printer size={13} />
               <span>Imprimir</span>

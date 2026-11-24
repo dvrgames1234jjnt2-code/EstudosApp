@@ -17,7 +17,7 @@ export default function EditalPage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#020617]">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-[#020617]/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-[#020617]/95">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link 
@@ -62,7 +62,7 @@ export default function EditalPage() {
               <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
                   isActive
                     ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
                     : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent"
@@ -89,7 +89,7 @@ export default function EditalPage() {
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 flex flex-col min-w-0 bg-[#0F172A] rounded-3xl border border-white/5 overflow-hidden shadow-2xl relative">
+        <main className="flex-1 flex flex-col min-w-0 bg-[#0F172A] rounded-3xl border border-white/5 overflow-hidden relative">
           
           {activeSection === "documento" && (
             <div className="flex-1 w-full h-[calc(100vh-12rem)] relative">
