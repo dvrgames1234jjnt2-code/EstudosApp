@@ -105,7 +105,7 @@ export function AppSidebarNav({
       <aside
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
-        className="fixed left-0 top-0 bottom-0 z-[100] w-80 sm:w-84 bg-[#070b19] border-r border-white/10 shadow-lg flex flex-col justify-between overflow-hidden"
+        className="fixed left-0 top-0 bottom-0 z-[100] w-[min(85vw,21rem)] bg-[#070b19] border-r border-white/10 shadow-lg flex flex-col justify-between overflow-hidden"
       >
         {/* Header da Sidebar */}
         <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">

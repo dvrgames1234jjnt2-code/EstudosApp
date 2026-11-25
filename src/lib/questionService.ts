@@ -44,23 +44,109 @@ export interface BancoQuestionComPath extends BancoQuestion {
   organizacao_path?: string;
   organizacao_nivel?: number;
   ID_Qconcursos?: string;
+  Idq?: string;
+  idq?: string;
+  Idg?: string;
+  idg?: string;
+  Idtec?: string;
+  idtec?: string;
   link?: string;
-  Ano?: number;
+  Ano?: string | number;
+  Ordem?: number | null;
+  ordem?: number | null;
+  Banca?: string;
+  banca?: string;
+  Disciplina?: string;
+  disciplina?: string;
+}
+
+export type PlataformaFiltro = 'todas' | 'qconcursos' | 'gran' | 'tec';
+
+export const CADERNO_ERROS_SQL_MIGRATION = `ALTER TABLE public.questoes
+  ADD COLUMN IF NOT EXISTS "Idq" text,
+  ADD COLUMN IF NOT EXISTS "Idg" text,
+  ADD COLUMN IF NOT EXISTS "Idtec" text,
+  ADD COLUMN IF NOT EXISTS "Banca" text,
+  ADD COLUMN IF NOT EXISTS "Ordem" numeric,
+  ADD COLUMN IF NOT EXISTS "Disciplina" text;
+
+UPDATE public.questoes SET "Idq" = "ID_Qconcursos" WHERE "Idq" IS NULL AND "ID_Qconcursos" IS NOT NULL;
+
+DROP VIEW IF EXISTS public.v_questoes_com_path;
+ALTER TABLE public.questoes ALTER COLUMN "Ano" TYPE text USING "Ano"::text;`;
+
+export function normalizeDifficultyLabel(raw?: unknown): string | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  const val = String(raw).trim();
+  if (!val) return undefined;
+  const lower = val.toLowerCase();
+  if (lower === 'facil' || lower === 'fácil') return 'Fácil';
+  if (lower === 'media' || lower === 'média') return 'Média';
+  if (lower === 'dificil' || lower === 'difícil' || lower === 'díficil') return 'Difícil';
+  if (lower === 'ultrahard' || lower === 'ultra hard' || lower === 'ultra-hard') return 'Ultrahard';
+  if (lower === 'atencao' || lower === 'atenção') return 'Atenção';
+  if (lower === 'bonus' || lower === 'bônus') return 'Bônus';
+  return val;
+}
+
+export function getQuestionIds(q: Partial<BancoQuestion> & Record<string, any>) {
+  const idq = String(q.Idq ?? q.idq ?? q.ID_Qconcursos ?? '').trim();
+  const idg = String(q.Idg ?? q.idg ?? q.ID_Gran ?? '').trim();
+  const idtec = String(q.Idtec ?? q.idtec ?? q.ID_TEC ?? '').trim();
+  return { idq, idg, idtec };
+}
+
+export function matchesPlataforma(q: Partial<BancoQuestion> & Record<string, any>, plataforma: PlataformaFiltro): boolean {
+  if (plataforma === 'todas') return true;
+  const { idq, idg, idtec } = getQuestionIds(q);
+  if (plataforma === 'qconcursos') return Boolean(idq);
+  if (plataforma === 'gran') return Boolean(idg);
+  if (plataforma === 'tec') return Boolean(idtec);
+  return true;
+}
+
+export function sortQuestoesByOrdem<T extends Partial<BancoQuestion> & Record<string, any>>(list: T[]): T[] {
+  return [...list].sort((a, b) => {
+    const rawA: unknown = a.Ordem ?? a.ordem;
+    const rawB: unknown = b.Ordem ?? b.ordem;
+    const ordA = rawA !== undefined && rawA !== null && String(rawA).trim() !== '' && !Number.isNaN(Number(rawA)) ? Number(rawA) : Number.MAX_SAFE_INTEGER;
+    const ordB = rawB !== undefined && rawB !== null && String(rawB).trim() !== '' && !Number.isNaN(Number(rawB)) ? Number(rawB) : Number.MAX_SAFE_INTEGER;
+    if (ordA !== ordB) return ordA - ordB;
+    const idA = Number(a.id) || 0;
+    const idB = Number(b.id) || 0;
+    return idA - idB;
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Normalização: linha do DB → BancoQuestionComPath
 // ─────────────────────────────────────────────────────────────────────────────
 export function normalizarQuestao(row: any): BancoQuestionComPath {
+  const idq = row.Idq ?? row.idq ?? row.ID_Qconcursos ?? undefined;
+  const idg = row.Idg ?? row.idg ?? row.ID_Gran ?? undefined;
+  const idtec = row.Idtec ?? row.idtec ?? row.ID_TEC ?? undefined;
+  const rawOrdem = row.Ordem ?? row.ordem;
+  const ordem = rawOrdem !== undefined && rawOrdem !== null && rawOrdem !== '' && !Number.isNaN(Number(rawOrdem))
+    ? Number(rawOrdem)
+    : undefined;
+  const banca = row.Banca ?? row.banca ?? undefined;
+  const disciplina = row.Disciplina ?? row.disciplina ?? row.Materia ?? row.materia ?? 'Geral';
+  const rawAno = row.Ano ?? row.ano;
+  const anoNormalized = rawAno !== undefined && rawAno !== null && String(rawAno).trim() !== ''
+    ? String(rawAno).trim()
+    : undefined;
+
   return {
     id:           row.id,
     // Compatibilidade com campos antigos e novos
-    materia:      row.Materia || row.Disciplina || row.materia || row.disciplina || 'Geral',
+    materia:      disciplina,
+    disciplina,
+    Disciplina:   disciplina,
     tema:         row.tema || row.Tema || row['Tópico'] || row.Assunto || undefined,
     title:        row.Enunciado || row.enunciado || row.texto || row.title || '',
-    dificuldade:  row.dificuldade || row.Dificuldade || undefined,
+    dificuldade:  normalizeDifficultyLabel(row.dificuldade || row.Dificuldade),
     status:       row.Status || row.status || undefined,
-    prova:        row.PROVA || row.prova || undefined,
+    prova:        row.PROVA || row.Prova || row.prova || undefined,
     dat:          row.created_at || row.dat || undefined,
     referencia:   row.referencia || undefined,
     'Alternativa A': row['Alternativa A'] || row.alternativa_a || undefined,
@@ -72,17 +158,27 @@ export function normalizarQuestao(row: any): BancoQuestionComPath {
     perguntaProblema: row['Pergunta problema'] !== undefined ? row['Pergunta problema'] : (row.pergunta_problema || row.perguntaProblema || undefined),
     respostaCorreta:  row.respostaCorreta || row.resposta_correta || row.Gabarito || row.gabarito || undefined,
     Gabarito:     row.Gabarito || row.gabarito || undefined,
-    explicacao:   row['Comentário'] || row.Comentário || row.comentario || row.Comentario || row.explicacao || undefined,
+    explicacao:   row['Comentário'] || row.Comentário || row.comentario || row.Comentario || row.explicacao || row.Explicacao || undefined,
     created_at:   row.created_at || undefined,
     imagemEnunciado: row.Imagem_Enunciado || row.imagemEnunciado || undefined,
-    // Campos novos (Etapa 1)
+    // Campos novos (Etapa 1 & Etapa 2)
     organizacao_id:    row.organizacao_id    || undefined,
     organizacao_nome:  row.organizacao_nome  || undefined,
     organizacao_path:  row.organizacao_path  || undefined,
     organizacao_nivel: row.organizacao_nivel ?? undefined,
-    ID_Qconcursos:     row.ID_Qconcursos     || undefined,
+    ID_Qconcursos:     idq ? String(idq).trim() : undefined,
+    Idq:               idq ? String(idq).trim() : undefined,
+    idq:               idq ? String(idq).trim() : undefined,
+    Idg:               idg ? String(idg).trim() : undefined,
+    idg:               idg ? String(idg).trim() : undefined,
+    Idtec:             idtec ? String(idtec).trim() : undefined,
+    idtec:             idtec ? String(idtec).trim() : undefined,
+    Ordem:             ordem,
+    ordem,
+    Banca:             banca ? String(banca).trim() : undefined,
+    banca:             banca ? String(banca).trim() : undefined,
     link:              row.link              || undefined,
-    Ano:               row.Ano               ?? undefined,
+    Ano:               anoNormalized,
     Duvida:            typeof row.Duvida === 'boolean' ? row.Duvida : undefined,
   };
 }

@@ -675,8 +675,8 @@ function SimuladoContent() {
                   }}
                   className="px-3 sm:px-4 py-2.5 bg-red-600/10 hover:bg-red-600/20 rounded-xl text-[10px] font-black uppercase tracking-widest text-red-500 transition-colors border border-red-500/20 flex items-center justify-center"
                 >
-                  <span className="hidden xs:inline">Cancelar</span>
-                  <LogOut className="w-4 h-4 xs:hidden" />
+                  <span className="hidden sm:inline">Cancelar</span>
+                  <LogOut className="w-4 h-4 sm:hidden" />
                 </button>
                 <button 
                   onClick={() => setShowMobileGabarito(!showMobileGabarito)} 
@@ -692,8 +692,8 @@ function SimuladoContent() {
                   saveProgress();
                 }} className="w-9 h-9 sm:w-10 sm:h-10 bg-white/5 hover:bg-white/10 rounded-xl flex items-center justify-center text-slate-400 hover:text-white transition-colors border border-white/5" title="Pausar"><Lock className="w-4 h-4" /></button>
                 <button onClick={handleFinish} className="px-3 sm:px-6 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-colors flex items-center justify-center min-w-[70px]">
-                  <span className="hidden xs:inline">Finalizar</span>
-                  <span className="xs:hidden">Fim</span>
+                  <span className="hidden sm:inline">Finalizar</span>
+                  <span className="sm:hidden">Fim</span>
                 </button>
               </div>
            </div>

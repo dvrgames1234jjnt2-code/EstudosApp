@@ -80,7 +80,7 @@ function ClassificationValidationDropdown({
   };
 
   return (
-    <div ref={containerRef} className="relative inline-block">
+    <div ref={containerRef} className="relative inline-block w-full sm:w-auto max-w-full">
       <div
         className={`flex items-center rounded-xl border transition-colors ${
           isFiltered
@@ -93,8 +93,8 @@ function ClassificationValidationDropdown({
           onClick={() => setOpen(v => !v)}
           aria-haspopup="listbox"
           aria-expanded={open}
-          className={`flex items-center justify-between gap-2 text-left focus:outline-none ${
-            compact ? "px-2.5 py-1.5 min-w-[175px]" : "px-3 py-1.5 min-w-[225px]"
+          className={`flex items-center justify-between gap-2 text-left focus:outline-none w-full sm:w-auto ${
+            compact ? "px-2.5 py-2 sm:py-1.5 min-w-0 sm:min-w-[175px]" : "px-3 py-2 sm:py-1.5 min-w-0 sm:min-w-[225px]"
           }`}
         >
           <span className="flex items-center gap-2 min-w-0">
@@ -150,7 +150,7 @@ function ClassificationValidationDropdown({
         <div
           role="listbox"
           aria-label="Lista de validação de classificação"
-          className="absolute left-0 top-full mt-1.5 z-50 w-64 rounded-xl border border-white/[0.14] bg-[#0b101c] py-1.5 shadow-lg"
+          className="absolute left-0 top-full mt-1.5 z-50 w-full min-w-[240px] sm:w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-white/[0.14] bg-[#0b101c] py-1.5 shadow-lg"
         >
           <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/[0.06] mb-1">
             <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-500">
@@ -1484,6 +1484,13 @@ function ImagemLightbox({
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const touchStateRef = useRef<{ x: number; y: number; startX: number; startY: number; panning: boolean }>({
+    x: 0,
+    y: 0,
+    startX: 0,
+    startY: 0,
+    panning: false,
+  });
 
   const [recording, setRecording] = useState(false);
   const [recorded, setRecorded] = useState<'acerto' | 'erro' | null>(null);
@@ -1634,6 +1641,40 @@ function ImagemLightbox({
 
   const handleMouseUp = () => setIsDragging(false);
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    touchStateRef.current = {
+      x: t.clientX,
+      y: t.clientY,
+      startX: t.clientX - position.x,
+      startY: t.clientY - position.y,
+      panning: scale > 1 || isFullWidth,
+    };
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    if (touchStateRef.current.panning) {
+      const t = e.touches[0];
+      setPosition({
+        x: t.clientX - touchStateRef.current.startX,
+        y: t.clientY - touchStateRef.current.startY,
+      });
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStateRef.current.panning || e.changedTouches.length !== 1) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStateRef.current.x;
+    const dy = t.clientY - touchStateRef.current.y;
+    if (Math.abs(dx) > 65 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+      if (dx < 0 && hasNext && onNext) onNext();
+      else if (dx > 0 && hasPrev && onPrev) onPrev();
+    }
+  };
+
   if (typeof document === "undefined") return null;
 
   return createPortal(
@@ -1643,11 +1684,11 @@ function ImagemLightbox({
       onMouseUp={handleMouseUp}
     >
       {/* Top Bar Controls */}
-      <div className="w-full px-2 sm:px-4 py-2 flex items-center gap-2 bg-[#070b14] border-b border-white/10 z-30 overflow-hidden" style={{ minHeight: 44 }}>
+      <div className="w-full px-2 sm:px-4 py-2 flex items-center gap-1.5 sm:gap-2 bg-[#070b14] border-b border-white/10 z-30 overflow-hidden" style={{ minHeight: 44 }}>
         {/* Left Info — shrink aggressively */}
         <div className="flex items-center gap-1.5 text-white font-bold text-xs shrink min-w-0 overflow-hidden">
-          <Maximize2 size={14} className="text-indigo-400 shrink-0" />
-          <span className="truncate max-w-[120px] sm:max-w-xs">
+          <Maximize2 size={14} className="text-indigo-400 shrink-0 hidden sm:block" />
+          <span className="truncate max-w-[78px] sm:max-w-xs">
             {questaoNumero ? `Q${questaoNumero}` : "Imagem"}
             {questaoTopic ? ` — ${questaoTopic}` : ""}
           </span>
@@ -1659,7 +1700,7 @@ function ImagemLightbox({
         </div>
 
         {/* Toolbar Center — scrollable horizontally, no wrap */}
-        <div className="flex items-center gap-1 bg-white/10 p-1 rounded-xl border border-white/10 shrink-0 overflow-x-auto max-w-[55vw] sm:max-w-none" style={{ scrollbarWidth: 'none' }}>
+        <div className="flex items-center gap-0.5 sm:gap-1 bg-white/10 p-1 rounded-xl border border-white/10 shrink-0 overflow-x-auto no-scrollbar max-w-[calc(100vw-170px)] sm:max-w-none">
           {hasPrev && onPrev && (
             <button
               onClick={onPrev}
@@ -1771,24 +1812,31 @@ function ImagemLightbox({
 
 
       {/* Main Image View & Side-by-Side Split Screen Answer Panel Area */}
-      <div className="relative flex-1 w-full h-full overflow-hidden flex flex-row items-center justify-between min-h-0">
-        {/* Left Question Image Container (Fixed 50% when showResposta is true) */}
+      <div className="relative flex-1 w-full h-full overflow-hidden flex flex-col md:flex-row items-center justify-between min-h-0">
+        {/* Left/Top Question Image Container */}
         <div
-          className={`relative h-full overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing p-2 sm:p-4 min-w-0 ${
-            showResposta ? "w-1/2 flex-1 border-r border-white/10" : "w-full flex-1"
+          className={`relative overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing p-2 sm:p-4 min-w-0 min-h-0 ${
+            scale > 1 || isFullWidth ? "touch-none" : "touch-pan-y"
+          } ${
+            showResposta
+              ? "w-full h-1/2 border-b md:border-b-0 md:h-full md:w-1/2 md:border-r border-white/10"
+              : "w-full h-full flex-1"
           }`}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           onClick={(e) => {
             if (e.target === e.currentTarget) onClose();
           }}
         >
-          {/* Floating Side Arrows for Next/Prev (Absolute to Question Container) */}
+          {/* Floating Side Arrows for Next/Prev (Desktop/Tablet) */}
           {hasPrev && onPrev && (
             <button
               onClick={(e) => { e.stopPropagation(); onPrev(); }}
               title="Questão Anterior (←)"
-              className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-900/95 hover:bg-slate-800 text-slate-200 hover:text-white flex items-center justify-center border border-slate-700 transition-colors"
+              className="hidden sm:flex absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-900/95 hover:bg-slate-800 text-slate-200 hover:text-white items-center justify-center border border-slate-700 transition-colors"
             >
               <ChevronLeft size={24} />
             </button>
@@ -1798,7 +1846,7 @@ function ImagemLightbox({
             <button
               onClick={(e) => { e.stopPropagation(); onNext(); }}
               title="Próxima Questão (→)"
-              className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-900/95 hover:bg-slate-800 text-slate-200 hover:text-white flex items-center justify-center border border-slate-700 transition-colors"
+              className="hidden sm:flex absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-900/95 hover:bg-slate-800 text-slate-200 hover:text-white items-center justify-center border border-slate-700 transition-colors"
             >
               <ChevronRight size={24} />
             </button>
@@ -1870,16 +1918,16 @@ function ImagemLightbox({
           })()}
         </div>
 
-        {/* Right Side Answer Screen Panel (Fixed 50% Width, Scrollable Content) */}
+        {/* Right/Bottom Answer Screen Panel */}
         {showResposta && (
-          <div className="w-1/2 flex-1 h-full bg-[#0b101d] p-4 sm:p-6 z-40 text-white flex flex-col gap-4 overflow-y-auto custom-scrollbar shrink-0 min-w-0 border-l border-white/10">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
-              <span className="text-sm sm:text-base font-bold text-emerald-400 flex items-center gap-2">
-                <span>✨</span> Resposta e Gabarito {questaoNumero ? `— Questão ${questaoNumero}` : ""}
+          <div className="w-full h-1/2 md:h-full md:w-1/2 flex-1 bg-[#0b101d] p-3.5 sm:p-6 z-40 text-white flex flex-col gap-3 sm:gap-4 overflow-y-auto custom-scrollbar shrink-0 min-w-0 border-t md:border-t-0 md:border-l border-white/10">
+            <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-white/10 shrink-0 gap-2">
+              <span className="text-xs sm:text-base font-bold text-emerald-400 flex items-center gap-1.5 sm:gap-2 truncate">
+                <span>✨</span> Resposta e Gabarito {questaoNumero ? `— Q${questaoNumero}` : ""}
               </span>
               <button
                 onClick={() => setShowResposta(false)}
-                className="text-slate-400 hover:text-white text-xs p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                className="text-slate-400 hover:text-white text-xs p-1.5 rounded-lg hover:bg-white/10 transition-colors shrink-0"
               >
                 <X size={18} />
               </button>
@@ -1964,7 +2012,7 @@ function ImagemLightbox({
       </div>
 
       {/* Footer hint */}
-      <div className="w-full px-4 py-2 bg-[#070b14] border-t border-white/5 text-[11px] text-slate-400 font-medium z-20 flex items-center justify-center gap-3 sm:gap-6 text-center flex-wrap">
+      <div className="hidden sm:flex w-full px-4 py-2 bg-[#070b14] border-t border-white/5 text-[11px] text-slate-400 font-medium z-20 items-center justify-center gap-3 sm:gap-6 text-center flex-wrap">
         <span>💡 Dica: <span className="text-indigo-300 font-bold">Modo Ajustado</span> ativo por padrão</span>
         <span>• <kbd className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 rounded font-mono">B</kbd> Anti-Brilho</span>
         <span>• <kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-slate-200">←</kbd> / <kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-slate-200">→</kbd> Pular Questão</span>
@@ -2532,7 +2580,7 @@ const QuestaoRow = memo(function QuestaoRow({
     >
       <div
         onMouseEnter={handlePrefetchQuestao}
-        className={`flex items-center gap-1.5 py-[2px] px-2 min-h-[24px] rounded-md group ${
+        className={`flex flex-wrap sm:flex-nowrap items-center gap-x-1.5 gap-y-1 py-1.5 sm:py-[2px] px-2 min-h-[34px] sm:min-h-[24px] rounded-md group ${
         showHighlightStyle ? "bg-rose-500/[0.05]" : bgClass
       }`}>
         {isAdmin && (
@@ -2546,23 +2594,23 @@ const QuestaoRow = memo(function QuestaoRow({
 
         <button
           onClick={() => { setOpen(v => !v); setShowResp(false); }}
-          className="text-slate-500 hover:text-slate-300 w-3.5 h-3.5 flex items-center justify-center shrink-0"
+          className="text-slate-500 hover:text-slate-300 w-6 h-6 sm:w-3.5 sm:h-3.5 flex items-center justify-center shrink-0"
         >
           {loading && imageUrls.filter(u => u && u.trim() !== "").length === 0 ? (
-            <Loader2 size={9} className="animate-spin text-slate-500" />
+            <Loader2 size={10} className="animate-spin text-slate-500" />
           ) : (
-            <ChevronRight size={10} className={`text-slate-500 shrink-0 ${open ? "rotate-90" : ""}`} />
+            <ChevronRight size={11} className={`text-slate-500 shrink-0 ${open ? "rotate-90" : ""}`} />
           )}
         </button>
 
-        <span className="text-[10px] font-normal text-slate-400 bg-white/[0.04] border border-white/[0.07] px-1.5 py-0 rounded leading-[16px] shrink-0 tabular-nums">
+        <span className="text-[10px] font-normal text-slate-400 bg-white/[0.04] border border-white/[0.07] px-1.5 py-0 rounded leading-[18px] sm:leading-[16px] shrink-0 tabular-nums">
           {questao.numero}
         </span>
 
         <span className="w-1.5 h-1.5 rounded-full shrink-0 select-none shadow-sm" style={{ backgroundColor: catColor }} title={catLabel} />
 
         <span
-          className="text-[10px] font-normal px-1.5 py-0 leading-[16px] rounded bg-black/20 border border-white/[0.06] shrink-0"
+          className="text-[10px] font-normal px-1.5 py-0 leading-[18px] sm:leading-[16px] rounded bg-black/20 border border-white/[0.06] shrink-0"
           style={{ color: catColor }}
         >
           {catLabel}
@@ -2578,7 +2626,7 @@ const QuestaoRow = memo(function QuestaoRow({
             const value = event.target.value as CategoryKey | "";
             void updateClassification(questao.id, value || null);
           }}
-          className="h-[18px] max-w-[100px] rounded border border-white/[0.08] bg-[#0b1019] px-1 py-0 text-[9.5px] leading-none text-slate-300 outline-none focus:border-indigo-500/60 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-6 sm:h-[18px] max-w-[92px] sm:max-w-[100px] rounded border border-white/[0.08] bg-[#0b1019] px-1 py-0 text-[9.5px] leading-none text-slate-300 outline-none focus:border-indigo-500/60 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <option value="">Padrão</option>
           {CATEGORIES.map(category => (
@@ -2598,13 +2646,13 @@ const QuestaoRow = memo(function QuestaoRow({
         )}
 
         {questao.topic && (
-          <span className="text-[11px] sm:text-[11.5px] font-normal text-slate-300 leading-tight truncate ml-0.5">
+          <span className="text-[11px] sm:text-[11.5px] font-normal text-slate-300 leading-tight truncate ml-0.5 basis-full sm:basis-auto order-last sm:order-none min-w-0">
             — {questao.topic}
           </span>
         )}
 
         {questao.caseLabel && (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0 leading-[15px] rounded-full bg-slate-800/40 border border-slate-700/50 text-[9.5px] font-medium text-slate-400 truncate shrink-0 ml-1">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0 leading-[15px] rounded-full bg-slate-800/40 border border-slate-700/50 text-[9.5px] font-medium text-slate-400 truncate shrink-0 ml-0.5 sm:ml-1 max-w-[130px] sm:max-w-none">
             <span className="text-slate-600 font-normal">in</span> {questao.caseLabel}
           </span>
         )}
@@ -2614,7 +2662,7 @@ const QuestaoRow = memo(function QuestaoRow({
         )}
 
         {rootBlockId && casoId && (
-          <div className="flex items-center gap-0.5 opacity-45 group-hover:opacity-100 ml-auto mr-1 shrink-0">
+          <div className="flex items-center gap-0.5 opacity-90 sm:opacity-45 sm:group-hover:opacity-100 ml-auto mr-0.5 sm:mr-1 shrink-0">
             <button
               type="button"
               onClick={(e) => {
@@ -2628,9 +2676,9 @@ const QuestaoRow = memo(function QuestaoRow({
                 });
               }}
               title="Jogar questão em outro Caso ou Subcaso"
-              className="flex items-center gap-1 px-1 py-0 h-4 rounded text-[9.5px] font-medium text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06]"
+              className="flex items-center gap-1 px-1.5 sm:px-1 py-0 h-6 sm:h-4 rounded text-[9.5px] font-medium text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06]"
             >
-              <FolderInput size={10} />
+              <FolderInput size={11} />
               <span className="hidden md:inline">Subcaso</span>
             </button>
             <button
@@ -2646,9 +2694,9 @@ const QuestaoRow = memo(function QuestaoRow({
                 });
               }}
               title="Editar pergunta, imagem ou resposta"
-              className="w-4 h-4 flex items-center justify-center rounded text-slate-400 hover:text-amber-300 hover:bg-white/[0.06]"
+              className="w-6 h-6 sm:w-4 sm:h-4 flex items-center justify-center rounded text-slate-400 hover:text-amber-300 hover:bg-white/[0.06]"
             >
-              <Pencil size={9.5} />
+              <Pencil size={10} />
             </button>
             <button
               type="button"
@@ -2657,49 +2705,49 @@ const QuestaoRow = memo(function QuestaoRow({
                 void builder.deleteQuestao(rootBlockId, casoId, questao);
               }}
               title="Excluir questão"
-              className="w-4 h-4 flex items-center justify-center rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10"
+              className="w-6 h-6 sm:w-4 sm:h-4 flex items-center justify-center rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10"
             >
-              <Trash2 size={9.5} />
+              <Trash2 size={10} />
             </button>
           </div>
         )}
 
         {isAdmin && (
-          <div className={`flex items-center gap-0.5 opacity-35 group-hover:opacity-100 ${!(rootBlockId && casoId) ? "ml-auto" : ""} mr-1`}>
+          <div className={`flex items-center gap-0.5 opacity-80 sm:opacity-35 sm:group-hover:opacity-100 ${!(rootBlockId && casoId) ? "ml-auto" : ""} mr-1`}>
             <button
               onClick={(e) => { e.stopPropagation(); onMoveUp?.(questao.id); }}
               disabled={isFirst}
               title="Mover questão para cima"
-              className="w-4 h-4 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent"
+              className="w-6 h-6 sm:w-4 sm:h-4 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent"
             >
-              <ArrowUp size={9.5} />
+              <ArrowUp size={10} />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onMoveDown?.(questao.id); }}
               disabled={isLast}
               title="Mover questão para baixo"
-              className="w-4 h-4 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent"
+              className="w-6 h-6 sm:w-4 sm:h-4 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent"
             >
-              <ArrowDown size={9.5} />
+              <ArrowDown size={10} />
             </button>
           </div>
         )}
 
         {stats && stats.totalErros > 0 && (
-          <span className={`inline-flex items-center gap-1 px-1.5 py-0 leading-[15px] rounded-full text-[9.5px] font-bold text-rose-300 bg-rose-950/60 border border-rose-500/30 shrink-0 ${!isAdmin && !isErro && !isAcerto ? "ml-auto" : ""}`} title={`${stats.totalErros} erro(s) no histórico`}>
+          <span className={`inline-flex items-center gap-1 px-1.5 py-0 leading-[15px] rounded-full text-[9.5px] font-bold text-rose-300 bg-rose-950/60 border border-rose-500/30 shrink-0 ${!isAdmin && !isErro && !isAcerto && !(rootBlockId && casoId) ? "ml-auto" : ""}`} title={`${stats.totalErros} erro(s) no histórico`}>
             <span>🔥</span>
             <span>{stats.totalErros} {stats.totalErros === 1 ? "erro" : "erros"}</span>
           </span>
         )}
 
         {isErro && (
-          <span className={`inline-flex items-center gap-1 px-2 py-0 leading-[15px] rounded-full text-[9.5px] font-medium text-rose-300 bg-rose-950/50 border border-rose-700/60 shrink-0 ${!isAdmin && !(stats && stats.totalErros > 0) ? "ml-auto" : ""}`}>
+          <span className={`inline-flex items-center gap-1 px-2 py-0 leading-[15px] rounded-full text-[9.5px] font-medium text-rose-300 bg-rose-950/50 border border-rose-700/60 shrink-0 ${!isAdmin && !(stats && stats.totalErros > 0) && !(rootBlockId && casoId) ? "ml-auto" : ""}`}>
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500 border border-rose-400/50 shrink-0 shadow-sm shadow-rose-500/50" />
             Errou
           </span>
         )}
         {isAcerto && (
-          <span className={`inline-flex items-center gap-1 px-2 py-0 leading-[15px] rounded-full text-[9.5px] font-medium text-emerald-300 bg-emerald-950/50 border border-emerald-700/60 shrink-0 ${!isAdmin && !(stats && stats.totalErros > 0) ? "ml-auto" : ""}`}>
+          <span className={`inline-flex items-center gap-1 px-2 py-0 leading-[15px] rounded-full text-[9.5px] font-medium text-emerald-300 bg-emerald-950/50 border border-emerald-700/60 shrink-0 ${!isAdmin && !(stats && stats.totalErros > 0) && !(rootBlockId && casoId) ? "ml-auto" : ""}`}>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 border border-emerald-400/50 shrink-0 shadow-sm shadow-emerald-500/50" />
             Acertou
           </span>
@@ -2707,7 +2755,7 @@ const QuestaoRow = memo(function QuestaoRow({
       </div>
 
       {open && (
-        <div className="ml-6 pl-4 border-l border-indigo-500/[0.15] my-2 flex flex-col gap-3">
+        <div className="ml-2.5 pl-2.5 sm:ml-6 sm:pl-4 border-l border-indigo-500/[0.15] my-2 flex flex-col gap-3">
           {loading && !enunciadoTexto?.trim() && imageUrls.filter(u => u && u.trim() !== "").length === 0 ? (
             <div className="flex items-center gap-2 text-[11px] text-slate-500 italic py-2">
               <Loader2 size={12} className="animate-spin" />
@@ -3326,8 +3374,8 @@ function CasoProgressMap({
                 {nonEmptyCategories.map((cat) => {
                   const items = colRows[cat.key];
                   return (
-                    <div key={cat.key} className="flex items-center gap-2.5 py-2">
-                      <div className="flex w-[84px] sm:w-[92px] shrink-0 items-center justify-between gap-1">
+                    <div key={cat.key} className="flex items-center gap-2 sm:gap-2.5 py-2">
+                      <div className="flex w-[74px] sm:w-[92px] shrink-0 items-center justify-between gap-1">
                         <span
                           className="flex items-center gap-1.5 text-[11.5px] font-medium truncate"
                           style={{ color: cat.textColor }}
@@ -4170,7 +4218,7 @@ const CasoCard = memo(function CasoCard({
         isDraggingOver ? "ring-2 ring-indigo-500/50 bg-indigo-500/10" : ""
       }`}
     >
-      <div className={`flex items-center justify-between py-1.5 px-2.5 min-h-[30px] rounded-lg group ${
+      <div className={`flex flex-wrap sm:flex-nowrap items-center justify-between gap-1.5 py-1.5 px-2 sm:px-2.5 min-h-[34px] sm:min-h-[30px] rounded-lg group ${
         hasErrosInCaso ? "bg-rose-500/[0.03] border border-rose-500/20" : "hover:bg-white/[0.02]"
       }`}>
         {isAdmin && (
@@ -4184,7 +4232,7 @@ const CasoCard = memo(function CasoCard({
 
         <button
           onClick={() => setOpenState({ open: !open, seq: expandSignal?.seq ?? openState.seq })}
-          className="flex items-center gap-2 text-left flex-1 min-w-0"
+          className="flex items-center gap-2 text-left flex-1 min-w-[160px]"
         >
           <span className="text-[10px] text-slate-500 w-4 h-4 flex items-center justify-center shrink-0 select-none">
             {loading ? (
@@ -4196,7 +4244,7 @@ const CasoCard = memo(function CasoCard({
           {isSubcaso && (
             <Folder size={13} className="text-indigo-400/80 shrink-0" />
           )}
-          <span className={`font-semibold truncate ${hasErrosInCaso ? "text-rose-300 font-bold" : isSubcaso ? "text-indigo-100 group-hover:text-white" : "text-[#a4adc0] group-hover:text-white"} ${depth === 0 ? "text-[14px]" : "text-[13px]"}`}>
+          <span className={`font-semibold truncate ${hasErrosInCaso ? "text-rose-300 font-bold" : isSubcaso ? "text-indigo-100 group-hover:text-white" : "text-[#a4adc0] group-hover:text-white"} ${depth === 0 ? "text-[13.5px] sm:text-[14px]" : "text-[12.5px] sm:text-[13px]"}`}>
             {caso.nome}
           </span>
           {isSubcaso && (
@@ -4206,7 +4254,7 @@ const CasoCard = memo(function CasoCard({
           )}
 
           {hasErrosInCaso && (
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium text-rose-300 bg-rose-950/30 border border-rose-500/20 shrink-0 ml-1.5">
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium text-rose-300 bg-rose-950/30 border border-rose-500/20 shrink-0 ml-1">
               <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
               {errosInCaso} {errosInCaso === 1 ? "erro" : "erros"}
             </span>
@@ -4214,12 +4262,12 @@ const CasoCard = memo(function CasoCard({
         </button>
 
         {isAdmin && (
-          <div className="flex items-center gap-0.5 opacity-35 group-hover:opacity-100 ml-2">
+          <div className="flex items-center gap-0.5 opacity-80 sm:opacity-35 sm:group-hover:opacity-100 ml-1 sm:ml-2">
             <button
               onClick={(e) => { e.stopPropagation(); onMoveUp?.(caso.id); }}
               disabled={isFirst}
               title="Mover caso para cima"
-              className="w-5 h-5 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent"
+              className="w-6 h-6 sm:w-5 sm:h-5 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent"
             >
               <ArrowUp size={10} />
             </button>
@@ -4227,16 +4275,16 @@ const CasoCard = memo(function CasoCard({
               onClick={(e) => { e.stopPropagation(); onMoveDown?.(caso.id); }}
               disabled={isLast}
               title="Mover caso para baixo"
-              className="w-5 h-5 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent"
+              className="w-6 h-6 sm:w-5 sm:h-5 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent"
             >
               <ArrowDown size={10} />
             </button>
           </div>
         )}
 
-        <div className="flex items-center gap-1 shrink-0 ml-1">
+        <div className="flex items-center gap-1 shrink-0 ml-auto sm:ml-1">
           {rootBlockId && (
-            <div className="flex items-center gap-0.5 opacity-50 group-hover:opacity-100 mr-0.5">
+            <div className="flex items-center gap-0.5 opacity-85 sm:opacity-50 sm:group-hover:opacity-100 mr-0.5">
               <button
                 type="button"
                 onClick={(e) => {
@@ -4244,9 +4292,9 @@ const CasoCard = memo(function CasoCard({
                   openCreateSubcaso(rootBlockId, caso.id, caso.nome);
                 }}
                 title={`Criar subcaso dentro de "${caso.nome}"`}
-                className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06]"
+                className="flex items-center gap-1 px-1.5 py-1 sm:py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06]"
               >
-                <FolderPlus size={11} />
+                <FolderPlus size={12} />
                 <span className="hidden lg:inline">Subcaso</span>
               </button>
               <button
@@ -4256,9 +4304,9 @@ const CasoCard = memo(function CasoCard({
                   openCreateQuestao(rootBlockId, caso.id);
                 }}
                 title={`Nova questão dentro de "${caso.nome}"`}
-                className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-emerald-300 hover:bg-white/[0.06]"
+                className="flex items-center gap-1 px-1.5 py-1 sm:py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-emerald-300 hover:bg-white/[0.06]"
               >
-                <FilePlus2 size={11} />
+                <FilePlus2 size={12} />
                 <span className="hidden lg:inline">Questão</span>
               </button>
               <button
@@ -4268,9 +4316,9 @@ const CasoCard = memo(function CasoCard({
                   void deleteCaso(rootBlockId, parentBlockId || rootBlockId, caso.id, caso.nome);
                 }}
                 title={`Remover "${caso.nome}"`}
-                className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10"
+                className="p-1.5 sm:p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10"
               >
-                <Trash2 size={11} />
+                <Trash2 size={12} />
               </button>
             </div>
           )}
@@ -4281,7 +4329,7 @@ const CasoCard = memo(function CasoCard({
               onPrintCaso?.(caso, questoes);
             }}
             title={`Imprimir caso "${caso.nome}" (com gabarito no final)`}
-            className="opacity-45 hover:opacity-100 group-hover:opacity-80 p-1 text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06] rounded-md"
+            className="opacity-80 sm:opacity-45 hover:opacity-100 sm:group-hover:opacity-80 p-1.5 sm:p-1 text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06] rounded-md"
           >
             <Printer size={12} />
           </button>
@@ -4296,8 +4344,8 @@ const CasoCard = memo(function CasoCard({
       {open && (
         <div className={`flex flex-col gap-1.5 border-l my-1 ${
           isSubcaso
-            ? "ml-10 pl-5 border-indigo-400/25"
-            : "ml-6 pl-4 border-indigo-500/20"
+            ? "ml-3 pl-2.5 sm:ml-10 sm:pl-5 border-indigo-400/25"
+            : "ml-2 pl-2.5 sm:ml-6 sm:pl-4 border-indigo-500/20"
         }`}>
           {loading && !loaded ? (
             <div className="flex items-center gap-2 text-[11px] text-slate-500 italic py-2">
@@ -4379,7 +4427,7 @@ const CasoCard = memo(function CasoCard({
                     </div>
                   )}
 
-                  <div className={hasSubcasos ? "ml-8 pl-4 border-l border-white/[0.10] flex flex-col gap-0.5" : "pl-2 flex flex-col gap-0.5"}>
+                  <div className={hasSubcasos ? "ml-2.5 pl-2.5 sm:ml-8 sm:pl-4 border-l border-white/[0.10] flex flex-col gap-0.5" : "pl-1 sm:pl-2 flex flex-col gap-0.5"}>
                     {showQuestionMap && (
                       <CasoProgressMap
                         questoes={filteredQuestoes}
@@ -4424,7 +4472,7 @@ const CasoCard = memo(function CasoCard({
                             </button>
 
                             {!isGroupCollapsed && (
-                              <div className="flex flex-col gap-0.5 mt-0.5 pl-3 border-l border-amber-500/20 ml-3">
+                              <div className="flex flex-col gap-0.5 mt-0.5 pl-2 ml-1.5 sm:pl-3 sm:ml-3 border-l border-amber-500/20">
                                 {entry.items.map(({ q, flatIdx }, subIdx) => (
                                   <div
                                     key={q.id}
@@ -5728,7 +5776,7 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
                   />
                   
                   <div 
-                    className="absolute right-0 top-full mt-1.5 w-60 z-50 bg-[#111623] border border-white/[0.12] rounded-2xl p-3 shadow-lg flex flex-col gap-2.5"
+                    className="absolute right-0 top-full mt-1.5 w-60 max-w-[calc(100vw-2.5rem)] z-50 bg-[#111623] border border-white/[0.12] rounded-2xl p-3 shadow-lg flex flex-col gap-2.5"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
@@ -6810,11 +6858,11 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   return (
     <BuilderActionsContext.Provider value={builderContextValue}>
     <ClassificationContext.Provider value={{ overrides: classificationOverrides, updateClassification: handleUpdateClassification, canEdit: !!user?.id, classificacaoFiltro, setClassificacaoFiltro }}>
-    <div className="flex flex-col gap-4 bg-[#080d1a] rounded-2xl border border-white/[0.06] p-4 sm:p-5 relative overflow-hidden">
+    <div className="flex flex-col gap-3 sm:gap-4 bg-[#080d1a] rounded-2xl border border-white/[0.06] p-2.5 sm:p-5 relative overflow-x-clip">
 
       {/* Sleek Ultra-Compact Header Toolbar */}
       <div className="flex items-center justify-between flex-wrap gap-2.5 pb-2.5 border-b border-white/[0.06] relative z-10">
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
               <BookMarked size={14} className="text-indigo-400" />
@@ -6823,7 +6871,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           </div>
 
           {user && (
-            <div className="flex items-center gap-1.5 pl-2 border-l border-white/10 flex-wrap">
+            <div className="flex items-center gap-1.5 sm:pl-2 sm:border-l sm:border-white/10 flex-wrap">
               <TotalBancoStatsBadge blocks={blocks} />
               <span className="text-[10px] font-normal text-slate-300 flex items-center gap-1 bg-slate-900/60 border border-slate-800 px-2 py-0.5 rounded-lg" title="Feitas hoje">
                 <Clock size={11} className="text-sky-400/80" /> <span className="text-sky-400/90 font-medium">{feitasHojeIds.length} hoje</span>
@@ -7055,10 +7103,10 @@ export default function NotionQuestionTab({ user }: { user: any }) {
       )}
 
       {!selectedBlock && !loadingBlocks && blocks.length > 0 && (
-        <div className="flex items-center gap-3 flex-wrap justify-between bg-[#101526] p-3 rounded-2xl border border-white/[0.08] relative z-10">
-          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap justify-between bg-[#101526] p-2.5 sm:p-3 rounded-2xl border border-white/[0.08] relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full lg:w-auto flex-1 min-w-0">
             {/* Filtro por Caderno */}
-            <div className="flex items-center gap-1.5 bg-[#0d1220] border border-white/[0.08] hover:border-white/[0.18] px-3 py-1.5 rounded-xl transition-colors">
+            <div className="flex items-center gap-1.5 bg-[#0d1220] border border-white/[0.08] hover:border-white/[0.18] px-3 py-2 sm:py-1.5 rounded-xl transition-colors w-full sm:w-auto">
               <BookMarked size={13} className="text-indigo-400 shrink-0" />
               <select
                 value={cadernoFiltro}
@@ -7072,7 +7120,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                     if (found) setSelectedBlock(found);
                   }
                 }}
-                className="bg-[#0d1220] text-slate-200 text-[11px] font-bold focus:outline-none cursor-pointer border-none min-w-[140px] max-w-[240px]"
+                className="bg-[#0d1220] text-slate-200 text-[11px] font-bold focus:outline-none cursor-pointer border-none w-full sm:w-auto sm:min-w-[140px] sm:max-w-[240px]"
                 style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}
               >
                 <option
@@ -7096,14 +7144,14 @@ export default function NotionQuestionTab({ user }: { user: any }) {
             </div>
 
             {/* Filtro por Matéria em lista suspensa */}
-            <label className="flex items-center gap-1.5 bg-[#0d1220] border border-white/[0.08] hover:border-white/[0.18] px-2.5 py-1.5 rounded-xl transition-colors">
+            <label className="flex items-center gap-1.5 bg-[#0d1220] border border-white/[0.08] hover:border-white/[0.18] px-2.5 py-2 sm:py-1.5 rounded-xl transition-colors w-full sm:w-auto">
               <Filter size={12} className="text-indigo-400 shrink-0" />
               <span className="text-[10px] text-slate-500 shrink-0">Matéria</span>
               <select
                 value={materiaFiltro}
                 onChange={e => setMateriaFiltro(e.target.value)}
                 aria-label="Filtrar por matéria"
-                className="bg-transparent text-slate-200 text-[11px] focus:outline-none cursor-pointer border-none max-w-[190px]"
+                className="bg-transparent text-slate-200 text-[11px] focus:outline-none cursor-pointer border-none w-full sm:w-auto sm:max-w-[190px]"
                 style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}
               >
                 {["Todas", ...materiasDisponiveis, "Sem matéria"].map(m => (
@@ -7116,7 +7164,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           </div>
 
           {/* Filtro por Status da Questão */}
-          <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] shrink-0 flex-wrap">
+          <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] w-full sm:w-auto overflow-x-auto no-scrollbar sm:flex-wrap shrink-0">
             <button
               onClick={() => setStatusFiltro("todas")}
               className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
@@ -7264,8 +7312,8 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           </div>
 
           {/* Barra de Filtro interna do Caderno */}
-          <div className="flex items-center justify-between gap-3 flex-wrap bg-[#101526] p-3 rounded-2xl border border-white/[0.06] relative z-20">
-            <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center justify-between gap-2.5 sm:gap-3 flex-wrap bg-[#101526] p-2.5 sm:p-3 rounded-2xl border border-white/[0.06] relative z-20">
+            <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full sm:w-auto">
               <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5 shrink-0">
                 <Filter size={14} className="text-indigo-400" />
                 Filtrar questões:
@@ -7291,11 +7339,11 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               )}
             </div>
 
-            <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] shrink-0 flex-wrap">
+            <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] w-full sm:w-auto overflow-x-auto no-scrollbar sm:flex-wrap shrink-0">
               <button
                 type="button"
                 onClick={() => setStatusFiltro("todas")}
-                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+                className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shrink-0 ${
                   statusFiltro === "todas" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
                 }`}
               >
@@ -7304,7 +7352,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               <button
                 type="button"
                 onClick={() => setStatusFiltro("erros")}
-                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+                className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shrink-0 ${
                   statusFiltro === "erros" ? "bg-rose-600 text-white" : "text-rose-400/70 hover:text-rose-300"
                 }`}
               >
@@ -7313,7 +7361,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               <button
                 type="button"
                 onClick={() => setStatusFiltro("mais_erros")}
-                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+                className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shrink-0 ${
                   statusFiltro === "mais_erros" ? "bg-amber-600 text-white" : "text-amber-400/70 hover:text-amber-300"
                 }`}
               >
@@ -7322,7 +7370,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               <button
                 type="button"
                 onClick={() => setStatusFiltro("nao_feitas")}
-                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+                className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shrink-0 ${
                   statusFiltro === "nao_feitas" ? "bg-purple-600 text-white" : "text-purple-400/70 hover:text-purple-300"
                 }`}
               >
@@ -7331,7 +7379,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               <button
                 type="button"
                 onClick={() => setStatusFiltro("feitas_hoje")}
-                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+                className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shrink-0 ${
                   statusFiltro === "feitas_hoje" ? "bg-sky-600 text-white" : "text-sky-400/70 hover:text-sky-300"
                 }`}
               >
@@ -7341,7 +7389,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           </div>
 
           {/* Conteúdo do caderno selecionado */}
-          <div className="bg-[#101526] border border-white/[0.06] rounded-2xl p-4 sm:p-5 ml-2 sm:ml-5">
+          <div className="bg-[#101526] border border-white/[0.06] rounded-2xl p-2.5 sm:p-5 ml-0 sm:ml-5">
             <BlockViewer
               block={selectedBlock}
               user={user}

@@ -32,29 +32,8 @@ import {
   X
 } from "lucide-react";
 import { PrintSimuladoModal } from "./PrintSimuladoModal";
-
-interface BancoQuestion {
-  id: any;
-  materia: string;
-  tema?: string;
-  title: string;
-  dificuldade?: string;
-  prova?: string;
-  link?: string;
-  ID_Qconcursos?: string;
-  "Alternativa A"?: string;
-  "Alternativa B"?: string;
-  "Alternativa C"?: string;
-  "Alternativa D"?: string;
-  "Alternativa E"?: string;
-  "Texto de apoio"?: string;
-  perguntaProblema?: string;
-  respostaCorreta?: string;
-  Gabarito?: string;
-  explicacao?: string;
-  comentario?: string;
-  "ComentÃ¡rio"?: string;
-}
+import type { BancoQuestion } from "./QuestionsTable";
+import { getQuestionIds } from "../../lib/questionService";
 
 interface QuestionResolverProps {
   question: BancoQuestion;
@@ -320,7 +299,7 @@ export default function QuestionResolver({
   const comentarioTexto =
     question.explicacao ||
     question.comentario ||
-    question["ComentÃ¡rio"] ||
+    question["Comentário"] ||
     (question as any).Comentario;
 
   const alternativas: Record<string, string> = {};
@@ -392,22 +371,29 @@ export default function QuestionResolver({
       <div className="w-full flex flex-col flex-1 min-h-0">
 
         {/* ── Top bar: progresso + navegação ── */}
-        <div className="flex items-center justify-between gap-2 mb-3 shrink-0 px-2 pb-2.5 border-b border-white/[0.08]">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3 shrink-0 px-1 sm:px-2 pb-2.5 border-b border-white/[0.08]">
 
           {/* Esquerda: voltar + número + prova */}
-            <div className="flex items-center gap-2">
-            <button onClick={onBackToBank} className="text-slate-600 hover:text-white transition-colors p-1">
+            <div className="flex items-center gap-2 min-w-0">
+            <button onClick={onBackToBank} className="text-slate-600 hover:text-white transition-colors p-1.5 sm:p-1 shrink-0">
               <ArrowLeft size={17} />
             </button>
             <div className="w-8 h-8 rounded-md bg-emerald-400/10 border border-emerald-300/20 flex items-center justify-center text-xs font-medium text-emerald-200 shrink-0">
               {questionIndex + 1}
             </div>
-            <div>
-              <div className="text-[11px] font-semibold text-slate-300 max-w-[180px] sm:max-w-xs truncate">
+            <div className="min-w-0">
+              <div className="text-[11px] font-semibold text-slate-300 max-w-[170px] sm:max-w-xs truncate">
                 {question.prova || "Simulado Padrão"}
+                {question.Ano ? ` · ${question.Ano}` : ""}
               </div>
-              <div className="text-[10px] text-slate-600 tabular-nums">
-                ID {question.id}
+              <div className="text-[10px] text-slate-500 tabular-nums flex items-center gap-1.5 flex-wrap">
+                <span>ID {question.id}</span>
+                {(question.Ordem ?? question.ordem) !== undefined && (question.Ordem ?? question.ordem) !== null && (
+                  <span className="text-indigo-300/90">· Ordem #{question.Ordem ?? question.ordem}</span>
+                )}
+                {(question.Banca || question.banca) && (
+                  <span className="text-slate-400">· {question.Banca || question.banca}</span>
+                )}
               </div>
             </div>
           </div>
@@ -506,9 +492,14 @@ export default function QuestionResolver({
 
             {/* Metadata chips */}
             <div className="flex flex-wrap items-center gap-1.5 mb-4 pb-3 border-b border-white/[0.07]">
-              <span className="text-[11px] font-normal text-slate-500 bg-white/[0.04] border border-white/[0.07] px-2.5 py-1 rounded-md">
-                {question.materia || "Geral"}
+              <span className="text-[11px] font-normal text-slate-400 bg-white/[0.04] border border-white/[0.07] px-2.5 py-1 rounded-md">
+                {question.Disciplina || question.materia || "Geral"}
               </span>
+              {(question.Banca || question.banca) && (
+                <span className="text-[11px] font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-md">
+                  {question.Banca || question.banca}
+                </span>
+              )}
               {question.tema && question.tema !== question.materia && (
                 <span className="text-[11px] text-slate-400 bg-white/[0.03] border border-white/[0.06] px-2.5 py-1 rounded-md">
                   {question.tema}
@@ -519,6 +510,28 @@ export default function QuestionResolver({
                   {question.dificuldade}
                 </span>
               )}
+              {(() => {
+                const { idq, idg, idtec } = getQuestionIds(question);
+                return (
+                  <>
+                    {idq && (
+                      <span className="text-[11px] font-mono text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-md">
+                        QC: {idq}
+                      </span>
+                    )}
+                    {idg && (
+                      <span className="text-[11px] font-mono text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 px-2 py-1 rounded-md">
+                        Gran: {idg}
+                      </span>
+                    )}
+                    {idtec && (
+                      <span className="text-[11px] font-mono text-violet-300 bg-violet-500/10 border border-violet-500/20 px-2 py-1 rounded-md">
+                        TEC: {idtec}
+                      </span>
+                    )}
+                  </>
+                );
+              })()}
               {question.link && (
                 <a
                   href={question.link}
@@ -528,7 +541,7 @@ export default function QuestionResolver({
                   title="Abrir página original da questão"
                 >
                   <ExternalLink size={11} />
-                  {question.ID_Qconcursos ? `Qconcursos (${question.ID_Qconcursos})` : "Link da Questão"}
+                  Link da Questão
                 </a>
               )}
               {isAdmin && onEditQuestion && (
@@ -673,13 +686,13 @@ export default function QuestionResolver({
                         onClick={(e) => { e.stopPropagation(); toggleStrikethrough(letter); }}
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); toggleStrikethrough(letter); } }}
                         title={strikethroughs[letter] ? "Restaurar alternativa" : "Eliminar alternativa"}
-                        className={`mt-1.5 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 cursor-pointer ${
+                        className={`mt-1 p-2 sm:p-1.5 rounded-lg opacity-60 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer shrink-0 ${
                           strikethroughs[letter]
-                            ? "text-rose-400 opacity-100 bg-rose-500/10"
-                            : "text-slate-600 hover:text-rose-400 hover:bg-rose-500/5"
+                            ? "text-rose-400 !opacity-100 bg-rose-500/10"
+                            : "text-slate-500 sm:text-slate-600 hover:text-rose-400 hover:bg-rose-500/5"
                         }`}
                       >
-                        <Scissors size={11} />
+                        <Scissors size={12} />
                       </span>
                     )}
                   </button>
@@ -779,7 +792,7 @@ export default function QuestionResolver({
 
         {/* Coluna Direita: Qconcursos Lado a Lado */}
         {splitView && targetQconcursosUrl && (
-          <div className="w-full lg:w-1/2 flex flex-col h-[560px] lg:h-full rounded-2xl border border-white/[0.08] bg-[#0c1220] overflow-hidden shrink-0">
+          <div className="w-full lg:w-1/2 flex flex-col h-[65vh] lg:h-full rounded-2xl border border-white/[0.08] bg-[#0c1220] overflow-hidden shrink-0">
             {/* Header da divisão */}
             <div className="flex items-center justify-between px-3.5 py-2.5 bg-slate-900/90 border-b border-white/[0.08] shrink-0">
               <div className="flex items-center gap-2 min-w-0">

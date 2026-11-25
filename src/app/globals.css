@@ -12,8 +12,9 @@
 }
 
 html, body {
-  overflow-x: hidden;
+  overflow-x: clip;
   max-width: 100vw;
+  -webkit-tap-highlight-color: transparent;
   /* Cor base suavizada — cinza confortável, sem branco puro */
   color: #B0B8C8;
 }
@@ -25,6 +26,14 @@ html, body {
 @layer utilities {
   .animate-fade-in {
     animation: fadeIn 0.12s ease-out forwards;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 
   .glass {

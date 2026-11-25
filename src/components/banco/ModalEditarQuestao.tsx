@@ -7,17 +7,10 @@ import {
   Loader2,
   FolderTree,
   ExternalLink,
-  CheckCircle2,
   AlertCircle,
-  FileText,
-  Tag,
-  BookOpen,
-  Calendar,
-  Award,
-  HelpCircle,
-  ChevronDown
 } from "lucide-react";
 import { supabase, supabasePublic } from "../../lib/supabase";
+import { getQuestionIds, normalizeDifficultyLabel } from "../../lib/questionService";
 import type { BancoQuestion } from "./QuestionsTable";
 import type { OrgNodeDB } from "./CadernosTab";
 
@@ -39,12 +32,14 @@ export function ModalEditarQuestao({
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  // Form states
   const [enunciado, setEnunciado] = useState("");
   const [perguntaProblema, setPerguntaProblema] = useState("");
   const [textoApoio, setTextoApoio] = useState("");
   const [link, setLink] = useState("");
-  const [idQconcursos, setIdQconcursos] = useState("");
+  const [idq, setIdq] = useState("");
+  const [idg, setIdg] = useState("");
+  const [idtec, setIdtec] = useState("");
+  const [ordem, setOrdem] = useState<string>("");
   const [materia, setMateria] = useState("");
   const [tema, setTema] = useState("");
   const [prova, setProva] = useState("");
@@ -63,26 +58,31 @@ export function ModalEditarQuestao({
 
   useEffect(() => {
     if (questao && isOpen) {
+      const ids = getQuestionIds(questao);
       setEnunciado(questao.title || "");
       setPerguntaProblema(questao.perguntaProblema || "");
       setTextoApoio(questao["Texto de apoio"] || "");
       setShowTextoApoio(Boolean(questao["Texto de apoio"]));
       setLink(questao.link || "");
-      setIdQconcursos((questao as any).ID_Qconcursos || "");
-      setMateria(questao.materia || "");
+      setIdq(ids.idq);
+      setIdg(ids.idg);
+      setIdtec(ids.idtec);
+      const qOrdem = questao.Ordem ?? questao.ordem;
+      setOrdem(qOrdem !== undefined && qOrdem !== null ? String(qOrdem) : "");
+      setMateria(questao.Disciplina || questao.materia || "");
       setTema(questao.tema || "");
       setProva(questao.prova || "");
-      setAno((questao as any).Ano ? String((questao as any).Ano) : "");
-      setBanca((questao as any).Banca || (questao as any).banca || "");
-      setDificuldade(questao.dificuldade || "");
+      setAno(questao.Ano !== undefined && questao.Ano !== null ? String(questao.Ano) : "");
+      setBanca(questao.Banca || questao.banca || "");
+      setDificuldade(normalizeDifficultyLabel(questao.dificuldade) || "");
       setGabarito(questao.Gabarito || questao.respostaCorreta || "");
       setAltA(questao["Alternativa A"] || "");
       setAltB(questao["Alternativa B"] || "");
       setAltC(questao["Alternativa C"] || "");
       setAltD(questao["Alternativa D"] || "");
       setAltE(questao["Alternativa E"] || "");
-      setComentario(questao.comentario || (questao as any)["Comentário"] || questao.explicacao || "");
-      setOrganizacaoId((questao as any).organizacao_id || "");
+      setComentario(questao.comentario || questao["Comentário"] || questao.explicacao || "");
+      setOrganizacaoId(questao.organizacao_id || "");
       setErro(null);
     }
   }, [questao, isOpen]);
@@ -99,16 +99,30 @@ export function ModalEditarQuestao({
         throw new Error("Gabarito inválido. Use A, B, C, D ou E.");
       }
 
+      const parsedOrdem = ordem.trim() !== "" && !Number.isNaN(Number(ordem.trim()))
+        ? Number(ordem.trim())
+        : null;
+      const cleanIdq = idq.trim() || null;
+      const cleanIdg = idg.trim() || null;
+      const cleanIdtec = idtec.trim() || null;
+      const cleanAno = ano.trim() || null;
+      const cleanMateria = materia.trim() || null;
+
       const updatePayload: Record<string, any> = {
         Enunciado: enunciado,
         "Pergunta problema": perguntaProblema,
         "Texto de apoio": textoApoio || null,
         link: link.trim() || null,
-        ID_Qconcursos: idQconcursos.trim() || null,
-        Materia: materia.trim() || null,
+        ID_Qconcursos: cleanIdq,
+        Idq: cleanIdq,
+        Idg: cleanIdg,
+        Idtec: cleanIdtec,
+        Ordem: parsedOrdem,
+        Materia: cleanMateria,
+        Disciplina: cleanMateria,
         tema: tema.trim() || null,
         PROVA: prova.trim() || null,
-        Ano: ano.trim() ? Number(ano) : null,
+        Ano: cleanAno,
         Banca: banca.trim() || null,
         Dificuldade: dificuldade.trim() || null,
         Gabarito: cleanGabarito || null,
@@ -121,7 +135,6 @@ export function ModalEditarQuestao({
         organizacao_id: organizacaoId || null,
       };
 
-      // Tenta salvar via supabase com sessão, fallback supabasePublic
       let updateRes = await supabase
         .from("questoes")
         .update(updatePayload)
@@ -135,6 +148,28 @@ export function ModalEditarQuestao({
       }
 
       if (updateRes.error) {
+        const msg = updateRes.error.message || "";
+        const missingCols = /column|schema cache|Idg|Idtec|Idq|Disciplina/i.test(msg);
+        const anoTypeErr = /invalid input syntax for type integer/i.test(msg);
+        if ((missingCols || anoTypeErr) && !cleanIdg && !cleanIdtec) {
+          const fallbackPayload = { ...updatePayload };
+          delete fallbackPayload.Idq;
+          delete fallbackPayload.Idg;
+          delete fallbackPayload.Idtec;
+          if (/Disciplina/i.test(msg)) delete fallbackPayload.Disciplina;
+          if (anoTypeErr && typeof fallbackPayload.Ano === "string") {
+            const yrMatch = fallbackPayload.Ano.match(/\b(19|20)\d{2}\b/);
+            fallbackPayload.Ano = yrMatch ? Number(yrMatch[0]) : null;
+          }
+          let retry = await supabase.from("questoes").update(fallbackPayload).eq("id", questao.id);
+          if (retry.error) {
+            retry = await supabasePublic.from("questoes").update(fallbackPayload).eq("id", questao.id);
+          }
+          updateRes = retry;
+        }
+      }
+
+      if (updateRes.error) {
         throw new Error(updateRes.error.message);
       }
 
@@ -144,11 +179,23 @@ export function ModalEditarQuestao({
         perguntaProblema: perguntaProblema || undefined,
         "Texto de apoio": textoApoio || undefined,
         link: link.trim() || undefined,
-        ID_Qconcursos: idQconcursos.trim() || undefined,
-        materia: materia.trim() || questao.materia,
+        ID_Qconcursos: cleanIdq || undefined,
+        Idq: cleanIdq || undefined,
+        idq: cleanIdq || undefined,
+        Idg: cleanIdg || undefined,
+        idg: cleanIdg || undefined,
+        Idtec: cleanIdtec || undefined,
+        idtec: cleanIdtec || undefined,
+        Ordem: parsedOrdem,
+        ordem: parsedOrdem,
+        materia: cleanMateria || questao.materia,
+        disciplina: cleanMateria || undefined,
+        Disciplina: cleanMateria || undefined,
         tema: tema.trim() || undefined,
         prova: prova.trim() || undefined,
-        Ano: ano.trim() ? Number(ano) : undefined,
+        Ano: cleanAno || undefined,
+        Banca: banca.trim() || undefined,
+        banca: banca.trim() || undefined,
         dificuldade: dificuldade.trim() || undefined,
         Gabarito: cleanGabarito || undefined,
         respostaCorreta: cleanGabarito || undefined,
@@ -159,6 +206,7 @@ export function ModalEditarQuestao({
         "Alternativa E": altE || undefined,
         comentario: comentario || undefined,
         "Comentário": comentario || undefined,
+        explicacao: comentario || undefined,
         organizacao_id: organizacaoId || undefined,
       };
 
@@ -173,36 +221,42 @@ export function ModalEditarQuestao({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-black/80">
-      <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col bg-[#0d1220] border border-white/[0.08] rounded-2xl overflow-hidden">
-        
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2.5 sm:p-5 bg-black/80">
+      <div className="relative w-full max-w-3xl max-h-[94vh] flex flex-col bg-[#0d1220] border border-white/[0.08] rounded-2xl overflow-hidden">
         {/* Top Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] bg-white/[0.02]">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="w-2 h-2 rounded-full bg-indigo-400" />
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-white/[0.06] bg-white/[0.02]">
+          <div className="flex items-center gap-2 min-w-0 flex-wrap">
+            <span className="w-2 h-2 rounded-full bg-indigo-400 shrink-0" />
             <h3 className="text-sm font-semibold text-slate-200 truncate">
               Editar Questão #{questao.id}
             </h3>
-            {idQconcursos && (
+            {idq && (
               <span className="text-[10px] font-mono font-medium text-amber-400/90 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded">
-                {idQconcursos}
+                QC: {idq}
+              </span>
+            )}
+            {idg && (
+              <span className="text-[10px] font-mono font-medium text-cyan-400/90 bg-cyan-400/10 border border-cyan-400/20 px-2 py-0.5 rounded">
+                Gran: {idg}
+              </span>
+            )}
+            {idtec && (
+              <span className="text-[10px] font-mono font-medium text-violet-400/90 bg-violet-400/10 border border-violet-400/20 px-2 py-0.5 rounded">
+                TEC: {idtec}
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onClose}
-              className="p-1.5 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.05] transition-colors"
-            >
-              <X size={16} />
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.05] transition-colors shrink-0"
+          >
+            <X size={16} />
+          </button>
         </div>
 
         {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-4">
-          
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-5 space-y-4">
           {erro && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
               <AlertCircle size={15} className="shrink-0" />
@@ -210,7 +264,7 @@ export function ModalEditarQuestao({
             </div>
           )}
 
-          {/* Seção 1: Pasta / Hierarquia de Organização */}
+          {/* Pasta / Hierarquia de Organização */}
           <div className="space-y-1.5 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]">
             <label className="text-[11px] font-medium text-slate-300 flex items-center gap-1.5">
               <FolderTree size={12} className="text-indigo-400" />
@@ -230,10 +284,10 @@ export function ModalEditarQuestao({
             </select>
           </div>
 
-          {/* Seção 2: Metadados Básicos */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Matéria</label>
+          {/* Disciplina, Tópico, Ordem, Dificuldade */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div className="sm:col-span-2">
+              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Disciplina / Matéria</label>
               <input
                 type="text"
                 value={materia}
@@ -243,13 +297,13 @@ export function ModalEditarQuestao({
               />
             </div>
             <div>
-              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Tópico / Caderno</label>
+              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Ordem</label>
               <input
-                type="text"
-                value={tema}
-                onChange={(e) => setTema(e.target.value)}
-                placeholder="Ex: Sistema Financeiro Nacional"
-                className="w-full bg-[#111623] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                type="number"
+                value={ordem}
+                onChange={(e) => setOrdem(e.target.value)}
+                placeholder="Ex: 1"
+                className="w-full bg-[#111623] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-slate-200 tabular-nums focus:outline-none focus:border-indigo-500"
               />
             </div>
             <div>
@@ -263,22 +317,114 @@ export function ModalEditarQuestao({
                 <option value="Fácil">Fácil</option>
                 <option value="Média">Média</option>
                 <option value="Difícil">Difícil</option>
+                <option value="Ultrahard">Ultrahard</option>
+                <option value="Atenção">Atenção</option>
+                <option value="Lacuna">Lacuna</option>
+                <option value="Bônus">Bônus</option>
               </select>
             </div>
           </div>
 
-          {/* Seção 3: Link & ID_Qconcursos */}
+          {/* IDs por Plataforma: Idq, Idg, Idtec */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="sm:col-span-2">
-              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">
-                Link da Questão (URL completa)
-              </label>
+            <div>
+              <label className="text-[10.5px] font-medium text-amber-300/90 block mb-1">Idq (Qconcursos)</label>
+              <input
+                type="text"
+                value={idq}
+                onChange={(e) => setIdq(e.target.value)}
+                placeholder="Ex: Q2408218"
+                className="w-full bg-[#111623] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-amber-500/50"
+              />
+            </div>
+            <div>
+              <label className="text-[10.5px] font-medium text-cyan-300/90 block mb-1">Idg (Gran)</label>
+              <input
+                type="text"
+                value={idg}
+                onChange={(e) => setIdg(e.target.value)}
+                placeholder="Ex: G123456"
+                className="w-full bg-[#111623] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyan-500/50"
+              />
+            </div>
+            <div>
+              <label className="text-[10.5px] font-medium text-violet-300/90 block mb-1">Idtec (TEC)</label>
+              <input
+                type="text"
+                value={idtec}
+                onChange={(e) => setIdtec(e.target.value)}
+                placeholder="Ex: 2345678"
+                className="w-full bg-[#111623] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-violet-500/50"
+              />
+            </div>
+          </div>
+
+          {/* Prova, Banca, Ano (Data), Link */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Prova (Órgão abreviado)</label>
+              <input
+                type="text"
+                value={prova}
+                onChange={(e) => setProva(e.target.value)}
+                placeholder="Ex: BB, CEF, BNB..."
+                className="w-full bg-[#111623] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Banca (ou IA)</label>
+              <input
+                type="text"
+                list="bancas-sugestoes"
+                value={banca}
+                onChange={(e) => setBanca(e.target.value)}
+                placeholder="Ex: CESGRANRIO, CLAUDE, GPT..."
+                className="w-full bg-[#111623] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+              />
+              <datalist id="bancas-sugestoes">
+                <option value="CESGRANRIO" />
+                <option value="FGV" />
+                <option value="CEBRASPE" />
+                <option value="FCC" />
+                <option value="VUNESP" />
+                <option value="CLAUDE" />
+                <option value="GPT" />
+                <option value="GEMINI FLASH" />
+                <option value="MANUS" />
+                <option value="HYDROGEN" />
+              </datalist>
+            </div>
+            <div>
+              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Ano / Data Aplicação</label>
+              <input
+                type="text"
+                value={ano}
+                onChange={(e) => setAno(e.target.value)}
+                placeholder="Ex: 23/04/2023 ou 2024"
+                className="w-full bg-[#111623] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Tópico / Subtema</label>
+              <input
+                type="text"
+                value={tema}
+                onChange={(e) => setTema(e.target.value)}
+                placeholder="Ex: Sistema Financeiro Nacional"
+                className="w-full bg-[#111623] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Link da Questão</label>
               <div className="relative flex items-center">
                 <input
                   type="text"
                   value={link}
                   onChange={(e) => setLink(e.target.value)}
-                  placeholder="https://www.qconcursos.com/..."
+                  placeholder="https://..."
                   className="w-full bg-[#111623] border border-white/[0.08] rounded-lg px-3 py-1.5 pr-8 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500"
                 />
                 {link && (
@@ -287,60 +433,16 @@ export function ModalEditarQuestao({
                     target="_blank"
                     rel="noopener noreferrer"
                     className="absolute right-2.5 text-slate-500 hover:text-indigo-400 transition-colors"
-                    title="Testar link"
+                    title="Abrir link"
                   >
                     <ExternalLink size={12} />
                   </a>
                 )}
               </div>
             </div>
-            <div>
-              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">ID Qconcursos</label>
-              <input
-                type="text"
-                value={idQconcursos}
-                onChange={(e) => setIdQconcursos(e.target.value)}
-                placeholder="Ex: Q2408218"
-                className="w-full bg-[#111623] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500"
-              />
-            </div>
           </div>
 
-          {/* Seção 4: Prova, Ano, Banca */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Prova</label>
-              <input
-                type="text"
-                value={prova}
-                onChange={(e) => setProva(e.target.value)}
-                placeholder="Ex: Banco do Brasil"
-                className="w-full bg-[#111623] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
-              />
-            </div>
-            <div>
-              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Banca</label>
-              <input
-                type="text"
-                value={banca}
-                onChange={(e) => setBanca(e.target.value)}
-                placeholder="Ex: CESGRANRIO"
-                className="w-full bg-[#111623] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
-              />
-            </div>
-            <div>
-              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Ano</label>
-              <input
-                type="number"
-                value={ano}
-                onChange={(e) => setAno(e.target.value)}
-                placeholder="2024"
-                className="w-full bg-[#111623] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
-              />
-            </div>
-          </div>
-
-          {/* Seção 5: Texto de Apoio (Opcional / Colapsável) */}
+          {/* Texto de Apoio */}
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-[10.5px] font-medium text-slate-400">Texto de Apoio (Opcional)</label>
@@ -363,24 +465,24 @@ export function ModalEditarQuestao({
             )}
           </div>
 
-          {/* Seção 6: Enunciado */}
+          {/* Enunciado */}
           <div>
             <label className="text-[10.5px] font-medium text-slate-300 block mb-1">
-              Enunciado Principal
+              Enunciado / Contexto (Opcional)
             </label>
             <textarea
               value={enunciado}
               onChange={(e) => setEnunciado(e.target.value)}
-              rows={4}
-              placeholder="Digite o enunciado da questão..."
+              rows={3}
+              placeholder="Digite o contexto/enunciado da questão..."
               className="w-full bg-[#111623] border border-white/[0.08] rounded-lg p-2.5 text-xs text-slate-200 leading-relaxed focus:outline-none focus:border-indigo-500"
             />
           </div>
 
-          {/* Seção 7: Pergunta problema */}
+          {/* Pergunta problema */}
           <div>
             <label className="text-[10.5px] font-medium text-indigo-300/90 block mb-1">
-              Pergunta Problema (Comando direto da questão)
+              Pergunta Problema (O que de fato pergunta)
             </label>
             <textarea
               value={perguntaProblema}
@@ -391,7 +493,7 @@ export function ModalEditarQuestao({
             />
           </div>
 
-          {/* Seção 8: Alternativas e Gabarito */}
+          {/* Alternativas e Gabarito */}
           <div className="space-y-2 p-3.5 rounded-xl bg-white/[0.015] border border-white/[0.04]">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-medium text-slate-300">Alternativas</span>
@@ -445,10 +547,10 @@ export function ModalEditarQuestao({
             })}
           </div>
 
-          {/* Seção 9: Comentário / Resolução */}
+          {/* Comentário */}
           <div>
             <label className="text-[10.5px] font-medium text-slate-400 block mb-1">
-              Comentário do Professor / Gabarito Comentado
+              Comentário / Resolução
             </label>
             <textarea
               value={comentario}
@@ -458,11 +560,10 @@ export function ModalEditarQuestao({
               className="w-full bg-[#111623] border border-white/[0.08] rounded-lg p-2.5 text-xs text-slate-200 leading-relaxed focus:outline-none focus:border-indigo-500"
             />
           </div>
-
         </div>
 
         {/* Bottom Actions */}
-        <div className="flex items-center justify-between px-5 py-3 border-t border-white/[0.06] bg-white/[0.02]">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-t border-white/[0.06] bg-white/[0.02]">
           <button
             type="button"
             onClick={onClose}
@@ -491,7 +592,6 @@ export function ModalEditarQuestao({
             )}
           </button>
         </div>
-
       </div>
     </div>
   );

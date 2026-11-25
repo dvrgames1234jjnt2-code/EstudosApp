@@ -39,6 +39,7 @@ import CadernosTab from "../../components/banco/CadernosTab";
 import { ModalEditarQuestao } from "../../components/banco/ModalEditarQuestao";
 import VerificadorIDsTab from "../../components/banco/VerificadorIDsTab";
 import StudyCorner3DTab from "../../components/banco/StudyCorner3DTab";
+import { normalizarQuestao } from "../../lib/questionService";
 
 // ──────────────────────────────────────────────
 // Types
@@ -199,33 +200,7 @@ export default function BancoPage() {
         .order("id", { ascending: true });
       if (error) throw error;
 
-      const normalized: BancoQuestion[] = (data || []).map((row: any) => ({
-        id: row.id,
-        materia:  row.Materia || row.Disciplina || row.materia || row.disciplina || "Geral",
-        tema:     row.tema       || row.Tema       || row.Tópico || row.Assunto || undefined,
-        title:    row.Enunciado  || row.enunciado  || row.texto      || row.title || "",
-        dificuldade: row.dificuldade || row.Dificuldade || undefined,
-        prova:    row.PROVA      || row.prova      || undefined,
-        dat:      row.created_at || row.dat        || undefined,
-        referencia: row.referencia || undefined,
-        "Alternativa A": row["Alternativa A"] || row.alternativa_a || undefined,
-        "Alternativa B": row["Alternativa B"] || row.alternativa_b || undefined,
-        "Alternativa C": row["Alternativa C"] || row.alternativa_c || undefined,
-        "Alternativa D": row["Alternativa D"] || row.alternativa_d || undefined,
-        "Alternativa E": row["Alternativa E"] || row.alternativa_e || undefined,
-        "Texto de apoio": row["Texto de apoio"] || row.texto_apoio || undefined,
-        perguntaProblema: row["Pergunta problema"] !== undefined ? row["Pergunta problema"] : (row.pergunta_problema || row.perguntaProblema || undefined),
-        respostaCorreta: row.respostaCorreta || row.resposta_correta || row.Gabarito || row.gabarito || undefined,
-        Gabarito: row.Gabarito || row.gabarito || undefined,
-        explicacao: row["Comentário"] || row.Comentário || row.comentario || row.Comentario || row.explicacao || row.Explicacao || undefined,
-        created_at: row.created_at || undefined,
-        imagemEnunciado: row.Imagem_Enunciado || row.imagemEnunciado || undefined,
-        Ano: row.Ano ? Number(row.Ano) : undefined,
-        ID_Qconcursos: row.ID_Qconcursos || undefined,
-        link: row.link || undefined,
-        organizacao_id: row.organizacao_id || undefined,
-        Duvida: typeof row.Duvida === "boolean" ? row.Duvida : undefined,
-      }));
+      const normalized: BancoQuestion[] = (data || []).map(normalizarQuestao);
       setQuestions(normalized);
       // Inicializa a fila padrão com todas as questões para que o Desempenho funcione de imediato
       setResolverQueue(normalized);
@@ -462,12 +437,15 @@ export default function BancoPage() {
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans">
 
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 h-16 border-b border-white/[0.05] bg-[#020617] px-4 sm:px-8 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center">
+      <nav className="sticky top-0 z-50 h-14 sm:h-16 border-b border-white/[0.05] bg-[#020617] px-3 sm:px-8 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center shrink-0">
               <GraduationCap size={16} className="text-white" />
             </div>
+            <span className="sm:hidden text-xs font-black text-white tracking-tight truncate">
+              Banco
+            </span>
             <div className="hidden sm:block">
               <h1 className="text-sm font-black text-white tracking-tight leading-none">
                 Banco <span className="text-blue-500">de Questões</span>
@@ -479,33 +457,36 @@ export default function BancoPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {/* Botão de Destaque Imprimir Simulado na Topbar */}
           <button
             onClick={() => setShowGlobalPrintModal(true)}
-            className="flex items-center gap-2 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[11px] font-black uppercase tracking-wider transition-colors shrink-0"
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 min-h-[36px] py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[11px] font-black uppercase tracking-wider transition-colors shrink-0"
           >
-            <Printer size={13} /> Imprimir Simulado
+            <Printer size={13} />
+            <span className="hidden sm:inline">Imprimir Simulado</span>
+            <span className="sm:hidden">Imprimir</span>
           </button>
 
           <button
             onClick={() => { fetchQuestions(); if (user) fetchUserAnswers(user.id); }}
-            className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.06] text-slate-600 hover:text-blue-400 transition-colors"
+            className="w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center rounded-xl bg-white/[0.03] border border-white/[0.06] text-slate-600 hover:text-blue-400 transition-colors shrink-0"
+            title="Atualizar"
           >
             <RefreshCw size={13} className={loadingQuestions ? "animate-spin" : ""} />
           </button>
 
           {user ? (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.03] border border-white/[0.06] rounded-xl">
-              <div className="w-5 h-5 rounded-full bg-blue-600/30 flex items-center justify-center">
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 min-h-[36px] py-1.5 bg-white/[0.03] border border-white/[0.06] rounded-xl">
+              <div className="w-5 h-5 rounded-full bg-blue-600/30 flex items-center justify-center shrink-0">
                 <User size={10} className="text-blue-400" />
               </div>
-              <span className="text-[11px] font-bold text-slate-300 max-w-[100px] truncate">{displayName}</span>
+              <span className="text-[11px] font-bold text-slate-300 max-w-[68px] sm:max-w-[110px] truncate">{displayName}</span>
             </div>
           ) : (
             <button
               onClick={() => setShowAuthModal(true)}
-              className="flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-colors"
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 min-h-[36px] py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-colors shrink-0"
             >
               <Lock size={11} /> Entrar
             </button>
@@ -514,8 +495,8 @@ export default function BancoPage() {
       </nav>
 
       {/* Sub-navbar / Tab Bar Sutil */}
-      <div className="sticky top-16 z-40 border-b border-white/[0.06] bg-[#020617] px-4 sm:px-8">
-        <div className="flex items-center gap-1.5 w-full max-w-[1920px] mx-auto overflow-x-auto py-2 custom-scrollbar">
+      <div className="sticky top-14 sm:top-16 z-40 border-b border-white/[0.06] bg-[#020617] px-2.5 sm:px-8">
+        <div className="flex items-center gap-1 sm:gap-1.5 w-full max-w-[1920px] mx-auto overflow-x-auto py-2 no-scrollbar">
           {[
             { id: "resolver",   icon: <Layers size={13} />,         label: "Questão Ativa", badge: selectedQuestion ? "●" : null },
             { id: "simulados",  icon: <ClipboardList size={13} />,  label: "Simulados", count: provasDisponiveis.length },
@@ -537,7 +518,7 @@ export default function BancoPage() {
                   setActiveTab(tab.id as ActiveTab);
                 }}
                 disabled={isDisabled}
-                className={`relative px-3.5 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 ${
+                className={`relative px-3 sm:px-3.5 py-2 sm:py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 sm:gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 ${
                   isSelected
                     ? "bg-blue-600/15 text-blue-400 border border-blue-500/30"
                     : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border border-transparent"
@@ -564,7 +545,7 @@ export default function BancoPage() {
       </div>
 
       {/* Main */}
-      <main className="w-full max-w-[1920px] mx-auto px-4 sm:px-8 py-6">
+      <main className="w-full max-w-[1920px] mx-auto px-2.5 sm:px-8 py-4 sm:py-6">
           {/* ── BANCO ── */}
           {activeTab === "banco" && (
             <div>
@@ -613,7 +594,7 @@ export default function BancoPage() {
 
           {/* ── RESOLVER ── */}
           {activeTab === "resolver" && selectedQuestion && (
-            <div className="w-full max-w-[1750px] mx-auto px-2 sm:px-4">
+            <div className="w-full max-w-[1750px] mx-auto px-0 sm:px-4">
               <div className="w-full h-full min-h-[calc(100vh-200px)] flex flex-col">
                 <QuestionResolver
                   question={resolverQueue[resolverIndex]}
@@ -676,23 +657,23 @@ export default function BancoPage() {
               : `${questions.length} questões`;
 
             return (
-              <div className="w-full max-w-6xl mx-auto px-4">
-                <div className="flex flex-col h-full min-h-0 w-full bg-[#0b0f19] rounded-[2rem] border border-white/[0.04] p-6 sm:p-8 relative overflow-x-hidden gap-6">
+              <div className="w-full max-w-6xl mx-auto px-0 sm:px-4">
+                <div className="flex flex-col h-full min-h-0 w-full bg-[#0b0f19] rounded-2xl sm:rounded-[2rem] border border-white/[0.04] p-3.5 sm:p-8 relative overflow-x-clip gap-4 sm:gap-6">
                   {/* Header */}
-                  <div className="flex items-center justify-between px-4 py-3 bg-[#121626] rounded-2xl border border-white/[0.04] gap-3">
-                    <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center justify-between px-3 sm:px-4 py-3 bg-[#121626] rounded-2xl border border-white/[0.04] gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div className="w-8 h-8 rounded-xl bg-[#0b0f19] flex items-center justify-center shrink-0">
                         <BarChart3 size={14} className="text-blue-500" />
                       </div>
-                      <div className="relative">
+                      <div className="relative min-w-0">
                         <h2 className="text-sm font-black text-white leading-none">Desempenho & Resultados</h2>
-                        <div className="flex items-center gap-2 mt-1">
-                          <div className="relative group cursor-pointer">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 transition-colors ${isQueueFiltered ? 'text-blue-300 bg-blue-500/20 border border-blue-500/30' : 'text-slate-400 bg-[#1e2436] hover:text-slate-200'}`}>
+                        <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                          <div className="relative group cursor-pointer max-w-full">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 transition-colors max-w-[200px] sm:max-w-xs truncate ${isQueueFiltered ? 'text-blue-300 bg-blue-500/20 border border-blue-500/30' : 'text-slate-400 bg-[#1e2436] hover:text-slate-200'}`}>
                               {isQueueFiltered && <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />}
-                              {currentProvaName} <ChevronDown size={10} className="opacity-50" />
+                              <span className="truncate">{currentProvaName}</span> <ChevronDown size={10} className="opacity-50 shrink-0" />
                             </span>
-                            <div className="absolute top-full left-0 mt-1.5 w-max bg-[#1e2436] border border-white/[0.04] rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible z-50 max-h-56 overflow-y-auto custom-scrollbar">
+                            <div className="absolute top-full left-0 mt-1.5 w-max max-w-[calc(100vw-3rem)] bg-[#1e2436] border border-white/[0.04] rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible z-50 max-h-56 overflow-y-auto custom-scrollbar">
                               <div className="p-1.5 space-y-0.5">
                                 {provasDisponiveis?.map((prova) => (
                                   <button key={prova} onClick={() => {
@@ -719,16 +700,10 @@ export default function BancoPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div>
-                        <h2 className="text-sm font-semibold text-white">Desempenho & Resultados</h2>
-                        <span className="text-[10px] text-slate-500">{currentProvaName}</span>
-                      </div>
-                    </div>
                     {isQueueFiltered && (
                       <button
                         onClick={() => { setResolverQueue(questions); setResolverIndex(0); }}
-                        className="px-3 py-1.5 rounded-lg bg-blue-600/10 border border-blue-500/20 text-[10px] font-medium text-blue-400 hover:bg-blue-600/20 transition-colors flex items-center gap-1.5"
+                        className="px-3 py-1.5 rounded-lg bg-blue-600/10 border border-blue-500/20 text-[10px] font-medium text-blue-400 hover:bg-blue-600/20 transition-colors flex items-center gap-1.5 shrink-0"
                       >
                         <RefreshCw size={10} /> Ver Todas
                       </button>
@@ -1039,17 +1014,17 @@ export default function BancoPage() {
 
               return (
                 <div>
-                  <div className="flex items-center gap-3 mb-6">
+                  <div className="flex flex-wrap items-center gap-3 mb-6">
                     <button
                       onClick={() => setSelectedSimulado(null)}
-                      className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center text-slate-400 hover:text-slate-200 transition-colors"
+                      className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center text-slate-400 hover:text-slate-200 transition-colors shrink-0"
                     >
                       <ArrowLeft size={14} />
                     </button>
-                    <div>
-                      <h2 className="text-sm font-semibold text-slate-200">{selectedSimulado}</h2>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-sm font-semibold text-slate-200 truncate">{selectedSimulado}</h2>
                     </div>
-                    <div className="ml-auto flex gap-2">
+                    <div className="w-full sm:w-auto sm:ml-auto flex gap-2">
                       <button
                         onClick={() => {
                           if (!user) { setShowAuthModal(true); return; }
@@ -1060,7 +1035,7 @@ export default function BancoPage() {
                           setSelectedQuestion(d.questions[startIdx]);
                           setActiveTab("resolver");
                         }}
-                        className={`px-4 py-2 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 transition-colors ${
+                        className={`w-full sm:w-auto justify-center px-4 py-2 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 transition-colors ${
                           status === "nao_iniciado" ? "bg-blue-600 hover:bg-blue-500 text-white"
                           : status === "concluido" ? "bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.1] text-slate-300"
                           : "bg-amber-500/20 border border-amber-500/20 hover:bg-amber-500/30 text-amber-300"
@@ -1162,11 +1137,11 @@ export default function BancoPage() {
                   </div>
 
                   {/* Filtro de Família */}
-                  <div className="flex items-center gap-2 w-full md:w-auto">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
                     <select
                       value={simuladoFamiliaFilter}
                       onChange={(e) => setSimuladoFamiliaFilter(e.target.value)}
-                      className="bg-[#151b2d] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/50 transition-colors"
+                      className="w-full sm:w-auto bg-[#151b2d] border border-white/10 rounded-xl px-3 py-2 sm:py-1.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/50 transition-colors"
                     >
                       <option value="todas">Todas as Famílias</option>
                       {todasFamilias.map(f => (
@@ -1175,7 +1150,7 @@ export default function BancoPage() {
                     </select>
 
                     {/* Filtro de Status (Pills) */}
-                    <div className="flex items-center bg-[#151b2d] border border-white/10 rounded-xl p-1 gap-1">
+                    <div className="flex items-center bg-[#151b2d] border border-white/10 rounded-xl p-1 gap-1 overflow-x-auto no-scrollbar max-w-full">
                       {[
                         { id: "todos", label: "Todos" },
                         { id: "concluidos", label: "🟢 Feitos" },
@@ -1185,7 +1160,7 @@ export default function BancoPage() {
                         <button
                           key={st.id}
                           onClick={() => setSimuladoStatusFilter(st.id as any)}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors ${
+                          className={`px-2.5 py-1.5 sm:py-1 rounded-lg text-[10px] font-bold transition-colors shrink-0 ${
                             simuladoStatusFilter === st.id
                               ? "bg-blue-600 text-white"
                               : "text-slate-400 hover:text-slate-200"

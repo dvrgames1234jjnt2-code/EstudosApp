@@ -329,15 +329,15 @@ export default function VerificadorIDsTab({
       </div>
 
       {/* ── Área de Entrada de Texto ── */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-[#0b0f19]/80 border border-white/[0.05] space-y-3">
-        <div className="flex items-center justify-between">
+      <div className="p-3.5 sm:p-5 rounded-2xl bg-[#0b0f19]/80 border border-white/[0.05] space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <label className="text-[11px] font-medium text-slate-300 flex items-center gap-1.5">
-            <FileText size={12} className="text-blue-400" />
+            <FileText size={12} className="text-blue-400 shrink-0" />
             Cole os IDs abaixo (um por linha, separados por vírgula, espaço ou texto/JSON)
           </label>
           <button
             onClick={handleColarClipboard}
-            className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+            className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors shrink-0"
           >
             <ClipboardPaste size={12} />
             Colar da Área de Transferência
@@ -352,7 +352,7 @@ export default function VerificadorIDsTab({
           className="w-full bg-[#070b14] border border-white/[0.08] rounded-xl px-3.5 py-3 text-xs font-mono text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 custom-scrollbar resize-y"
         />
 
-        <div className="flex items-center justify-between pt-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
           <div className="text-[11px] text-slate-500 font-mono">
             {textoIds.trim() ? (
               <span>{extrairIDs(textoIds).length} IDs identificados</span>
@@ -364,7 +364,7 @@ export default function VerificadorIDsTab({
           <button
             onClick={executarConfronto}
             disabled={analisando || !textoIds.trim()}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-medium tracking-wide transition-colors flex items-center gap-2"
+            className="w-full sm:w-auto justify-center px-4 py-2.5 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-medium tracking-wide transition-colors flex items-center gap-2"
           >
             {analisando ? (
               <>
@@ -522,8 +522,103 @@ export default function VerificadorIDsTab({
 
           </div>
 
-          {/* Tabela de Confrontação */}
-          <div className="rounded-2xl border border-white/[0.06] bg-[#0b0f19]/70 overflow-hidden">
+          {/* Lista Mobile (Cards) */}
+          <div className="md:hidden divide-y divide-white/[0.05] rounded-2xl border border-white/[0.06] bg-[#0b0f19]/70 overflow-hidden">
+            {itensFiltrados.length === 0 ? (
+              <div className="px-4 py-8 text-center text-xs text-slate-500">
+                Nenhum item corresponde ao filtro selecionado.
+              </div>
+            ) : (
+              itensFiltrados.map((item) => {
+                const linkQC =
+                  item.questao?.link ||
+                  `https://www.qconcursos.com/questoes-de-concursos/questoes?q=${item.idNormalizado}`;
+
+                return (
+                  <div key={`mob-${item.idNormalizado}`} className="p-3.5 space-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {item.encontrada ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                            No Banco
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                            Inédita
+                          </span>
+                        )}
+                        <span className="font-mono text-xs font-semibold text-slate-200 truncate">
+                          {item.idNormalizado}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <a
+                          href={linkQC}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Abrir no Qconcursos"
+                          className="p-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-blue-400"
+                        >
+                          <ExternalLink size={12} />
+                        </a>
+                        {item.encontrada && item.questao ? (
+                          <>
+                            {isAdmin && onEditQuestion && (
+                              <button
+                                onClick={() => onEditQuestion(item.questao!)}
+                                title="Editar questão (Admin)"
+                                className="p-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-amber-400"
+                              >
+                                <Pencil size={12} />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => onSelectQuestion(item.questao!)}
+                              className="px-2.5 py-1.5 rounded-lg bg-blue-600 text-white text-[10px] font-medium flex items-center gap-1"
+                            >
+                              <Play size={10} />
+                              <span>Resolver</span>
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => navigator.clipboard.writeText(item.idNormalizado)}
+                            className="px-2.5 py-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-300 text-[10px] font-medium"
+                          >
+                            Copiar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {item.encontrada && item.questao ? (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+                          <span className="font-medium text-blue-400">{item.questao.materia}</span>
+                          {item.questao.tema && (
+                            <span className="text-slate-500">• {item.questao.tema}</span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-300 line-clamp-2">
+                          {item.questao.perguntaProblema || item.questao.title}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-slate-500 italic">
+                        Questão ainda não cadastrada no sistema.
+                      </p>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Tabela de Confrontação (Desktop) */}
+          <div className="hidden md:block rounded-2xl border border-white/[0.06] bg-[#0b0f19]/70 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>

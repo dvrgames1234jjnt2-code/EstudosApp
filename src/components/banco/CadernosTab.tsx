@@ -38,10 +38,17 @@ import {
   Trash2,
   FolderInput,
   Printer,
+  AlertTriangle,
 } from "lucide-react";
 import type { BancoQuestion } from "./QuestionsTable";
 import QuestionResolver from "./QuestionResolver";
 import { supabase, supabasePublic } from "../../lib/supabase";
+import {
+  getQuestionIds,
+  matchesPlataforma,
+  sortQuestoesByOrdem,
+  type PlataformaFiltro,
+} from "../../lib/questionService";
 import { ModalEditarQuestao } from "./ModalEditarQuestao";
 import { ModalMoverQuestao } from "./ModalMoverQuestao";
 import { ModalRenomearPasta } from "./ModalRenomearPasta";
@@ -183,8 +190,56 @@ function resolveCategory(q: BancoQuestion): CategoryKey {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Componente: QuestaoRowItem (Exatamente: N. ≡ [ID] [●Dif] [→ Pasta] [Acertou/Errou])
-// Sem enunciado! Suporta arrastar e soltar (Drag and Drop)!
+// Helpers de Exibição de Plataforma / Colunas
+// ─────────────────────────────────────────────────────────────────────────────
+function PlatformIdsBadges({ questao, compact = false }: { questao: BancoQuestion; compact?: boolean }) {
+  const { idq, idg, idtec } = getQuestionIds(questao);
+  const hasAny = Boolean(idq || idg || idtec);
+
+  if (!hasAny) {
+    return (
+      <span className="inline-flex items-center text-[10px] font-mono font-medium text-slate-400 bg-white/[0.04] border border-white/[0.08] px-1.5 py-0.5 rounded shrink-0">
+        #{questao.id}
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-1 min-w-0">
+      {idq && (
+        <span
+          title={`Qconcursos: ${idq}`}
+          className="inline-flex items-center gap-1 text-[10px] font-mono font-medium text-amber-300 bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 rounded shrink-0"
+        >
+          <span className="text-[8.5px] font-sans uppercase tracking-wider text-amber-400/80">QC</span>
+          <span>{idq}</span>
+        </span>
+      )}
+      {idg && (
+        <span
+          title={`Gran: ${idg}`}
+          className="inline-flex items-center gap-1 text-[10px] font-mono font-medium text-cyan-300 bg-cyan-500/10 border border-cyan-500/25 px-1.5 py-0.5 rounded shrink-0"
+        >
+          <span className="text-[8.5px] font-sans uppercase tracking-wider text-cyan-400/80">Gran</span>
+          <span>{compact && idg.length > 10 ? `${idg.slice(0, 10)}…` : idg}</span>
+        </span>
+      )}
+      {idtec && (
+        <span
+          title={`TEC Concursos: ${idtec}`}
+          className="inline-flex items-center gap-1 text-[10px] font-mono font-medium text-violet-300 bg-violet-500/10 border border-violet-500/25 px-1.5 py-0.5 rounded shrink-0"
+        >
+          <span className="text-[8.5px] font-sans uppercase tracking-wider text-violet-400/80">TEC</span>
+          <span>{compact && idtec.length > 10 ? `${idtec.slice(0, 10)}…` : idtec}</span>
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Componente: QuestaoRowItem — Colunas completas do Caderno de Erros
+// Ordem | Plataforma / IDs | Prova / Ano | Banca | Dificuldade | Erros / Status | Ações
 // ─────────────────────────────────────────────────────────────────────────────
 function QuestaoRowItem({
   questao,
@@ -197,7 +252,6 @@ function QuestaoRowItem({
   onEdit,
   onMove,
   onDelete,
-  onChangeDifficulty,
 }: {
   questao: BancoQuestion;
   numero: number;
@@ -220,24 +274,29 @@ function QuestaoRowItem({
     { label: "Fácil", value: "Fácil", emoji: "🟢" },
     { label: "Média", value: "Média", emoji: "🟡" },
     { label: "Difícil", value: "Difícil", emoji: "🔴" },
+    { label: "Ultrahard", value: "Ultrahard", emoji: "🟣" },
     { label: "Atenção", value: "Atenção", emoji: "🔵" },
     { label: "Lacuna", value: "Lacuna", emoji: "⛳" },
     { label: "Treinar", value: "Treinar", emoji: "🧠" },
     { label: "Dominada", value: "Dominada", emoji: "🏆" },
-    { label: "Ultrahard", value: "Ultrahard", emoji: "🟣" },
     { label: "Bônus", value: "Bônus", emoji: "🎉" },
   ];
-  const currentDifficultyIndex = difficultyLevels.findIndex(level => level.value.toLowerCase() === (displayedQuestion.dificuldade || "").toLowerCase());
+  const currentDifficultyIndex = difficultyLevels.findIndex(
+    level => level.value.toLowerCase() === (displayedQuestion.dificuldade || "").toLowerCase()
+  );
   const currentDifficulty = currentDifficultyIndex >= 0 ? difficultyLevels[currentDifficultyIndex] : null;
-  const catKey = resolveCategory(questao);
+  const catKey = resolveCategory(displayedQuestion);
   const categoryInfo = CATEGORIES.find(c => c.key === catKey);
-  const catLabel = categoryInfo?.label || "Média";
+  const catLabel = displayedQuestion.dificuldade || categoryInfo?.label || "Média";
   const catColor = categoryInfo?.textColor || "#c69238";
   const isErro = stats?.isCorrect === false;
   const isAcerto = stats?.isCorrect === true;
+  const errorCount = stats?.errorCount || 0;
+  const ordemVal = questao.Ordem ?? questao.ordem;
+  const bancaVal = (questao.Banca || questao.banca || "").trim();
+  const provaVal = (questao.prova || "").trim();
+  const anoVal = questao.Ano !== undefined && questao.Ano !== null ? String(questao.Ano).trim() : "";
 
-  // Exibir ID_Qconcursos, Ordem ou ID
-  const displayId = (questao as any).ID_Qconcursos || (questao as any).Ordem || questao.id;
   const changeDifficulty = async (nextIndex: number) => {
     const next = difficultyLevels[nextIndex];
     if (!next || savingDifficulty || next.value === displayedQuestion.dificuldade) return;
@@ -259,111 +318,183 @@ function QuestaoRowItem({
         e.dataTransfer.effectAllowed = "move";
       }}
       onClick={onOpenResolver}
-      className="flex items-center gap-2 py-1 px-2 transition-colors duration-150 rounded-md group cursor-pointer select-none bg-white/[0.015] hover:bg-white/[0.04] border border-white/[0.03] hover:border-white/[0.08]"
+      className={`flex flex-col md:grid md:grid-cols-[54px_minmax(130px,1.2fr)_minmax(115px,1fr)_minmax(90px,0.85fr)_110px_118px_auto] md:items-center gap-1.5 md:gap-2.5 py-2 md:py-1.5 px-2.5 transition-colors duration-150 rounded-lg group cursor-pointer select-none border ${
+        isErro
+          ? "bg-rose-500/[0.045] hover:bg-rose-500/[0.085] border-rose-500/20 hover:border-rose-500/35"
+          : "bg-white/[0.015] hover:bg-white/[0.045] border-white/[0.04] hover:border-white/[0.09]"
+      }`}
     >
-      {/* Handle de arrastar (oculto no mobile) */}
-      <span className="hidden sm:inline-flex text-slate-600 group-hover:text-slate-400 cursor-grab shrink-0 p-0.5" title="Arraste para mover para outro caso ou pasta">
-        <GripVertical size={12} />
-      </span>
-
-      {/* Número da questão */}
-      <span className="text-[10.5px] font-light text-slate-500 shrink-0 tabular-nums min-w-[18px]">
-        {numero}.
-      </span>
-
-      {/* Botão indicador Play */}
-      <span className="text-slate-500 hover:text-slate-300 transition-colors w-3.5 h-3.5 flex items-center justify-center shrink-0">
-        <Play size={9} className="fill-current text-slate-500 group-hover:text-indigo-400" />
-      </span>
-
-      {/* ID_Qconcursos / Número da questão em âmbar */}
-      <span className="text-[10.5px] font-mono font-medium text-amber-400/90 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.2 rounded shrink-0">
-        {displayId}
-      </span>
-
-      {savePersonalClassification ? (
-        <div className="relative shrink-0" onClick={(event) => event.stopPropagation()}>
-          <button
-            type="button"
-            aria-expanded={difficultyMenuOpen}
-            disabled={savingDifficulty}
-            onClick={() => setDifficultyMenuOpen(open => !open)}
-            className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-black/25 px-1.5 py-0.5 text-[9.5px] font-medium text-slate-300 transition-colors hover:border-indigo-400/40 hover:bg-indigo-500/10"
-            title="Alterar dificuldade"
+      {/* Coluna 1: Handle + Ordem */}
+      <div className="flex items-center justify-between md:justify-start gap-1.5 min-w-0">
+        <div className="flex items-center gap-1 min-w-0">
+          <span className="hidden sm:inline-flex text-slate-600 group-hover:text-slate-400 cursor-grab shrink-0" title="Arraste para mover para outro caso ou pasta">
+            <GripVertical size={12} />
+          </span>
+          <span
+            title={ordemVal !== undefined && ordemVal !== null ? `Ordem ${ordemVal}` : `Posição ${numero}`}
+            className="inline-flex items-center justify-center text-[10.5px] font-mono font-semibold text-slate-300 bg-white/[0.04] border border-white/[0.08] px-1.5 py-0.5 rounded tabular-nums shrink-0"
           >
-            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: catColor }} />
-            {savingDifficulty ? "Salvando…" : currentDifficulty?.label ?? catLabel}
-            <ChevronDown size={10} className={difficultyMenuOpen ? "rotate-180" : ""} />
-          </button>
-          {difficultyMenuOpen && (
-            <div className="absolute left-0 top-full z-50 mt-1 w-64 rounded-xl border border-white/10 bg-[#111827] p-2 shadow-lg" onClick={(event) => event.stopPropagation()}>
-              <p className="px-1.5 pb-1.5 text-[9px] font-semibold uppercase tracking-wider text-slate-500">Progressão de dificuldade</p>
-              <div className="grid grid-cols-3 gap-1">
-                {difficultyLevels.map((level, index) => {
-                  const relation = currentDifficultyIndex < 0 ? "" : index < currentDifficultyIndex ? "anterior" : index > currentDifficultyIndex ? "próximo" : "atual";
-                  return (
-                    <button
-                      key={level.value}
-                      type="button"
-                      disabled={savingDifficulty || index === currentDifficultyIndex}
-                      onClick={() => void changeDifficulty(index)}
-                      className={`flex flex-col items-center gap-1 rounded-lg border px-1 py-2 text-[9px] transition-colors ${index === currentDifficultyIndex ? "border-indigo-400/40 bg-indigo-500/15 text-indigo-200" : "border-white/[0.06] bg-white/[0.02] text-slate-400 hover:border-white/15 hover:bg-white/[0.06] hover:text-white"} disabled:cursor-default`}
-                    >
-                      <span className="text-sm">{level.emoji}</span>
-                      <span>{level.label}</span>
-                      {relation && <span className="text-[8px] text-slate-500">{relation}</span>}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="mt-1.5 flex items-center justify-between rounded-lg bg-black/20 px-2 py-1.5 text-[8px] text-slate-500">
-                <span>Primeiro: Fácil</span>
-                <span>Agora: {currentDifficulty?.label ?? "não definida"}</span>
-                <span>Último: Difícil</span>
-              </div>
-            </div>
+            {ordemVal !== undefined && ordemVal !== null ? `#${ordemVal}` : `${numero}.`}
+          </span>
+        </div>
+
+        {/* No mobile, Status + Ações ficam alinhados no topo direito do card */}
+        <div className="flex md:hidden items-center gap-1.5 shrink-0">
+          {isDuvida && <Flag size={10} className="fill-amber-400/90 text-amber-400/90 shrink-0" />}
+          {isErro ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-semibold text-rose-300 bg-rose-950/60 border border-rose-500/35 tabular-nums">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+              {errorCount > 1 ? `Errou ${errorCount}×` : "Errou"}
+            </span>
+          ) : isAcerto ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-medium text-emerald-300 bg-emerald-950/50 border border-emerald-700/40">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+              Acertou{errorCount > 0 ? ` (${errorCount}e)` : ""}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] text-slate-500 bg-white/[0.03] border border-white/[0.06]">
+              Aberta
+            </span>
           )}
         </div>
-      ) : (
-        <span className="text-[9.5px] font-light px-1.5 py-0.2 rounded bg-black/25 border border-white/[0.05] shrink-0" style={{ color: catColor }}>{catLabel}</span>
-      )}
+      </div>
 
-      {/* Pill com seta e nome da pasta/caso atual (oculto no mobile para poupar espaço) */}
-      <span className="hidden sm:inline-flex text-[9.5px] font-light text-slate-400 bg-white/[0.03] border border-white/[0.06] px-1.5 py-0.2 rounded-md shrink-0 items-center gap-1 max-w-[240px]">
-        <span className="text-indigo-400/70">→</span>
-        <span className="truncate">{casoNome}</span>
-      </span>
+      {/* Coluna 2: Plataforma & IDs (Idq / Idg / Idtec) */}
+      <div className="flex items-center gap-1.5 min-w-0">
+        <Play size={9} className="hidden md:inline-block fill-current text-slate-500 group-hover:text-indigo-400 shrink-0" />
+        <PlatformIdsBadges questao={questao} compact />
+      </div>
 
-      {/* Indicador de Dúvida */}
-      {isDuvida && (
-        <Flag size={10} className="fill-amber-400/90 text-amber-400/90 shrink-0 ml-0.5" />
-      )}
-
-      {/* Indicador de Status Acerto / Erro na direita */}
-      {isAcerto && (
-        <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.2 rounded-full text-[9px] sm:text-[9.5px] font-light text-emerald-300/90 bg-emerald-950/40 border border-emerald-800/40 shrink-0 ml-auto">
-          <span className="w-1 h-1 rounded-full bg-emerald-500 shrink-0" />
-          Acertou
+      {/* Coluna 3 (Desktop) / Metadado (Mobile): Prova / Ano */}
+      <div className="flex items-center gap-1.5 text-[10.5px] text-slate-300 min-w-0 truncate">
+        <span className="truncate font-medium text-slate-200/90" title={`${provaVal || "—"} ${anoVal}`}>
+          {provaVal || <span className="text-slate-600">—</span>}
         </span>
-      )}
-      {isErro && (
-        <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.2 rounded-full text-[9px] sm:text-[9.5px] font-light text-rose-300/90 bg-rose-950/40 border border-rose-800/40 shrink-0 ml-auto">
-          <span className="w-1 h-1 rounded-full bg-rose-500 shrink-0" />
-          Errou
-        </span>
-      )}
+        {anoVal && (
+          <span className="text-[10px] text-slate-400 font-mono shrink-0 tabular-nums">
+            · {anoVal}
+          </span>
+        )}
+        {/* No mobile exibe Banca inline junto de Prova/Ano */}
+        {bancaVal && (
+          <span className="md:hidden text-[10px] text-indigo-300/90 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.2 rounded truncate max-w-[120px]">
+            {bancaVal}
+          </span>
+        )}
+      </div>
 
-      {/* Ações de Administração: Mover, Editar, Excluir (visíveis para toque no mobile) */}
-      {isAdmin && (
+      {/* Coluna 4 (Desktop): Banca */}
+      <div className="hidden md:flex items-center min-w-0">
+        {bancaVal ? (
+          <span
+            title={bancaVal}
+            className="text-[10px] font-semibold text-indigo-300/90 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded truncate max-w-full"
+          >
+            {bancaVal}
+          </span>
+        ) : (
+          <span className="text-[10px] text-slate-600">—</span>
+        )}
+      </div>
+
+      {/* Coluna 5: Dificuldade / Classificação */}
+      <div className="flex items-center justify-between md:justify-start gap-2 min-w-0">
+        {savePersonalClassification ? (
+          <div className="relative shrink-0" onClick={(event) => event.stopPropagation()}>
+            <button
+              type="button"
+              aria-expanded={difficultyMenuOpen}
+              disabled={savingDifficulty}
+              onClick={() => setDifficultyMenuOpen(open => !open)}
+              className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-black/30 px-1.5 py-0.5 text-[10px] font-medium text-slate-300 transition-colors hover:border-indigo-400/40 hover:bg-indigo-500/10"
+              title="Alterar dificuldade"
+            >
+              <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: catColor }} />
+              <span className="truncate max-w-[78px]">{savingDifficulty ? "Salvando…" : currentDifficulty?.label ?? catLabel}</span>
+              <ChevronDown size={10} className={difficultyMenuOpen ? "rotate-180" : ""} />
+            </button>
+            {difficultyMenuOpen && (
+              <div className="absolute left-0 top-full z-50 mt-1 w-64 rounded-xl border border-white/10 bg-[#111827] p-2 shadow-lg" onClick={(event) => event.stopPropagation()}>
+                <p className="px-1.5 pb-1.5 text-[9px] font-semibold uppercase tracking-wider text-slate-500">Progressão de dificuldade</p>
+                <div className="grid grid-cols-3 gap-1">
+                  {difficultyLevels.map((level, index) => {
+                    const relation = currentDifficultyIndex < 0 ? "" : index < currentDifficultyIndex ? "anterior" : index > currentDifficultyIndex ? "próximo" : "atual";
+                    return (
+                      <button
+                        key={level.value}
+                        type="button"
+                        disabled={savingDifficulty || index === currentDifficultyIndex}
+                        onClick={() => void changeDifficulty(index)}
+                        className={`flex flex-col items-center gap-1 rounded-lg border px-1 py-2 text-[9px] transition-colors ${index === currentDifficultyIndex ? "border-indigo-400/40 bg-indigo-500/15 text-indigo-200" : "border-white/[0.06] bg-white/[0.02] text-slate-400 hover:border-white/15 hover:bg-white/[0.06] hover:text-white"} disabled:cursor-default`}
+                      >
+                        <span className="text-sm">{level.emoji}</span>
+                        <span>{level.label}</span>
+                        {relation && <span className="text-[8px] text-slate-500">{relation}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-black/25 border border-white/[0.05] shrink-0" style={{ color: catColor }}>
+            {catLabel}
+          </span>
+        )}
+
+        {/* Mobile Admin Actions */}
+        {isAdmin && (
+          <div
+            className="flex md:hidden items-center gap-1 shrink-0 select-none"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button type="button" onClick={() => onMove?.(questao)} title="Mover pasta" className="p-1.5 text-slate-400 hover:text-indigo-400 bg-white/[0.04] rounded">
+              <FolderInput size={12} />
+            </button>
+            <button type="button" onClick={() => onEdit?.(questao)} title="Editar questão" className="p-1.5 text-slate-400 hover:text-amber-400 bg-white/[0.04] rounded">
+              <Pencil size={12} />
+            </button>
+            <button type="button" onClick={() => onDelete?.(questao)} title="Excluir questão" className="p-1.5 text-slate-400 hover:text-rose-400 bg-white/[0.04] rounded">
+              <Trash2 size={12} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Coluna 6 (Desktop): Erros / Status */}
+      <div className="hidden md:flex items-center gap-1.5 justify-end tabular-nums">
+        {isDuvida && (
+          <Flag size={10} className="fill-amber-400/90 text-amber-400/90 shrink-0" />
+        )}
+        {isErro ? (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-semibold text-rose-300 bg-rose-950/60 border border-rose-500/35 shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+            {errorCount > 1 ? `Errou ${errorCount}×` : "Errou"}
+          </span>
+        ) : isAcerto ? (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-medium text-emerald-300/90 bg-emerald-950/40 border border-emerald-800/40 shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+            Acertou{errorCount > 0 ? ` (${errorCount}e)` : ""}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] text-slate-500 bg-white/[0.02] border border-white/[0.05] shrink-0">
+            Aberta
+          </span>
+        )}
+      </div>
+
+      {/* Coluna 7 (Desktop): Ações Admin */}
+      {isAdmin ? (
         <div
-          className="flex items-center gap-0.5 opacity-90 sm:opacity-60 sm:group-hover:opacity-100 transition-opacity ml-1 sm:ml-2 shrink-0 select-none"
+          className="hidden md:flex items-center justify-end gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity shrink-0 select-none"
           onClick={(e) => e.stopPropagation()}
         >
           <button
             type="button"
             onClick={() => onMove?.(questao)}
-            title="Mover para outro caso ou pasta"
-            className="p-1 sm:p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.08] active:bg-white/[0.12] rounded transition-colors"
+            title={`Mover de "${casoNome}" para outra pasta`}
+            className="p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.08] rounded transition-colors"
           >
             <FolderInput size={12} />
           </button>
@@ -371,7 +502,7 @@ function QuestaoRowItem({
             type="button"
             onClick={() => onEdit?.(questao)}
             title="Editar questão"
-            className="p-1 sm:p-1 text-slate-500 hover:text-amber-400 hover:bg-white/[0.08] active:bg-white/[0.12] rounded transition-colors"
+            className="p-1 text-slate-500 hover:text-amber-400 hover:bg-white/[0.08] rounded transition-colors"
           >
             <Pencil size={12} />
           </button>
@@ -379,10 +510,14 @@ function QuestaoRowItem({
             type="button"
             onClick={() => onDelete?.(questao)}
             title="Excluir questão"
-            className="p-1 sm:p-1 text-slate-500 hover:text-rose-400 hover:bg-white/[0.08] active:bg-white/[0.12] rounded transition-colors"
+            className="p-1 text-slate-500 hover:text-rose-400 hover:bg-white/[0.08] rounded transition-colors"
           >
             <Trash2 size={12} />
           </button>
+        </div>
+      ) : (
+        <div className="hidden md:flex items-center justify-end text-slate-600 group-hover:text-indigo-400">
+          <ChevronRight size={12} />
         </div>
       )}
     </div>
@@ -444,7 +579,7 @@ function TreeNodeItem({
             onDropQuestion(qId, node.id);
           }
         }}
-        style={{ paddingLeft: `${depth * 20 + 8}px` }}
+        style={{ paddingLeft: `${Math.min(depth, 4) * 14 + 8}px` }}
         className={`flex items-center justify-between gap-2 py-1.5 pr-3 rounded-lg cursor-pointer transition-colors group ${
           isDragOver
             ? "bg-indigo-600/20 border border-indigo-500 text-white"
@@ -491,9 +626,9 @@ function TreeNodeItem({
                 onPrintNode?.(node);
               }}
               title={`Imprimir questões de "${node.nome}" (${node.questoes.length + node.totalDescendentesQuestoes})`}
-              className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.06] rounded transition-colors shrink-0"
+              className="opacity-80 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 sm:p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.06] rounded transition-colors shrink-0"
             >
-              <Printer size={11} />
+              <Printer size={12} />
             </button>
           )}
 
@@ -504,9 +639,9 @@ function TreeNodeItem({
               onAddSubfolder(node.id);
             }}
             title={`Adicionar subpasta dentro de "${node.nome}"`}
-            className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.06] rounded transition-colors shrink-0"
+            className="opacity-80 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 sm:p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.06] rounded transition-colors shrink-0"
           >
-            <Plus size={12} />
+            <Plus size={13} />
           </button>
         </div>
       </div>
@@ -533,14 +668,14 @@ function TreeNodeItem({
           ))}
 
           {/* Questões diretamente vinculadas a este nó */}
-          {node.questoes.map((q, idx) => {
+          {node.questoes.map((q) => {
             q = getQuestionWithCurrentDifficulty(q);
-            const displayId = (q as any).ID_Qconcursos || (q as any).Ordem || q.id;
             const catKey = resolveCategory(q);
             const catInfo = CATEGORIES.find(c => c.key === catKey);
             const st = userAnswers[String(q.id)];
             const isAcerto = st?.isCorrect === true;
             const isErro = st?.isCorrect === false;
+            const ordemVal = q.Ordem ?? q.ordem;
 
             return (
               <div
@@ -552,14 +687,20 @@ function TreeNodeItem({
                   e.dataTransfer.effectAllowed = "move";
                 }}
                 onClick={() => onOpenQuestion(q, node.questoes)}
-                style={{ paddingLeft: `${(depth + 1) * 20 + 8}px` }}
+                style={{ paddingLeft: `${Math.min(depth + 1, 5) * 14 + 8}px` }}
                 className="flex items-center justify-between gap-2 py-1 pr-3 rounded-lg hover:bg-white/[0.04] cursor-pointer text-slate-300 hover:text-white transition-colors group"
               >
-                <div className="flex items-center gap-2 min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                   <span className="text-slate-500 group-hover:text-slate-300 shrink-0">📄</span>
-                  <span className="text-[11px] font-mono font-bold text-amber-400/90 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.2 rounded shrink-0">
-                    {displayId}
-                  </span>
+                  {ordemVal !== undefined && ordemVal !== null && (
+                    <span className="text-[10px] font-mono text-slate-400 shrink-0">#{ordemVal}</span>
+                  )}
+                  <PlatformIdsBadges questao={q} compact />
+                  {(q.prova || q.Banca || q.banca) && (
+                    <span className="hidden sm:inline text-[10px] text-slate-400 truncate max-w-[160px]">
+                      {[q.prova, q.Ano, q.Banca || q.banca].filter(Boolean).join(" · ")}
+                    </span>
+                  )}
                   <span
                     className="w-1.5 h-1.5 rounded-full shrink-0"
                     style={{ backgroundColor: catInfo?.textColor || "#c69238" }}
@@ -808,6 +949,31 @@ function CasoAccordion({
             </div>
           )}
 
+          {/* Botão rápido para revisar erros deste caso */}
+          {stats.erros > 0 && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                const errQs = caso.questoes.filter(q => userAnswers[String(q.id)]?.isCorrect === false);
+                if (errQs.length > 0) onOpenQuestion(errQs[0], errQs);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const errQs = caso.questoes.filter(q => userAnswers[String(q.id)]?.isCorrect === false);
+                  if (errQs.length > 0) onOpenQuestion(errQs[0], errQs);
+                }
+              }}
+              title={`Revisar ${stats.erros} erro(s) de "${caso.nome}"`}
+              className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-[9.5px] font-semibold text-rose-300 transition-colors cursor-pointer"
+            >
+              <Play size={8} fill="currentColor" /> Erros
+            </span>
+          )}
+
           {/* Imprimir Questões do Caso */}
           {caso.questoes.length > 0 && (
             <span
@@ -834,13 +1000,24 @@ function CasoAccordion({
 
       {/* Conteúdo do Caso expandido */}
       {isOpen && (
-        <div className="pl-4 pr-1 pb-1 flex flex-col gap-1 border-l border-white/[0.05] ml-3.5 my-0.5">
+        <div className="pl-2 sm:pl-4 pr-1 pb-1 flex flex-col gap-1 border-l border-white/[0.05] ml-2 sm:ml-3.5 my-0.5">
           {caso.questoes.length === 0 ? (
             <div className="py-2 px-3 border border-dashed border-white/[0.05] rounded-md text-center text-slate-500 text-[11px] font-light">
               Nenhuma questão neste caso. Arraste questões para cá.
             </div>
           ) : (
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
+              {/* Cabeçalho das colunas no desktop */}
+              <div className="hidden md:grid md:grid-cols-[54px_minmax(130px,1.2fr)_minmax(115px,1fr)_minmax(90px,0.85fr)_110px_118px_auto] items-center gap-2.5 px-2.5 py-1 text-[9.5px] font-semibold uppercase tracking-wider text-slate-500 border-b border-white/[0.05]">
+                <span>Ordem</span>
+                <span>Plataforma / IDs</span>
+                <span>Prova · Ano</span>
+                <span>Banca</span>
+                <span>Dificuldade</span>
+                <span className="text-right">Status / Erros</span>
+                <span className="text-right">Ações</span>
+              </div>
+
               {caso.questoes.map((sourceQuestion, qIdx) => {
                 const q = getQuestionWithCurrentDifficulty(sourceQuestion);
                 return (
@@ -869,7 +1046,7 @@ function CasoAccordion({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Componente: CadernoDedicatedView (Tela focada no Caderno com timeline de Casos)
+// Componente: CadernoDedicatedView (Tela focada no Caderno com filtro de Plataforma e Erros)
 // ─────────────────────────────────────────────────────────────────────────────
 function CadernoDedicatedView({
   caderno,
@@ -893,13 +1070,15 @@ function CadernoDedicatedView({
   onDeleteCaderno,
   onMoverCaso,
   todosCadernos,
+  plataformaFiltro,
+  onChangePlataformaFiltro,
 }: {
   caderno: CadernoItem;
   onBack: () => void;
   userAnswers: Record<string, QuestionStats>;
   duvidas: Set<string>;
   onOpenQuestion: (q: BancoQuestion, queue: BancoQuestion[]) => void;
-  onTrainAll: () => void;
+  onTrainAll: (queue: BancoQuestion[]) => void;
   onDropQuestion: (questaoId: string, targetCasoId: string) => void;
   onOpenNovaPastaModal: (parentCadernoId: string) => void;
   isAdmin?: boolean;
@@ -915,16 +1094,35 @@ function CadernoDedicatedView({
   onDeleteCaderno?: (caderno: CadernoItem) => void;
   onMoverCaso?: (casoId: string, casoNome: string, novoCadernoId: string) => Promise<void>;
   todosCadernos?: CadernoItem[];
+  plataformaFiltro: PlataformaFiltro;
+  onChangePlataformaFiltro: (plat: PlataformaFiltro) => void;
 }) {
-  const [filtroStatus, setFiltroStatus] = useState<"todas" | "erros" | "nao_feitas" | "duvidas">("todas");
+  const [filtroStatus, setFiltroStatus] = useState<"todas" | "erros" | "mais_erros" | "nao_feitas" | "duvidas">("todas");
   const [isActionsOpen, setIsActionsOpen] = useState(false);
+
+  const questoesPorPlataforma = useMemo(() => {
+    return caderno.questoes.filter((q) => matchesPlataforma(q, plataformaFiltro));
+  }, [caderno.questoes, plataformaFiltro]);
+
+  const platformCounts = useMemo(() => {
+    let qc = 0;
+    let gran = 0;
+    let tec = 0;
+    caderno.questoes.forEach((q) => {
+      const { idq, idg, idtec } = getQuestionIds(q);
+      if (idq) qc++;
+      if (idg) gran++;
+      if (idtec) tec++;
+    });
+    return { todas: caderno.questoes.length, qc, gran, tec };
+  }, [caderno.questoes]);
 
   const stats = useMemo(() => {
     let acertos = 0;
     let erros = 0;
     let duvidasCount = 0;
 
-    caderno.questoes.forEach((q) => {
+    questoesPorPlataforma.forEach((q) => {
       const st = userAnswers[String(q.id)];
       if (st) {
         if (st.isCorrect) acertos++;
@@ -933,29 +1131,44 @@ function CadernoDedicatedView({
       if (duvidas.has(String(q.id))) duvidasCount++;
     });
 
-    const total = caderno.questoes.length;
+    const total = questoesPorPlataforma.length;
     const respondidas = acertos + erros;
     const pct = respondidas > 0 ? Math.round((acertos / respondidas) * 100) : null;
 
     return { total, acertos, erros, duvidasCount, respondidas, pct };
-  }, [caderno.questoes, userAnswers, duvidas]);
+  }, [questoesPorPlataforma, userAnswers, duvidas]);
 
   const casosFiltrados = useMemo(() => {
-    if (filtroStatus === "todas") return caderno.casos;
-
-    return caderno.casos
+    const mapped = caderno.casos
       .map((c) => {
-        const filteredQs = c.questoes.filter((q) => {
-          const st = userAnswers[String(q.id)];
-          if (filtroStatus === "erros") return st && !st.isCorrect;
-          if (filtroStatus === "nao_feitas") return !st;
-          if (filtroStatus === "duvidas") return duvidas.has(String(q.id));
-          return true;
-        });
-        return { ...c, questoes: filteredQs };
-      })
-      .filter((c) => c.questoes.length > 0);
-  }, [caderno.casos, filtroStatus, userAnswers, duvidas]);
+        let qs = c.questoes.filter((q) => matchesPlataforma(q, plataformaFiltro));
+        if (filtroStatus === "erros") {
+          qs = qs.filter((q) => userAnswers[String(q.id)] && !userAnswers[String(q.id)].isCorrect);
+        } else if (filtroStatus === "mais_erros") {
+          qs = qs
+            .filter((q) => (userAnswers[String(q.id)]?.errorCount || 0) > 0)
+            .sort((a, b) => (userAnswers[String(b.id)]?.errorCount || 0) - (userAnswers[String(a.id)]?.errorCount || 0));
+        } else if (filtroStatus === "nao_feitas") {
+          qs = qs.filter((q) => !userAnswers[String(q.id)]);
+        } else if (filtroStatus === "duvidas") {
+          qs = qs.filter((q) => duvidas.has(String(q.id)));
+        }
+        return { ...c, questoes: filtroStatus === "mais_erros" ? qs : sortQuestoesByOrdem(qs) };
+      });
+
+    const hasActiveFilter = filtroStatus !== "todas" || plataformaFiltro !== "todas";
+    return hasActiveFilter ? mapped.filter((c) => c.questoes.length > 0) : mapped;
+  }, [caderno.casos, filtroStatus, plataformaFiltro, userAnswers, duvidas]);
+
+  const errorQueue = useMemo(() => {
+    return sortQuestoesByOrdem(
+      questoesPorPlataforma.filter((q) => userAnswers[String(q.id)]?.isCorrect === false)
+    );
+  }, [questoesPorPlataforma, userAnswers]);
+
+  const allFilteredQueue = useMemo(() => {
+    return casosFiltrados.flatMap((c) => c.questoes);
+  }, [casosFiltrados]);
 
   return (
     <div className="flex flex-col gap-3 sm:gap-4">
@@ -983,152 +1196,199 @@ function CadernoDedicatedView({
                 </span>
               </div>
               <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">
-                {caderno.casos.length} caso(s) · {caderno.questoes.length} questões
+                {casosFiltrados.length} caso(s) · {stats.total} questões
               </p>
             </div>
           </div>
         </div>
 
-        {/* Ações do caderno */}
-        <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
+        {/* Ações do caderno (Revisar Erros + Resolver) */}
+        <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto flex-wrap">
+          {errorQueue.length > 0 && (
+            <button
+              onClick={() => onOpenQuestion(errorQueue[0], errorQueue)}
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2.5 sm:py-2 bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-200 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
+            >
+              <AlertTriangle size={12} className="text-rose-400" /> Revisar Erros ({errorQueue.length})
+            </button>
+          )}
           <button
-            onClick={onTrainAll}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-colors"
+            onClick={() => onTrainAll(allFilteredQueue.length > 0 ? allFilteredQueue : questoesPorPlataforma)}
+            disabled={allFilteredQueue.length === 0 && questoesPorPlataforma.length === 0}
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-colors"
           >
-            <Play size={12} /> Resolver Caderno
+            <Play size={12} /> Resolver ({allFilteredQueue.length})
           </button>
         </div>
       </div>
 
-      {/* Barra de Filtro de Casos */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3 bg-[#101526] p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-white/[0.06]">
-        <div className="flex items-center justify-between sm:justify-start gap-2.5 w-full sm:w-auto">
-          <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-mono tabular-nums overflow-x-auto custom-scrollbar flex-nowrap py-0.5">
-            <span className="text-slate-400">{stats.total} quest.</span>
-            <span className="text-emerald-400 flex items-center gap-0.5" title="Acertos"><Check size={11} />{stats.acertos}</span>
-            <span className="text-rose-400 flex items-center gap-0.5" title="Erros"><X size={11} />{stats.erros}</span>
-            <span className="text-amber-400 flex items-center gap-0.5" title="Dúvidas"><Flag size={10} />{stats.duvidasCount}</span>
-            <span
-              className={`px-1.5 py-0.5 rounded border text-[9px] sm:text-[10px] ${
-                stats.pct === null
-                  ? "text-slate-500 border-white/[0.08] bg-white/[0.02]"
-                  : stats.pct >= 70
-                  ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10"
-                  : stats.pct >= 50
-                  ? "text-amber-400 border-amber-500/30 bg-amber-500/10"
-                  : "text-rose-400 border-rose-500/30 bg-rose-500/10"
-              }`}
-            >
-              {stats.pct === null ? "—" : `${stats.pct}%`}
-            </span>
-          </div>
+      {/* Barra de Filtro de Casos + Filtro de Plataforma (Qconcursos / Gran / TEC) */}
+      <div className="flex flex-col gap-2.5 bg-[#101526] p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-white/[0.06]">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2.5">
+          <div className="flex items-center justify-between sm:justify-start gap-2.5 w-full lg:w-auto">
+            <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-mono tabular-nums overflow-x-auto custom-scrollbar flex-nowrap py-0.5">
+              <span className="text-slate-400">{stats.total} quest.</span>
+              <span className="text-emerald-400 flex items-center gap-0.5" title="Acertos"><Check size={11} />{stats.acertos}</span>
+              <span className="text-rose-400 flex items-center gap-0.5" title="Erros"><X size={11} />{stats.erros}</span>
+              <span className="text-amber-400 flex items-center gap-0.5" title="Dúvidas"><Flag size={10} />{stats.duvidasCount}</span>
+              <span
+                className={`px-1.5 py-0.5 rounded border text-[9px] sm:text-[10px] ${
+                  stats.pct === null
+                    ? "text-slate-500 border-white/[0.08] bg-white/[0.02]"
+                    : stats.pct >= 70
+                    ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10"
+                    : stats.pct >= 50
+                    ? "text-amber-400 border-amber-500/30 bg-amber-500/10"
+                    : "text-rose-400 border-rose-500/30 bg-rose-500/10"
+                }`}
+              >
+                {stats.pct === null ? "—" : `${stats.pct}%`}
+              </span>
+            </div>
 
-          <div className="relative flex items-center shrink-0">
-            <button
-              type="button"
-              onClick={() => setIsActionsOpen(open => !open)}
-              aria-label="Mais ações do caderno"
-              aria-expanded={isActionsOpen}
-              title="Mais ações"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-[#0d1220] text-slate-300 hover:bg-white/[0.08] active:bg-white/[0.12] hover:text-white transition-colors"
-            >
-              <MoreVertical size={16} />
-            </button>
+            <div className="relative flex items-center shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsActionsOpen(open => !open)}
+                aria-label="Mais ações do caderno"
+                aria-expanded={isActionsOpen}
+                title="Mais ações"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-[#0d1220] text-slate-300 hover:bg-white/[0.08] active:bg-white/[0.12] hover:text-white transition-colors"
+              >
+                <MoreVertical size={16} />
+              </button>
 
-            {isActionsOpen && (
-              <div className="absolute right-0 sm:left-0 sm:right-auto top-full z-30 mt-1 flex w-60 max-w-[calc(100vw-32px)] flex-col rounded-xl border border-white/[0.10] bg-[#111827] p-1 shadow-lg">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsActionsOpen(false);
-                    onOpenNovaPastaModal(caderno.id);
-                  }}
-                  className="flex items-center gap-2 whitespace-nowrap rounded-lg px-2.5 py-2.5 sm:py-2 text-left text-xs text-slate-300 hover:bg-white/[0.06] hover:text-white"
-                >
-                  <FolderPlus size={14} className="text-indigo-300" /> Nova Subpasta / Caso
-                </button>
-                {caderno.questoes.length > 0 && (
+              {isActionsOpen && (
+                <div className="absolute right-0 sm:left-0 sm:right-auto top-full z-30 mt-1 flex w-60 max-w-[calc(100vw-32px)] flex-col rounded-xl border border-white/[0.10] bg-[#111827] p-1 shadow-lg">
                   <button
                     type="button"
                     onClick={() => {
                       setIsActionsOpen(false);
-                      onPrintCaderno?.(caderno);
+                      onOpenNovaPastaModal(caderno.id);
                     }}
                     className="flex items-center gap-2 whitespace-nowrap rounded-lg px-2.5 py-2.5 sm:py-2 text-left text-xs text-slate-300 hover:bg-white/[0.06] hover:text-white"
                   >
-                    <Printer size={14} className="text-indigo-400" /> Imprimir Caderno ({caderno.questoes.length})
+                    <FolderPlus size={14} className="text-indigo-300" /> Nova Subpasta / Caso
                   </button>
-                )}
-                {isAdmin && onDeleteCaderno && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsActionsOpen(false);
-                      onDeleteCaderno(caderno);
-                    }}
-                    className="flex items-center gap-2 whitespace-nowrap rounded-lg px-2.5 py-2.5 sm:py-2 text-left text-xs text-rose-300 hover:bg-rose-500/10 hover:text-rose-200"
-                  >
-                    <Trash2 size={14} /> Excluir Caderno
-                  </button>
-                )}
-              </div>
-            )}
+                  {caderno.questoes.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsActionsOpen(false);
+                        onPrintCaderno?.(caderno);
+                      }}
+                      className="flex items-center gap-2 whitespace-nowrap rounded-lg px-2.5 py-2.5 sm:py-2 text-left text-xs text-slate-300 hover:bg-white/[0.06] hover:text-white"
+                    >
+                      <Printer size={14} className="text-indigo-400" /> Imprimir Caderno ({caderno.questoes.length})
+                    </button>
+                  )}
+                  {isAdmin && onDeleteCaderno && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsActionsOpen(false);
+                        onDeleteCaderno(caderno);
+                      }}
+                      className="flex items-center gap-2 whitespace-nowrap rounded-lg px-2.5 py-2.5 sm:py-2 text-left text-xs text-rose-300 hover:bg-rose-500/10 hover:text-rose-200"
+                    >
+                      <Trash2 size={14} /> Excluir Caderno
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Filtros de Status */}
+          <div className="w-full lg:w-auto flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] overflow-x-auto custom-scrollbar flex-nowrap">
+            {[
+              { id: "todas", label: "Todas" },
+              { id: "erros", label: "Erros" },
+              { id: "mais_erros", label: "Mais Erros" },
+              { id: "nao_feitas", label: "Pendentes" },
+              { id: "duvidas", label: "Dúvidas" },
+            ].map((st) => (
+              <button
+                key={st.id}
+                onClick={() => setFiltroStatus(st.id as any)}
+                className={`px-2.5 sm:px-3 py-1 rounded-lg text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider transition-colors whitespace-nowrap shrink-0 ${
+                  filtroStatus === st.id
+                    ? st.id === "erros" || st.id === "mais_erros"
+                      ? "bg-rose-600 text-white"
+                      : "bg-indigo-600 text-white"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                {st.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="w-full sm:w-auto sm:ml-auto flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] overflow-x-auto custom-scrollbar flex-nowrap">
-          {[
-            { id: "todas", label: "Todas" },
-            { id: "erros", label: "🔴 Erros" },
-            { id: "nao_feitas", label: "⭕ Pendentes" },
-            { id: "duvidas", label: "⚑ Dúvidas" },
-          ].map((st) => (
-            <button
-              key={st.id}
-              onClick={() => setFiltroStatus(st.id as any)}
-              className={`px-2.5 sm:px-3 py-1 rounded-lg text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider transition-colors whitespace-nowrap shrink-0 ${
-                filtroStatus === st.id
-                  ? "bg-indigo-600 text-white"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              {st.label}
-            </button>
-          ))}
+        {/* Linha 2: Filtro por ID de Plataforma (Todas | Qconcursos | Gran | TEC) */}
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/[0.06] flex-wrap">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+            Filtrar por ID da plataforma:
+          </span>
+          <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] overflow-x-auto custom-scrollbar flex-nowrap max-w-full">
+            {[
+              { id: "todas" as PlataformaFiltro, label: `Todas (${platformCounts.todas})`, activeCls: "bg-indigo-600 text-white" },
+              { id: "qconcursos" as PlataformaFiltro, label: `Qconcursos (${platformCounts.qc})`, activeCls: "bg-amber-600 text-white" },
+              { id: "gran" as PlataformaFiltro, label: `Gran (${platformCounts.gran})`, activeCls: "bg-cyan-600 text-white" },
+              { id: "tec" as PlataformaFiltro, label: `TEC (${platformCounts.tec})`, activeCls: "bg-violet-600 text-white" },
+            ].map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => onChangePlataformaFiltro(p.id)}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap shrink-0 tabular-nums ${
+                  plataformaFiltro === p.id ? p.activeCls : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Lista de Casos do Caderno - Compacto e elegante */}
-      <div className="flex flex-col gap-2 p-3 sm:p-3.5 bg-[#0a0e1a]/85 rounded-xl border border-white/[0.04]">
+      {/* Lista de Casos do Caderno */}
+      <div className="flex flex-col gap-2 p-2.5 sm:p-3.5 bg-[#0a0e1a]/85 rounded-xl border border-white/[0.04]">
         <h4 className="text-[10px] font-normal text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mb-0.5">
-          <LayoutGrid size={11} className="text-indigo-400/70" /> Desempenho por Caso (Subpastas)
+          <LayoutGrid size={11} className="text-indigo-400/70" /> Casos & Questões (Ordenados por Ordem)
         </h4>
 
-        <div className="relative flex flex-col gap-1">
-          {casosFiltrados.map((caso, idx) => (
-            <CasoAccordion
-              key={caso.id}
-              caso={caso}
-              index={idx}
-              userAnswers={userAnswers}
-              duvidas={duvidas}
-              onOpenQuestion={onOpenQuestion}
-              onDropQuestion={onDropQuestion}
-              isAdmin={isAdmin}
-              onEditQuestao={onEditQuestao}
-              onMoveQuestao={onMoveQuestao}
-              onDeleteQuestao={onDeleteQuestao}
-              onChangeDifficulty={onChangeDifficulty}
-              getQuestionWithCurrentDifficulty={getQuestionWithCurrentDifficulty}
-              onRenameCaso={onRenameCaso}
-              onAddSubfolder={onOpenNovaPastaModal}
-              onDeleteCaso={onDeleteCaso}
-              onPrintCaso={onPrintCaso}
-              onMoverCaso={onMoverCaso}
-              cadernos={todosCadernos?.filter(c => c.id !== caderno.id)}
-            />
-          ))}
-        </div>
+        {casosFiltrados.length === 0 ? (
+          <div className="py-10 text-center text-xs text-slate-500">
+            Nenhuma questão encontrada para os filtros selecionados neste caderno.
+          </div>
+        ) : (
+          <div className="relative flex flex-col gap-1.5">
+            {casosFiltrados.map((caso, idx) => (
+              <CasoAccordion
+                key={caso.id}
+                caso={caso}
+                index={idx}
+                userAnswers={userAnswers}
+                duvidas={duvidas}
+                onOpenQuestion={onOpenQuestion}
+                onDropQuestion={onDropQuestion}
+                isAdmin={isAdmin}
+                onEditQuestao={onEditQuestao}
+                onMoveQuestao={onMoveQuestao}
+                onDeleteQuestao={onDeleteQuestao}
+                onChangeDifficulty={onChangeDifficulty}
+                getQuestionWithCurrentDifficulty={getQuestionWithCurrentDifficulty}
+                onRenameCaso={onRenameCaso}
+                onAddSubfolder={onOpenNovaPastaModal}
+                onDeleteCaso={onDeleteCaso}
+                onPrintCaso={onPrintCaso}
+                onMoverCaso={onMoverCaso}
+                cadernos={todosCadernos?.filter(c => c.id !== caderno.id)}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1301,9 +1561,11 @@ export default function CadernosTab({
   onRefreshQuestions,
   isAdmin = false,
 }: CadernosTabProps) {
-  const [selectedCaderno, setSelectedCaderno] = useState<CadernoItem | null>(null);
+  const [selectedCadernoId, setSelectedCadernoId] = useState<string | null>(null);
   const [cadernoFiltro, setCadernoFiltro] = useState("Todos");
   const [materiaFiltro, setMateriaFiltro] = useState("Todas");
+  const [plataformaFiltro, setPlataformaFiltro] = useState<PlataformaFiltro>("todas");
+  const [bancaFiltro, setBancaFiltro] = useState<string>("Todas");
   const [statusFiltro, setStatusFiltro] = useState<"todas" | "erros" | "mais_erros" | "nao_feitas" | "duvidas">("todas");
   const [search, setSearch] = useState("");
 
@@ -1732,8 +1994,8 @@ export default function CadernosTab({
       await deleteOrgNodeHierarchy(caderno.id);
 
       showToast(`Caderno "${caderno.nome}" excluído com sucesso!`);
-      if (selectedCaderno?.id === caderno.id) {
-        setSelectedCaderno(null);
+      if (selectedCadernoId === caderno.id) {
+        setSelectedCadernoId(null);
       }
       await carregarNos();
       if (onRefreshQuestions) onRefreshQuestions();
@@ -1741,7 +2003,7 @@ export default function CadernosTab({
       console.error("Erro ao excluir caderno:", e);
       showToast(e.message || "Erro ao excluir caderno.", "error");
     }
-  }, [isAdminState, selectedCaderno, deleteQuestionsPermanently, deleteOrgNodeHierarchy, carregarNos, onRefreshQuestions]);
+  }, [isAdminState, selectedCadernoId, deleteQuestionsPermanently, deleteOrgNodeHierarchy, carregarNos, onRefreshQuestions]);
 
   // ── Mover caso (subpasta) de um caderno para outro ──
   const handleMoverCaso = useCallback(async (casoId: string, casoNome: string, novoCadernoId: string) => {
@@ -1768,215 +2030,247 @@ export default function CadernosTab({
     }
   }, [isAdminState, carregarNos, onRefreshQuestions]);
 
-  // ── 2. Montar Estrutura Hierárquica em Árvore Completa ──
-  const { treeRoots, materiasAgrupadas, todosCadernos, parentOptions } = useMemo(() => {
-    // Mapa de nós por ID (UUID)
-    const nodeMap = new Map<string, HierarchyTreeNode>();
+  const questionMatchesFilters = useCallback(
+    (q: BancoQuestion) => {
+      if (!matchesPlataforma(q, plataformaFiltro)) return false;
 
-    dbNodes.forEach(n => {
-      nodeMap.set(String(n.id), {
-        id: String(n.id),
-        nome: n.nome.trim(),
-        parent_id: n.parent_id ? String(n.parent_id) : null,
-        tipo: n.tipo,
-        ordem: n.ordem ?? 0,
-        filhos: [],
-        questoes: [],
-        totalDescendentesQuestoes: 0,
-      });
-    });
-
-    // Função para subir a cadeia ancestral de qualquer nó
-    function getAncestry(nodeId: string): HierarchyTreeNode[] {
-      const chain: HierarchyTreeNode[] = [];
-      let cur = nodeMap.get(nodeId);
-      const visited = new Set<string>();
-      while (cur && !visited.has(cur.id)) {
-        visited.add(cur.id);
-        chain.unshift(cur);
-        cur = cur.parent_id ? nodeMap.get(cur.parent_id) : undefined;
+      if (bancaFiltro !== "Todas") {
+        const qBanca = String((q as any).Banca || (q as any).banca || "").trim();
+        if (qBanca !== bancaFiltro) return false;
       }
-      return chain;
-    }
 
-    // Vincular filhos aos pais para formar a árvore recursiva
-    const roots: HierarchyTreeNode[] = [];
-    nodeMap.forEach(node => {
-      if (node.parent_id && nodeMap.has(node.parent_id)) {
-        nodeMap.get(node.parent_id)!.filhos.push(node);
-      } else {
-        roots.push(node);
+      if (statusFiltro === "erros") {
+        const st = userAnswers[String(q.id)];
+        if (!st || st.isCorrect) return false;
+      } else if (statusFiltro === "mais_erros") {
+        const st = userAnswers[String(q.id)];
+        if (!st || (st.errorCount || 0) <= 0) return false;
+      } else if (statusFiltro === "nao_feitas") {
+        if (userAnswers[String(q.id)]) return false;
+      } else if (statusFiltro === "duvidas") {
+        if (!duvidas.has(String(q.id))) return false;
       }
-    });
-    const sortChildren = (node: HierarchyTreeNode) => {
-      node.filhos.sort((a, b) => {
-        const orderA = a.ordem && a.ordem > 0 ? a.ordem : Number.MAX_SAFE_INTEGER;
-        const orderB = b.ordem && b.ordem > 0 ? b.ordem : Number.MAX_SAFE_INTEGER;
-        return orderA - orderB || a.nome.localeCompare(b.nome, "pt-BR");
-      });
-      node.filhos.forEach(sortChildren);
+
+      return true;
+    },
+    [plataformaFiltro, bancaFiltro, statusFiltro, userAnswers, duvidas]
+  );
+
+  // ── 2. Montar Estrutura Hierárquica em Árvore Completa (preservando organizacao_nos) ──
+  const { treeRoots, materiasAgrupadas, todosCadernos, unfilteredCadernos, parentOptions } = useMemo(() => {
+    const hasActiveQuestionFilter =
+      plataformaFiltro !== "todas" || bancaFiltro !== "Todas" || statusFiltro !== "todas";
+
+    const sortList = (list: BancoQuestion[]) => {
+      if (statusFiltro === "mais_erros") {
+        return [...list].sort((a, b) => {
+          const errDiff = (userAnswers[String(b.id)]?.errorCount || 0) - (userAnswers[String(a.id)]?.errorCount || 0);
+          if (errDiff !== 0) return errDiff;
+          return sortQuestoesByOrdem([a, b])[0] === a ? -1 : 1;
+        });
+      }
+      return sortQuestoesByOrdem(list);
     };
-    roots.forEach(sortChildren);
 
-    // Mapear cada questão para o nó final em organizacao_nos através de organizacao_id
-    const unlinkedQuestions: BancoQuestion[] = [];
+    const buildTree = (applyQuestionFilter: boolean) => {
+      const nodeMap = new Map<string, HierarchyTreeNode>();
 
-    questions.forEach(q => {
-      const effectiveOrgId = orgOverrides.get(String(q.id)) || (q as any).organizacao_id;
-      if (effectiveOrgId && nodeMap.has(String(effectiveOrgId))) {
-        // Encontra o nó final exato correspondente ao UUID
-        const targetNode = nodeMap.get(String(effectiveOrgId))!;
-        targetNode.questoes.push(q);
-      } else {
-        unlinkedQuestions.push(q);
-      }
-    });
-
-    // Se houver questões sem organizacao_id, agrupa em nós virtuais correspondentes à Matéria
-    unlinkedQuestions.forEach(q => {
-      const matName = (q.materia || (q as any).Disciplina || "Conhecimentos Bancários").trim();
-      let root = roots.find(r => r.nome.toLowerCase() === matName.toLowerCase());
-      if (!root) {
-        root = {
-          id: `root_virt_${matName.toLowerCase()}`,
-          nome: matName,
-          parent_id: null,
-          tipo: "materia",
-          ordem: 0,
+      dbNodes.forEach(n => {
+        nodeMap.set(String(n.id), {
+          id: String(n.id),
+          nome: n.nome.trim(),
+          parent_id: n.parent_id ? String(n.parent_id) : null,
+          tipo: n.tipo,
+          ordem: n.ordem ?? 0,
           filhos: [],
           questoes: [],
           totalDescendentesQuestoes: 0,
-        };
-        roots.push(root);
-        nodeMap.set(root.id, root);
-      }
+        });
+      });
 
-      const cadName = ((q as any).topico || (q as any)["Tópico"] || q.tema || (q as any).PROVA || "Geral").trim();
-      let cad = root.filhos.find(f => f.nome.toLowerCase() === cadName.toLowerCase());
-      if (!cad) {
-        cad = {
-          id: `cad_virt_${root.id}_${cadName.toLowerCase()}`,
-          nome: cadName,
-          parent_id: root.id,
-          tipo: "caderno",
-          ordem: 0,
-          filhos: [],
-          questoes: [],
-          totalDescendentesQuestoes: 0,
-        };
-        root.filhos.push(cad);
-        nodeMap.set(cad.id, cad);
-      }
-
-      const casoName = ((q as any).assunto || (q as any)["Assunto"] || (q as any)["Pergunta problema"] || "Geral").trim();
-      let caso = cad.filhos.find(f => f.nome.toLowerCase() === casoName.toLowerCase());
-      if (!caso) {
-        caso = {
-          id: `caso_virt_${cad.id}_${casoName.toLowerCase()}`,
-          nome: casoName,
-          parent_id: cad.id,
-          tipo: "caso",
-          ordem: 0,
-          filhos: [],
-          questoes: [],
-          totalDescendentesQuestoes: 0,
-        };
-        cad.filhos.push(caso);
-        nodeMap.set(caso.id, caso);
-      }
-
-      caso.questoes.push(q);
-    });
-
-    // Calcular contagem de descendentes recursivamente
-    function computeDescendants(node: HierarchyTreeNode): number {
-      let count = node.questoes.length;
-      for (const child of node.filhos) {
-        count += computeDescendants(child);
-      }
-      node.totalDescendentesQuestoes = count - node.questoes.length;
-      return count;
-    }
-    roots.forEach(r => computeDescendants(r));
-
-    // ── Converter a árvore em blocos Notion para o modo Cadernos ──
-    const materiasList: MateriaGroup[] = [];
-    const cadernosList: CadernoItem[] = [];
-
-    roots.forEach(root => {
-      const cadList: CadernoItem[] = [];
-
-      // Cada filho direto da raiz é um Caderno
-      root.filhos.forEach(cadNode => {
-        const casosList: CasoGroup[] = [];
-        const cadAllQuestions: BancoQuestion[] = [...cadNode.questoes];
-
-        // Filhos do caderno são os Casos
-        if (cadNode.filhos.length > 0) {
-          cadNode.filhos.forEach(casoNode => {
-            const casoAllQuestions: BancoQuestion[] = [...casoNode.questoes];
-            // Coleta questões de sub-subpastas se houver
-            function collectSubQuestions(n: HierarchyTreeNode) {
-              for (const sub of n.filhos) {
-                casoAllQuestions.push(...sub.questoes);
-                collectSubQuestions(sub);
-              }
-            }
-            collectSubQuestions(casoNode);
-
-            casosList.push({
-              id: casoNode.id,
-              nome: casoNode.nome,
-              questoes: casoAllQuestions,
-            });
-            cadAllQuestions.push(...casoAllQuestions);
-          });
+      const roots: HierarchyTreeNode[] = [];
+      nodeMap.forEach(node => {
+        if (node.parent_id && nodeMap.has(node.parent_id)) {
+          nodeMap.get(node.parent_id)!.filhos.push(node);
         } else {
-          // Se o caderno não tem subpastas filhas, ele mesmo é um caso
-          casosList.push({
-            id: cadNode.id,
-            nome: cadNode.nome,
-            questoes: cadNode.questoes,
-          });
+          roots.push(node);
+        }
+      });
+
+      const sortChildren = (node: HierarchyTreeNode) => {
+        node.filhos.sort((a, b) => {
+          const orderA = a.ordem && a.ordem > 0 ? a.ordem : Number.MAX_SAFE_INTEGER;
+          const orderB = b.ordem && b.ordem > 0 ? b.ordem : Number.MAX_SAFE_INTEGER;
+          return orderA - orderB || a.nome.localeCompare(b.nome, "pt-BR");
+        });
+        node.filhos.forEach(sortChildren);
+      };
+      roots.forEach(sortChildren);
+
+      const unlinkedQuestions: BancoQuestion[] = [];
+      const sourceQuestions = applyQuestionFilter ? questions.filter(questionMatchesFilters) : questions;
+
+      sourceQuestions.forEach(q => {
+        const effectiveOrgId = orgOverrides.get(String(q.id)) || (q as any).organizacao_id;
+        if (effectiveOrgId && nodeMap.has(String(effectiveOrgId))) {
+          nodeMap.get(String(effectiveOrgId))!.questoes.push(q);
+        } else {
+          unlinkedQuestions.push(q);
+        }
+      });
+
+      unlinkedQuestions.forEach(q => {
+        const matName = (q.materia || (q as any).Disciplina || "Conhecimentos Bancários").trim();
+        let root = roots.find(r => r.nome.toLowerCase() === matName.toLowerCase());
+        if (!root) {
+          root = {
+            id: `root_virt_${matName.toLowerCase()}`,
+            nome: matName,
+            parent_id: null,
+            tipo: "materia",
+            ordem: 0,
+            filhos: [],
+            questoes: [],
+            totalDescendentesQuestoes: 0,
+          };
+          roots.push(root);
+          nodeMap.set(root.id, root);
         }
 
-        casosList.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+        const cadName = ((q as any).topico || (q as any)["Tópico"] || q.tema || (q as any).PROVA || "Geral").trim();
+        let cad = root.filhos.find(f => f.nome.toLowerCase() === cadName.toLowerCase());
+        if (!cad) {
+          cad = {
+            id: `cad_virt_${root.id}_${cadName.toLowerCase()}`,
+            nome: cadName,
+            parent_id: root.id,
+            tipo: "caderno",
+            ordem: 0,
+            filhos: [],
+            questoes: [],
+            totalDescendentesQuestoes: 0,
+          };
+          root.filhos.push(cad);
+          nodeMap.set(cad.id, cad);
+        }
 
-        const cadItem: CadernoItem = {
-          id: cadNode.id,
-          nome: cadNode.nome,
-          materia: root.nome,
-          casos: casosList,
-          questoes: cadAllQuestions,
-        };
+        const casoName = ((q as any).assunto || (q as any)["Assunto"] || (q as any)["Pergunta problema"] || "Geral").trim();
+        let caso = cad.filhos.find(f => f.nome.toLowerCase() === casoName.toLowerCase());
+        if (!caso) {
+          caso = {
+            id: `caso_virt_${cad.id}_${casoName.toLowerCase()}`,
+            nome: casoName,
+            parent_id: cad.id,
+            tipo: "caso",
+            ordem: 0,
+            filhos: [],
+            questoes: [],
+            totalDescendentesQuestoes: 0,
+          };
+          cad.filhos.push(caso);
+          nodeMap.set(caso.id, caso);
+        }
 
-        cadList.push(cadItem);
-        cadernosList.push(cadItem);
+        caso.questoes.push(q);
       });
 
-      cadList.sort((a, b) => {
-        const nodeA = nodeMap.get(a.id);
-        const nodeB = nodeMap.get(b.id);
-        const orderA = nodeA?.ordem && nodeA.ordem > 0 ? nodeA.ordem : Number.MAX_SAFE_INTEGER;
-        const orderB = nodeB?.ordem && nodeB.ordem > 0 ? nodeB.ordem : Number.MAX_SAFE_INTEGER;
-        return orderA - orderB || a.nome.localeCompare(b.nome, "pt-BR");
+      const sortAndCount = (node: HierarchyTreeNode): number => {
+        node.questoes = sortList(node.questoes);
+        let total = node.questoes.length;
+        if (applyQuestionFilter) {
+          node.filhos = node.filhos.filter(child => sortAndCount(child) > 0);
+          total = node.questoes.length + node.filhos.reduce((acc, c) => acc + c.questoes.length + c.totalDescendentesQuestoes, 0);
+        } else {
+          for (const child of node.filhos) {
+            total += sortAndCount(child);
+          }
+        }
+        node.totalDescendentesQuestoes = total - node.questoes.length;
+        return total;
+      };
+
+      const finalRoots = applyQuestionFilter ? roots.filter(r => sortAndCount(r) > 0) : (roots.forEach(r => sortAndCount(r)), roots);
+
+      const materiasList: MateriaGroup[] = [];
+      const cadernosList: CadernoItem[] = [];
+
+      finalRoots.forEach(root => {
+        const cadList: CadernoItem[] = [];
+
+        root.filhos.forEach(cadNode => {
+          const casosList: CasoGroup[] = [];
+          const cadAllQuestions: BancoQuestion[] = [...cadNode.questoes];
+
+          if (cadNode.filhos.length > 0) {
+            cadNode.filhos.forEach(casoNode => {
+              const casoAllQuestions: BancoQuestion[] = [...casoNode.questoes];
+              function collectSubQuestions(n: HierarchyTreeNode) {
+                for (const sub of n.filhos) {
+                  casoAllQuestions.push(...sub.questoes);
+                  collectSubQuestions(sub);
+                }
+              }
+              collectSubQuestions(casoNode);
+
+              const sortedCasoQs = sortList(casoAllQuestions);
+              casosList.push({
+                id: casoNode.id,
+                nome: casoNode.nome,
+                questoes: sortedCasoQs,
+              });
+              cadAllQuestions.push(...sortedCasoQs);
+            });
+          } else {
+            casosList.push({
+              id: cadNode.id,
+              nome: cadNode.nome,
+              questoes: sortList(cadNode.questoes),
+            });
+          }
+
+          casosList.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+
+          const cadItem: CadernoItem = {
+            id: cadNode.id,
+            nome: cadNode.nome,
+            materia: root.nome,
+            casos: casosList,
+            questoes: sortList(cadAllQuestions),
+          };
+
+          cadList.push(cadItem);
+          cadernosList.push(cadItem);
+        });
+
+        cadList.sort((a, b) => {
+          const nodeA = nodeMap.get(a.id);
+          const nodeB = nodeMap.get(b.id);
+          const orderA = nodeA?.ordem && nodeA.ordem > 0 ? nodeA.ordem : Number.MAX_SAFE_INTEGER;
+          const orderB = nodeB?.ordem && nodeB.ordem > 0 ? nodeB.ordem : Number.MAX_SAFE_INTEGER;
+          return orderA - orderB || a.nome.localeCompare(b.nome, "pt-BR");
+        });
+
+        materiasList.push({
+          id: root.id,
+          nome: root.nome,
+          icone: getMateriaIcon(root.nome),
+          cadernos: cadList,
+          totalQuestoes: root.questoes.length + root.totalDescendentesQuestoes,
+        });
       });
 
-      materiasList.push({
-        id: root.id,
-        nome: root.nome,
-        icone: getMateriaIcon(root.nome),
-        cadernos: cadList,
-        totalQuestoes: root.questoes.length + root.totalDescendentesQuestoes,
-      });
-    });
+      materiasList.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+      cadernosList.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 
-    materiasList.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-    cadernosList.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+      return { finalRoots, materiasList, cadernosList };
+    };
 
-    // Opções para o select de criar pasta
+    const rawTree = buildTree(false);
+    const filteredTree = hasActiveQuestionFilter ? buildTree(true) : rawTree;
+
+    // Opções completas de organizacao_nos para o select de criar pasta
     const options: { id: string; nome: string; nivel: string }[] = [];
-    roots.forEach(rn => {
+    rawTree.finalRoots.forEach(rn => {
       options.push({ id: rn.id, nome: rn.nome, nivel: "🏛️ [Matéria Raiz]" });
       rn.filhos.forEach(cn => {
         options.push({ id: cn.id, nome: `${rn.nome} → ${cn.nome}`, nivel: "  📁 [Subpasta / Caderno]" });
@@ -1987,17 +2281,60 @@ export default function CadernosTab({
     });
 
     return {
-      treeRoots: roots,
-      materiasAgrupadas: materiasList,
-      todosCadernos: cadernosList,
+      treeRoots: filteredTree.finalRoots,
+      materiasAgrupadas: filteredTree.materiasList,
+      todosCadernos: filteredTree.cadernosList,
+      unfilteredCadernos: rawTree.cadernosList,
       parentOptions: options,
     };
-  }, [dbNodes, questions, orgOverrides]);
+  }, [dbNodes, questions, orgOverrides, plataformaFiltro, bancaFiltro, statusFiltro, questionMatchesFilters, userAnswers]);
 
-  // Lista de matérias para filtros em pills
+  const selectedCaderno = useMemo(() => {
+    if (!selectedCadernoId) return null;
+    return unfilteredCadernos.find(c => c.id === selectedCadernoId) || null;
+  }, [selectedCadernoId, unfilteredCadernos]);
+
+  // Lista de matérias, bancas e contagens por plataforma
   const materiasDisponiveis = useMemo(() => {
     return materiasAgrupadas.map(m => m.nome);
   }, [materiasAgrupadas]);
+
+  const bancasDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    questions.forEach(q => {
+      const b = String((q as any).Banca || (q as any).banca || "").trim();
+      if (b) set.add(b);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [questions]);
+
+  const platformCounts = useMemo(() => {
+    let qc = 0;
+    let gran = 0;
+    let tec = 0;
+    questions.forEach(q => {
+      const { idq, idg, idtec } = getQuestionIds(q);
+      if (idq) qc++;
+      if (idg) gran++;
+      if (idtec) tec++;
+    });
+    return { todas: questions.length, qc, gran, tec };
+  }, [questions]);
+
+  const allErrorQueue = useMemo(() => {
+    return sortQuestoesByOrdem(
+      questions.filter(q => {
+        const st = userAnswers[String(q.id)];
+        if (!st || st.isCorrect) return false;
+        if (!matchesPlataforma(q, plataformaFiltro)) return false;
+        if (bancaFiltro !== "Todas") {
+          const qb = String((q as any).Banca || (q as any).banca || "").trim();
+          if (qb !== bancaFiltro) return false;
+        }
+        return true;
+      })
+    );
+  }, [questions, userAnswers, plataformaFiltro, bancaFiltro]);
 
   // Estatísticas globais do usuário
   const { acertadasCount, erradasCount, duvidasCount, respondidasTotal, taxaAcertoGlobal } = useMemo(() => {
@@ -2159,25 +2496,54 @@ export default function CadernosTab({
     }
   };
 
+  // Filtragem de matérias (busca também por IDs QC/Gran/TEC, Banca e Prova)
+  const materiasFiltradas = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return materiasAgrupadas.filter(m => {
+      if (materiaFiltro !== "Todas" && m.nome !== materiaFiltro) return false;
+      if (term) {
+        const matchMateria = m.nome.toLowerCase().includes(term);
+        const matchCaderno = m.cadernos.some(c => {
+          if (c.nome.toLowerCase().includes(term)) return true;
+          return c.questoes.some(q => {
+            const { idq, idg, idtec } = getQuestionIds(q);
+            const banca = String((q as any).Banca || (q as any).banca || "").toLowerCase();
+            const prova = String(q.prova || (q as any).PROVA || "").toLowerCase();
+            return (
+              (idq && idq.toLowerCase().includes(term)) ||
+              (idg && idg.toLowerCase().includes(term)) ||
+              (idtec && idtec.toLowerCase().includes(term)) ||
+              banca.includes(term) ||
+              prova.includes(term)
+            );
+          });
+        });
+        if (!matchMateria && !matchCaderno) return false;
+      }
+      return true;
+    });
+  }, [materiasAgrupadas, materiaFiltro, search]);
+
   // ── Se estiver na visão dedicada de um Caderno Selecionado ──
   if (selectedCaderno) {
     return (
-      <div className="flex w-full max-w-[1200px] mx-auto flex-col gap-4 bg-[#080d1a] rounded-2xl border border-white/[0.06] p-4 sm:p-5 relative overflow-hidden">
+      <div className="flex w-full max-w-[1200px] mx-auto flex-col gap-3 sm:gap-4 bg-[#080d1a] rounded-xl sm:rounded-2xl border border-white/[0.06] p-2.5 sm:p-5 relative overflow-hidden">
 
           <QuestionClassificationContext.Provider value={{ difficultyOverrides, onChangeDifficulty: handleChangeDifficulty }}>
           <CadernoDedicatedView
           caderno={selectedCaderno}
           onBack={() => {
-            setSelectedCaderno(null);
+            setSelectedCadernoId(null);
             setCadernoFiltro("Todos");
           }}
           userAnswers={userAnswers}
           duvidas={duvidas}
           onOpenQuestion={handleOpenQuestionInModal}
-          onTrainAll={() => {
+          onTrainAll={(queue) => {
             if (!user) { onShowAuth(); return; }
-            if (selectedCaderno.questoes.length > 0) {
-              handleOpenQuestionInModal(selectedCaderno.questoes[0], selectedCaderno.questoes);
+            const targetQueue = queue && queue.length > 0 ? queue : selectedCaderno.questoes;
+            if (targetQueue.length > 0) {
+              handleOpenQuestionInModal(targetQueue[0], targetQueue);
             }
           }}
           onDropQuestion={handleDropQuestion}
@@ -2197,7 +2563,9 @@ export default function CadernosTab({
           onPrintCaso={handlePrintCaso}
           onDeleteCaderno={handleDeleteCaderno}
           onMoverCaso={handleMoverCaso}
-          todosCadernos={todosCadernos}
+          todosCadernos={unfilteredCadernos}
+          plataformaFiltro={plataformaFiltro}
+          onChangePlataformaFiltro={setPlataformaFiltro}
         />
           </QuestionClassificationContext.Provider>
 
@@ -2287,7 +2655,7 @@ export default function CadernosTab({
         {/* Toast Notification */}
         {toastMsg && (
           <div
-            className={`fixed bottom-6 right-6 z-[120] flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg border text-xs font-medium ${
+            className={`fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 z-[120] flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg border text-xs font-medium ${
               toastMsg.type === "success"
                 ? "bg-[#0d1627] border-emerald-500/40 text-emerald-300"
                 : "bg-[#251016] border-rose-500/40 text-rose-300"
@@ -2305,54 +2673,49 @@ export default function CadernosTab({
     );
   }
 
-  // Filtragem de matérias
-  const materiasFiltradas = materiasAgrupadas.filter(m => {
-    if (materiaFiltro !== "Todas" && m.nome !== materiaFiltro) return false;
-    if (search.trim()) {
-      const term = search.toLowerCase();
-      const matchMateria = m.nome.toLowerCase().includes(term);
-      const matchCaderno = m.cadernos.some(c => c.nome.toLowerCase().includes(term));
-      if (!matchMateria && !matchCaderno) return false;
-    }
-    return true;
-  });
-
   return (
     <QuestionClassificationContext.Provider value={{ difficultyOverrides, onChangeDifficulty: handleChangeDifficulty }}>
-    <div className="flex w-full max-w-[1200px] mx-auto flex-col gap-4 bg-[#0a0e18] rounded-2xl border border-white/[0.07] p-3 sm:p-4 relative overflow-hidden">
+    <div className="flex w-full max-w-[1200px] mx-auto flex-col gap-3 sm:gap-4 bg-[#0a0e18] rounded-xl sm:rounded-2xl border border-white/[0.07] p-2.5 sm:p-4 relative overflow-hidden">
 
-      {/* ── Toolbar Superior Ultra-Compacta ── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.07] relative z-10">
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto">
+      {/* ── Toolbar Superior: Caderno de Erros ── */}
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 pb-3 border-b border-white/[0.07] relative z-10">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full lg:w-auto">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
-              <BookMarked size={14} className="text-indigo-400" />
+            <div className="w-7 h-7 rounded-xl bg-rose-600/20 border border-rose-500/30 flex items-center justify-center shrink-0">
+              <BookMarked size={14} className="text-rose-400" />
             </div>
-            <h2 className="text-sm sm:text-base font-semibold text-slate-100 tracking-tight">Cadernos de Questões</h2>
+            <div>
+              <h2 className="text-sm sm:text-base font-semibold text-slate-100 tracking-tight leading-tight">
+                Caderno de Erros
+              </h2>
+              <p className="text-[10px] text-slate-500 hidden sm:block">
+                Organização por nós, ordem, banca e plataforma (QC · Gran · TEC)
+              </p>
+            </div>
           </div>
 
           {user && (
             <div className="flex items-center gap-1.5 pl-0 sm:pl-2 sm:border-l sm:border-white/10 w-full sm:w-auto overflow-x-auto custom-scrollbar flex-nowrap py-1">
               {/* Total de questões */}
-              <span className="text-[10px] sm:text-[11px] font-normal text-slate-300 flex items-center gap-1 bg-white/[0.03] border border-white/[0.07] px-2 sm:px-2.5 py-1 rounded-lg shrink-0" title="Total de questões cadastradas">
+              <span className="text-[10px] sm:text-[11px] font-normal text-slate-300 flex items-center gap-1 bg-white/[0.03] border border-white/[0.07] px-2 sm:px-2.5 py-1 rounded-lg shrink-0 tabular-nums" title="Total de questões cadastradas">
                 <BookMarked size={11} className="text-indigo-400/80" />
                 <span className="text-indigo-300 font-bold">{questions.length} quest.</span>
               </span>
 
               {/* Acertos */}
-              <span className="text-[10px] sm:text-[11px] font-normal text-slate-300 flex items-center gap-1 bg-white/[0.03] border border-white/[0.07] px-2 sm:px-2.5 py-1 rounded-lg shrink-0" title="Total de acertos">
+              <span className="text-[10px] sm:text-[11px] font-normal text-slate-300 flex items-center gap-1 bg-white/[0.03] border border-white/[0.07] px-2 sm:px-2.5 py-1 rounded-lg shrink-0 tabular-nums" title="Total de acertos">
                 <Check size={11} className="text-emerald-400/80 stroke-[2]" />
                 <span className="text-emerald-400/90 font-medium">{acertadasCount} acertos</span>
               </span>
 
               {/* Erros */}
-              <span className="text-[10px] sm:text-[11px] font-normal text-slate-300 flex items-center gap-1 bg-white/[0.03] border border-white/[0.07] px-2 sm:px-2.5 py-1 rounded-lg shrink-0" title="Total de erros">
-                <X size={11} className="text-rose-400/80 stroke-[2]" />
-                <span className="text-rose-400/90 font-medium">{erradasCount} erros</span>
+              <span className="text-[10px] sm:text-[11px] font-normal text-slate-300 flex items-center gap-1 bg-rose-500/10 border border-rose-500/25 px-2 sm:px-2.5 py-1 rounded-lg shrink-0 tabular-nums" title="Total de erros">
+                <X size={11} className="text-rose-400 stroke-[2]" />
+                <span className="text-rose-300 font-semibold">{erradasCount} erros</span>
               </span>
 
               {/* Dúvidas */}
-              <span className="text-[10px] sm:text-[11px] font-normal text-slate-300 flex items-center gap-1 bg-white/[0.03] border border-white/[0.07] px-2 sm:px-2.5 py-1 rounded-lg shrink-0" title="Em dúvida">
+              <span className="text-[10px] sm:text-[11px] font-normal text-slate-300 flex items-center gap-1 bg-white/[0.03] border border-white/[0.07] px-2 sm:px-2.5 py-1 rounded-lg shrink-0 tabular-nums" title="Em dúvida">
                 <Flag size={11} className="text-amber-400/80 fill-amber-400/10" />
                 <span className="text-amber-400/90 font-medium">{duvidasCount} dúvidas</span>
               </span>
@@ -2360,7 +2723,7 @@ export default function CadernosTab({
               {/* Aproveitamento */}
               {respondidasTotal > 0 && (
                 <span
-                  className={`text-[10px] sm:text-[11px] font-medium px-2 sm:px-2.5 py-1 rounded-lg border bg-white/[0.03] border-white/[0.07] shrink-0 ${
+                  className={`text-[10px] sm:text-[11px] font-medium px-2 sm:px-2.5 py-1 rounded-lg border bg-white/[0.03] border-white/[0.07] shrink-0 tabular-nums ${
                     taxaAcertoGlobal >= 70
                       ? "text-emerald-400/90"
                       : taxaAcertoGlobal >= 50
@@ -2369,15 +2732,27 @@ export default function CadernosTab({
                   }`}
                   title="Taxa de aproveitamento"
                 >
-                  🎯 {taxaAcertoGlobal}%
+                  {taxaAcertoGlobal}%
                 </span>
               )}
             </div>
           )}
         </div>
 
-        {/* Alternador de Modo de Visualização (Notion Cards x Árvore) + Alternante Recolher/Expandir + Botão Nova Pasta */}
-        <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 w-full sm:w-auto sm:ml-auto flex-wrap">
+        {/* Ações: Revisar Todos os Erros + Modos de Visualização + Nova Pasta */}
+        <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 w-full lg:w-auto lg:ml-auto flex-wrap">
+          {allErrorQueue.length > 0 && (
+            <button
+              type="button"
+              onClick={() => handleOpenQuestionInModal(allErrorQueue[0], allErrorQueue)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-200 rounded-xl text-[11px] font-bold transition-colors"
+              title="Abrir todas as questões erradas em sequência"
+            >
+              <AlertTriangle size={12} className="text-rose-400" />
+              <span>Revisar Erros ({allErrorQueue.length})</span>
+            </button>
+          )}
+
           {viewMode === "blocos" && (
             <div className="flex items-center gap-1 bg-[#101526] p-0.5 rounded-xl border border-white/[0.08]">
               <button
@@ -2401,10 +2776,10 @@ export default function CadernosTab({
             </div>
           )}
 
-          <div className="flex items-center gap-1 bg-[#101526] p-0.5 rounded-xl border border-white/[0.08]">
+          <div className="flex items-center gap-1 bg-[#101526] p-0.5 rounded-xl border border-white/[0.08] overflow-x-auto custom-scrollbar flex-nowrap max-w-full">
             <button
               onClick={() => setViewMode("blocos")}
-              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors ${
+              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap ${
                 viewMode === "blocos"
                   ? "bg-indigo-600 text-white"
                   : "text-slate-400 hover:text-white"
@@ -2415,7 +2790,7 @@ export default function CadernosTab({
             </button>
             <button
               onClick={() => setViewMode("arvore")}
-              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors ${
+              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap ${
                 viewMode === "arvore"
                   ? "bg-indigo-600 text-white"
                   : "text-slate-400 hover:text-white"
@@ -2426,7 +2801,7 @@ export default function CadernosTab({
             </button>
             <button
               onClick={() => setViewMode("mapa")}
-              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors ${
+              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap ${
                 viewMode === "mapa"
                   ? "bg-indigo-600 text-white"
                   : "text-slate-400 hover:text-white"
@@ -2439,7 +2814,7 @@ export default function CadernosTab({
             </button>
             <button
               onClick={() => setViewMode("caderno_plus")}
-              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors ${
+              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap ${
                 viewMode === "caderno_plus" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"
               }`}
               aria-pressed={viewMode === "caderno_plus"}
@@ -2467,14 +2842,14 @@ export default function CadernosTab({
       {/* ── Barra Superior de Controles e Filtros ── */}
       <div className="flex flex-col gap-2.5 sm:gap-3 bg-[#0d1220] p-2.5 sm:p-3 rounded-xl border border-white/[0.07] relative z-10">
         {/* Linha 1: Controles de Busca, Caderno e Filtro de Status */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5 sm:gap-3">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 flex-1">
-            {/* Campo de Busca */}
-            <div className="relative w-full sm:w-60">
+            {/* Campo de Busca (inclui IDs, Banca, Prova e Cadernos) */}
+            <div className="relative w-full sm:w-64">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
               <input
                 type="text"
-                placeholder="Buscar caderno ou pasta..."
+                placeholder="Buscar caderno, ID (QC/Gran/TEC) ou banca..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="w-full bg-[#070b14] border border-white/[0.08] hover:border-white/[0.16] rounded-xl pl-8 pr-7 py-1.5 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50 transition-colors font-normal"
@@ -2498,17 +2873,17 @@ export default function CadernosTab({
                   const val = e.target.value;
                   setCadernoFiltro(val);
                   if (val !== "Todos") {
-                    const found = todosCadernos.find(c => c.nome === val);
-                    if (found) setSelectedCaderno(found);
+                    const found = unfilteredCadernos.find(c => c.nome === val);
+                    if (found) setSelectedCadernoId(found.id);
                   }
                 }}
                 className="bg-transparent text-slate-200 text-xs font-medium focus:outline-none cursor-pointer border-none w-full sm:max-w-[200px] truncate"
                 style={{ backgroundColor: "#070b14", color: "#e2e8f0" }}
               >
                 <option value="Todos" className="bg-[#0d1222] text-slate-200">
-                  Todos os Cadernos ({todosCadernos.length})
+                  Todos os Cadernos ({unfilteredCadernos.length})
                 </option>
-                {todosCadernos.map(c => (
+                {unfilteredCadernos.map(c => (
                   <option key={c.id} value={c.nome} className="bg-[#0d1222] text-slate-200">
                     {c.nome} ({c.materia})
                   </option>
@@ -2566,24 +2941,76 @@ export default function CadernosTab({
           </div>
         </div>
 
-        {/* Filtro de matéria em lista suspensa */}
-        <div className="flex items-center gap-2 pt-3 border-t border-white/[0.06]">
-          <label htmlFor="cadernos-materia-filtro" className="text-[10px] font-medium text-slate-500 uppercase tracking-wider shrink-0 flex items-center gap-1">
-            <Filter size={10} /> Matéria:
-          </label>
-          <select
-            id="cadernos-materia-filtro"
-            value={materiaFiltro}
-            onChange={e => setMateriaFiltro(e.target.value)}
-            className="max-w-full bg-[#070b14] border border-white/[0.08] hover:border-white/[0.16] rounded-lg px-3 py-1.5 text-[11px] text-slate-300 focus:outline-none focus:border-indigo-500/50 cursor-pointer"
-            style={{ backgroundColor: "#070b14", color: "#cbd5e1" }}
-          >
-            {["Todas", ...materiasDisponiveis].map(m => (
-              <option key={m} value={m} className="bg-[#0d1222] text-slate-200">
-                {m === "Todas" ? "Todas as matérias" : m}
-              </option>
-            ))}
-          </select>
+        {/* Linha 2: Plataforma (Todas / Qconcursos / Gran / TEC) + Matéria + Banca */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 pt-2.5 border-t border-white/[0.06]">
+          {/* Filtro de Plataforma por ID */}
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider shrink-0">
+              Plataforma:
+            </span>
+            <div className="flex items-center gap-1 bg-[#070b14] p-1 rounded-xl border border-white/[0.08] overflow-x-auto custom-scrollbar flex-nowrap max-w-full">
+              {[
+                { id: "todas" as PlataformaFiltro, label: `Todas (${platformCounts.todas})`, activeCls: "bg-indigo-600 text-white" },
+                { id: "qconcursos" as PlataformaFiltro, label: `Qconcursos (${platformCounts.qc})`, activeCls: "bg-amber-600 text-white" },
+                { id: "gran" as PlataformaFiltro, label: `Gran (${platformCounts.gran})`, activeCls: "bg-cyan-600 text-white" },
+                { id: "tec" as PlataformaFiltro, label: `TEC (${platformCounts.tec})`, activeCls: "bg-violet-600 text-white" },
+              ].map((plat) => (
+                <button
+                  key={plat.id}
+                  type="button"
+                  onClick={() => setPlataformaFiltro(plat.id)}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap shrink-0 tabular-nums ${
+                    plataformaFiltro === plat.id ? plat.activeCls : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  {plat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Selects de Matéria e Banca */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 flex-1 sm:flex-initial">
+              <label htmlFor="cadernos-materia-filtro" className="text-[10px] font-medium text-slate-500 uppercase tracking-wider shrink-0 flex items-center gap-1">
+                <Filter size={10} /> Matéria:
+              </label>
+              <select
+                id="cadernos-materia-filtro"
+                value={materiaFiltro}
+                onChange={e => setMateriaFiltro(e.target.value)}
+                className="w-full sm:w-auto max-w-full bg-[#070b14] border border-white/[0.08] hover:border-white/[0.16] rounded-lg px-2.5 py-1.5 text-[11px] text-slate-300 focus:outline-none focus:border-indigo-500/50 cursor-pointer"
+                style={{ backgroundColor: "#070b14", color: "#cbd5e1" }}
+              >
+                {["Todas", ...materiasDisponiveis].map(m => (
+                  <option key={m} value={m} className="bg-[#0d1222] text-slate-200">
+                    {m === "Todas" ? "Todas as matérias" : m}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {bancasDisponiveis.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-1 sm:flex-initial">
+                <label htmlFor="cadernos-banca-filtro" className="text-[10px] font-medium text-slate-500 uppercase tracking-wider shrink-0">
+                  Banca:
+                </label>
+                <select
+                  id="cadernos-banca-filtro"
+                  value={bancaFiltro}
+                  onChange={e => setBancaFiltro(e.target.value)}
+                  className="w-full sm:w-auto max-w-full bg-[#070b14] border border-white/[0.08] hover:border-white/[0.16] rounded-lg px-2.5 py-1.5 text-[11px] text-slate-300 focus:outline-none focus:border-indigo-500/50 cursor-pointer"
+                  style={{ backgroundColor: "#070b14", color: "#cbd5e1" }}
+                >
+                  {["Todas", ...bancasDisponiveis].map(b => (
+                    <option key={b} value={b} className="bg-[#0d1222] text-slate-200">
+                      {b === "Todas" ? "Todas as bancas" : b}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -2696,11 +3123,13 @@ export default function CadernosTab({
                                       const answer = userAnswers[String(q.id)];
                                       const doubt = duvidas.has(String(q.id));
                                       const qStatus = answer ? (answer.isCorrect ? "Acertou" : "Errou") : doubt ? "Dúvida · não respondida" : "Não respondida";
-                                      const qId = (q as any).ID_Qconcursos || (q as any).Ordem || q.id;
+                                      const { idq, idg, idtec } = getQuestionIds(q);
+                                      const ord = (q as any).Ordem ?? (q as any).ordem;
+                                      const qId = idq || idg || idtec || `#${q.id}`;
                                       const category = CATEGORIES.find(c => c.key === resolveCategory(q));
                                       return (
-                                        <button key={q.id} type="button" onClick={() => handleOpenQuestionInModal(q, caso.questoes)} title={`Questão ${qId} · ${qStatus} · ${category?.label || "Média"}`} className={`inline-flex items-center gap-1 rounded border px-1.5 py-1 text-[9px] transition-colors hover:border-indigo-400/40 ${answer ? (answer.isCorrect ? "border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-300" : "border-rose-500/20 bg-rose-500/[0.06] text-rose-300") : doubt ? "border-amber-500/20 bg-amber-500/[0.05] text-amber-300" : "border-white/[0.07] bg-white/[0.02] text-slate-400"}`}>
-                                          <span className="text-slate-500">{index + 1}.</span><span>Q{qId}</span>
+                                        <button key={q.id} type="button" onClick={() => handleOpenQuestionInModal(q, caso.questoes)} title={`Ordem #${ord || index + 1} · ${qId} · ${qStatus} · ${category?.label || "Média"}`} className={`inline-flex items-center gap-1 rounded border px-1.5 py-1 text-[9px] transition-colors hover:border-indigo-400/40 ${answer ? (answer.isCorrect ? "border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-300" : "border-rose-500/20 bg-rose-500/[0.06] text-rose-300") : doubt ? "border-amber-500/20 bg-amber-500/[0.05] text-amber-300" : "border-white/[0.07] bg-white/[0.02] text-slate-400"}`}>
+                                          <span className="text-slate-500">#{ord ?? index + 1}</span><span>{qId}</span>
                                           <span className="hidden border-l border-current/20 pl-1 text-[8px] opacity-70 sm:inline">{category?.label || "Média"}</span>
                                         </button>
                                       );
@@ -2881,6 +3310,8 @@ export default function CadernosTab({
                 setSearch("");
                 setMateriaFiltro("Todas");
                 setCadernoFiltro("Todos");
+                setPlataformaFiltro("todas");
+                setBancaFiltro("Todas");
                 setStatusFiltro("todas");
               }}
               className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold"
@@ -3037,7 +3468,7 @@ export default function CadernosTab({
                               ? "bg-[#101623] hover:bg-[#182131]"
                               : "bg-[#0c111c] hover:bg-[#151d2a]"
                           }`}
-                          onClick={() => setSelectedCaderno(caderno)}
+                          onClick={() => setSelectedCadernoId(caderno.id)}
                         >
                           {/* Nome do caderno */}
                           <div className="flex items-center gap-1.5 min-w-0">
@@ -3067,8 +3498,22 @@ export default function CadernosTab({
                             </span>
                           </div>
 
-                          {/* Botão abrir + ações administrativas com touch targets confortáveis */}
+                          {/* Botão revisar erros + abrir + ações administrativas com touch targets confortáveis */}
                           <div className="flex items-center gap-1 shrink-0">
+                            {cErros > 0 && (
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  const errQs = caderno.questoes.filter(q => userAnswers[String(q.id)]?.isCorrect === false);
+                                  if (errQs.length > 0) handleOpenQuestionInModal(errQs[0], errQs);
+                                }}
+                                title={`Revisar ${cErros} erro(s) deste caderno`}
+                                className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-[9.5px] font-semibold text-rose-300 transition-colors"
+                              >
+                                <Play size={8} fill="currentColor" /> Erros
+                              </button>
+                            )}
                             {isAdminState && (
                               <div className="flex items-center gap-0.5" onClick={(event) => event.stopPropagation()}>
                                 <span className="flex h-6 w-6 cursor-grab items-center justify-center rounded border border-white/[0.08] bg-white/[0.03] text-slate-500 active:cursor-grabbing" title="Arraste para reorganizar este caderno">
@@ -3196,7 +3641,7 @@ export default function CadernosTab({
       {/* Toast Notification */}
       {toastMsg && (
         <div
-          className={`fixed bottom-6 right-6 z-[120] flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg border text-xs font-medium ${
+          className={`fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 z-[120] flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg border text-xs font-medium ${
             toastMsg.type === "success"
               ? "bg-[#0d1627] border-emerald-500/40 text-emerald-300"
               : "bg-[#251016] border-rose-500/40 text-rose-300"

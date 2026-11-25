@@ -23,6 +23,7 @@ import Book3DScene from "../../components/biblioteca/Book3DScene";
 import OpenBookReader from "../../components/biblioteca/OpenBookReader";
 import type { Caderno3DItem, Caso3DGroup } from "../../components/biblioteca/types";
 import { BOOK_PALETTES } from "../../components/biblioteca/bookTextureGenerator";
+import { normalizarQuestao } from "../../lib/questionService";
 
 export default function Biblioteca3DPage() {
   const router = useRouter();
@@ -83,44 +84,7 @@ export default function Biblioteca3DPage() {
 
       if (qErr) throw qErr;
 
-      const normalized: BancoQuestion[] = (qData || []).map((row: any) => ({
-        id: row.id,
-        materia: row.Materia || row.Disciplina || row.materia || row.disciplina || "Geral",
-        tema: row.tema || row.Tema || row.Tópico || row.Assunto || undefined,
-        title: row.Enunciado || row.enunciado || row.texto || row.title || "",
-        dificuldade: row.dificuldade || row.Dificuldade || undefined,
-        prova: row.PROVA || row.prova || undefined,
-        dat: row.created_at || row.dat || undefined,
-        referencia: row.referencia || undefined,
-        "Alternativa A": row["Alternativa A"] || row.alternativa_a || undefined,
-        "Alternativa B": row["Alternativa B"] || row.alternativa_b || undefined,
-        "Alternativa C": row["Alternativa C"] || row.alternativa_c || undefined,
-        "Alternativa D": row["Alternativa D"] || row.alternativa_d || undefined,
-        "Alternativa E": row["Alternativa E"] || row.alternativa_e || undefined,
-        "Texto de apoio": row["Texto de apoio"] || row.texto_apoio || undefined,
-        perguntaProblema:
-          row["Pergunta problema"] !== undefined
-            ? row["Pergunta problema"]
-            : row.pergunta_problema || row.perguntaProblema || undefined,
-        respostaCorreta:
-          row.respostaCorreta || row.resposta_correta || row.Gabarito || row.gabarito || undefined,
-        Gabarito: row.Gabarito || row.gabarito || undefined,
-        explicacao:
-          row["Comentário"] ||
-          row.Comentário ||
-          row.comentario ||
-          row.Comentario ||
-          row.explicacao ||
-          row.Explicacao ||
-          undefined,
-        created_at: row.created_at || undefined,
-        imagemEnunciado: row.Imagem_Enunciado || row.imagemEnunciado || undefined,
-        Ano: row.Ano ? Number(row.Ano) : undefined,
-        ID_Qconcursos: row.ID_Qconcursos || undefined,
-        link: row.link || undefined,
-        organizacao_id: row.organizacao_id || undefined,
-        Duvida: typeof row.Duvida === "boolean" ? row.Duvida : undefined,
-      }));
+      const normalized: BancoQuestion[] = (qData || []).map(normalizarQuestao);
 
       setQuestions(normalized);
     } catch (err: any) {

@@ -31,6 +31,7 @@ import {
   Flag,
 } from 'lucide-react';
 import { supabase, supabasePublic } from '../../lib/supabase';
+import { getQuestionIds, matchesPlataforma, type PlataformaFiltro } from '../../lib/questionService';
 import { PrintSimuladoModal } from './PrintSimuladoModal';
 import { ImportJsonModal } from './ImportJsonModal';
 
@@ -59,9 +60,21 @@ export interface BancoQuestion {
   comentario?: string;
   "Comentário"?: string;
   imagemEnunciado?: string;
-  // Campos da nova arquitetura (Etapa 1)
-  Ano?: number;
+  // Campos da nova arquitetura (Etapa 1 & Etapa 2 Caderno de Erros)
+  Ano?: string | number;
+  Ordem?: number | null;
+  ordem?: number | null;
+  Banca?: string;
+  banca?: string;
+  Disciplina?: string;
+  disciplina?: string;
   ID_Qconcursos?: string;
+  Idq?: string;
+  idq?: string;
+  Idg?: string;
+  idg?: string;
+  Idtec?: string;
+  idtec?: string;
   link?: string;
   organizacao_id?: string;
   Duvida?: boolean;
@@ -150,6 +163,7 @@ export default function QuestionsTable({
   const [materiaFilter, setMateriaFilter] = useState('Todas');
   const [provaFilter, setProvaFilter] = useState('Todas');
   const [statusFilter, setStatusFilter] = useState('Todos');
+  const [plataformaFilter, setPlataformaFilter] = useState<PlataformaFiltro>('todas');
   const [viewMode, setViewMode] = useState<'list' | 'category'>('list');
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -179,7 +193,7 @@ export default function QuestionsTable({
   // Resetar página ao mudar filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, materiaFilter, provaFilter, statusFilter]);
+  }, [searchTerm, materiaFilter, provaFilter, statusFilter, plataformaFilter]);
 
   const getStatus = useCallback((id: any) => {
     const answer = userAnswers[String(id)];
@@ -192,15 +206,22 @@ export default function QuestionsTable({
   const filteredQuestions = useMemo(() => {
     const term = norm(searchTerm);
     return questions.filter(q => {
+      const { idq, idg, idtec } = getQuestionIds(q);
       const matchesSearch =
         !term ||
         norm(q.title).includes(term) ||
         norm(q.materia).includes(term) ||
         norm(q.tema).includes(term) ||
+        norm(q.Banca || q.banca).includes(term) ||
+        norm(q.prova).includes(term) ||
+        norm(idq).includes(term) ||
+        norm(idg).includes(term) ||
+        norm(idtec).includes(term) ||
         String(q.id || "").includes(term);
 
       const matchesMateria = materiaFilter === 'Todas' || norm(q.materia) === norm(materiaFilter);
       const matchesProva = provaFilter === 'Todas' || norm(q.prova) === norm(provaFilter);
+      const matchesPlat = matchesPlataforma(q, plataformaFilter);
 
       const status = getStatus(q.id);
       const isDuv = duvidas ? duvidas.has(String(q.id)) : false;
@@ -211,9 +232,9 @@ export default function QuestionsTable({
         (statusFilter === 'Erradas' && status === 'Errei') ||
         (statusFilter === 'Pendente' && status === 'Pendente');
 
-      return matchesSearch && matchesMateria && matchesProva && matchesStatus;
+      return matchesSearch && matchesMateria && matchesProva && matchesPlat && matchesStatus;
     });
-  }, [questions, searchTerm, materiaFilter, provaFilter, statusFilter, getStatus, duvidas]);
+  }, [questions, searchTerm, materiaFilter, provaFilter, plataformaFilter, statusFilter, getStatus, duvidas]);
 
   // Previne loop de renderização infinita checando assinatura do array
   const prevFilterSig = useRef("");
@@ -235,7 +256,7 @@ export default function QuestionsTable({
   }, [filteredQuestions, currentPage, pageSize]);
 
   // Stats (Dinâmicos conforme filtro) memoizados
-  const isFiltered = materiaFilter !== 'Todas' || provaFilter !== 'Todas' || statusFilter !== 'Todos' || searchTerm.trim() !== '';
+  const isFiltered = materiaFilter !== 'Todas' || provaFilter !== 'Todas' || statusFilter !== 'Todos' || plataformaFilter !== 'todas' || searchTerm.trim() !== '';
   const currentTotal = filteredQuestions.length;
   const answeredCount = useMemo(() => filteredQuestions.filter(q => userAnswers[String(q.id)]).length, [filteredQuestions, userAnswers]);
   const correctCount = useMemo(() => filteredQuestions.filter(q => userAnswers[String(q.id)]?.isCorrect).length, [filteredQuestions, userAnswers]);
@@ -485,6 +506,16 @@ export default function QuestionsTable({
         <div className="flex flex-wrap gap-2 w-full md:w-auto items-center justify-end">
           {[
             {
+              value: plataformaFilter,
+              onChange: (v: string) => setPlataformaFilter(v as PlataformaFiltro),
+              options: [
+                { value: 'todas', label: 'Plataforma: Todas' },
+                { value: 'qconcursos', label: 'Qconcursos (Idq)' },
+                { value: 'gran', label: 'Gran (Idg)' },
+                { value: 'tec', label: 'TEC (Idtec)' },
+              ],
+            },
+            {
               value: materiaFilter,
               onChange: setMateriaFilter,
               options: [{ value: 'Todas', label: 'Matéria: Tudo' }, ...materias.map(m => ({ value: m, label: m }))],
@@ -703,9 +734,9 @@ export default function QuestionsTable({
       {/* ── BARRA FLUTUANTE DE AÇÕES EM LOTE (SELEÇÃO MÚLTIPLA) ── */}
       {selectedIds.size > 0 && (
         <div
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#0c1220] border border-blue-500/30 rounded-2xl px-4 py-2.5 flex items-center gap-2.5 flex-wrap max-w-[95vw]"
+          className="fixed bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#0c1220] border border-blue-500/30 rounded-2xl px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-center gap-2 flex-wrap w-[calc(100vw-1.5rem)] sm:w-auto max-w-[95vw]"
         >
-          <div className="flex items-center gap-2 pr-3 border-r border-white/10 text-xs font-bold text-white shrink-0">
+          <div className="flex items-center gap-2 pr-2 sm:pr-3 border-r border-white/10 text-xs font-bold text-white shrink-0">
             <span className="w-2 h-2 rounded-full bg-blue-400" />
             <span>{selectedIds.size} selecionada{selectedIds.size > 1 ? 's' : ''}</span>
           </div>
@@ -1024,11 +1055,11 @@ const MobileQuestionRow = memo(function MobileQuestionRow({
                 onToggleDuvida(q.id);
               }}
               title={isDuvida ? "Em Dúvida" : "Marcar Dúvida"}
-              className={`p-1 rounded text-xs transition-colors ${
+              className={`p-2 rounded-lg text-xs transition-colors ${
                 isDuvida ? "text-amber-400 bg-amber-400/10" : "text-slate-500 hover:text-slate-400"
               }`}
             >
-              <Flag size={11} className={isDuvida ? "fill-amber-400" : ""} />
+              <Flag size={12} className={isDuvida ? "fill-amber-400" : ""} />
             </button>
           )}
         </div>
@@ -1037,23 +1068,23 @@ const MobileQuestionRow = memo(function MobileQuestionRow({
             <button
               onClick={e => { e.stopPropagation(); onEdit(q); }}
               title="Editar questão (Admin)"
-              className="p-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-amber-400 transition-colors"
+              className="p-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-amber-400 transition-colors"
             >
-              <Pencil size={11} />
+              <Pencil size={12} />
             </button>
           )}
           {isAdmin && onDelete && (
             <button
               onClick={e => { e.stopPropagation(); onDelete(q); }}
               title="Excluir questão (Admin)"
-              className="p-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+              className="p-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
             >
-              <Trash2 size={11} />
+              <Trash2 size={12} />
             </button>
           )}
           <button
             onClick={e => { e.stopPropagation(); onSelect(q); }}
-            className="px-3 py-1 bg-blue-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest"
+            className="px-3.5 py-2 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest"
           >
             {status === 'Pendente' ? 'Responder' : 'Refazer'}
           </button>
