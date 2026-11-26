@@ -293,12 +293,23 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
       const dupTec = new Map<string, number>();
 
       if (idsQc.length > 0) {
-        const { data: existingQc } = await supabasePublic
+        const { data: existingIdq, error: idqErr } = await supabasePublic
+          .from("questoes")
+          .select('id, "Idq"')
+          .in('"Idq"', idsQc);
+        if (!idqErr && existingIdq) {
+          for (const row of existingIdq) {
+            if ((row as any).Idq) dupQc.set(String((row as any).Idq), row.id);
+          }
+        }
+        const { data: existingQc, error: qcErr } = await supabasePublic
           .from("questoes")
           .select('id, "ID_Qconcursos"')
           .in('"ID_Qconcursos"', idsQc);
-        for (const row of existingQc ?? []) {
-          if (row["ID_Qconcursos"]) dupQc.set(String(row["ID_Qconcursos"]), row.id);
+        if (!qcErr && existingQc) {
+          for (const row of existingQc) {
+            if (row["ID_Qconcursos"]) dupQc.set(String(row["ID_Qconcursos"]), row.id);
+          }
         }
       }
 
@@ -421,15 +432,16 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
 
         if (insertRes.error) {
           const msg = insertRes.error.message || "";
-          const missingCols = /column|schema cache|Idg|Idtec|Idq|Disciplina/i.test(msg);
+          const missingCols = /column|schema cache|Idg|Idtec|Idq|ID_Qconcursos|Disciplina/i.test(msg);
           const anoTypeErr = /invalid input syntax for type integer/i.test(msg);
 
           if ((missingCols || anoTypeErr) && !q.Idg && !q.Idtec) {
-            // Fallback seguro caso não tenha Idg/Idtec e as novas colunas ainda não existam
+            // Fallback seguro caso não tenha Idg/Idtec e alguma coluna opcional ainda não exista
             const fallbackRow = { ...fullRow };
-            delete fallbackRow.Idq;
-            delete fallbackRow.Idg;
-            delete fallbackRow.Idtec;
+            if (/Idq/i.test(msg)) delete fallbackRow.Idq;
+            if (/ID_Qconcursos/i.test(msg)) delete fallbackRow.ID_Qconcursos;
+            if (/Idg/i.test(msg)) delete fallbackRow.Idg;
+            if (/Idtec/i.test(msg)) delete fallbackRow.Idtec;
             if (anoTypeErr && typeof fallbackRow.Ano === "string") {
               const yrMatch = fallbackRow.Ano.match(/\b(19|20)\d{2}\b/);
               fallbackRow.Ano = yrMatch ? Number(yrMatch[0]) : null;
