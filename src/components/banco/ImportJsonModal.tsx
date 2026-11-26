@@ -176,9 +176,9 @@ function normalizarInput(item: Record<string, any>): QuestaoInput {
     Dificuldade: normalizeDifficultyLabel(rawDificuldade),
     Status: item.Status || item.status || "Ativa",
     Duvida: Boolean(item.Duvida ?? item.duvida ?? false),
-    "Texto de apoio": rawTextoApoio !== undefined ? String(rawTextoApoio) : undefined,
+    "Texto de apoio": rawTextoApoio !== undefined && String(rawTextoApoio).trim() !== "" ? String(rawTextoApoio) : undefined,
     Enunciado: enunciado,
-    "Pergunta problema": perguntaProblema,
+    "Pergunta problema": perguntaProblema && perguntaProblema !== "" ? perguntaProblema : undefined,
     Imagens_Enunciado: Array.isArray(item.Imagens_Enunciado)
       ? item.Imagens_Enunciado.filter(Boolean)
       : item.Imagem_Enunciado
@@ -508,7 +508,7 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
                 </span>
               </h3>
               <p className="text-[11px] sm:text-xs text-slate-400 truncate">
-                Suporta Prova, Ano (data), Ordem, Banca, Disciplina, Organização nó, Idq, Idg e Idtec.
+                Suporta Prova, Ano, Ordem, Banca, Disciplina, Organização nó, Idq/Idg/Idtec, Texto de apoio, Enunciado e Pergunta problema.
               </p>
             </div>
           </div>
@@ -529,7 +529,7 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
               <div>
                 <h4 className="text-xs font-bold text-blue-200">Modelo oficial do novo JSON</h4>
                 <p className="text-[11px] text-slate-400">
-                  Com Ordem, Banca, Organização nó, Idq, Idg, Idtec e Dificuldade (incl. Ultrahard).
+                  Com Ordem, Banca, Organização nó, Idq/Idg/Idtec, Texto de apoio, Enunciado e Pergunta problema.
                 </p>
               </div>
             </div>
@@ -583,7 +583,7 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
                 setErrorMsg("");
                 setSuccessCount(null);
               }}
-              placeholder={'[\n  {\n    "Prova": "BB",\n    "Ano": "23/04/2023",\n    "Ordem": 1,\n    "Banca": "CESGRANRIO",\n    "Disciplina": "Matemática",\n    "Organização nó": "Matemática / Juros / Caso 1",\n    "Idq": "Q2408218",\n    "Idg": "",\n    "Idtec": "",\n    "Dificuldade": "Média",\n    "Pergunta problema": "...",\n    "Gabarito": "A"\n  }\n]'}
+              placeholder={'[\n  {\n    "Prova": "BB",\n    "Ano": "23/04/2023",\n    "Ordem": 1,\n    "Banca": "CESGRANRIO",\n    "Disciplina": "Matemática",\n    "Organização nó": "Matemática / Juros / Caso 1",\n    "Idq": "Q2408218",\n    "Idg": "",\n    "Idtec": "",\n    "Dificuldade": "Média",\n    "Texto de apoio": "",\n    "Enunciado": "Contexto da questão (opcional)...",\n    "Pergunta problema": "O que de fato pergunta...",\n    "Alternativa A": "...",\n    "Gabarito": "A"\n  }\n]'}
               className="w-full p-3 bg-[#090D16] border border-white/10 rounded-xl text-xs font-mono text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 custom-scrollbar"
             />
           </div>
@@ -675,9 +675,24 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
                       </div>
                     ) : null}
 
-                    {(qa.input["Pergunta problema"] || qa.input.Enunciado) && (
-                      <div className="text-[10.5px] text-slate-300/90 pl-2 border-l border-indigo-500/40 line-clamp-2">
-                        {qa.input["Pergunta problema"] || qa.input.Enunciado}
+                    {qa.input["Texto de apoio"] && (
+                      <div className="text-[10.5px] text-blue-200/80 pl-2 border-l border-blue-500/40 line-clamp-1">
+                        <span className="text-blue-400 font-semibold">Texto de apoio: </span>
+                        {qa.input["Texto de apoio"]}
+                      </div>
+                    )}
+
+                    {qa.input.Enunciado && (
+                      <div className="text-[10.5px] text-slate-300/90 pl-2 border-l border-slate-500/40 line-clamp-2">
+                        <span className="text-slate-400 font-semibold">Enunciado: </span>
+                        {qa.input.Enunciado}
+                      </div>
+                    )}
+
+                    {qa.input["Pergunta problema"] && (
+                      <div className="text-[10.5px] text-slate-200 pl-2 border-l border-indigo-500/40 line-clamp-2">
+                        <span className="text-indigo-300 font-semibold">Pergunta: </span>
+                        {qa.input["Pergunta problema"]}
                       </div>
                     )}
 

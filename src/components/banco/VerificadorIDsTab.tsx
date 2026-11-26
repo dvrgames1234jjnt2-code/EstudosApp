@@ -231,16 +231,16 @@ export default function VerificadorIDsTab({
     if (faltantes.length === 0) return;
 
     const templates = faltantes.map((i, idx) => ({
-      PROVA: "",
-      Ano: new Date().getFullYear(),
+      Prova: "",
+      Ano: "",
       Ordem: idx + 1,
       Banca: "",
-      ID_Qconcursos: i.idNormalizado,
-      link: `https://www.qconcursos.com/questoes-de-concursos/questoes?q=${i.idNormalizado}`,
+      Disciplina: "",
+      "Organização nó": "Matéria / Caderno / Caso",
+      Idq: i.idNormalizado,
+      Idg: "",
+      Idtec: "",
       Dificuldade: "Média",
-      Status: "Ativa",
-      Duvida: false,
-      Caminho_Organizacao: ["Matéria", "Tópico", "Caso"],
       "Texto de apoio": "",
       Enunciado: "",
       "Pergunta problema": "",
@@ -250,7 +250,6 @@ export default function VerificadorIDsTab({
       "Alternativa D": "",
       "Alternativa E": "",
       Gabarito: "A",
-      "Comentário": ""
     }));
 
     navigator.clipboard.writeText(JSON.stringify(templates, null, 2));

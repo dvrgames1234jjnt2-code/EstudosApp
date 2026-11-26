@@ -39,6 +39,7 @@ import {
   FolderInput,
   Printer,
   AlertTriangle,
+  FileJson,
 } from "lucide-react";
 import type { BancoQuestion } from "./QuestionsTable";
 import QuestionResolver from "./QuestionResolver";
@@ -53,6 +54,7 @@ import { ModalEditarQuestao } from "./ModalEditarQuestao";
 import { ModalMoverQuestao } from "./ModalMoverQuestao";
 import { ModalRenomearPasta } from "./ModalRenomearPasta";
 import { PrintSimuladoModal } from "./PrintSimuladoModal";
+import { ImportJsonModal } from "./ImportJsonModal";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tipos & Categorias (Idêntico ao NotionQuestionTab)
@@ -1625,6 +1627,7 @@ export default function CadernosTab({
   const [dbNodes, setDbNodes] = useState<OrgNodeDB[]>([]);
   const [difficultyOverrides, setDifficultyOverrides] = useState<Map<string, string>>(new Map());
   const [isNovaPastaModalOpen, setIsNovaPastaModalOpen] = useState(false);
+  const [isImportJsonOpen, setIsImportJsonOpen] = useState(false);
   const [modalDefaultParentId, setModalDefaultParentId] = useState<string>("");
 
   // Override local de organizacao_id para drag and drop instantâneo
@@ -2832,6 +2835,19 @@ export default function CadernosTab({
             </button>
           </div>
 
+          {isAdminState && (
+            <button
+              type="button"
+              onClick={() => setIsImportJsonOpen(true)}
+              className="flex items-center gap-1.5 px-3 min-h-[36px] sm:min-h-0 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/35 text-blue-200 rounded-xl text-xs font-bold transition-colors"
+              title="Importar questões em lote via JSON"
+            >
+              <FileJson size={13} className="text-blue-400" />
+              <span className="hidden sm:inline">Importar JSON</span>
+              <span className="sm:hidden">JSON</span>
+            </button>
+          )}
+
           <button
             onClick={() => {
               setModalDefaultParentId("");
@@ -3646,6 +3662,15 @@ export default function CadernosTab({
             nodeId={renamingNode?.id || ""}
             currentNome={renamingNode?.nome || ""}
             onSuccess={handleRenameSuccess}
+          />
+
+          <ImportJsonModal
+            isOpen={isImportJsonOpen}
+            onClose={() => setIsImportJsonOpen(false)}
+            onSuccess={() => {
+              void carregarNos();
+              onRefreshQuestions?.();
+            }}
           />
         </>
       )}
