@@ -27,6 +27,7 @@ import {
   BookMarked,
   CheckCheck,
   LampDesk,
+  RotateCw,
 } from "lucide-react";
 import { supabase, supabasePublic } from "../../lib/supabase";
 import { AuthModal } from "../../components/AuthModal";
@@ -39,6 +40,7 @@ import CadernosTab from "../../components/banco/CadernosTab";
 import { ModalEditarQuestao } from "../../components/banco/ModalEditarQuestao";
 import VerificadorIDsTab from "../../components/banco/VerificadorIDsTab";
 import StudyCorner3DTab from "../../components/banco/StudyCorner3DTab";
+import FlashcardsView from "../../components/flashcards/FlashcardsView";
 import { normalizarQuestao } from "../../lib/questionService";
 
 // ──────────────────────────────────────────────
@@ -58,7 +60,7 @@ export interface QuestionStats {
 /** Mapa questao_id → stats (derivado do histórico completo) */
 type UserAnswers = Record<string, QuestionStats>;
 
-type ActiveTab = "banco" | "resolver" | "simulados" | "desempenho" | "fixacao" | "notion" | "cantinho" | "cadernos" | "verificador";
+type ActiveTab = "banco" | "resolver" | "simulados" | "desempenho" | "fixacao" | "notion" | "cantinho" | "flashcards" | "cadernos" | "verificador";
 
 // ──────────────────────────────────────────────
 // Helpers
@@ -503,6 +505,7 @@ export default function BancoPage() {
             { id: "desempenho", icon: <BarChart3 size={13} />,      label: "Desempenho", badge: resolverQueue.length > 0 ? "●" : null },
             { id: "notion",     icon: <BookMarked size={13} />,     label: "Notion Question" },
             { id: "cantinho",   icon: <LampDesk size={13} />,       label: "Cantinho 3D" },
+            { id: "flashcards", icon: <RotateCw size={13} />,       label: "Flashcards 3D" },
             ...(isAdmin ? [{ id: "cadernos", icon: <Layers size={13} />, label: "Cadernos" }] : []),
             { id: "verificador", icon: <CheckCheck size={13} />, label: "Confrontar IDs" },
           ].map(tab => {
@@ -1436,6 +1439,13 @@ export default function BancoPage() {
           {activeTab === "cantinho" && (
             <div>
               <StudyCorner3DTab user={user} onRequireAuth={() => setShowAuthModal(true)} />
+            </div>
+          )}
+
+          {/* ── FLASHCARDS 3D ── */}
+          {activeTab === "flashcards" && (
+            <div className="w-full max-w-[1600px] mx-auto">
+              <FlashcardsView />
             </div>
           )}
 

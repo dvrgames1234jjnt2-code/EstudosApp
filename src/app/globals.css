@@ -67,3 +67,10 @@ html, body {
     opacity: 1;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .flashcard-3d-inner {
+    transition-duration: 120ms !important;
+  }
+}
+

@@ -31,7 +31,7 @@ export function Rascunho() {
       <button
         onClick={() => setOpen((v) => !v)}
         title="Rascunho"
-        className={`fixed bottom-6 right-6 z-[200] w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-colors ${
+        className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[200] w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shadow-lg transition-colors ${
           open
             ? "bg-blue-600 text-white"
             : "bg-[#0F172A] border border-white/10 text-slate-400 hover:text-blue-400 hover:border-blue-500/30"
@@ -46,7 +46,7 @@ export function Rascunho() {
           className={`fixed z-[199] shadow-lg overflow-hidden border-l border-white/10 flex flex-col top-0 right-0 h-full ${
             maximized
               ? "w-full"
-              : "w-[450px] sm:w-[600px]"
+              : "w-full sm:w-[480px] md:w-[600px]"
           }`}
           style={{ background: "#1a1a1a" }}
         >

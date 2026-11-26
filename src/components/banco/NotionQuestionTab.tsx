@@ -5708,30 +5708,30 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
       }`}
     >
       {/* Header do Card */}
-      <div className="flex items-center justify-between gap-1.5 min-w-0 flex-nowrap whitespace-nowrap overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-1.5 min-w-0">
         <button
           onClick={() => onSelect ? onSelect(block) : setOpen(v => !v)}
-          className="flex items-center gap-1.5 text-left flex-1 min-w-0 group flex-nowrap whitespace-nowrap overflow-hidden"
+          className="flex items-center gap-1.5 text-left flex-1 min-w-0 group overflow-hidden"
         >
           <span className="text-[9px] text-slate-500 w-3.5 h-3.5 flex items-center justify-center shrink-0 select-none">
             {onSelect ? "→" : open ? "▼" : "▶"}
           </span>
           <span className="text-sm shrink-0 select-none">{blockIcon}</span>
-          <div className="flex items-center gap-1.5 min-w-0 flex-nowrap whitespace-nowrap overflow-hidden">
-            <span className={`text-[12px] sm:text-[13px] font-normal truncate shrink-0 ${
-              showRedHighlight ? "text-rose-300" : "text-slate-400 group-hover:text-slate-200"
+          <div className="flex items-baseline gap-1.5 min-w-0 overflow-hidden">
+            <span className={`text-[13px] font-normal truncate ${
+              showRedHighlight ? "text-rose-300" : "text-slate-300 group-hover:text-slate-100"
             }`}>
               {block.nome}
             </span>
             {block.descricao && (
-              <span className="text-[10px] text-slate-400/70 font-normal truncate shrink min-w-0 whitespace-nowrap">
+              <span className="hidden sm:inline text-[10px] text-slate-400/70 font-normal truncate shrink min-w-0 whitespace-nowrap">
                 {block.descricao}
               </span>
             )}
           </div>
         </button>
 
-        <div className="flex items-center gap-1.5 shrink-0 flex-nowrap whitespace-nowrap">
+        <div className="flex items-center justify-between sm:justify-end gap-1.5 shrink-0 flex-nowrap whitespace-nowrap pl-5 sm:pl-0">
           <button
             type="button"
             onClick={(e) => {
@@ -5739,7 +5739,7 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
               onPrintCaderno?.(block);
             }}
             title={`Imprimir caderno "${block.nome}" inteiro (com gabarito no final)`}
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.03] text-slate-400 hover:text-indigo-300 hover:bg-white/[0.08] hover:border-white/[0.15] transition-colors"
+            className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.03] text-slate-400 hover:text-indigo-300 hover:bg-white/[0.08] hover:border-white/[0.15] transition-colors"
           >
             <Printer size={12} />
           </button>
@@ -5759,7 +5759,7 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
                   setShowMenu(v => !v);
                 }}
                 title="Opções do Caderno (Admin)"
-                className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-colors ${
+                className={`w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border transition-colors ${
                   showMenu
                     ? "bg-indigo-600/30 border-indigo-500/50 text-indigo-300"
                     : "bg-white/[0.03] border-white/[0.07] text-slate-500 hover:text-slate-200 hover:border-white/[0.15]"
@@ -7167,7 +7167,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] w-full sm:w-auto overflow-x-auto no-scrollbar sm:flex-wrap shrink-0">
             <button
               onClick={() => setStatusFiltro("todas")}
-              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+              className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap shrink-0 ${
                 statusFiltro === "todas" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
               }`}
             >
@@ -7175,7 +7175,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
             </button>
             <button
               onClick={() => setStatusFiltro("erros")}
-              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+              className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap shrink-0 ${
                 statusFiltro === "erros" ? "bg-rose-600 text-white" : "text-rose-400/70 hover:text-rose-300"
               }`}
             >
@@ -7183,7 +7183,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
             </button>
             <button
               onClick={() => setStatusFiltro("mais_erros")}
-              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+              className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap shrink-0 ${
                 statusFiltro === "mais_erros" ? "bg-amber-600 text-white" : "text-amber-400/70 hover:text-amber-300"
               }`}
             >
@@ -7191,7 +7191,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
             </button>
             <button
               onClick={() => setStatusFiltro("nao_feitas")}
-              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+              className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap shrink-0 ${
                 statusFiltro === "nao_feitas" ? "bg-purple-600 text-white" : "text-purple-400/70 hover:text-purple-300"
               }`}
             >
@@ -7199,7 +7199,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
             </button>
             <button
               onClick={() => setStatusFiltro("feitas_hoje")}
-              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
+              className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap shrink-0 ${
                 statusFiltro === "feitas_hoje" ? "bg-sky-600 text-white" : "text-sky-400/70 hover:text-sky-300"
               }`}
             >

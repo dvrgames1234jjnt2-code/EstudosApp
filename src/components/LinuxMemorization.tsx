@@ -107,9 +107,9 @@ export function LinuxMemorization() {
 
   if (gameState === 'start') {
     return (
-      <div className="space-y-12 py-12">
-        <div className="text-center space-y-4">
-          <h2 className="text-4xl font-light text-white tracking-tighter">
+      <div className="space-y-8 sm:space-y-12 py-6 sm:py-12 px-1">
+        <div className="text-center space-y-3 sm:space-y-4">
+          <h2 className="text-3xl sm:text-4xl font-light text-white tracking-tighter">
             Laboratório de <span className="font-black text-blue-500 italic">Memorização</span>
           </h2>
           <p className="text-slate-500 text-xs uppercase font-bold tracking-[0.3em]">Treinamento de elite para diretórios e comandos Linux</p>
@@ -147,13 +147,13 @@ export function LinuxMemorization() {
     const progress = (currentQuestionIndex / questions.length) * 100;
 
     return (
-      <div className="max-w-3xl mx-auto py-12 space-y-8">
+      <div className="max-w-3xl mx-auto py-6 sm:py-12 space-y-6 sm:space-y-8">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="px-4 py-2 bg-blue-600/10 border border-blue-500/20 rounded-xl">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="px-3 sm:px-4 py-2 bg-blue-600/10 border border-blue-500/20 rounded-xl">
               <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Score: {score}</span>
             </div>
-            <div className="px-4 py-2 bg-emerald-600/10 border border-emerald-500/20 rounded-xl flex items-center gap-2">
+            <div className="px-3 sm:px-4 py-2 bg-emerald-600/10 border border-emerald-500/20 rounded-xl flex items-center gap-2">
               <Zap className="w-3 h-3 text-emerald-500" />
               <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Streak: {streak}</span>
             </div>
@@ -171,10 +171,10 @@ export function LinuxMemorization() {
           />
         </div>
 
-        <div className="p-10 rounded-[40px] bg-white/[0.02] border border-white/5 space-y-10 relative overflow-hidden">
-          <div className="space-y-4">
+        <div className="p-5 sm:p-10 rounded-3xl sm:rounded-[40px] bg-white/[0.02] border border-white/5 space-y-6 sm:space-y-10 relative overflow-hidden">
+          <div className="space-y-3 sm:space-y-4">
             <div className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em]">Desafio {currentQuestionIndex + 1}/{questions.length}</div>
-            <h3 className="text-2xl sm:text-3xl font-light text-white leading-tight">{q.q}</h3>
+            <h3 className="text-xl sm:text-3xl font-light text-white leading-tight">{q.q}</h3>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -225,33 +225,33 @@ export function LinuxMemorization() {
 
   if (gameState === 'finished') {
     return (
-      <div className="max-w-2xl mx-auto py-24 text-center space-y-12">
+      <div className="max-w-2xl mx-auto py-12 sm:py-24 text-center space-y-8 sm:space-y-12">
         <div className="relative inline-block">
-          <div className="w-32 h-32 bg-blue-600 rounded-[40px] rotate-12 flex items-center justify-center mx-auto shadow-lg">
-            <Trophy className="w-16 h-16 text-white -rotate-12" />
+          <div className="w-24 h-24 sm:w-32 sm:h-32 bg-blue-600 rounded-[32px] sm:rounded-[40px] rotate-12 flex items-center justify-center mx-auto shadow-lg">
+            <Trophy className="w-12 h-12 sm:w-16 sm:h-16 text-white -rotate-12" />
           </div>
-          <div className="absolute -top-4 -right-4 w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center text-white border-4 border-[#020617] font-bold">
+          <div className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 w-10 h-10 sm:w-12 sm:h-12 bg-emerald-500 rounded-full flex items-center justify-center text-white border-4 border-[#020617] text-xs sm:text-sm font-bold">
             100%
           </div>
         </div>
 
-        <div className="space-y-4">
-          <h2 className="text-5xl font-black text-white tracking-tighter">Treinamento <span className="text-blue-500">Concluído.</span></h2>
-          <p className="text-slate-500 uppercase text-[10px] font-black tracking-[0.5em]">Base de dados memorizada com sucesso</p>
+        <div className="space-y-3 sm:space-y-4">
+          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tighter">Treinamento <span className="text-blue-500">Concluído.</span></h2>
+          <p className="text-slate-500 uppercase text-[10px] font-black tracking-[0.35em] sm:tracking-[0.5em]">Base de dados memorizada com sucesso</p>
         </div>
 
-        <div className="grid grid-cols-3 gap-6">
-          <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6">
+          <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white/[0.02] border border-white/5">
             <div className="text-2xl font-black text-white">{score}</div>
-            <div className="text-[8px] font-black text-slate-600 uppercase tracking-widest mt-1">Pontuação</div>
+            <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1">Pontuação</div>
           </div>
-          <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5">
+          <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white/[0.02] border border-white/5">
             <div className="text-2xl font-black text-white">{formatTime(time)}</div>
-            <div className="text-[8px] font-black text-slate-600 uppercase tracking-widest mt-1">Tempo Total</div>
+            <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1">Tempo Total</div>
           </div>
-          <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5">
+          <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white/[0.02] border border-white/5">
             <div className="text-2xl font-black text-white">{streak}</div>
-            <div className="text-[8px] font-black text-slate-600 uppercase tracking-widest mt-1">Melhor Combo</div>
+            <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1">Melhor Combo</div>
           </div>
         </div>
 

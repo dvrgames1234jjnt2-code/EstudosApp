@@ -711,17 +711,17 @@ export function BinderHudAndSheet({
   } = state;
 
   return (
-    <div className="absolute inset-0 z-20 flex flex-col justify-between p-3 sm:p-5 pointer-events-none select-none">
+    <div className="absolute inset-0 z-20 flex flex-col justify-between p-2.5 sm:p-5 pointer-events-none select-none">
       {/* Top Bar over 3D Desk (Escrivaninha / Zoom / Search / Stats) */}
-      <div className="flex items-center justify-between gap-3 flex-wrap pointer-events-none">
-        <div className="flex items-center gap-2 pointer-events-auto">
+      <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap pointer-events-none">
+        <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
           <button
             type="button"
             onClick={() => {
               if (activeBlockId) closeSheet();
               else onCloseToDesk();
             }}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#1a1019]/95 hover:bg-[#2a1929] border border-[#d4af6a]/35 text-[#f4e6cc] text-xs font-medium transition-colors shadow-lg cursor-pointer"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-[#1a1019]/95 hover:bg-[#2a1929] border border-[#d4af6a]/35 text-[#f4e6cc] text-[11px] sm:text-xs font-medium transition-colors shadow-lg cursor-pointer"
           >
             <ArrowLeft size={14} className="text-[#e7c47a]" />
             <span>{activeBlockId ? "Voltar ao Caderno" : "Escrivaninha"}</span>
@@ -731,7 +731,7 @@ export function BinderHudAndSheet({
             <button
               type="button"
               onClick={onToggleZoom}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-[#1a1019]/95 hover:bg-[#2a1929] border border-[#d4af6a]/35 text-[#f4e6cc] text-xs font-medium transition-colors shadow-lg cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-full bg-[#1a1019]/95 hover:bg-[#2a1929] border border-[#d4af6a]/35 text-[#f4e6cc] text-[11px] sm:text-xs font-medium transition-colors shadow-lg cursor-pointer"
               title={zoomedIn ? "Afastar câmera" : "Aproximar caderno"}
             >
               {zoomedIn ? (
@@ -745,7 +745,7 @@ export function BinderHudAndSheet({
         </div>
 
         {!activeBlockId && (
-          <div className="flex-1 max-w-md mx-auto pointer-events-auto">
+          <div className="order-3 sm:order-none w-full sm:w-auto flex-1 max-w-md mx-auto pointer-events-auto">
             <label className="relative flex items-center w-full">
               <Search size={14} className="absolute left-3.5 text-[#d8b982]/70 pointer-events-none" />
               <input
@@ -756,7 +756,7 @@ export function BinderHudAndSheet({
                   setPageIndex(0);
                 }}
                 placeholder="Pesquise matérias, cadernos ou questões..."
-                className="w-full pl-9 pr-8 py-2 rounded-full bg-[#170f17]/92 border border-[#d4af6a]/30 text-xs text-[#f6ead3] placeholder-[#b9a080]/60 focus:outline-none focus:border-[#e7c47a]/70 shadow-lg"
+                className="w-full pl-9 pr-8 py-1.5 sm:py-2 rounded-full bg-[#170f17]/92 border border-[#d4af6a]/30 text-xs text-[#f6ead3] placeholder-[#b9a080]/60 focus:outline-none focus:border-[#e7c47a]/70 shadow-lg"
               />
               {searchQuery && (
                 <button
@@ -772,7 +772,7 @@ export function BinderHudAndSheet({
           </div>
         )}
 
-        <div className="flex items-center gap-4 px-4 py-2 rounded-full bg-[#1a1019]/92 border border-[#d4af6a]/25 text-xs text-[#f2e2c6] shadow-lg tabular-nums">
+        <div className="flex items-center gap-2.5 sm:gap-4 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-[#1a1019]/92 border border-[#d4af6a]/25 text-[11px] sm:text-xs text-[#f2e2c6] shadow-lg tabular-nums">
           <span>
             <strong className="text-[#e8c67c] font-semibold">{globalTotals.acertos}</strong> acertos
           </span>
@@ -786,9 +786,9 @@ export function BinderHudAndSheet({
       {/* Center: ONLY shown when user clicked a Caderno / Questão to open the Case Sheet ("Folha") */}
       {activeBlockId && (
         <div className="flex-1 min-h-0 flex items-center justify-center my-2 pointer-events-none">
-          <div className="pointer-events-auto w-full max-w-6xl h-full max-h-[680px] rounded-2xl bg-[#19121e]/98 border border-[#d4af6a]/35 shadow-lg flex flex-col overflow-hidden">
+          <div className="pointer-events-auto w-full max-w-6xl h-full max-h-[92dvh] sm:max-h-[680px] rounded-2xl bg-[#19121e]/98 border border-[#d4af6a]/35 shadow-lg flex flex-col overflow-hidden">
             {/* Sheet Header */}
-            <div className="px-5 py-3.5 border-b border-[#d4af6a]/20 bg-[#231426] flex items-center justify-between gap-4 flex-wrap">
+            <div className="px-3.5 sm:px-5 py-3 sm:py-3.5 border-b border-[#d4af6a]/20 bg-[#231426] flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 text-[11px] text-[#d6b782]">
                   <span>{activeBlock?.materia || "Caderno"}</span>
@@ -824,8 +824,8 @@ export function BinderHudAndSheet({
             </div>
 
             {/* Split Sheet Body */}
-            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12">
-              <div className="lg:col-span-5 border-b lg:border-b-0 lg:border-r border-[#d4af6a]/15 overflow-y-auto p-4 space-y-3 bg-[#150e19]">
+            <div className="flex-1 min-h-0 flex flex-col lg:grid lg:grid-cols-12 overflow-y-auto lg:overflow-hidden">
+              <div className="lg:col-span-5 border-b lg:border-b-0 lg:border-r border-[#d4af6a]/15 max-h-[34vh] lg:max-h-none overflow-y-auto p-3.5 sm:p-4 space-y-3 bg-[#150e19] shrink-0">
                 {activeBlockCasos.length === 0 ? (
                   <div className="py-12 text-center text-xs text-[#b59d82]">
                     Nenhum caso encontrado com o filtro selecionado.
@@ -927,7 +927,7 @@ export function BinderHudAndSheet({
               </div>
 
               {/* Active Question Cream Paper Sheet */}
-              <div className="lg:col-span-7 overflow-y-auto p-5 sm:p-6 bg-[#f7f0e3] text-[#281e19] flex flex-col gap-4">
+              <div className="lg:col-span-7 lg:overflow-y-auto p-4 sm:p-6 bg-[#f7f0e3] text-[#281e19] flex flex-col gap-4">
                 {!activeQuestion ? (
                   <div className="flex-1 flex flex-col items-center justify-center text-center gap-2 text-[#766353]">
                     <BookOpen size={28} className="opacity-50" />
@@ -953,12 +953,12 @@ export function BinderHudAndSheet({
                         </h3>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                         <button
                           type="button"
                           disabled={savingAnswer}
                           onClick={() => handleAnswer(true)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-colors cursor-pointer ${
+                          className={`min-h-[38px] sm:min-h-0 flex-1 sm:flex-initial justify-center px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-colors cursor-pointer ${
                             resultadosMap.get(activeQuestion.id)?.ultimo === "acerto"
                               ? "bg-emerald-700 border-emerald-700 text-white"
                               : "bg-white border-emerald-600/40 text-emerald-800 hover:bg-emerald-50"
@@ -970,7 +970,7 @@ export function BinderHudAndSheet({
                           type="button"
                           disabled={savingAnswer}
                           onClick={() => handleAnswer(false)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-colors cursor-pointer ${
+                          className={`min-h-[38px] sm:min-h-0 flex-1 sm:flex-initial justify-center px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-colors cursor-pointer ${
                             resultadosMap.get(activeQuestion.id)?.ultimo === "erro"
                               ? "bg-rose-700 border-rose-700 text-white"
                               : "bg-white border-rose-600/40 text-rose-800 hover:bg-rose-50"
@@ -990,7 +990,7 @@ export function BinderHudAndSheet({
                               !duvidasIds.has(activeQuestion.id)
                             );
                           }}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-colors cursor-pointer ${
+                          className={`min-h-[38px] sm:min-h-0 flex-1 sm:flex-initial justify-center px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-colors cursor-pointer ${
                             duvidasIds.has(activeQuestion.id)
                               ? "bg-amber-500 border-amber-600 text-white"
                               : "bg-white border-amber-600/40 text-amber-800 hover:bg-amber-50"

@@ -414,7 +414,7 @@ function QuestaoRowItem({
               <ChevronDown size={10} className={difficultyMenuOpen ? "rotate-180" : ""} />
             </button>
             {difficultyMenuOpen && (
-              <div className="absolute left-0 top-full z-50 mt-1 w-64 rounded-xl border border-white/10 bg-[#111827] p-2 shadow-lg" onClick={(event) => event.stopPropagation()}>
+              <div className="absolute left-0 top-full z-50 mt-1 w-64 max-w-[calc(100vw-3rem)] rounded-xl border border-white/10 bg-[#111827] p-2 shadow-lg" onClick={(event) => event.stopPropagation()}>
                 <p className="px-1.5 pb-1.5 text-[9px] font-semibold uppercase tracking-wider text-slate-500">Progressão de dificuldade</p>
                 <div className="grid grid-cols-3 gap-1">
                   {difficultyLevels.map((level, index) => {
@@ -449,14 +449,14 @@ function QuestaoRowItem({
             className="flex md:hidden items-center gap-1 shrink-0 select-none"
             onClick={(e) => e.stopPropagation()}
           >
-            <button type="button" onClick={() => onMove?.(questao)} title="Mover pasta" className="p-1.5 text-slate-400 hover:text-indigo-400 bg-white/[0.04] rounded">
-              <FolderInput size={12} />
+            <button type="button" onClick={() => onMove?.(questao)} title="Mover pasta" className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-indigo-400 bg-white/[0.04] rounded">
+              <FolderInput size={13} />
             </button>
-            <button type="button" onClick={() => onEdit?.(questao)} title="Editar questão" className="p-1.5 text-slate-400 hover:text-amber-400 bg-white/[0.04] rounded">
-              <Pencil size={12} />
+            <button type="button" onClick={() => onEdit?.(questao)} title="Editar questão" className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-amber-400 bg-white/[0.04] rounded">
+              <Pencil size={13} />
             </button>
-            <button type="button" onClick={() => onDelete?.(questao)} title="Excluir questão" className="p-1.5 text-slate-400 hover:text-rose-400 bg-white/[0.04] rounded">
-              <Trash2 size={12} />
+            <button type="button" onClick={() => onDelete?.(questao)} title="Excluir questão" className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-rose-400 bg-white/[0.04] rounded">
+              <Trash2 size={13} />
             </button>
           </div>
         )}
@@ -579,8 +579,8 @@ function TreeNodeItem({
             onDropQuestion(qId, node.id);
           }
         }}
-        style={{ paddingLeft: `${Math.min(depth, 4) * 14 + 8}px` }}
-        className={`flex items-center justify-between gap-2 py-1.5 pr-3 rounded-lg cursor-pointer transition-colors group ${
+        style={{ paddingLeft: `${Math.min(depth, 3) * 10 + 6}px` }}
+        className={`flex items-center justify-between gap-2 py-2 sm:py-1.5 pr-2 sm:pr-3 rounded-lg cursor-pointer transition-colors group ${
           isDragOver
             ? "bg-indigo-600/20 border border-indigo-500 text-white"
             : "hover:bg-white/[0.04] text-slate-300 hover:text-white"
@@ -617,7 +617,7 @@ function TreeNodeItem({
           </span>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
           {/* Botão de imprimir questões desta pasta/caso */}
           {node.questoes.length + node.totalDescendentesQuestoes > 0 && (
             <button
@@ -626,7 +626,7 @@ function TreeNodeItem({
                 onPrintNode?.(node);
               }}
               title={`Imprimir questões de "${node.nome}" (${node.questoes.length + node.totalDescendentesQuestoes})`}
-              className="opacity-80 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 sm:p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.06] rounded transition-colors shrink-0"
+              className="opacity-80 sm:opacity-0 sm:group-hover:opacity-100 w-7 h-7 sm:w-auto sm:h-auto flex items-center justify-center sm:p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.06] rounded transition-colors shrink-0"
             >
               <Printer size={12} />
             </button>
@@ -639,7 +639,7 @@ function TreeNodeItem({
               onAddSubfolder(node.id);
             }}
             title={`Adicionar subpasta dentro de "${node.nome}"`}
-            className="opacity-80 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 sm:p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.06] rounded transition-colors shrink-0"
+            className="opacity-80 sm:opacity-0 sm:group-hover:opacity-100 w-7 h-7 sm:w-auto sm:h-auto flex items-center justify-center sm:p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.06] rounded transition-colors shrink-0"
           >
             <Plus size={13} />
           </button>
@@ -687,8 +687,8 @@ function TreeNodeItem({
                   e.dataTransfer.effectAllowed = "move";
                 }}
                 onClick={() => onOpenQuestion(q, node.questoes)}
-                style={{ paddingLeft: `${Math.min(depth + 1, 5) * 14 + 8}px` }}
-                className="flex items-center justify-between gap-2 py-1 pr-3 rounded-lg hover:bg-white/[0.04] cursor-pointer text-slate-300 hover:text-white transition-colors group"
+                style={{ paddingLeft: `${Math.min(depth + 1, 4) * 10 + 6}px` }}
+                className="flex items-center justify-between gap-2 py-1.5 sm:py-1 pr-2 sm:pr-3 rounded-lg hover:bg-white/[0.04] cursor-pointer text-slate-300 hover:text-white transition-colors group"
               >
                 <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                   <span className="text-slate-500 group-hover:text-slate-300 shrink-0">📄</span>
@@ -835,166 +835,173 @@ function CasoAccordion({
             setIsOpen(v => !v);
           }
         }}
-        className={`relative z-10 w-full flex items-center justify-between gap-2.5 px-2.5 py-1.5 rounded-lg border border-white/[0.04] bg-[#0d1220]/80 hover:bg-[#121829] hover:border-white/[0.08] transition-colors text-left cursor-pointer select-none group ${
+        className={`relative z-10 w-full flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-2.5 px-2.5 py-2 sm:py-1.5 rounded-lg border border-white/[0.04] bg-[#0d1220]/80 hover:bg-[#121829] hover:border-white/[0.08] transition-colors text-left cursor-pointer select-none group ${
           isDragOver ? "border-indigo-500" : ""
         }`}
       >
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <span className="text-[12px] opacity-75 shrink-0 select-none">
-            📁
-          </span>
-          <span className="text-[11.5px] font-normal text-slate-300 tracking-wide truncate group-hover:text-slate-100 transition-colors">
-            <span className="text-slate-500 font-light mr-1.5">{index + 1}.</span>
-            {caso.nome || "Geral"}
-          </span>
+        <div className="flex items-center justify-between gap-2 min-w-0 flex-1 w-full sm:w-auto">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="text-[12px] opacity-75 shrink-0 select-none">
+              📁
+            </span>
+            <span className="text-[12px] sm:text-[11.5px] font-normal text-slate-300 tracking-wide truncate group-hover:text-slate-100 transition-colors">
+              <span className="text-slate-500 font-light mr-1.5">{index + 1}.</span>
+              {caso.nome || "Geral"}
+            </span>
+          </div>
+          <ChevronDown
+            size={13}
+            className={`sm:hidden text-slate-500/80 shrink-0 ${isOpen ? "rotate-180" : ""}`}
+          />
         </div>
 
         {/* Stats inline */}
-        <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] shrink-0 tabular-nums font-light">
-          <span className="text-slate-500 font-light">{stats.total} <span className="hidden sm:inline">quest.</span><span className="sm:hidden">q.</span></span>
-          <span className="text-emerald-400/80 font-light flex items-center gap-0.5">
-            <Check size={9} className="stroke-[1.5]" />
-            {stats.acertos}
-          </span>
-          <span className="text-rose-400/80 font-light flex items-center gap-0.5">
-            <X size={9} className="stroke-[1.5]" />
-            {stats.erros}
-          </span>
-          {stats.duvidasCount > 0 && (
-            <span className="text-amber-400/80 font-light flex items-center gap-0.5">
-              <Flag size={8} />
-              {stats.duvidasCount}
+        <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-1.5 sm:gap-2 text-[10px] shrink-0 tabular-nums font-light flex-wrap">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="text-slate-500 font-light">{stats.total} <span className="hidden sm:inline">quest.</span><span className="sm:hidden">q.</span></span>
+            <span className="text-emerald-400/80 font-light flex items-center gap-0.5">
+              <Check size={9} className="stroke-[1.5]" />
+              {stats.acertos}
             </span>
-          )}
-          <span className={`px-1.5 py-0.2 rounded border text-[9px] font-light tabular-nums ${aproveitamentoClasses}`}>
-            {stats.pct === null ? "—" : `${stats.pct}%`}
-          </span>
+            <span className="text-rose-400/80 font-light flex items-center gap-0.5">
+              <X size={9} className="stroke-[1.5]" />
+              {stats.erros}
+            </span>
+            {stats.duvidasCount > 0 && (
+              <span className="text-amber-400/80 font-light flex items-center gap-0.5">
+                <Flag size={8} />
+                {stats.duvidasCount}
+              </span>
+            )}
+            <span className={`px-1.5 py-0.2 rounded border text-[9px] font-light tabular-nums ${aproveitamentoClasses}`}>
+              {stats.pct === null ? "—" : `${stats.pct}%`}
+            </span>
+          </div>
 
-          {/* Ações de Admin no Caso */}
-          {isAdmin && (
-            <div
-              className="flex items-center gap-0.5 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0 ml-1 select-none"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <span
-                role="button"
-                tabIndex={0}
-                onClick={() => onAddSubfolder?.(caso.id)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onAddSubfolder?.(caso.id); } }}
-                title="Adicionar subpasta neste caso"
-                className="p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.08] active:bg-white/[0.12] rounded transition-colors cursor-pointer inline-flex"
-              >
-                <FolderPlus size={12} />
-              </span>
-              <span
-                role="button"
-                tabIndex={0}
-                onClick={() => onRenameCaso?.(caso.id, caso.nome)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onRenameCaso?.(caso.id, caso.nome); } }}
-                title="Renomear este caso"
-                className="p-1 text-slate-500 hover:text-amber-400 hover:bg-white/[0.08] active:bg-white/[0.12] rounded transition-colors cursor-pointer inline-flex"
-              >
-                <Pencil size={12} />
-              </span>
-              {/* Mover caso para outro caderno */}
-              {onMoverCaso && cadernos && cadernos.length > 0 && (
-                <span className="relative inline-flex">
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setShowMoverDropdown(v => !v)}
-                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowMoverDropdown(v => !v); } }}
-                    title="Mover este caso para outro caderno"
-                    className="p-1 text-slate-500 hover:text-indigo-300 hover:bg-white/[0.08] active:bg-white/[0.12] rounded transition-colors cursor-pointer inline-flex"
-                  >
-                    <FolderInput size={12} />
-                  </span>
-                  {showMoverDropdown && (
-                    <div className="absolute top-6 right-0 z-50 min-w-[200px] max-w-[calc(100vw-40px)] bg-[#0d1222] border border-white/[0.12] rounded-xl shadow-lg p-1.5 flex flex-col gap-0.5">
-                      <p className="text-[9px] text-slate-500 uppercase tracking-wider px-2 pb-1 border-b border-white/[0.06] font-bold">Mover para caderno:</p>
-                      <div className="max-h-48 overflow-y-auto custom-scrollbar flex flex-col gap-0.5">
-                        {cadernos.map(c => (
-                          <button
-                            key={c.id}
-                            disabled={movingCaso}
-                            onClick={async () => {
-                              setMovingCaso(true);
-                              try {
-                                await onMoverCaso(caso.id, caso.nome, c.id);
-                              } finally {
-                                setMovingCaso(false);
-                                setShowMoverDropdown(false);
-                              }
-                            }}
-                            className="text-left px-2.5 py-1.5 rounded-lg text-[10px] text-slate-300 hover:bg-indigo-500/20 hover:text-indigo-200 transition-colors truncate disabled:opacity-50"
-                          >
-                            📝 {c.nome}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+            {/* Ações de Admin no Caso */}
+            {isAdmin && (
+              <div className="flex items-center gap-0.5 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0 select-none">
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onAddSubfolder?.(caso.id)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onAddSubfolder?.(caso.id); } }}
+                  title="Adicionar subpasta neste caso"
+                  className="p-1.5 sm:p-1 text-slate-500 hover:text-indigo-400 hover:bg-white/[0.08] active:bg-white/[0.12] rounded transition-colors cursor-pointer inline-flex"
+                >
+                  <FolderPlus size={12} />
                 </span>
-              )}
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onRenameCaso?.(caso.id, caso.nome)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onRenameCaso?.(caso.id, caso.nome); } }}
+                  title="Renomear este caso"
+                  className="p-1.5 sm:p-1 text-slate-500 hover:text-amber-400 hover:bg-white/[0.08] active:bg-white/[0.12] rounded transition-colors cursor-pointer inline-flex"
+                >
+                  <Pencil size={12} />
+                </span>
+                {/* Mover caso para outro caderno */}
+                {onMoverCaso && cadernos && cadernos.length > 0 && (
+                  <span className="relative inline-flex">
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setShowMoverDropdown(v => !v)}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowMoverDropdown(v => !v); } }}
+                      title="Mover este caso para outro caderno"
+                      className="p-1.5 sm:p-1 text-slate-500 hover:text-indigo-300 hover:bg-white/[0.08] active:bg-white/[0.12] rounded transition-colors cursor-pointer inline-flex"
+                    >
+                      <FolderInput size={12} />
+                    </span>
+                    {showMoverDropdown && (
+                      <div className="absolute top-7 right-0 z-50 min-w-[200px] max-w-[calc(100vw-40px)] bg-[#0d1222] border border-white/[0.12] rounded-xl shadow-lg p-1.5 flex flex-col gap-0.5">
+                        <p className="text-[9px] text-slate-500 uppercase tracking-wider px-2 pb-1 border-b border-white/[0.06] font-bold">Mover para caderno:</p>
+                        <div className="max-h-48 overflow-y-auto custom-scrollbar flex flex-col gap-0.5">
+                          {cadernos.map(c => (
+                            <button
+                              key={c.id}
+                              disabled={movingCaso}
+                              onClick={async () => {
+                                setMovingCaso(true);
+                                try {
+                                  await onMoverCaso(caso.id, caso.nome, c.id);
+                                } finally {
+                                  setMovingCaso(false);
+                                  setShowMoverDropdown(false);
+                                }
+                              }}
+                              className="text-left px-2.5 py-1.5 rounded-lg text-[10px] text-slate-300 hover:bg-indigo-500/20 hover:text-indigo-200 transition-colors truncate disabled:opacity-50"
+                            >
+                              📝 {c.nome}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </span>
+                )}
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onDeleteCaso?.(caso.id, caso.nome, caso.questoes)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onDeleteCaso?.(caso.id, caso.nome, caso.questoes); } }}
+                  title={caso.questoes.length > 0 ? `Excluir subpasta e suas ${caso.questoes.length} questões` : "Excluir esta subpasta/caso"}
+                  className="p-1.5 sm:p-1 text-slate-500 hover:text-rose-400 hover:bg-white/[0.08] active:bg-white/[0.12] rounded transition-colors cursor-pointer inline-flex"
+                >
+                  <Trash2 size={12} />
+                </span>
+              </div>
+            )}
+
+            {/* Botão rápido para revisar erros deste caso */}
+            {stats.erros > 0 && (
               <span
                 role="button"
                 tabIndex={0}
-                onClick={() => onDeleteCaso?.(caso.id, caso.nome, caso.questoes)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onDeleteCaso?.(caso.id, caso.nome, caso.questoes); } }}
-                title={caso.questoes.length > 0 ? `Excluir subpasta e suas ${caso.questoes.length} questões` : "Excluir esta subpasta/caso"}
-                className="p-1 text-slate-500 hover:text-rose-400 hover:bg-white/[0.08] active:bg-white/[0.12] rounded transition-colors cursor-pointer inline-flex"
-              >
-                <Trash2 size={12} />
-              </span>
-            </div>
-          )}
-
-          {/* Botão rápido para revisar erros deste caso */}
-          {stats.erros > 0 && (
-            <span
-              role="button"
-              tabIndex={0}
-              onClick={(e) => {
-                e.stopPropagation();
-                const errQs = caso.questoes.filter(q => userAnswers[String(q.id)]?.isCorrect === false);
-                if (errQs.length > 0) onOpenQuestion(errQs[0], errQs);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
+                onClick={(e) => {
                   e.stopPropagation();
                   const errQs = caso.questoes.filter(q => userAnswers[String(q.id)]?.isCorrect === false);
                   if (errQs.length > 0) onOpenQuestion(errQs[0], errQs);
-                }
-              }}
-              title={`Revisar ${stats.erros} erro(s) de "${caso.nome}"`}
-              className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-[9.5px] font-semibold text-rose-300 transition-colors cursor-pointer"
-            >
-              <Play size={8} fill="currentColor" /> Erros
-            </span>
-          )}
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const errQs = caso.questoes.filter(q => userAnswers[String(q.id)]?.isCorrect === false);
+                    if (errQs.length > 0) onOpenQuestion(errQs[0], errQs);
+                  }
+                }}
+                title={`Revisar ${stats.erros} erro(s) de "${caso.nome}"`}
+                className="inline-flex items-center gap-1 px-2 sm:px-1.5 py-1 sm:py-0.5 rounded bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-[10px] sm:text-[9.5px] font-semibold text-rose-300 transition-colors cursor-pointer"
+              >
+                <Play size={8} fill="currentColor" /> Erros
+              </span>
+            )}
 
-          {/* Imprimir Questões do Caso */}
-          {caso.questoes.length > 0 && (
-            <span
-              role="button"
-              tabIndex={0}
-              onClick={(e) => {
-                e.stopPropagation();
-                onPrintCaso?.(caso);
-              }}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onPrintCaso?.(caso); } }}
-              title={`Imprimir ${caso.questoes.length} questões deste caso (${caso.nome})`}
-              className="p-1 text-slate-500 hover:text-indigo-300 hover:bg-white/[0.08] rounded transition-colors cursor-pointer inline-flex"
-            >
-              <Printer size={11} />
-            </span>
-          )}
+            {/* Imprimir Questões do Caso */}
+            {caso.questoes.length > 0 && (
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPrintCaso?.(caso);
+                }}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onPrintCaso?.(caso); } }}
+                title={`Imprimir ${caso.questoes.length} questões deste caso (${caso.nome})`}
+                className="p-1.5 sm:p-1 text-slate-500 hover:text-indigo-300 hover:bg-white/[0.08] rounded transition-colors cursor-pointer inline-flex"
+              >
+                <Printer size={12} className="sm:w-[11px] sm:h-[11px]" />
+              </span>
+            )}
 
-          <ChevronDown
-            size={11}
-            className={`text-slate-500/70 shrink-0 ${isOpen ? "rotate-180" : ""}`}
-          />
+            <ChevronDown
+              size={11}
+              className={`hidden sm:block text-slate-500/70 shrink-0 ${isOpen ? "rotate-180" : ""}`}
+            />
+          </div>
         </div>
       </div>
 
@@ -2759,7 +2766,7 @@ export default function CadernosTab({
                 type="button"
                 onClick={() => setMateriasAbertas(new Set())}
                 title="Recolher todos os cadernos das matérias"
-                className="px-2 py-1 text-[10px] text-slate-400 hover:text-white rounded-lg transition-colors flex items-center gap-1"
+                className="px-2 py-1.5 sm:py-1 text-[10px] text-slate-400 hover:text-white rounded-lg transition-colors flex items-center gap-1"
               >
                 <ChevronRight size={11} />
                 <span>Recolher</span>
@@ -2768,7 +2775,7 @@ export default function CadernosTab({
                 type="button"
                 onClick={() => setMateriasAbertas(new Set(materiasAgrupadas.map(m => m.id)))}
                 title="Expandir todos os cadernos das matérias"
-                className="px-2 py-1 text-[10px] text-slate-400 hover:text-white rounded-lg transition-colors flex items-center gap-1"
+                className="px-2 py-1.5 sm:py-1 text-[10px] text-slate-400 hover:text-white rounded-lg transition-colors flex items-center gap-1"
               >
                 <ChevronDown size={11} />
                 <span>Expandir</span>
@@ -2779,7 +2786,7 @@ export default function CadernosTab({
           <div className="flex items-center gap-1 bg-[#101526] p-0.5 rounded-xl border border-white/[0.08] overflow-x-auto custom-scrollbar flex-nowrap max-w-full">
             <button
               onClick={() => setViewMode("blocos")}
-              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 sm:py-1 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap ${
                 viewMode === "blocos"
                   ? "bg-indigo-600 text-white"
                   : "text-slate-400 hover:text-white"
@@ -2790,7 +2797,7 @@ export default function CadernosTab({
             </button>
             <button
               onClick={() => setViewMode("arvore")}
-              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 sm:py-1 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap ${
                 viewMode === "arvore"
                   ? "bg-indigo-600 text-white"
                   : "text-slate-400 hover:text-white"
@@ -2801,7 +2808,7 @@ export default function CadernosTab({
             </button>
             <button
               onClick={() => setViewMode("mapa")}
-              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 sm:py-1 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap ${
                 viewMode === "mapa"
                   ? "bg-indigo-600 text-white"
                   : "text-slate-400 hover:text-white"
@@ -2814,7 +2821,7 @@ export default function CadernosTab({
             </button>
             <button
               onClick={() => setViewMode("caderno_plus")}
-              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 sm:py-1 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap ${
                 viewMode === "caderno_plus" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"
               }`}
               aria-pressed={viewMode === "caderno_plus"}
@@ -2830,7 +2837,7 @@ export default function CadernosTab({
               setModalDefaultParentId("");
               setIsNovaPastaModalOpen(true);
             }}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-indigo-600/90 hover:bg-indigo-600 active:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors ml-auto sm:ml-0"
+            className="flex items-center gap-1.5 px-3 min-h-[36px] sm:min-h-0 py-1.5 bg-indigo-600/90 hover:bg-indigo-600 active:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors ml-auto sm:ml-0"
           >
             <FolderPlus size={13} />
             <span className="hidden sm:inline">Nova Pasta / Caderno</span>
@@ -3128,7 +3135,7 @@ export default function CadernosTab({
                                       const qId = idq || idg || idtec || `#${q.id}`;
                                       const category = CATEGORIES.find(c => c.key === resolveCategory(q));
                                       return (
-                                        <button key={q.id} type="button" onClick={() => handleOpenQuestionInModal(q, caso.questoes)} title={`Ordem #${ord || index + 1} · ${qId} · ${qStatus} · ${category?.label || "Média"}`} className={`inline-flex items-center gap-1 rounded border px-1.5 py-1 text-[9px] transition-colors hover:border-indigo-400/40 ${answer ? (answer.isCorrect ? "border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-300" : "border-rose-500/20 bg-rose-500/[0.06] text-rose-300") : doubt ? "border-amber-500/20 bg-amber-500/[0.05] text-amber-300" : "border-white/[0.07] bg-white/[0.02] text-slate-400"}`}>
+                                        <button key={q.id} type="button" onClick={() => handleOpenQuestionInModal(q, caso.questoes)} title={`Ordem #${ord || index + 1} · ${qId} · ${qStatus} · ${category?.label || "Média"}`} className={`inline-flex items-center gap-1 rounded border px-2.5 py-1.5 sm:px-1.5 sm:py-1 text-[10.5px] sm:text-[9px] transition-colors hover:border-indigo-400/40 ${answer ? (answer.isCorrect ? "border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-300" : "border-rose-500/20 bg-rose-500/[0.06] text-rose-300") : doubt ? "border-amber-500/20 bg-amber-500/[0.05] text-amber-300" : "border-white/[0.07] bg-white/[0.02] text-slate-400"}`}>
                                           <span className="text-slate-500">#{ord ?? index + 1}</span><span>{qId}</span>
                                           <span className="hidden border-l border-current/20 pl-1 text-[8px] opacity-70 sm:inline">{category?.label || "Média"}</span>
                                         </button>
@@ -3222,34 +3229,34 @@ export default function CadernosTab({
                               const caseOpen = Math.max(0, caso.questoes.length - caseCorrect - caseWrong);
                               return (
                                 <div key={caso.id} className="min-w-0 max-w-full">
-                                  <div className="mb-1.5 flex items-center gap-1.5 text-[10px] text-slate-400">
-                                    <ChevronRight size={10} className="shrink-0 text-slate-600" />
-                                    <span className="max-w-[280px] truncate" title={caso.nome}>{caso.nome}</span>
-                                    <span className="shrink-0 text-slate-600">{caso.questoes.length} q.</span>
-                                  </div>
-                                  <div className="flex flex-wrap gap-[3px] pl-4" aria-label={`${caso.nome}: ${caseCorrect} acertos, ${caseWrong} erros, ${caseOpen} não respondidas${caseDoubt ? `, ${caseDoubt} dúvidas` : ""}`}>
-                                    {caso.questoes.map((q, idx) => {
-                                      const answer = userAnswers[String(q.id)];
-                                      const markedDoubt = duvidas.has(String(q.id));
-                                      const statusClass = answer
-                                        ? answer.isCorrect
-                                          ? "border-emerald-500/60 bg-emerald-500/20 text-emerald-300"
-                                          : "border-rose-500/60 bg-rose-500/20 text-rose-300"
-                                        : markedDoubt
-                                          ? "border-amber-500/50 bg-amber-500/10 text-amber-300"
-                                          : "border-slate-600/70 bg-[#0b1019] text-slate-600";
-                                      return (
-                                        <button
-                                          key={q.id}
-                                          type="button"
-                                          onClick={() => handleOpenQuestionInModal(q, caso.questoes)}
-                                          title={`Questão ${idx + 1}${answer ? (answer.isCorrect ? " · Acerto" : " · Erro") : markedDoubt ? " · Dúvida" : " · Não respondida"}`}
-                                          className={`flex h-[15px] w-[15px] items-center justify-center rounded-[3px] border transition-colors hover:brightness-125 ${statusClass}`}
-                                        >
-                                          {answer ? (answer.isCorrect ? <Check size={9} /> : <X size={9} />) : markedDoubt ? <Flag size={7} /> : null}
-                                        </button>
-                                      );
-                                    })}
+                                    <div className="mb-1.5 flex items-center gap-1.5 text-[10px] text-slate-400">
+                                      <ChevronRight size={10} className="shrink-0 text-slate-600" />
+                                      <span className="max-w-full sm:max-w-[280px] truncate" title={caso.nome}>{caso.nome}</span>
+                                      <span className="shrink-0 text-slate-600">{caso.questoes.length} q.</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1 sm:gap-[3px] pl-2 sm:pl-4" aria-label={`${caso.nome}: ${caseCorrect} acertos, ${caseWrong} erros, ${caseOpen} não respondidas${caseDoubt ? `, ${caseDoubt} dúvidas` : ""}`}>
+                                      {caso.questoes.map((q, idx) => {
+                                        const answer = userAnswers[String(q.id)];
+                                        const markedDoubt = duvidas.has(String(q.id));
+                                        const statusClass = answer
+                                          ? answer.isCorrect
+                                            ? "border-emerald-500/60 bg-emerald-500/20 text-emerald-300"
+                                            : "border-rose-500/60 bg-rose-500/20 text-rose-300"
+                                          : markedDoubt
+                                            ? "border-amber-500/50 bg-amber-500/10 text-amber-300"
+                                            : "border-slate-600/70 bg-[#0b1019] text-slate-600";
+                                        return (
+                                          <button
+                                            key={q.id}
+                                            type="button"
+                                            onClick={() => handleOpenQuestionInModal(q, caso.questoes)}
+                                            title={`Questão ${idx + 1}${answer ? (answer.isCorrect ? " · Acerto" : " · Erro") : markedDoubt ? " · Dúvida" : " · Não respondida"}`}
+                                            className={`flex h-7 w-7 sm:h-[15px] sm:w-[15px] items-center justify-center rounded-[4px] sm:rounded-[3px] border transition-colors hover:brightness-125 ${statusClass}`}
+                                          >
+                                            {answer ? (answer.isCorrect ? <Check size={11} className="sm:w-[9px] sm:h-[9px]" /> : <X size={11} className="sm:w-[9px] sm:h-[9px]" />) : markedDoubt ? <Flag size={9} className="sm:w-[7px] sm:h-[7px]" /> : null}
+                                          </button>
+                                        );
+                                      })}
                                   </div>
                                 </div>
                               );
@@ -3461,7 +3468,7 @@ export default function CadernosTab({
                           onDragLeave={(event) => {
                             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragOverCadernoId(null);
                           }}
-                          className={`grid min-h-11 grid-cols-[minmax(0,1fr)_auto_auto] sm:grid-cols-[minmax(0,1fr)_120px_auto] items-center gap-2 sm:gap-4 px-2 sm:px-4 py-1.5 sm:py-1 rounded-md border-b border-white/[0.05] transition-colors group cursor-pointer ${
+                          className={`flex flex-col gap-2 sm:grid min-h-11 sm:grid-cols-[minmax(0,1fr)_120px_auto] sm:items-center sm:gap-4 px-3 sm:px-4 py-2.5 sm:py-1.5 rounded-md border-b border-white/[0.05] transition-colors group cursor-pointer ${
                             draggingCadernoId === caderno.id ? "opacity-40" : ""
                           } ${dragOverCadernoId === caderno.id ? "ring-2 ring-indigo-400/70 bg-indigo-500/10" : ""} ${
                             cadernoIndex % 2 === 0
@@ -3471,86 +3478,91 @@ export default function CadernosTab({
                           onClick={() => setSelectedCadernoId(caderno.id)}
                         >
                           {/* Nome do caderno */}
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="text-[10px] text-slate-600 group-hover:text-slate-400 shrink-0">→</span>
-                            <span className="text-[11px] shrink-0 opacity-75">📝</span>
-                            <span className="text-xs font-medium text-slate-300 group-hover:text-white truncate min-w-0">
-                              {caderno.nome}
-                            </span>
-                            <span className="shrink-0 rounded bg-white/[0.04] px-1 sm:px-1.5 py-0.5 text-[8.5px] sm:text-[9px] leading-none text-slate-500">
+                          <div className="flex items-center justify-between sm:justify-start gap-2 min-w-0 w-full sm:w-auto">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="text-[10px] text-slate-600 group-hover:text-slate-400 shrink-0">→</span>
+                              <span className="text-[11px] shrink-0 opacity-75">📝</span>
+                              <span className="text-[12.5px] sm:text-xs font-medium text-slate-300 group-hover:text-white truncate min-w-0">
+                                {caderno.nome}
+                              </span>
+                            </div>
+                            <span className="shrink-0 rounded bg-white/[0.04] px-1.5 py-0.5 text-[9px] leading-none text-slate-500">
                               {cTotal} <span className="hidden sm:inline">quest.</span><span className="sm:hidden">q.</span>
                             </span>
                           </div>
 
-                          {/* Status em colunas compactas no mobile e fixas no desktop */}
-                          <div className="flex sm:grid sm:w-[120px] sm:grid-cols-[28px_28px_28px_36px] items-center gap-1 sm:gap-0 justify-items-center whitespace-nowrap tabular-nums shrink-0">
-                            <span className="w-6 sm:w-7 text-center text-emerald-400/80 font-light inline-flex justify-center items-center gap-0.5 text-[9.5px] sm:text-[10px]" title="Acertos">
-                              <Check size={9} className="stroke-[1.5]" />{cAcertos}
-                            </span>
-                            <span className="w-6 sm:w-7 text-center text-rose-400/80 font-light inline-flex justify-center items-center gap-0.5 text-[9.5px] sm:text-[10px]" title="Erros">
-                              <X size={9} className="stroke-[1.5]" />{cErros}
-                            </span>
-                            <span className="w-5 sm:w-7 text-center text-amber-400/80 font-light inline-flex justify-center items-center gap-0.5 text-[9.5px] sm:text-[10px]" title="Dúvidas">
-                              {cDuvidas > 0 ? <><Flag size={8} />{cDuvidas}</> : <span className="invisible text-[0px] sm:text-[10px]">0</span>}
-                            </span>
-                            <span className={`w-8 sm:w-9 text-center px-1 py-0.2 rounded border text-[8.5px] sm:text-[9px] font-light ${cAproveitamentoClasses}`}>
-                              {cPct === null ? "—" : `${cPct}%`}
-                            </span>
-                          </div>
+                          {/* Row 2 on mobile: Stats + Actions */}
+                          <div className="flex items-center justify-between sm:contents gap-2 w-full">
+                            {/* Status em colunas compactas no mobile e fixas no desktop */}
+                            <div className="flex sm:grid sm:w-[120px] sm:grid-cols-[28px_28px_28px_36px] items-center gap-2 sm:gap-0 justify-items-center whitespace-nowrap tabular-nums shrink-0">
+                              <span className="sm:w-7 text-center text-emerald-400/80 font-light inline-flex justify-center items-center gap-0.5 text-[10px]" title="Acertos">
+                                <Check size={9} className="stroke-[1.5]" />{cAcertos}
+                              </span>
+                              <span className="sm:w-7 text-center text-rose-400/80 font-light inline-flex justify-center items-center gap-0.5 text-[10px]" title="Erros">
+                                <X size={9} className="stroke-[1.5]" />{cErros}
+                              </span>
+                              <span className="sm:w-7 text-center text-amber-400/80 font-light inline-flex justify-center items-center gap-0.5 text-[10px]" title="Dúvidas">
+                                {cDuvidas > 0 ? <><Flag size={8} />{cDuvidas}</> : <span className="invisible text-[0px] sm:text-[10px]">0</span>}
+                              </span>
+                              <span className={`sm:w-9 text-center px-1.5 sm:px-1 py-0.5 sm:py-0.2 rounded border text-[9px] font-light ${cAproveitamentoClasses}`}>
+                                {cPct === null ? "—" : `${cPct}%`}
+                              </span>
+                            </div>
 
-                          {/* Botão revisar erros + abrir + ações administrativas com touch targets confortáveis */}
-                          <div className="flex items-center gap-1 shrink-0">
-                            {cErros > 0 && (
-                              <button
-                                type="button"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  const errQs = caderno.questoes.filter(q => userAnswers[String(q.id)]?.isCorrect === false);
-                                  if (errQs.length > 0) handleOpenQuestionInModal(errQs[0], errQs);
-                                }}
-                                title={`Revisar ${cErros} erro(s) deste caderno`}
-                                className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-[9.5px] font-semibold text-rose-300 transition-colors"
-                              >
-                                <Play size={8} fill="currentColor" /> Erros
-                              </button>
-                            )}
-                            {isAdminState && (
-                              <div className="flex items-center gap-0.5" onClick={(event) => event.stopPropagation()}>
-                                <span className="flex h-6 w-6 cursor-grab items-center justify-center rounded border border-white/[0.08] bg-white/[0.03] text-slate-500 active:cursor-grabbing" title="Arraste para reorganizar este caderno">
-                                  <GripVertical size={12} />
-                                </span>
-                              </div>
-                            )}
-                            <span
-                              title="Abrir visão dedicada deste caderno"
-                              className="w-6 h-6 sm:w-5 sm:h-5 flex items-center justify-center rounded border border-white/[0.05] bg-white/[0.02] text-slate-500 group-hover:text-slate-300 group-hover:border-white/[0.10] transition-colors"
-                            >
-                              <ChevronRight size={13} className="sm:w-[11px] sm:h-[11px]" />
-                            </span>
-
-                            {isAdminState && (
-                              <div
-                                className="flex items-center gap-1 select-none shrink-0"
-                                onClick={(e) => e.stopPropagation()}
-                              >
+                            {/* Botão revisar erros + abrir + ações administrativas com touch targets confortáveis */}
+                            <div className="flex items-center gap-1.5 sm:gap-1 shrink-0">
+                              {cErros > 0 && (
                                 <button
                                   type="button"
-                                  onClick={() => handleOpenRenameCaso(caderno.id, caderno.nome)}
-                                  title="Renomear este caderno (Admin)"
-                                  className="w-6 h-6 sm:w-5 sm:h-5 flex items-center justify-center rounded border border-white/[0.08] bg-white/[0.04] text-slate-400 hover:text-amber-300 active:bg-amber-500/20 hover:border-amber-500/30 hover:bg-amber-500/10 transition-colors cursor-pointer"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    const errQs = caderno.questoes.filter(q => userAnswers[String(q.id)]?.isCorrect === false);
+                                    if (errQs.length > 0) handleOpenQuestionInModal(errQs[0], errQs);
+                                  }}
+                                  title={`Revisar ${cErros} erro(s) deste caderno`}
+                                  className="inline-flex items-center gap-1 px-2 sm:px-1.5 py-1 sm:py-0.5 rounded bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-[10px] sm:text-[9.5px] font-semibold text-rose-300 transition-colors"
                                 >
-                                  <Pencil size={11} className="sm:w-[10px] sm:h-[10px]" />
+                                  <Play size={8} fill="currentColor" /> Erros
                                 </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteCaderno(caderno)}
-                                  title={caderno.questoes.length > 0 ? `Excluir caderno e suas ${caderno.questoes.length} questões (Admin)` : "Excluir este caderno (Admin)"}
-                                  className="w-6 h-6 sm:w-5 sm:h-5 flex items-center justify-center rounded border border-rose-500/25 bg-rose-500/10 text-rose-400 hover:text-rose-100 active:bg-rose-500/30 hover:border-rose-500/50 hover:bg-rose-500/25 transition-colors cursor-pointer"
+                              )}
+                              {isAdminState && (
+                                <div className="flex items-center gap-0.5" onClick={(event) => event.stopPropagation()}>
+                                  <span className="flex h-8 w-8 sm:h-6 sm:w-6 cursor-grab items-center justify-center rounded border border-white/[0.08] bg-white/[0.03] text-slate-500 active:cursor-grabbing" title="Arraste para reorganizar este caderno">
+                                    <GripVertical size={13} className="sm:w-3 sm:h-3" />
+                                  </span>
+                                </div>
+                              )}
+                              <span
+                                title="Abrir visão dedicada deste caderno"
+                                className="w-8 h-8 sm:w-5 sm:h-5 flex items-center justify-center rounded border border-white/[0.05] bg-white/[0.02] text-slate-500 group-hover:text-slate-300 group-hover:border-white/[0.10] transition-colors"
+                              >
+                                <ChevronRight size={14} className="sm:w-[11px] sm:h-[11px]" />
+                              </span>
+
+                              {isAdminState && (
+                                <div
+                                  className="flex items-center gap-1 select-none shrink-0"
+                                  onClick={(e) => e.stopPropagation()}
                                 >
-                                  <Trash2 size={11} className="sm:w-[10px] sm:h-[10px]" />
-                                </button>
-                              </div>
-                            )}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenRenameCaso(caderno.id, caderno.nome)}
+                                    title="Renomear este caderno (Admin)"
+                                    className="w-8 h-8 sm:w-5 sm:h-5 flex items-center justify-center rounded border border-white/[0.08] bg-white/[0.04] text-slate-400 hover:text-amber-300 active:bg-amber-500/20 hover:border-amber-500/30 hover:bg-amber-500/10 transition-colors cursor-pointer"
+                                  >
+                                    <Pencil size={12} className="sm:w-[10px] sm:h-[10px]" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteCaderno(caderno)}
+                                    title={caderno.questoes.length > 0 ? `Excluir caderno e suas ${caderno.questoes.length} questões (Admin)` : "Excluir este caderno (Admin)"}
+                                    className="w-8 h-8 sm:w-5 sm:h-5 flex items-center justify-center rounded border border-rose-500/25 bg-rose-500/10 text-rose-400 hover:text-rose-100 active:bg-rose-500/30 hover:border-rose-500/50 hover:bg-rose-500/25 transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 size={12} className="sm:w-[10px] sm:h-[10px]" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );

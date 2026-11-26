@@ -727,7 +727,7 @@ export default function StudyCorner3DTab({ user, onRequireAuth }: StudyCorner3DT
   }, [binderState, closeBinderToDesk]);
 
   return (
-    <div className="relative w-full h-[calc(100vh-148px)] min-h-[580px] rounded-2xl overflow-hidden border border-white/[0.08] bg-[#0b0d17]">
+    <div className="relative w-full h-[calc(100dvh-135px)] min-h-[420px] sm:min-h-[580px] rounded-2xl overflow-hidden border border-white/[0.08] bg-[#0b0d17]">
       {/* Isolated WebGL Mount Container */}
       <div ref={canvasMountRef} className="relative w-full h-full" />
 

@@ -357,7 +357,7 @@ export default function FixationGame({
   return (
     <div className="flex-1 flex flex-col bg-zinc-950 text-white min-h-0 overflow-hidden">
       {/* ── Header ── */}
-      <div className="p-3 md:p-4 flex items-center gap-2 md:gap-3 border-b border-white/5 bg-zinc-950 sticky top-0 z-50 shrink-0">
+      <div className="p-3 md:p-4 flex flex-wrap items-center gap-2 md:gap-3 border-b border-white/5 bg-zinc-950 sticky top-0 z-50 shrink-0">
         <button onClick={onBack} className="p-2 hover:bg-white/5 rounded-xl transition-colors shrink-0">
           <ChevronLeft size={20} />
         </button>
@@ -384,10 +384,11 @@ export default function FixationGame({
         </div>
 
         {/* Toggle de modo */}
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-zinc-900 rounded-full border border-white/5">
+        <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 bg-zinc-900 rounded-full border border-white/5 shrink-0">
           <span className={`text-[8px] font-black uppercase tracking-widest ${!isTypingMode ? 'text-indigo-400' : 'text-zinc-500'}`}>Revelar</span>
           <button
             onClick={() => { setIsTypingMode(v => !v); setRevealed(false); setUserInput(''); }}
+            aria-label="Alternar entre Revelar e Digitar"
             className="w-8 h-4 bg-zinc-800 rounded-full relative p-0.5 border border-white/10"
           >
             <div className={`w-3 h-3 bg-white rounded-full ${isTypingMode ? 'translate-x-4' : 'translate-x-0'}`} />
@@ -546,7 +547,7 @@ export default function FixationGame({
 
                             {!isTypingMode && (
                               <>
-                                <div className="grid grid-cols-4 gap-2">
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                   {([
                                     { type: 'forgot' as ChoiceType, label: 'Branco', Icon: Brain, color: '#ef4444' },
                                     { type: 'partial' as ChoiceType, label: 'Quase', Icon: Layers, color: '#f97316' },

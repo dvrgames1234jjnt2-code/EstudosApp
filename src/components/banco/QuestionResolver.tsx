@@ -424,7 +424,7 @@ export default function QuestionResolver({
               </button>
               {showHistory && (
                 <div
-                  className="absolute top-full right-0 mt-2 w-60 bg-[#181f2e] border border-white/[0.08] rounded-xl z-50 overflow-hidden"
+                  className="absolute top-full right-0 mt-2 w-60 max-w-[calc(100vw-2rem)] bg-[#181f2e] border border-white/[0.08] rounded-xl z-50 overflow-hidden"
                 >
                   <div className="px-4 py-2.5 border-b border-white/[0.06]">
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Histórico desta questão</p>
@@ -460,15 +460,15 @@ export default function QuestionResolver({
             </div>
 
             {/* Progresso + Prev/Next */}
-            <div className="flex items-center gap-1.5 bg-white/[0.03] border border-white/[0.06] rounded-lg px-2 py-1">
-              <button onClick={handlePrev} disabled={questionIndex === 0} className="text-slate-500 hover:text-white disabled:opacity-25 transition-colors">
-                <ChevronLeft size={15} />
+            <div className="flex items-center gap-1 bg-white/[0.03] border border-white/[0.06] rounded-lg px-1.5 py-0.5 sm:px-2 sm:py-1">
+              <button onClick={handlePrev} disabled={questionIndex === 0} aria-label="Questão anterior" className="p-1.5 sm:p-0.5 text-slate-500 hover:text-white disabled:opacity-25 transition-colors">
+                <ChevronLeft size={16} className="sm:w-[15px] sm:h-[15px]" />
               </button>
-              <span className="text-[11px] font-medium text-slate-500 tabular-nums min-w-[3rem] text-center">
+              <span className="text-[11px] font-medium text-slate-500 tabular-nums min-w-[2.75rem] sm:min-w-[3rem] text-center">
                 {questionIndex + 1} / {totalQuestions}
               </span>
-              <button onClick={handleNext} disabled={questionIndex === totalQuestions - 1} className="text-slate-500 hover:text-white disabled:opacity-25 transition-colors">
-                <ChevronRight size={15} />
+              <button onClick={handleNext} disabled={questionIndex === totalQuestions - 1} aria-label="Próxima questão" className="p-1.5 sm:p-0.5 text-slate-500 hover:text-white disabled:opacity-25 transition-colors">
+                <ChevronRight size={16} className="sm:w-[15px] sm:h-[15px]" />
               </button>
             </div>
 
@@ -724,12 +724,12 @@ export default function QuestionResolver({
                 </span>
               </label>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 {!showFeedback && (
                   <button
                     onClick={handleConfirm}
                     disabled={isSaving || !selectedOption}
-                    className={`px-4 py-2 rounded-lg text-xs font-medium transition-colors ${
+                    className={`min-h-[40px] sm:min-h-0 px-4 py-2 rounded-lg text-xs font-medium transition-colors flex-1 sm:flex-initial justify-center flex items-center ${
                       selectedOption
                         ? "bg-blue-600 hover:bg-blue-500 text-white"
                         : "bg-white/[0.04] text-slate-600 border border-white/[0.05] cursor-not-allowed"
@@ -741,14 +741,14 @@ export default function QuestionResolver({
 
                 <button
                   onClick={() => setShowFeedback(!showFeedback)}
-                  className="px-3 py-2 rounded-lg border border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200 text-xs font-medium transition-colors"
+                  className="min-h-[40px] sm:min-h-0 px-3 py-2 rounded-lg border border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200 text-xs font-medium transition-colors"
                 >
                   {showFeedback ? "Ocultar gabarito" : "Ver gabarito"}
                 </button>
 
                 <button
                   onClick={() => setShowComment(!showComment)}
-                  className={`px-3 py-2 rounded-lg border text-xs font-medium transition-colors flex items-center gap-2 ${
+                  className={`min-h-[40px] sm:min-h-0 px-3 py-2 rounded-lg border text-xs font-medium transition-colors flex items-center gap-2 ${
                     showComment
                       ? "border-purple-500/30 bg-purple-500/10 text-purple-300"
                       : "border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200"
