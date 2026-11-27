@@ -126,7 +126,12 @@ async function updateQuestaoByIds(
   ids: (string | number)[],
   payload: Record<string, string | number | boolean | null>
 ): Promise<string | null> {
-  return safeUpdateQuestoesByIds(ids, payload);
+  const nextPayload =
+    Object.prototype.hasOwnProperty.call(payload, "Banca") &&
+    !Object.prototype.hasOwnProperty.call(payload, "banca")
+      ? { ...payload, banca: payload.Banca }
+      : payload;
+  return safeUpdateQuestoesByIds(ids, nextPayload);
 }
 
 async function deleteQuestoesByIds(ids: (string | number)[]): Promise<string | null> {

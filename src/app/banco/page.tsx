@@ -243,8 +243,8 @@ export default function BancoPage() {
   }, []);
 
   // ── Fetch questions ───────────────────────
-  const fetchQuestions = useCallback(async () => {
-    setLoadingQuestions(true);
+  const fetchQuestions = useCallback(async (silent = false) => {
+    if (!silent) setLoadingQuestions(true);
     try {
       // Usa supabasePublic (sem JWT do usuário) para não ser bloqueado pela RLS
       const { data, error } = await supabasePublic
@@ -254,13 +254,16 @@ export default function BancoPage() {
       if (error) throw error;
 
       const normalized: BancoQuestion[] = (data || []).map(normalizarQuestao);
+      const byId = new Map(normalized.map((q) => [String(q.id), q]));
       setQuestions(normalized);
-      // Inicializa a fila padrão com todas as questões para que o Desempenho funcione de imediato
-      setResolverQueue(normalized);
+      setResolverQueue((prev) =>
+        prev.length === 0 ? normalized : prev.map((item) => byId.get(String(item.id)) ?? item)
+      );
+      setSelectedQuestion((prev) => (prev ? (byId.get(String(prev.id)) ?? prev) : null));
     } catch (err: any) {
       console.error("Erro ao carregar questões:", err.message);
     } finally {
-      setLoadingQuestions(false);
+      if (!silent) setLoadingQuestions(false);
     }
   }, []);
 
@@ -646,7 +649,7 @@ export default function BancoPage() {
                     onGenerateTest={handleGenerateTest}
                     onFilteredQuestionsChange={handleFilteredQuestionsChange}
                     isAdmin={isAdmin}
-                    onRefresh={fetchQuestions}
+                    onRefresh={() => fetchQuestions(true)}
                     onEdit={(q) => setEditingQuestion(q)}
                   />
                 </>
@@ -1039,7 +1042,7 @@ export default function BancoPage() {
                   user={user}
                   userId={user?.id}
                   onShowAuth={() => setShowAuthModal(true)}
-                  onRefreshQuestions={fetchQuestions}
+                  onRefreshQuestions={() => fetchQuestions(true)}
                   isAdmin={isAdmin}
                 />
               )}
@@ -1059,7 +1062,7 @@ export default function BancoPage() {
                   setActiveTab("resolver");
                 }}
                 onEditQuestion={(q) => setEditingQuestion(q)}
-                onRefreshQuestions={fetchQuestions}
+                onRefreshQuestions={() => fetchQuestions(true)}
               />
             </div>
           )}
@@ -1072,7 +1075,7 @@ export default function BancoPage() {
                 orgNodes={orgNodes}
                 simuladosConfig={simuladosConfig}
                 onSaveSimuladosConfig={handleSaveSimuladosConfig}
-                onRefreshQuestions={fetchQuestions}
+                onRefreshQuestions={() => fetchQuestions(true)}
                 onEditQuestion={(q) => setEditingQuestion(q)}
                 onOpenResolver={(q, queue) => {
                   if (!user) { setShowAuthModal(true); return; }
@@ -1113,9 +1116,11 @@ export default function BancoPage() {
           questao={editingQuestion}
           orgNodes={orgNodes}
           onSuccess={(updated) => {
-            fetchQuestions();
-            setSelectedQuestion(updated);
-            setResolverQueue(prev => prev.map(item => item.id === updated.id ? updated : item));
+            setQuestions((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+            setFilteredQuestions((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+            setResolverQueue((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+            setSelectedQuestion((prev) => (prev && prev.id === updated.id ? updated : prev));
+            void fetchQuestions(true);
           }}
         />
       )}

@@ -1785,10 +1785,11 @@ export default function CadernosTab({
 
   const handleEditSuccess = useCallback((updated: BancoQuestion) => {
     showToast("Questão atualizada com sucesso!");
-    if (onRefreshQuestions) onRefreshQuestions();
+    setModalQueue((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
     if (modalQuestion && modalQuestion.id === updated.id) {
       setModalQuestion(updated);
     }
+    if (onRefreshQuestions) onRefreshQuestions();
   }, [onRefreshQuestions, modalQuestion]);
 
   const handleChangeDifficulty = useCallback(async (question: BancoQuestion, difficulty: string) => {

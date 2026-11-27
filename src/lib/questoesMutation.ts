@@ -50,23 +50,39 @@ function adaptPayloadForError(
   return changed ? next : null;
 }
 
+interface MutationOutcome {
+  error: { message: string } | null;
+  affectedCount?: number;
+}
+
 async function runQuestaoMutation(
   runner: (
     client: typeof supabase,
     payload: QuestaoWritePayload
-  ) => Promise<{ error: { message: string } | null }>,
-  initialPayload: QuestaoWritePayload
+  ) => Promise<MutationOutcome>,
+  initialPayload: QuestaoWritePayload,
+  requireAffectedRow = false
 ): Promise<string | null> {
   let payload: QuestaoWritePayload = { ...initialPayload };
 
   for (let attempt = 0; attempt < 12; attempt += 1) {
     let res = await runner(supabase, payload);
-    if (!res.error) return null;
 
-    if (!extractMissingColumn(res.error.message || "")) {
+    const primarySucceeded =
+      !res.error && (!requireAffectedRow || (res.affectedCount ?? 0) > 0);
+    if (primarySucceeded) return null;
+
+    const missingCol = res.error ? extractMissingColumn(res.error.message || "") : null;
+    if (!missingCol) {
       const pubRes = await runner(supabasePublic, payload);
-      if (!pubRes.error) return null;
-      res = pubRes;
+      const pubSucceeded =
+        !pubRes.error && (!requireAffectedRow || (pubRes.affectedCount ?? 0) > 0);
+      if (pubSucceeded) return null;
+      if (pubRes.error) {
+        res = pubRes;
+      } else if (!res.error) {
+        return "Nenhuma alteração foi aplicada no banco (verifique permissões de edição).";
+      }
     }
 
     const msg = res.error?.message || "Erro ao salvar na tabela questoes.";
@@ -85,13 +101,21 @@ export async function safeUpdateQuestoesByIds(
   payload: QuestaoWritePayload
 ): Promise<string | null> {
   if (ids.length === 0) return null;
-  return runQuestaoMutation(async (client, currentPayload) => {
-    const { error } = await client
-      .from("questoes")
-      .update(currentPayload)
-      .in("id", ids);
-    return { error };
-  }, payload);
+  return runQuestaoMutation(
+    async (client, currentPayload) => {
+      const { data, error } = await client
+        .from("questoes")
+        .update(currentPayload)
+        .in("id", ids)
+        .select("id");
+      return {
+        error,
+        affectedCount: Array.isArray(data) ? data.length : 0,
+      };
+    },
+    payload,
+    true
+  );
 }
 
 export async function safeInsertQuestao(

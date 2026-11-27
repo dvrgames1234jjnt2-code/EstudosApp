@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import {
   X,
   Save,
@@ -9,8 +9,14 @@ import {
   ExternalLink,
   AlertCircle,
 } from "lucide-react";
-import { safeUpdateQuestoesByIds, type QuestaoWritePayload } from "../../lib/questoesMutation";
-import { getQuestionIds, normalizeDifficultyLabel } from "../../lib/questionService";
+import {
+  safeUpdateQuestoesByIds,
+  type QuestaoWritePayload,
+} from "../../lib/questoesMutation";
+import {
+  getQuestionIds,
+  normalizeDifficultyLabel,
+} from "../../lib/questionService";
 import type { BancoQuestion } from "./QuestionsTable";
 import type { OrgNodeDB } from "./CadernosTab";
 
@@ -22,72 +28,95 @@ interface ModalEditarQuestaoProps {
   onSuccess: (updated: BancoQuestion) => void;
 }
 
-export function ModalEditarQuestao({
-  isOpen,
+function buildOrgNodeOptions(orgNodes: OrgNodeDB[]) {
+  const byId = new Map<string, OrgNodeDB>();
+  for (const node of orgNodes) {
+    byId.set(node.id, node);
+  }
+
+  return orgNodes
+    .map((node) => {
+      const parts: string[] = [node.nome];
+      let currParent = node.parent_id;
+      let guard = 0;
+      while (currParent && byId.has(currParent) && guard < 8) {
+        const parent = byId.get(currParent)!;
+        parts.unshift(parent.nome);
+        currParent = parent.parent_id;
+        guard += 1;
+      }
+      const pathLabel = parts.join(" / ");
+      return {
+        id: node.id,
+        label: node.tipo ? `${pathLabel} (${node.tipo})` : pathLabel,
+      };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
+}
+
+function ModalEditarQuestaoInner({
   onClose,
   questao,
   orgNodes,
   onSuccess,
-}: ModalEditarQuestaoProps) {
+}: {
+  onClose: () => void;
+  questao: BancoQuestion;
+  orgNodes: OrgNodeDB[];
+  onSuccess: (updated: BancoQuestion) => void;
+}) {
+  const initialIds = getQuestionIds(questao);
+  const initialOrdem = questao.Ordem ?? questao.ordem;
+
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  const [enunciado, setEnunciado] = useState("");
-  const [perguntaProblema, setPerguntaProblema] = useState("");
-  const [textoApoio, setTextoApoio] = useState("");
-  const [link, setLink] = useState("");
-  const [idq, setIdq] = useState("");
-  const [idg, setIdg] = useState("");
-  const [idtec, setIdtec] = useState("");
-  const [ordem, setOrdem] = useState<string>("");
-  const [materia, setMateria] = useState("");
-  const [tema, setTema] = useState("");
-  const [prova, setProva] = useState("");
-  const [ano, setAno] = useState<string>("");
-  const [banca, setBanca] = useState("");
-  const [dificuldade, setDificuldade] = useState("");
-  const [gabarito, setGabarito] = useState("");
-  const [altA, setAltA] = useState("");
-  const [altB, setAltB] = useState("");
-  const [altC, setAltC] = useState("");
-  const [altD, setAltD] = useState("");
-  const [altE, setAltE] = useState("");
-  const [comentario, setComentario] = useState("");
-  const [organizacaoId, setOrganizacaoId] = useState("");
-  const [showTextoApoio, setShowTextoApoio] = useState(false);
+  const [enunciado, setEnunciado] = useState(questao.title || "");
+  const [perguntaProblema, setPerguntaProblema] = useState(
+    questao.perguntaProblema || ""
+  );
+  const [textoApoio, setTextoApoio] = useState(questao["Texto de apoio"] || "");
+  const [showTextoApoio, setShowTextoApoio] = useState(
+    Boolean(questao["Texto de apoio"])
+  );
+  const [imagemEnunciado, setImagemEnunciado] = useState(
+    questao.imagemEnunciado || ""
+  );
+  const [link, setLink] = useState(questao.link || "");
+  const [idq, setIdq] = useState(initialIds.idq);
+  const [idg, setIdg] = useState(initialIds.idg);
+  const [idtec, setIdtec] = useState(initialIds.idtec);
+  const [ordem, setOrdem] = useState(
+    initialOrdem !== undefined && initialOrdem !== null ? String(initialOrdem) : ""
+  );
+  const [materia, setMateria] = useState(
+    questao.Disciplina || questao.materia || ""
+  );
+  const [prova, setProva] = useState(questao.prova || "");
+  const [ano, setAno] = useState(
+    questao.Ano !== undefined && questao.Ano !== null ? String(questao.Ano) : ""
+  );
+  const [banca, setBanca] = useState(questao.Banca || questao.banca || "");
+  const [dificuldade, setDificuldade] = useState(
+    normalizeDifficultyLabel(questao.dificuldade) || ""
+  );
+  const [status, setStatus] = useState(questao.status || "Ativa");
+  const [gabarito, setGabarito] = useState(
+    questao.Gabarito || questao.respostaCorreta || ""
+  );
+  const [altA, setAltA] = useState(questao["Alternativa A"] || "");
+  const [altB, setAltB] = useState(questao["Alternativa B"] || "");
+  const [altC, setAltC] = useState(questao["Alternativa C"] || "");
+  const [altD, setAltD] = useState(questao["Alternativa D"] || "");
+  const [altE, setAltE] = useState(questao["Alternativa E"] || "");
+  const [comentario, setComentario] = useState(
+    questao.comentario || questao["Comentário"] || questao.explicacao || ""
+  );
+  const [organizacaoId, setOrganizacaoId] = useState(
+    questao.organizacao_id || ""
+  );
 
-  useEffect(() => {
-    if (questao && isOpen) {
-      const ids = getQuestionIds(questao);
-      setEnunciado(questao.title || "");
-      setPerguntaProblema(questao.perguntaProblema || "");
-      setTextoApoio(questao["Texto de apoio"] || "");
-      setShowTextoApoio(Boolean(questao["Texto de apoio"]));
-      setLink(questao.link || "");
-      setIdq(ids.idq);
-      setIdg(ids.idg);
-      setIdtec(ids.idtec);
-      const qOrdem = questao.Ordem ?? questao.ordem;
-      setOrdem(qOrdem !== undefined && qOrdem !== null ? String(qOrdem) : "");
-      setMateria(questao.Disciplina || questao.materia || "");
-      setTema(questao.tema || "");
-      setProva(questao.prova || "");
-      setAno(questao.Ano !== undefined && questao.Ano !== null ? String(questao.Ano) : "");
-      setBanca(questao.Banca || questao.banca || "");
-      setDificuldade(normalizeDifficultyLabel(questao.dificuldade) || "");
-      setGabarito(questao.Gabarito || questao.respostaCorreta || "");
-      setAltA(questao["Alternativa A"] || "");
-      setAltB(questao["Alternativa B"] || "");
-      setAltC(questao["Alternativa C"] || "");
-      setAltD(questao["Alternativa D"] || "");
-      setAltE(questao["Alternativa E"] || "");
-      setComentario(questao.comentario || questao["Comentário"] || questao.explicacao || "");
-      setOrganizacaoId(questao.organizacao_id || "");
-      setErro(null);
-    }
-  }, [questao, isOpen]);
-
-  if (!isOpen || !questao) return null;
+  const orgOptions = useMemo(() => buildOrgNodeOptions(orgNodes), [orgNodes]);
 
   const handleSalvar = async () => {
     setSalvando(true);
@@ -99,19 +128,27 @@ export function ModalEditarQuestao({
         throw new Error("Gabarito inválido. Use A, B, C, D ou E.");
       }
 
-      const parsedOrdem = ordem.trim() !== "" && !Number.isNaN(Number(ordem.trim()))
-        ? Number(ordem.trim())
-        : null;
+      const trimmedOrdem = ordem.trim();
+      if (trimmedOrdem !== "" && Number.isNaN(Number(trimmedOrdem))) {
+        throw new Error("Ordem deve ser um número válido.");
+      }
+      const parsedOrdem = trimmedOrdem !== "" ? Number(trimmedOrdem) : null;
+
       const cleanIdq = idq.trim() || null;
       const cleanIdg = idg.trim() || null;
       const cleanIdtec = idtec.trim() || null;
       const cleanAno = ano.trim() || null;
       const cleanMateria = materia.trim() || null;
+      const cleanBanca = banca.trim() || null;
+      const cleanProva = prova.trim() || null;
+      const cleanStatus = status.trim() || "Ativa";
+      const cleanImg = imagemEnunciado.trim() || null;
 
       const updatePayload: QuestaoWritePayload = {
         Enunciado: enunciado,
-        "Pergunta problema": perguntaProblema,
-        "Texto de apoio": textoApoio || null,
+        "Pergunta problema": perguntaProblema.trim() || null,
+        "Texto de apoio": textoApoio.trim() || null,
+        Imagem_Enunciado: cleanImg,
         link: link.trim() || null,
         ID_Qconcursos: cleanIdq,
         Idq: cleanIdq,
@@ -120,11 +157,12 @@ export function ModalEditarQuestao({
         Ordem: parsedOrdem,
         Materia: cleanMateria,
         Disciplina: cleanMateria,
-        tema: tema.trim() || null,
-        PROVA: prova.trim() || null,
+        PROVA: cleanProva,
         Ano: cleanAno,
-        Banca: banca.trim() || null,
+        Banca: cleanBanca,
+        banca: cleanBanca,
         Dificuldade: dificuldade.trim() || null,
+        Status: cleanStatus,
         Gabarito: cleanGabarito || null,
         "Alternativa A": altA || null,
         "Alternativa B": altB || null,
@@ -135,7 +173,10 @@ export function ModalEditarQuestao({
         organizacao_id: organizacaoId || null,
       };
 
-      const updateError = await safeUpdateQuestoesByIds([questao.id], updatePayload);
+      const updateError = await safeUpdateQuestoesByIds(
+        [questao.id],
+        updatePayload
+      );
       if (updateError) {
         throw new Error(updateError);
       }
@@ -143,8 +184,9 @@ export function ModalEditarQuestao({
       const updatedObj: BancoQuestion = {
         ...questao,
         title: enunciado,
-        perguntaProblema: perguntaProblema || undefined,
-        "Texto de apoio": textoApoio || undefined,
+        perguntaProblema: perguntaProblema.trim() || undefined,
+        "Texto de apoio": textoApoio.trim() || undefined,
+        imagemEnunciado: cleanImg || undefined,
         link: link.trim() || undefined,
         ID_Qconcursos: cleanIdq || undefined,
         Idq: cleanIdq || undefined,
@@ -155,15 +197,15 @@ export function ModalEditarQuestao({
         idtec: cleanIdtec || undefined,
         Ordem: parsedOrdem,
         ordem: parsedOrdem,
-        materia: cleanMateria || questao.materia,
-        disciplina: cleanMateria || undefined,
-        Disciplina: cleanMateria || undefined,
-        tema: tema.trim() || undefined,
-        prova: prova.trim() || undefined,
+        materia: cleanMateria || "Geral",
+        disciplina: cleanMateria || "Geral",
+        Disciplina: cleanMateria || "Geral",
+        prova: cleanProva || undefined,
         Ano: cleanAno || undefined,
-        Banca: banca.trim() || undefined,
-        banca: banca.trim() || undefined,
+        Banca: cleanBanca || undefined,
+        banca: cleanBanca || undefined,
         dificuldade: dificuldade.trim() || undefined,
+        status: cleanStatus,
         Gabarito: cleanGabarito || undefined,
         respostaCorreta: cleanGabarito || undefined,
         "Alternativa A": altA || undefined,
@@ -179,9 +221,10 @@ export function ModalEditarQuestao({
 
       onSuccess(updatedObj);
       onClose();
-    } catch (err: any) {
-      console.error("Erro ao salvar questão:", err);
-      setErro(err.message || "Erro desconhecido ao salvar.");
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Erro desconhecido ao salvar.";
+      setErro(message);
     } finally {
       setSalvando(false);
     }
@@ -215,7 +258,9 @@ export function ModalEditarQuestao({
           </div>
 
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Fechar modal"
             className="p-1.5 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.05] transition-colors shrink-0"
           >
             <X size={16} />
@@ -243,18 +288,20 @@ export function ModalEditarQuestao({
               className="w-full bg-[#111623] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
             >
               <option value="">— Sem pasta associada (Geral) —</option>
-              {orgNodes.map((node) => (
-                <option key={node.id} value={node.id}>
-                  {node.nome} {node.tipo ? `(${node.tipo})` : ""}
+              {orgOptions.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.label}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Disciplina, Tópico, Ordem, Dificuldade */}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          {/* Disciplina, Ordem, Dificuldade, Status */}
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
             <div className="sm:col-span-2">
-              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">Disciplina / Matéria</label>
+              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">
+                Disciplina / Matéria
+              </label>
               <input
                 type="text"
                 value={materia}
@@ -264,7 +311,9 @@ export function ModalEditarQuestao({
               />
             </div>
             <div>
-              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">Ordem</label>
+              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">
+                Ordem
+              </label>
               <input
                 type="number"
                 value={ordem}
@@ -274,7 +323,9 @@ export function ModalEditarQuestao({
               />
             </div>
             <div>
-              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">Dificuldade</label>
+              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">
+                Dificuldade
+              </label>
               <select
                 value={dificuldade}
                 onChange={(e) => setDificuldade(e.target.value)}
@@ -290,12 +341,29 @@ export function ModalEditarQuestao({
                 <option value="Bônus">Bônus</option>
               </select>
             </div>
+            <div>
+              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">
+                Status
+              </label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full bg-[#111623] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+              >
+                <option value="Ativa">Ativa</option>
+                <option value="Arquivada">Arquivada</option>
+                <option value="Anulada">Anulada</option>
+                <option value="Inativa">Inativa</option>
+              </select>
+            </div>
           </div>
 
           {/* IDs por Plataforma: Idq, Idg, Idtec */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="text-[10.5px] font-normal text-amber-300/90 block mb-1">Idq (Qconcursos)</label>
+              <label className="text-[10.5px] font-normal text-amber-300/90 block mb-1">
+                Idq (Qconcursos)
+              </label>
               <input
                 type="text"
                 value={idq}
@@ -305,7 +373,9 @@ export function ModalEditarQuestao({
               />
             </div>
             <div>
-              <label className="text-[10.5px] font-normal text-cyan-300/90 block mb-1">Idg (Gran)</label>
+              <label className="text-[10.5px] font-normal text-cyan-300/90 block mb-1">
+                Idg (Gran)
+              </label>
               <input
                 type="text"
                 value={idg}
@@ -315,7 +385,9 @@ export function ModalEditarQuestao({
               />
             </div>
             <div>
-              <label className="text-[10.5px] font-normal text-violet-300/90 block mb-1">Idtec (TEC)</label>
+              <label className="text-[10.5px] font-normal text-violet-300/90 block mb-1">
+                Idtec (TEC)
+              </label>
               <input
                 type="text"
                 value={idtec}
@@ -326,10 +398,12 @@ export function ModalEditarQuestao({
             </div>
           </div>
 
-          {/* Prova, Banca, Ano (Data), Link */}
+          {/* Prova, Banca, Ano (Data) */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">Prova (Órgão abreviado)</label>
+              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">
+                Prova (Órgão abreviado)
+              </label>
               <input
                 type="text"
                 value={prova}
@@ -339,7 +413,9 @@ export function ModalEditarQuestao({
               />
             </div>
             <div>
-              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">Banca (ou IA)</label>
+              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">
+                Banca (ou IA)
+              </label>
               <input
                 type="text"
                 list="bancas-sugestoes"
@@ -362,7 +438,9 @@ export function ModalEditarQuestao({
               </datalist>
             </div>
             <div>
-              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">Ano / Data Aplicação</label>
+              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">
+                Ano / Data Aplicação
+              </label>
               <input
                 type="text"
                 value={ano}
@@ -375,17 +453,9 @@ export function ModalEditarQuestao({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">Tópico / Subtema</label>
-              <input
-                type="text"
-                value={tema}
-                onChange={(e) => setTema(e.target.value)}
-                placeholder="Ex: Sistema Financeiro Nacional"
-                className="w-full bg-[#111623] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
-              />
-            </div>
-            <div>
-              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">Link da Questão</label>
+              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">
+                Link da Questão
+              </label>
               <div className="relative flex items-center">
                 <input
                   type="text"
@@ -407,12 +477,26 @@ export function ModalEditarQuestao({
                 )}
               </div>
             </div>
+            <div>
+              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">
+                Imagem do Enunciado (URL opcional)
+              </label>
+              <input
+                type="text"
+                value={imagemEnunciado}
+                onChange={(e) => setImagemEnunciado(e.target.value)}
+                placeholder="https://..."
+                className="w-full bg-[#111623] border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500"
+              />
+            </div>
           </div>
 
           {/* Texto de Apoio */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-[10.5px] font-normal text-slate-400">Texto de Apoio (Opcional)</label>
+              <label className="text-[10.5px] font-normal text-slate-400">
+                Texto de Apoio (Opcional)
+              </label>
               <button
                 type="button"
                 onClick={() => setShowTextoApoio(!showTextoApoio)}
@@ -463,9 +547,13 @@ export function ModalEditarQuestao({
           {/* Alternativas e Gabarito */}
           <div className="space-y-2 p-3.5 rounded-xl bg-white/[0.015] border border-white/[0.04]">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-normal text-slate-300">Alternativas</span>
+              <span className="text-[11px] font-normal text-slate-300">
+                Alternativas
+              </span>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] text-slate-400 font-normal">Gabarito:</span>
+                <span className="text-[10px] text-slate-400 font-normal">
+                  Gabarito:
+                </span>
                 <select
                   value={gabarito}
                   onChange={(e) => setGabarito(e.target.value)}
@@ -506,7 +594,9 @@ export function ModalEditarQuestao({
                     onChange={(e) => set(e.target.value)}
                     placeholder={`Alternativa ${letra}...`}
                     className={`flex-1 bg-[#111623] border rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none transition-colors ${
-                      isCorreta ? "border-emerald-500/30" : "border-white/[0.06] focus:border-indigo-500"
+                      isCorreta
+                        ? "border-emerald-500/30"
+                        : "border-white/[0.06] focus:border-indigo-500"
                     }`}
                   />
                 </div>
@@ -542,7 +632,7 @@ export function ModalEditarQuestao({
 
           <button
             type="button"
-            onClick={handleSalvar}
+            onClick={() => void handleSalvar()}
             disabled={salvando}
             className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-normal transition-colors disabled:opacity-50"
           >
@@ -561,5 +651,25 @@ export function ModalEditarQuestao({
         </div>
       </div>
     </div>
+  );
+}
+
+export function ModalEditarQuestao({
+  isOpen,
+  onClose,
+  questao,
+  orgNodes,
+  onSuccess,
+}: ModalEditarQuestaoProps) {
+  if (!isOpen || !questao) return null;
+
+  return (
+    <ModalEditarQuestaoInner
+      key={String(questao.id)}
+      onClose={onClose}
+      questao={questao}
+      orgNodes={orgNodes}
+      onSuccess={onSuccess}
+    />
   );
 }
