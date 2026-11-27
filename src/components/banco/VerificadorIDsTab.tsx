@@ -240,6 +240,7 @@ export default function VerificadorIDsTab({
       Idq: i.idNormalizado,
       Idg: "",
       Idtec: "",
+      Link: `https://www.qconcursos.com/questoes-de-concursos/questoes?q=${i.idNormalizado}`,
       Dificuldade: "Média",
       "Texto de apoio": "",
       Enunciado: "",

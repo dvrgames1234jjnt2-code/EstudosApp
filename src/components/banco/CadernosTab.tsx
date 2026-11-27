@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { createContext, useContext } from "react";
 import {
   ChevronRight,
@@ -52,6 +52,8 @@ import {
 } from "../../lib/questionService";
 import { ModalEditarQuestao } from "./ModalEditarQuestao";
 import { ModalMoverQuestao } from "./ModalMoverQuestao";
+import { ModalMoverSubcaso, type SubcasoToMove } from "./ModalMoverSubcaso";
+import { ModalExcluirCaderno, type DeleteTargetNode } from "./ModalExcluirCaderno";
 import { ModalRenomearPasta } from "./ModalRenomearPasta";
 import { PrintSimuladoModal } from "./PrintSimuladoModal";
 import { ImportJsonModal } from "./ImportJsonModal";
@@ -130,13 +132,13 @@ interface HierarchyTreeNode {
   totalDescendentesQuestoes: number;
 }
 
-interface CasoGroup {
+export interface CasoGroup {
   id: string;
   nome: string;
   questoes: BancoQuestion[];
 }
 
-interface CadernoItem {
+export interface CadernoItem {
   id: string;
   nome: string;
   materia: string;
@@ -144,7 +146,7 @@ interface CadernoItem {
   questoes: BancoQuestion[];
 }
 
-interface MateriaGroup {
+export interface MateriaGroup {
   id: string;
   nome: string;
   icone: string;
@@ -540,7 +542,11 @@ function TreeNodeItem({
   duvidas,
   onOpenQuestion,
   onDropQuestion,
+  onDropNodeToParent,
   onAddSubfolder,
+  onMoveNode,
+  onRenameNode,
+  onDeleteNode,
   onPrintNode,
   isAdmin,
   onChangeDifficulty,
@@ -552,7 +558,11 @@ function TreeNodeItem({
   duvidas: Set<string>;
   onOpenQuestion: (q: BancoQuestion, queue: BancoQuestion[]) => void;
   onDropQuestion: (questaoId: string, targetNodeId: string) => void;
+  onDropNodeToParent?: (draggedNodeId: string, targetParentId: string) => void;
   onAddSubfolder: (parentId: string) => void;
+  onMoveNode?: (node: HierarchyTreeNode) => void;
+  onRenameNode?: (nodeId: string, currentNome: string) => void;
+  onDeleteNode?: (node: HierarchyTreeNode) => void;
   onPrintNode?: (node: HierarchyTreeNode) => void;
   isAdmin?: boolean;
   onChangeDifficulty?: (q: BancoQuestion, difficulty: string) => Promise<void>;
@@ -567,6 +577,13 @@ function TreeNodeItem({
     <div className="flex flex-col select-none">
       {/* Linha da Pasta */}
       <div
+        draggable={Boolean(isAdmin && depth > 0)}
+        onDragStart={(e) => {
+          if (!isAdmin || depth === 0) return;
+          e.stopPropagation();
+          e.dataTransfer.setData("application/x-estudos-org-node", node.id);
+          e.dataTransfer.effectAllowed = "move";
+        }}
         onDragOver={(e) => {
           e.preventDefault();
           e.dataTransfer.dropEffect = "move";
@@ -575,7 +592,13 @@ function TreeNodeItem({
         onDragLeave={() => setIsDragOver(false)}
         onDrop={(e) => {
           e.preventDefault();
+          e.stopPropagation();
           setIsDragOver(false);
+          const movedNodeId = e.dataTransfer.getData("application/x-estudos-org-node");
+          if (movedNodeId && movedNodeId !== node.id) {
+            onDropNodeToParent?.(movedNodeId, node.id);
+            return;
+          }
           const qId = e.dataTransfer.getData("questao_id") || e.dataTransfer.getData("text/plain");
           if (qId) {
             onDropQuestion(qId, node.id);
@@ -610,7 +633,7 @@ function TreeNodeItem({
           {/* Ícone de pasta dourada conforme a imagem do usuário */}
           <span className="text-amber-400 text-sm shrink-0">📁</span>
 
-          <span className="text-[12px] font-semibold tracking-wide truncate">
+          <span className="text-[12px] font-normal tracking-wide truncate">
             {node.nome}
           </span>
 
@@ -645,6 +668,45 @@ function TreeNodeItem({
           >
             <Plus size={13} />
           </button>
+
+          {isAdmin && depth > 0 && onMoveNode && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onMoveNode(node);
+              }}
+              title={`Mover "${node.nome}" para outro caderno`}
+              className="opacity-80 sm:opacity-60 sm:group-hover:opacity-100 w-7 h-7 sm:w-auto sm:h-auto flex items-center justify-center sm:p-1 text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06] rounded transition-colors shrink-0"
+            >
+              <FolderInput size={12} />
+            </button>
+          )}
+
+          {isAdmin && onRenameNode && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRenameNode(node.id, node.nome);
+              }}
+              title={`Renomear "${node.nome}"`}
+              className="opacity-80 sm:opacity-0 sm:group-hover:opacity-100 w-7 h-7 sm:w-auto sm:h-auto flex items-center justify-center sm:p-1 text-slate-500 hover:text-amber-400 hover:bg-white/[0.06] rounded transition-colors shrink-0"
+            >
+              <Pencil size={12} />
+            </button>
+          )}
+
+          {isAdmin && onDeleteNode && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteNode(node);
+              }}
+              title={`Excluir "${node.nome}"`}
+              className="opacity-80 sm:opacity-60 sm:group-hover:opacity-100 w-7 h-7 sm:w-auto sm:h-auto flex items-center justify-center sm:p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors shrink-0"
+            >
+              <Trash2 size={12} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -661,7 +723,11 @@ function TreeNodeItem({
               duvidas={duvidas}
               onOpenQuestion={onOpenQuestion}
               onDropQuestion={onDropQuestion}
+              onDropNodeToParent={onDropNodeToParent}
               onAddSubfolder={onAddSubfolder}
+              onMoveNode={onMoveNode}
+              onRenameNode={onRenameNode}
+              onDeleteNode={onDeleteNode}
               onPrintNode={onPrintNode}
               isAdmin={isAdmin}
               onChangeDifficulty={onChangeDifficulty}
@@ -749,8 +815,7 @@ function CasoAccordion({
   onAddSubfolder,
   onDeleteCaso,
   onPrintCaso,
-  onMoverCaso,
-  cadernos,
+  onOpenMoverCaso,
 }: {
   caso: CasoGroup;
   index: number;
@@ -768,13 +833,10 @@ function CasoAccordion({
   onAddSubfolder?: (casoId: string) => void;
   onDeleteCaso?: (casoId: string, casoNome: string, questoes?: BancoQuestion[]) => void;
   onPrintCaso?: (caso: CasoGroup) => void;
-  onMoverCaso?: (casoId: string, casoNome: string, novoCadernoId: string) => Promise<void>;
-  cadernos?: CadernoItem[];
+  onOpenMoverCaso?: (caso: CasoGroup) => void;
 }) {
   const [isOpen, setIsOpen] = useState(index === 0);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [showMoverDropdown, setShowMoverDropdown] = useState(false);
-  const [movingCaso, setMovingCaso] = useState(false);
 
   const stats = useMemo(() => {
     let acertos = 0;
@@ -883,7 +945,20 @@ function CasoAccordion({
           <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
             {/* Ações de Admin no Caso */}
             {isAdmin && (
-              <div className="flex items-center gap-0.5 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0 select-none">
+              <div className="flex items-center gap-1 opacity-95 sm:opacity-75 sm:group-hover:opacity-100 transition-opacity shrink-0 select-none">
+                {onOpenMoverCaso && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => onOpenMoverCaso(caso)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpenMoverCaso(caso); } }}
+                    title="Mover este subcaso para outro caderno"
+                    className="inline-flex items-center gap-1 px-2 sm:px-1.5 py-1 sm:py-0.5 rounded bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/25 text-[10px] sm:text-[9.5px] font-normal text-indigo-300 transition-colors cursor-pointer"
+                  >
+                    <FolderInput size={11} />
+                    <span className="hidden sm:inline">Mover</span>
+                  </span>
+                )}
                 <span
                   role="button"
                   tabIndex={0}
@@ -904,46 +979,6 @@ function CasoAccordion({
                 >
                   <Pencil size={12} />
                 </span>
-                {/* Mover caso para outro caderno */}
-                {onMoverCaso && cadernos && cadernos.length > 0 && (
-                  <span className="relative inline-flex">
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setShowMoverDropdown(v => !v)}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowMoverDropdown(v => !v); } }}
-                      title="Mover este caso para outro caderno"
-                      className="p-1.5 sm:p-1 text-slate-500 hover:text-indigo-300 hover:bg-white/[0.08] active:bg-white/[0.12] rounded transition-colors cursor-pointer inline-flex"
-                    >
-                      <FolderInput size={12} />
-                    </span>
-                    {showMoverDropdown && (
-                      <div className="absolute top-7 right-0 z-50 min-w-[200px] max-w-[calc(100vw-40px)] bg-[#0d1222] border border-white/[0.12] rounded-xl shadow-lg p-1.5 flex flex-col gap-0.5">
-                        <p className="text-[9px] text-slate-500 uppercase tracking-wider px-2 pb-1 border-b border-white/[0.06] font-bold">Mover para caderno:</p>
-                        <div className="max-h-48 overflow-y-auto custom-scrollbar flex flex-col gap-0.5">
-                          {cadernos.map(c => (
-                            <button
-                              key={c.id}
-                              disabled={movingCaso}
-                              onClick={async () => {
-                                setMovingCaso(true);
-                                try {
-                                  await onMoverCaso(caso.id, caso.nome, c.id);
-                                } finally {
-                                  setMovingCaso(false);
-                                  setShowMoverDropdown(false);
-                                }
-                              }}
-                              className="text-left px-2.5 py-1.5 rounded-lg text-[10px] text-slate-300 hover:bg-indigo-500/20 hover:text-indigo-200 transition-colors truncate disabled:opacity-50"
-                            >
-                              📝 {c.nome}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </span>
-                )}
                 <span
                   role="button"
                   tabIndex={0}
@@ -1077,8 +1112,7 @@ function CadernoDedicatedView({
   onPrintCaderno,
   onPrintCaso,
   onDeleteCaderno,
-  onMoverCaso,
-  todosCadernos,
+  onOpenMoverCaso,
   plataformaFiltro,
   onChangePlataformaFiltro,
 }: {
@@ -1101,8 +1135,7 @@ function CadernoDedicatedView({
   onPrintCaderno?: (caderno: CadernoItem) => void;
   onPrintCaso?: (caso: CasoGroup) => void;
   onDeleteCaderno?: (caderno: CadernoItem) => void;
-  onMoverCaso?: (casoId: string, casoNome: string, novoCadernoId: string) => Promise<void>;
-  todosCadernos?: CadernoItem[];
+  onOpenMoverCaso?: (caso: CasoGroup, caderno: CadernoItem) => void;
   plataformaFiltro: PlataformaFiltro;
   onChangePlataformaFiltro: (plat: PlataformaFiltro) => void;
 }) {
@@ -1199,8 +1232,8 @@ function CadernoDedicatedView({
             <span className="text-base sm:text-lg shrink-0">📝</span>
             <div className="flex flex-col min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <h3 className="text-sm sm:text-base font-bold text-white break-words">{caderno.nome}</h3>
-                <span className="text-[9px] sm:text-[10px] font-bold text-indigo-400/90 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md shrink-0 uppercase">
+                <h3 className="text-sm sm:text-base font-normal text-white break-words">{caderno.nome}</h3>
+                <span className="text-[9px] sm:text-[10px] font-normal text-indigo-400/90 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md shrink-0 uppercase">
                   {caderno.materia}
                 </span>
               </div>
@@ -1211,8 +1244,19 @@ function CadernoDedicatedView({
           </div>
         </div>
 
-        {/* Ações do caderno (Revisar Erros + Resolver) */}
+        {/* Ações do caderno (Excluir + Revisar Erros + Resolver) */}
         <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto flex-wrap">
+          {isAdmin && onDeleteCaderno && (
+            <button
+              type="button"
+              onClick={() => onDeleteCaderno(caderno)}
+              title="Excluir este caderno"
+              className="flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 rounded-xl text-xs font-normal transition-colors"
+            >
+              <Trash2 size={12} />
+              <span>Excluir</span>
+            </button>
+          )}
           {errorQueue.length > 0 && (
             <button
               onClick={() => onOpenQuestion(errorQueue[0], errorQueue)}
@@ -1392,8 +1436,7 @@ function CadernoDedicatedView({
                 onAddSubfolder={onOpenNovaPastaModal}
                 onDeleteCaso={onDeleteCaso}
                 onPrintCaso={onPrintCaso}
-                onMoverCaso={onMoverCaso}
-                cadernos={todosCadernos?.filter(c => c.id !== caderno.id)}
+                onOpenMoverCaso={onOpenMoverCaso ? (c) => onOpenMoverCaso(c, caderno) : undefined}
               />
             ))}
           </div>
@@ -1640,6 +1683,11 @@ export default function CadernosTab({
   const [movingQuestaoIds, setMovingQuestaoIds] = useState<(string | number)[]>([]);
   const [movingQuestaoLabel, setMovingQuestaoLabel] = useState<string>("");
   const [renamingNode, setRenamingNode] = useState<{ id: string; nome: string } | null>(null);
+  const [subcasoToMove, setSubcasoToMove] = useState<SubcasoToMove | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTargetNode | null>(null);
+  const unfilteredCadernosRef = useRef<CadernoItem[]>([]);
+  const unfilteredMateriasRef = useRef<MateriaGroup[]>([]);
+  const unfilteredTreeRootsRef = useRef<HierarchyTreeNode[]>([]);
   const [toastMsg, setToastMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
   const showToast = (text: string, type: "success" | "error" = "success") => {
@@ -1882,7 +1930,7 @@ export default function CadernosTab({
   }, [isAdminState, deleteQuestionsPermanently, onRefreshQuestions]);
 
   // Exclusão recursiva de nós em organizacao_nos (folhas primeiro para não violar parent_id_fkey)
-  const deleteOrgNodeHierarchy = useCallback(async (rootNodeId: string) => {
+  const deleteOrgNodeHierarchy = useCallback(async (rootNodeId: string, deleteLinkedQuestions = true) => {
     if (!rootNodeId || rootNodeId.startsWith("cad_virt_") || rootNodeId.startsWith("caso_virt_") || rootNodeId.startsWith("root_virt_")) {
       return;
     }
@@ -1923,16 +1971,33 @@ export default function CadernosTab({
 
     traversePostOrder(rootNodeId);
 
-    // 1. Exclui questões vinculadas a qualquer um desses nós em `questoes.organizacao_id`
+    // 1. Trata questões vinculadas a qualquer um desses nós em `questoes.organizacao_id`
     try {
       const { data: linkedQuestions } = await supabase
         .from("questoes")
         .select("id")
         .in("organizacao_id", orderedIds);
       if (linkedQuestions && linkedQuestions.length > 0) {
-        await deleteQuestionsPermanently(linkedQuestions.map(q => q.id));
+        if (deleteLinkedQuestions) {
+          await deleteQuestionsPermanently(linkedQuestions.map(q => q.id));
+        } else {
+          let unlinkRes = await supabase
+            .from("questoes")
+            .update({ organizacao_id: null })
+            .in("organizacao_id", orderedIds);
+          if (unlinkRes.error) {
+            unlinkRes = await supabasePublic
+              .from("questoes")
+              .update({ organizacao_id: null })
+              .in("organizacao_id", orderedIds);
+          }
+          if (unlinkRes.error) {
+            throw new Error(`Falha ao desvincular questões: ${unlinkRes.error.message}`);
+          }
+        }
       }
     } catch (err) {
+      if (!deleteLinkedQuestions) throw err;
       console.warn("Aviso ao buscar questões associadas aos nós:", err);
     }
 
@@ -1949,96 +2014,256 @@ export default function CadernosTab({
     }
   }, [dbNodes, deleteQuestionsPermanently]);
 
-  const handleDeleteCaso = useCallback(async (casoId: string, casoNome: string, questoes?: BancoQuestion[]) => {
+  const handleDeleteCaso = useCallback((casoId: string, casoNome: string, questoes?: BancoQuestion[]) => {
     if (!isAdminState) {
       showToast("Apenas administradores autorizados podem excluir casos.", "error");
       return;
     }
-    const qCount = questoes ? questoes.length : 0;
-    const confirmDel = window.confirm(
-      qCount > 0
-        ? `Atenção: Deseja realmente excluir a subpasta/caso "${casoNome}" e todas as suas ${qCount} questões?\n\nEsta ação é definitiva e não pode ser desfeita.`
-        : `Deseja realmente excluir a subpasta/caso "${casoNome}"?`
-    );
-    if (!confirmDel) return;
+    setDeleteTarget({
+      kind: "subcaso",
+      id: casoId,
+      nome: casoNome,
+      questoes: questoes || [],
+    });
+  }, [isAdminState]);
 
-    try {
-      if (qCount > 0 && questoes) {
-        const qIds = questoes.map(q => q.id);
-        await deleteQuestionsPermanently(qIds);
-      }
-
-      await deleteOrgNodeHierarchy(casoId);
-
-      showToast(`Caso "${casoNome}" excluído.`);
-      await carregarNos();
-      if (onRefreshQuestions) onRefreshQuestions();
-    } catch (e: any) {
-      console.error("Erro ao excluir caso:", e);
-      showToast(e.message || "Erro ao excluir caso.", "error");
-    }
-  }, [isAdminState, deleteQuestionsPermanently, deleteOrgNodeHierarchy, carregarNos, onRefreshQuestions]);
-
-  const handleDeleteCaderno = useCallback(async (caderno: CadernoItem) => {
+  const handleDeleteCaderno = useCallback((caderno: CadernoItem) => {
     if (!isAdminState) {
       showToast("Apenas administradores autorizados podem excluir cadernos.", "error");
       return;
     }
+    const fullCaderno = unfilteredCadernosRef.current.find(c => c.id === caderno.id) || caderno;
+    setDeleteTarget({
+      kind: "caderno",
+      id: fullCaderno.id,
+      nome: fullCaderno.nome,
+      materia: fullCaderno.materia,
+      subcasosCount: fullCaderno.casos.length,
+      questoes: fullCaderno.questoes,
+    });
+  }, [isAdminState]);
 
-    const qCount = caderno.questoes.length;
-    const confirmDel = window.confirm(
-      qCount > 0
-        ? `Atenção: Deseja realmente excluir o caderno "${caderno.nome}" e todas as suas ${qCount} questões do banco de dados?\n\nEsta ação removerá permanentemente as questões associadas.`
-        : `Deseja realmente excluir o caderno "${caderno.nome}"?`
-    );
-    if (!confirmDel) return;
-
-    try {
-      // 1. Excluir todas as questões do caderno da tabela 'questoes' de forma segura
-      if (qCount > 0) {
-        const qIds = caderno.questoes.map(q => q.id);
-        await deleteQuestionsPermanently(qIds);
-      }
-
-      // 2. Excluir nós de organizacao_nos recursivamente (folhas primeiro, depois o caderno)
-      await deleteOrgNodeHierarchy(caderno.id);
-
-      showToast(`Caderno "${caderno.nome}" excluído com sucesso!`);
-      if (selectedCadernoId === caderno.id) {
-        setSelectedCadernoId(null);
-      }
-      await carregarNos();
-      if (onRefreshQuestions) onRefreshQuestions();
-    } catch (e: any) {
-      console.error("Erro ao excluir caderno:", e);
-      showToast(e.message || "Erro ao excluir caderno.", "error");
-    }
-  }, [isAdminState, selectedCadernoId, deleteQuestionsPermanently, deleteOrgNodeHierarchy, carregarNos, onRefreshQuestions]);
-
-  // ── Mover caso (subpasta) de um caderno para outro ──
-  const handleMoverCaso = useCallback(async (casoId: string, casoNome: string, novoCadernoId: string) => {
+  const handleDeleteDisciplina = useCallback((mat: MateriaGroup) => {
     if (!isAdminState) {
-      showToast("Apenas administradores podem mover casos.", "error");
+      showToast("Apenas administradores autorizados podem excluir disciplinas.", "error");
       return;
     }
-    if (casoId.startsWith("caso_virt_")) {
-      showToast("Casos virtuais não podem ser movidos.", "error");
+    const fullMat = unfilteredMateriasRef.current.find(m => m.id === mat.id) || mat;
+    const rootNode = unfilteredTreeRootsRef.current.find(r => r.id === mat.id);
+    const allQuestions: BancoQuestion[] = [];
+    if (rootNode) {
+      const collect = (n: HierarchyTreeNode) => {
+        allQuestions.push(...n.questoes);
+        for (const f of n.filhos) collect(f);
+      };
+      collect(rootNode);
+    } else {
+      fullMat.cadernos.forEach(c => allQuestions.push(...c.questoes));
+    }
+
+    setDeleteTarget({
+      kind: "disciplina",
+      id: fullMat.id,
+      nome: fullMat.nome,
+      cadernosCount: fullMat.cadernos.length,
+      questoes: allQuestions,
+    });
+  }, [isAdminState]);
+
+  const handleConfirmDeleteTarget = useCallback(async (target: DeleteTargetNode, deleteQuestions: boolean) => {
+    if (!isAdminState) {
+      throw new Error("Apenas administradores autorizados podem excluir.");
+    }
+
+    const qCount = target.questoes.length;
+    const isVirtual =
+      target.id.startsWith("cad_virt_") ||
+      target.id.startsWith("caso_virt_") ||
+      target.id.startsWith("root_virt_");
+
+    if (deleteQuestions && qCount > 0) {
+      await deleteQuestionsPermanently(target.questoes.map(q => q.id));
+    }
+
+    if (!isVirtual) {
+      await deleteOrgNodeHierarchy(target.id, deleteQuestions);
+    }
+
+    if (selectedCadernoId === target.id || target.kind === "disciplina") {
+      setSelectedCadernoId(null);
+    }
+    if (target.kind === "disciplina" && materiaFiltro === target.nome) {
+      setMateriaFiltro("Todas");
+    }
+
+    const label =
+      target.kind === "disciplina"
+        ? "Disciplina"
+        : target.kind === "caderno"
+        ? "Caderno"
+        : target.kind === "subcaso"
+        ? "Subcaso"
+        : "Pasta";
+
+    showToast(
+      deleteQuestions
+        ? `${label} "${target.nome}" e questões removidos!`
+        : `${label} "${target.nome}" excluído(a)!`
+    );
+    await carregarNos();
+    if (onRefreshQuestions) onRefreshQuestions();
+  }, [isAdminState, selectedCadernoId, materiaFiltro, deleteQuestionsPermanently, deleteOrgNodeHierarchy, carregarNos, onRefreshQuestions]);
+
+  // Verifica se candidateId é descendente de ancestorId para impedir ciclos na árvore
+  const isNodeDescendant = useCallback((ancestorId: string, candidateId: string): boolean => {
+    if (ancestorId === candidateId) return true;
+    const parentMap = new Map<string, string | null>();
+    dbNodes.forEach(n => parentMap.set(String(n.id), n.parent_id ? String(n.parent_id) : null));
+    let curr: string | null | undefined = candidateId;
+    const visited = new Set<string>();
+    while (curr && !visited.has(curr)) {
+      if (curr === ancestorId) return true;
+      visited.add(curr);
+      curr = parentMap.get(curr);
+    }
+    return false;
+  }, [dbNodes]);
+
+  // ── Mover subcaso de um caderno para outro (com suporte a subcasos virtuais e fallback RLS) ──
+  const handleConfirmMoveSubcaso = useCallback(async (
+    subcaso: SubcasoToMove,
+    targetCadernoId: string,
+    targetCadernoNome: string
+  ) => {
+    if (!isAdminState) {
+      throw new Error("Apenas administradores podem mover subcasos.");
+    }
+
+    const insertOrgNode = async (payload: { nome: string; parent_id: string | null; tipo: string; ordem: number }) => {
+      let res = await (supabasePublic.from("organizacao_nos") as any)
+        .insert(payload)
+        .select("id")
+        .single();
+      if (res.error && supabase) {
+        res = await (supabase.from("organizacao_nos") as any)
+          .insert(payload)
+          .select("id")
+          .single();
+      }
+      if (res.error || !res.data?.id) {
+        throw new Error(res.error?.message || "Não foi possível criar a pasta de destino.");
+      }
+      return String(res.data.id);
+    };
+
+    let realTargetCadernoId = targetCadernoId;
+    if (targetCadernoId.startsWith("cad_virt_")) {
+      // Materializa o caderno virtual (e sua matéria raiz virtual, se necessário) usando o nome exato da matéria
+      const parentMat = unfilteredMateriasRef.current.find(m =>
+        m.cadernos.some(c => c.id === targetCadernoId)
+      );
+      const targetMatName = parentMat?.nome || "Geral";
+      const existingRoot = dbNodes.find(
+        n => !n.parent_id && n.nome.trim().toLowerCase() === targetMatName.trim().toLowerCase()
+      );
+      const parentMatId = existingRoot
+        ? String(existingRoot.id)
+        : await insertOrgNode({ nome: targetMatName, parent_id: null, tipo: "materia", ordem: 0 });
+      realTargetCadernoId = await insertOrgNode({
+        nome: targetCadernoNome,
+        parent_id: parentMatId,
+        tipo: "caderno",
+        ordem: 0,
+      });
+    }
+
+    const isVirtualOrDirect =
+      subcaso.id.startsWith("caso_virt_") || subcaso.id === subcaso.cadernoId;
+
+    if (isVirtualOrDirect) {
+      const newSubcasoId = await insertOrgNode({
+        nome: subcaso.nome,
+        parent_id: realTargetCadernoId,
+        tipo: "caso",
+        ordem: 0,
+      });
+
+      if (subcaso.questoes.length > 0) {
+        const qIds = subcaso.questoes.map(q => Number(q.id) || q.id);
+        let qRes = await supabase
+          .from("questoes")
+          .update({ organizacao_id: newSubcasoId })
+          .in("id", qIds);
+        if (qRes.error) {
+          qRes = await supabasePublic
+            .from("questoes")
+            .update({ organizacao_id: newSubcasoId })
+            .in("id", qIds);
+        }
+        if (qRes.error) throw new Error(qRes.error.message);
+      }
+    } else {
+      if (isNodeDescendant(subcaso.id, realTargetCadernoId)) {
+        throw new Error("Não é possível mover um subcaso para dentro de si mesmo ou de uma subpasta dele.");
+      }
+
+      let res = await supabase
+        .from("organizacao_nos")
+        .update({ parent_id: realTargetCadernoId })
+        .eq("id", subcaso.id);
+      if (res.error) {
+        res = await supabasePublic
+          .from("organizacao_nos")
+          .update({ parent_id: realTargetCadernoId })
+          .eq("id", subcaso.id);
+      }
+      if (res.error) throw new Error(res.error.message);
+    }
+
+    showToast(`Subcaso "${subcaso.nome}" movido para "${targetCadernoNome}"!`);
+    await carregarNos();
+    if (onRefreshQuestions) onRefreshQuestions();
+  }, [isAdminState, dbNodes, isNodeDescendant, carregarNos, onRefreshQuestions]);
+
+  // ── Drag & Drop de pastas/subcasos na visão em Árvore ──
+  const handleDropNodeToParent = useCallback(async (draggedNodeId: string, targetParentId: string) => {
+    if (!isAdminState) return;
+    if (
+      draggedNodeId.startsWith("cad_virt_") ||
+      draggedNodeId.startsWith("caso_virt_") ||
+      draggedNodeId.startsWith("root_virt_") ||
+      targetParentId.startsWith("cad_virt_") ||
+      targetParentId.startsWith("caso_virt_") ||
+      targetParentId.startsWith("root_virt_")
+    ) {
+      showToast("Pastas automáticas devem ser movidas pelo botão Mover.", "error");
+      return;
+    }
+    if (isNodeDescendant(draggedNodeId, targetParentId)) {
+      showToast("Não é possível mover uma pasta para dentro dela mesma.", "error");
       return;
     }
     try {
-      const { error } = await supabase
+      let res = await supabase
         .from("organizacao_nos")
-        .update({ parent_id: novoCadernoId })
-        .eq("id", casoId);
-      if (error) throw error;
-      showToast(`Caso "${casoNome}" movido com sucesso!`);
+        .update({ parent_id: targetParentId })
+        .eq("id", draggedNodeId);
+      if (res.error) {
+        res = await supabasePublic
+          .from("organizacao_nos")
+          .update({ parent_id: targetParentId })
+          .eq("id", draggedNodeId);
+      }
+      if (res.error) throw res.error;
+      const movedName = dbNodes.find(n => String(n.id) === draggedNodeId)?.nome || "Pasta";
+      const targetName = dbNodes.find(n => String(n.id) === targetParentId)?.nome || "Destino";
+      showToast(`"${movedName}" movido para "${targetName}"!`);
       await carregarNos();
       if (onRefreshQuestions) onRefreshQuestions();
     } catch (e: any) {
-      console.error("Erro ao mover caso:", e);
-      showToast(e.message || "Erro ao mover caso.", "error");
+      showToast(e?.message || "Erro ao mover pasta.", "error");
     }
-  }, [isAdminState, carregarNos, onRefreshQuestions]);
+  }, [isAdminState, dbNodes, isNodeDescendant, carregarNos, onRefreshQuestions]);
 
   const questionMatchesFilters = useCallback(
     (q: BancoQuestion) => {
@@ -2067,7 +2292,7 @@ export default function CadernosTab({
   );
 
   // ── 2. Montar Estrutura Hierárquica em Árvore Completa (preservando organizacao_nos) ──
-  const { treeRoots, materiasAgrupadas, todosCadernos, unfilteredCadernos, parentOptions } = useMemo(() => {
+  const { treeRoots, unfilteredTreeRoots, materiasAgrupadas, unfilteredMaterias, todosCadernos, unfilteredCadernos, parentOptions } = useMemo(() => {
     const hasActiveQuestionFilter =
       plataformaFiltro !== "todas" || bancaFiltro !== "Todas" || statusFiltro !== "todas";
 
@@ -2292,12 +2517,20 @@ export default function CadernosTab({
 
     return {
       treeRoots: filteredTree.finalRoots,
+      unfilteredTreeRoots: rawTree.finalRoots,
       materiasAgrupadas: filteredTree.materiasList,
+      unfilteredMaterias: rawTree.materiasList,
       todosCadernos: filteredTree.cadernosList,
       unfilteredCadernos: rawTree.cadernosList,
       parentOptions: options,
     };
   }, [dbNodes, questions, orgOverrides, plataformaFiltro, bancaFiltro, statusFiltro, questionMatchesFilters, userAnswers]);
+
+  useEffect(() => {
+    unfilteredCadernosRef.current = unfilteredCadernos;
+    unfilteredMateriasRef.current = unfilteredMaterias;
+    unfilteredTreeRootsRef.current = unfilteredTreeRoots;
+  }, [unfilteredCadernos, unfilteredMaterias, unfilteredTreeRoots]);
 
   const selectedCaderno = useMemo(() => {
     if (!selectedCadernoId) return null;
@@ -2572,8 +2805,15 @@ export default function CadernosTab({
           onPrintCaderno={handlePrintCaderno}
           onPrintCaso={handlePrintCaso}
           onDeleteCaderno={handleDeleteCaderno}
-          onMoverCaso={handleMoverCaso}
-          todosCadernos={unfilteredCadernos}
+          onOpenMoverCaso={(casoObj, cad) =>
+            setSubcasoToMove({
+              id: casoObj.id,
+              nome: casoObj.nome,
+              cadernoId: cad.id,
+              cadernoNome: cad.nome,
+              questoes: casoObj.questoes,
+            })
+          }
           plataformaFiltro={plataformaFiltro}
           onChangePlataformaFiltro={setPlataformaFiltro}
         />
@@ -2649,6 +2889,21 @@ export default function CadernosTab({
               nodeId={renamingNode?.id || ""}
               currentNome={renamingNode?.nome || ""}
               onSuccess={handleRenameSuccess}
+            />
+
+            <ModalMoverSubcaso
+              isOpen={!!subcasoToMove}
+              onClose={() => setSubcasoToMove(null)}
+              subcaso={subcasoToMove}
+              materias={unfilteredMaterias}
+              onConfirmMove={handleConfirmMoveSubcaso}
+            />
+
+            <ModalExcluirCaderno
+              isOpen={!!deleteTarget}
+              onClose={() => setDeleteTarget(null)}
+              target={deleteTarget}
+              onConfirmDelete={handleConfirmDeleteTarget}
             />
           </>
         )}
@@ -3072,25 +3327,37 @@ export default function CadernosTab({
               const materiaAbertas = Math.max(0, mat.totalQuestoes - materiaRespondidas);
               return (
                 <section key={mat.id} className="overflow-hidden rounded-lg border border-white/[0.07] bg-[#0e1420]">
-                  <button type="button" aria-expanded={isMateriaAberta} onClick={() => setPainelMateriasAbertas(prev => {
-                    const next = new Set(prev);
-                    if (next.has(mat.id)) next.delete(mat.id); else next.add(mat.id);
-                    return next;
-                  })} className="flex w-full flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-left transition-colors hover:bg-white/[0.025]">
-                    <span className="flex min-w-0 items-center gap-2">
-                      <ChevronRight size={13} className={`shrink-0 text-slate-500 ${isMateriaAberta ? "rotate-90" : ""}`} />
-                      <span className="text-sm">{mat.icone}</span>
-                      <span className="truncate text-xs font-medium text-slate-200">{mat.nome}</span>
-                      <span className="shrink-0 text-[10px] text-slate-500">{mat.totalQuestoes} q.</span>
-                    </span>
-                    <span className="flex items-center gap-2 text-[10px] tabular-nums">
-                      <span className="text-rose-400">× {materiaStat.erros}</span>
-                      <span className="text-emerald-400">✓ {materiaStat.acertos}</span>
-                      <span className="hidden text-amber-400 sm:inline">⚑ {materiaStat.duvidas}</span>
-                      <span className="text-slate-500">{materiaAbertas} abertas</span>
-                      <span className="min-w-9 rounded border border-white/[0.08] px-1.5 py-0.5 text-center text-slate-300">{materiaStat.pct === null ? "—" : `${materiaStat.pct}%`}</span>
-                    </span>
-                  </button>
+                  <div className="flex w-full items-center justify-between gap-2 px-3 py-2.5 transition-colors hover:bg-white/[0.025]">
+                    <button type="button" aria-expanded={isMateriaAberta} onClick={() => setPainelMateriasAbertas(prev => {
+                      const next = new Set(prev);
+                      if (next.has(mat.id)) next.delete(mat.id); else next.add(mat.id);
+                      return next;
+                    })} className="flex flex-1 flex-wrap items-center justify-between gap-2 text-left min-w-0">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <ChevronRight size={13} className={`shrink-0 text-slate-500 ${isMateriaAberta ? "rotate-90" : ""}`} />
+                        <span className="text-sm">{mat.icone}</span>
+                        <span className="truncate text-xs font-normal text-slate-200">{mat.nome}</span>
+                        <span className="shrink-0 text-[10px] text-slate-500">{mat.totalQuestoes} q.</span>
+                      </span>
+                      <span className="flex items-center gap-2 text-[10px] tabular-nums">
+                        <span className="text-rose-400">× {materiaStat.erros}</span>
+                        <span className="text-emerald-400">✓ {materiaStat.acertos}</span>
+                        <span className="hidden text-amber-400 sm:inline">⚑ {materiaStat.duvidas}</span>
+                        <span className="text-slate-500">{materiaAbertas} abertas</span>
+                        <span className="min-w-9 rounded border border-white/[0.08] px-1.5 py-0.5 text-center text-slate-300">{materiaStat.pct === null ? "—" : `${materiaStat.pct}%`}</span>
+                      </span>
+                    </button>
+                    {isAdminState && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteDisciplina(mat)}
+                        title={`Excluir disciplina "${mat.nome}"`}
+                        className="p-1.5 rounded border border-rose-500/20 bg-rose-500/10 text-rose-400 hover:text-rose-200 hover:bg-rose-500/20 transition-colors shrink-0"
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    )}
+                  </div>
 
                   {isMateriaAberta && <div className="space-y-1.5 border-t border-white/[0.05] px-2 py-2 sm:px-3">
                     {mat.cadernos.map((caderno) => {
@@ -3107,7 +3374,7 @@ export default function CadernosTab({
                             })} className="flex min-w-0 items-center gap-1.5 text-left">
                               <ChevronRight size={11} className={`shrink-0 text-slate-500 ${isCadernoAberto ? "rotate-90" : ""}`} />
                               <Folder size={12} className="shrink-0 text-indigo-300/80" />
-                              <span className="truncate text-[11px] text-slate-200">{caderno.nome}</span>
+                              <span className="truncate text-[11px] font-normal text-slate-200">{caderno.nome}</span>
                               <span className="shrink-0 text-[9px] text-slate-500">{caderno.questoes.length} q. · {cases.length} casos</span>
                             </button>
                             <div className="flex shrink-0 items-center gap-2 text-[9px] tabular-nums">
@@ -3115,6 +3382,16 @@ export default function CadernosTab({
                               <span className="text-amber-400">⚑ {cStat.duvidas}</span>
                               <span className="text-slate-500">{Math.max(0, caderno.questoes.length - cStat.acertos - cStat.erros)} abertas</span>
                               <span className="min-w-8 rounded border border-white/[0.07] px-1 py-0.5 text-center text-slate-300">{cStat.pct === null ? "—" : `${cStat.pct}%`}</span>
+                              {isAdminState && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteCaderno(caderno)}
+                                  title={`Excluir caderno "${caderno.nome}"`}
+                                  className="p-1 rounded border border-rose-500/20 bg-rose-500/10 text-rose-400 hover:text-rose-200 hover:bg-rose-500/20 transition-colors"
+                                >
+                                  <Trash2 size={10} />
+                                </button>
+                              )}
                             </div>
                           </div>
 
@@ -3130,7 +3407,7 @@ export default function CadernosTab({
                                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.05] pb-2">
                                     <div className="flex min-w-0 items-center gap-1.5">
                                       <ChevronRight size={10} className="shrink-0 text-slate-600" />
-                                      <span className="truncate text-[10px] text-slate-300" title={caso.nome}>{caso.nome}</span>
+                                      <span className="truncate text-[10px] font-normal text-slate-300" title={caso.nome}>{caso.nome}</span>
                                       <span className="shrink-0 text-[9px] text-slate-500">{caso.questoes.length} q.</span>
                                     </div>
                                     <div className="flex flex-wrap items-center gap-2 text-[9px] tabular-nums">
@@ -3139,6 +3416,25 @@ export default function CadernosTab({
                                       <span className="text-amber-400">⚑ {doubts} dúvidas</span>
                                       <span className="text-slate-500">{open} abertas</span>
                                       <span className="min-w-8 rounded border border-white/[0.07] px-1 py-0.5 text-center text-slate-300">{pct === null ? "—" : `${pct}%`}</span>
+                                      {isAdminState && (
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            setSubcasoToMove({
+                                              id: caso.id,
+                                              nome: caso.nome,
+                                              cadernoId: caderno.id,
+                                              cadernoNome: caderno.nome,
+                                              questoes: caso.questoes,
+                                            })
+                                          }
+                                          title={`Mover subcaso "${caso.nome}" para outro caderno`}
+                                          className="inline-flex items-center gap-1 rounded border border-indigo-500/25 bg-indigo-500/10 px-1.5 py-0.5 text-[9px] text-indigo-300 hover:bg-indigo-500/20 transition-colors"
+                                        >
+                                          <FolderInput size={10} />
+                                          <span>Mover</span>
+                                        </button>
+                                      )}
                                     </div>
                                   </div>
                                   <div className="mt-2 flex flex-wrap gap-1.5">
@@ -3200,10 +3496,22 @@ export default function CadernosTab({
             <div className="space-y-5">
               {materiasFiltradas.map((mat) => (
                 <section key={mat.id} className="min-w-0">
-                  <div className="mb-2 flex items-center gap-2 border-b border-white/[0.06] pb-2">
-                    <span className="text-xs opacity-80">{mat.icone}</span>
-                    <h4 className="text-xs font-medium text-slate-200">{mat.nome}</h4>
-                    <span className="text-[10px] text-slate-500">{mat.totalQuestoes} questões</span>
+                  <div className="mb-2 flex items-center justify-between gap-2 border-b border-white/[0.06] pb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs opacity-80">{mat.icone}</span>
+                      <h4 className="text-xs font-normal text-slate-200 truncate">{mat.nome}</h4>
+                      <span className="text-[10px] text-slate-500 shrink-0">{mat.totalQuestoes} questões</span>
+                    </div>
+                    {isAdminState && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteDisciplina(mat)}
+                        title={`Excluir disciplina "${mat.nome}"`}
+                        className="p-1 rounded border border-rose-500/20 bg-rose-500/10 text-rose-400 hover:text-rose-200 hover:bg-rose-500/20 transition-colors shrink-0"
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    )}
                   </div>
 
                   <div className="relative ml-1 space-y-2 border-l border-slate-700/70 pl-4 sm:ml-3 sm:pl-6">
@@ -3225,7 +3533,7 @@ export default function CadernosTab({
                             })} aria-expanded={isMapaCadernoAberto} className="flex min-w-0 items-center gap-2 text-left">
                               <ChevronRight size={12} className={`shrink-0 text-slate-500 ${isMapaCadernoAberto ? "rotate-90" : ""}`} />
                               <Folder size={13} className="shrink-0 text-indigo-300/80" />
-                              <span className="truncate text-xs text-slate-200">{caderno.nome}</span>
+                              <span className="truncate text-xs font-normal text-slate-200">{caderno.nome}</span>
                               <span className="shrink-0 text-[10px] text-slate-500">{caderno.questoes.length} q.</span>
                             </button>
                             <div className="flex shrink-0 items-center gap-2 text-[10px] tabular-nums">
@@ -3234,6 +3542,16 @@ export default function CadernosTab({
                               <span className="text-slate-500">{naoRespondidas} abertas</span>
                               {stat.duvidas > 0 && <span className="inline-flex items-center gap-1 text-amber-400"><Flag size={9} />{stat.duvidas}</span>}
                               <span className="min-w-9 rounded border border-white/[0.08] px-1.5 py-0.5 text-center text-slate-300">{stat.pct === null ? "—" : `${stat.pct}%`}</span>
+                              {isAdminState && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteCaderno(caderno)}
+                                  title={`Excluir caderno "${caderno.nome}"`}
+                                  className="p-1 rounded border border-rose-500/20 bg-rose-500/10 text-rose-400 hover:text-rose-200 hover:bg-rose-500/20 transition-colors"
+                                >
+                                  <Trash2 size={11} />
+                                </button>
+                              )}
                             </div>
                           </div>
 
@@ -3308,9 +3626,43 @@ export default function CadernosTab({
                 duvidas={duvidas}
                 onOpenQuestion={handleOpenQuestionInModal}
                 onDropQuestion={handleDropQuestion}
+                onDropNodeToParent={handleDropNodeToParent}
                 onAddSubfolder={(parentId) => {
                   setModalDefaultParentId(parentId);
                   setIsNovaPastaModalOpen(true);
+                }}
+                onMoveNode={(targetNode) => {
+                  const collectQuestions = (n: HierarchyTreeNode): BancoQuestion[] => {
+                    const list = [...n.questoes];
+                    for (const child of n.filhos) list.push(...collectQuestions(child));
+                    return list;
+                  };
+                  const parentName =
+                    dbNodes.find(n => String(n.id) === String(targetNode.parent_id))?.nome ||
+                    "Pasta Pai";
+                  setSubcasoToMove({
+                    id: targetNode.id,
+                    nome: targetNode.nome,
+                    cadernoId: targetNode.parent_id || "",
+                    cadernoNome: parentName,
+                    questoes: collectQuestions(targetNode),
+                  });
+                }}
+                onRenameNode={handleOpenRenameCaso}
+                onDeleteNode={(targetNode) => {
+                  const collectQuestions = (n: HierarchyTreeNode): BancoQuestion[] => {
+                    const list = [...n.questoes];
+                    for (const child of n.filhos) list.push(...collectQuestions(child));
+                    return list;
+                  };
+                  setDeleteTarget({
+                    kind: targetNode.parent_id ? "subcaso" : "disciplina",
+                    id: targetNode.id,
+                    nome: targetNode.nome,
+                    cadernosCount: !targetNode.parent_id ? targetNode.filhos.length : undefined,
+                    subcasosCount: targetNode.parent_id ? targetNode.filhos.length : undefined,
+                    questoes: collectQuestions(targetNode),
+                  });
                 }}
                 onPrintNode={handlePrintNode}
                 isAdmin={isAdminState}
@@ -3368,62 +3720,77 @@ export default function CadernosTab({
                   key={mat.id}
                   className="flex flex-col bg-[#0d1220] border border-white/[0.07] rounded-xl p-2.5 sm:p-3 gap-1.5 transition-colors hover:border-white/[0.12]"
                 >
-                  {/* ── CABEÇALHO DA MATÉRIA (botão de recolher/expandir com layout mobile-first) ── */}
-                  <button
-                    type="button"
-                    onClick={() => toggleRecolherMateria(mat.id)}
-                    className={`w-full flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 sm:pb-1.5 px-1.5 gap-1.5 sm:gap-2 cursor-pointer select-none rounded-lg hover:bg-white/[0.05] active:bg-white/[0.08] transition-colors text-left ${
+                  {/* ── CABEÇALHO DA MATÉRIA (recolher/expandir + excluir disciplina para Admin) ── */}
+                  <div
+                    className={`w-full flex items-center justify-between gap-1.5 sm:gap-2 pb-2 sm:pb-1.5 px-1.5 rounded-lg hover:bg-white/[0.03] transition-colors ${
                       isRecolhido ? "" : "border-b border-white/[0.04]"
                     }`}
-                    title={isRecolhido ? `Expandir ${mat.cadernos.length} cadernos` : "Recolher cadernos"}
                   >
-                    <div className="flex items-center justify-between sm:justify-start gap-2 min-w-0 w-full sm:w-auto">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <ChevronDown
-                          size={13}
-                          className={`shrink-0 ${
-                            isRecolhido ? "-rotate-90 text-slate-500" : "rotate-0 text-indigo-400"
-                          }`}
-                        />
-                        <span className="w-1 h-1 rounded-full bg-indigo-400/80 shrink-0" />
-                        <span className="text-xs shrink-0 opacity-80">{mat.icone}</span>
-                        <h3 className="text-xs font-semibold text-slate-200 truncate">
-                          {mat.nome}
-                        </h3>
-                      </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleRecolherMateria(mat.id)}
+                      className="flex-1 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 sm:gap-2 cursor-pointer select-none text-left min-w-0"
+                      title={isRecolhido ? `Expandir ${mat.cadernos.length} cadernos` : "Recolher cadernos"}
+                    >
+                      <div className="flex items-center justify-between sm:justify-start gap-2 min-w-0 w-full sm:w-auto">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <ChevronDown
+                            size={13}
+                            className={`shrink-0 ${
+                              isRecolhido ? "-rotate-90 text-slate-500" : "rotate-0 text-indigo-400"
+                            }`}
+                          />
+                          <span className="w-1 h-1 rounded-full bg-indigo-400/80 shrink-0" />
+                          <span className="text-xs shrink-0 opacity-80">{mat.icone}</span>
+                          <h3 className="text-xs font-normal text-slate-200 truncate">
+                            {mat.nome}
+                          </h3>
+                        </div>
 
-                      {/* No mobile, contagem de cadernos vai ao lado do título */}
-                      <span className="sm:hidden text-[9px] font-light text-slate-400 font-mono bg-white/[0.03] px-1.5 py-0.5 rounded border border-white/[0.06] shrink-0">
-                        {mat.cadernos.length} cad.
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0 flex-nowrap whitespace-nowrap overflow-x-auto custom-scrollbar py-0.5">
-                      <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] font-light shrink-0 select-none flex-nowrap whitespace-nowrap tabular-nums">
-                        <span className="text-slate-500 font-light">{mTotal} <span className="hidden sm:inline">quest.</span><span className="sm:hidden">q.</span></span>
-                        <span className="text-emerald-400/80 flex items-center gap-0.5">
-                          <Check size={9} className="stroke-[1.5]" />
-                          {mAcertos}
-                        </span>
-                        <span className="text-rose-400/80 flex items-center gap-0.5">
-                          <X size={9} className="stroke-[1.5]" />
-                          {mErros}
-                        </span>
-                        <span className="text-amber-400/80 flex items-center gap-0.5">
-                          <Flag size={8} />
-                          {mDuvidas}
-                        </span>
-                        <span className={`px-1.5 py-0.2 rounded border text-[9px] font-light tabular-nums ${mAproveitamentoClasses}`}>
-                          {mPct === null ? "—" : `${mPct}%`}
+                        {/* No mobile, contagem de cadernos vai ao lado do título */}
+                        <span className="sm:hidden text-[9px] font-light text-slate-400 font-mono bg-white/[0.03] px-1.5 py-0.5 rounded border border-white/[0.06] shrink-0">
+                          {mat.cadernos.length} cad.
                         </span>
                       </div>
 
-                      {/* No desktop, contagem de cadernos fica no final */}
-                      <span className="hidden sm:inline-block text-[9.5px] font-light text-slate-500 font-mono bg-white/[0.02] px-1.5 py-0.2 rounded border border-white/[0.04] shrink-0">
-                        {mat.cadernos.length} caderno{mat.cadernos.length > 1 ? "s" : ""}
-                      </span>
-                    </div>
-                  </button>
+                      <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0 flex-nowrap whitespace-nowrap overflow-x-auto custom-scrollbar py-0.5">
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] font-light shrink-0 select-none flex-nowrap whitespace-nowrap tabular-nums">
+                          <span className="text-slate-500 font-light">{mTotal} <span className="hidden sm:inline">quest.</span><span className="sm:hidden">q.</span></span>
+                          <span className="text-emerald-400/80 flex items-center gap-0.5">
+                            <Check size={9} className="stroke-[1.5]" />
+                            {mAcertos}
+                          </span>
+                          <span className="text-rose-400/80 flex items-center gap-0.5">
+                            <X size={9} className="stroke-[1.5]" />
+                            {mErros}
+                          </span>
+                          <span className="text-amber-400/80 flex items-center gap-0.5">
+                            <Flag size={8} />
+                            {mDuvidas}
+                          </span>
+                          <span className={`px-1.5 py-0.2 rounded border text-[9px] font-light tabular-nums ${mAproveitamentoClasses}`}>
+                            {mPct === null ? "—" : `${mPct}%`}
+                          </span>
+                        </div>
+
+                        {/* No desktop, contagem de cadernos fica no final */}
+                        <span className="hidden sm:inline-block text-[9.5px] font-light text-slate-500 font-mono bg-white/[0.02] px-1.5 py-0.2 rounded border border-white/[0.04] shrink-0">
+                          {mat.cadernos.length} caderno{mat.cadernos.length > 1 ? "s" : ""}
+                        </span>
+                      </div>
+                    </button>
+
+                    {isAdminState && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteDisciplina(mat)}
+                        title={`Excluir disciplina "${mat.nome}" (Admin)`}
+                        className="w-8 h-8 sm:w-6 sm:h-6 flex items-center justify-center rounded border border-rose-500/25 bg-rose-500/10 text-rose-400 hover:text-rose-100 active:bg-rose-500/30 hover:border-rose-500/50 hover:bg-rose-500/25 transition-colors cursor-pointer shrink-0"
+                      >
+                        <Trash2 size={12} className="sm:w-[10px] sm:h-[10px]" />
+                      </button>
+                    )}
+                  </div>
 
                   {/* ── LISTA DE CADERNOS DENTRO DA MATÉRIA (Exibe quando não recolhido) ── */}
                   {!isRecolhido && (
@@ -3498,7 +3865,7 @@ export default function CadernosTab({
                             <div className="flex items-center gap-1.5 min-w-0">
                               <span className="text-[10px] text-slate-600 group-hover:text-slate-400 shrink-0">→</span>
                               <span className="text-[11px] shrink-0 opacity-75">📝</span>
-                              <span className="text-[12.5px] sm:text-xs font-medium text-slate-300 group-hover:text-white truncate min-w-0">
+                              <span className="text-[12.5px] sm:text-xs font-normal text-slate-300 group-hover:text-white truncate min-w-0">
                                 {caderno.nome}
                               </span>
                             </div>
@@ -3662,6 +4029,21 @@ export default function CadernosTab({
             nodeId={renamingNode?.id || ""}
             currentNome={renamingNode?.nome || ""}
             onSuccess={handleRenameSuccess}
+          />
+
+          <ModalMoverSubcaso
+            isOpen={!!subcasoToMove}
+            onClose={() => setSubcasoToMove(null)}
+            subcaso={subcasoToMove}
+            materias={unfilteredMaterias}
+            onConfirmMove={handleConfirmMoveSubcaso}
+          />
+
+          <ModalExcluirCaderno
+            isOpen={!!deleteTarget}
+            onClose={() => setDeleteTarget(null)}
+            target={deleteTarget}
+            onConfirmDelete={handleConfirmDeleteTarget}
           />
 
           <ImportJsonModal

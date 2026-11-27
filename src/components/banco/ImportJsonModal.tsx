@@ -153,7 +153,7 @@ function normalizarInput(item: Record<string, any>): QuestaoInput {
   const rawIdtec = pickField(item, ["Idtec", "idtec", "ID_TEC", "id_tec"]);
   const rawDificuldade = pickField(item, ["Dificuldade", "dificuldade"]);
   const rawTextoApoio = pickField(item, ["Texto de apoio", "texto de apoio", "texto_apoio"]);
-  const rawLink = pickField(item, ["link", "Link"]);
+  const rawLink = pickField(item, ["link", "Link", "URL", "url"]);
   const rawComentario = pickField(item, ["Comentário", "Comentario", "comentario", "explicacao"]);
   const rawGabarito = pickField(item, ["Gabarito", "gabarito"]);
 
@@ -210,6 +210,7 @@ const SAMPLE_PROMPT = `Gere uma lista de questões no formato JSON oficial abaix
     "Idq": "Q2408218",
     "Idg": "",
     "Idtec": "",
+    "Link": "https://www.qconcursos.com/questoes-de-concursos/questoes?q=Q2408218",
     "Dificuldade": "Média",
     "Texto de apoio": "",
     "Enunciado": "Nos conceitos básicos de administração financeira, o Sistema Financeiro Nacional é dividido em dois subsistemas: normativo e operacional.",
@@ -230,6 +231,7 @@ Regras:
 - Banca: banca oficial ou IA geradora (MANUS, CLAUDE, GPT, HYDROGEN, GEMINI FLASH...).
 - Organização nó: caminho hierárquico separado por " / " (ou lista ["Matéria", "Caderno", "Caso"]).
 - Idq / Idg / Idtec: preencha o ID correspondente (Qconcursos, Gran ou TEC) ou "" se não houver.
+- Link: URL direta da questão (Qconcursos, Gran, TEC) ou "" se não houver.
 - Dificuldade: Fácil, Média, Difícil ou Ultrahard.
 - Texto de apoio e Enunciado são opcionais (nem toda questão possui).
 - Gabarito: A, B, C, D ou E.`;
@@ -520,7 +522,7 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
                 </span>
               </h3>
               <p className="text-[11px] sm:text-xs text-slate-400 truncate">
-                Suporta Prova, Ano, Ordem, Banca, Disciplina, Organização nó, Idq/Idg/Idtec, Texto de apoio, Enunciado e Pergunta problema.
+                Suporta Prova, Ano, Ordem, Banca, Disciplina, Organização nó, Idq/Idg/Idtec, Link, Texto de apoio, Enunciado e Pergunta problema.
               </p>
             </div>
           </div>
@@ -541,7 +543,7 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
               <div>
                 <h4 className="text-xs font-bold text-blue-200">Modelo oficial do novo JSON</h4>
                 <p className="text-[11px] text-slate-400">
-                  Com Ordem, Banca, Organização nó, Idq/Idg/Idtec, Texto de apoio, Enunciado e Pergunta problema.
+                  Com Ordem, Banca, Organização nó, Idq/Idg/Idtec, Link, Texto de apoio, Enunciado e Pergunta problema.
                 </p>
               </div>
             </div>
@@ -595,7 +597,7 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
                 setErrorMsg("");
                 setSuccessCount(null);
               }}
-              placeholder={'[\n  {\n    "Prova": "BB",\n    "Ano": "23/04/2023",\n    "Ordem": 1,\n    "Banca": "CESGRANRIO",\n    "Disciplina": "Matemática",\n    "Organização nó": "Matemática / Juros / Caso 1",\n    "Idq": "Q2408218",\n    "Idg": "",\n    "Idtec": "",\n    "Dificuldade": "Média",\n    "Texto de apoio": "",\n    "Enunciado": "Contexto da questão (opcional)...",\n    "Pergunta problema": "O que de fato pergunta...",\n    "Alternativa A": "...",\n    "Gabarito": "A"\n  }\n]'}
+              placeholder={'[\n  {\n    "Prova": "BB",\n    "Ano": "23/04/2023",\n    "Ordem": 1,\n    "Banca": "CESGRANRIO",\n    "Disciplina": "Matemática",\n    "Organização nó": "Matemática / Juros / Caso 1",\n    "Idq": "Q2408218",\n    "Idg": "",\n    "Idtec": "",\n    "Link": "https://www.qconcursos.com/questoes-de-concursos/questoes?q=Q2408218",\n    "Dificuldade": "Média",\n    "Texto de apoio": "",\n    "Enunciado": "Contexto da questão (opcional)...",\n    "Pergunta problema": "O que de fato pergunta...",\n    "Alternativa A": "...",\n    "Gabarito": "A"\n  }\n]'}
               className="w-full p-3 bg-[#090D16] border border-white/10 rounded-xl text-xs font-mono text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 custom-scrollbar"
             />
           </div>
@@ -660,6 +662,16 @@ export function ImportJsonModal({ isOpen, onClose, onSuccess }: ImportJsonModalP
                           <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/25">
                             TEC: {qa.input.Idtec}
                           </span>
+                        )}
+                        {qa.input.link && (
+                          <a
+                            href={qa.input.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:underline"
+                          >
+                            Link
+                          </a>
                         )}
                       </div>
 
