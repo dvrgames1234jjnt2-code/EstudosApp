@@ -9,6 +9,7 @@ import {
   BookMarked,
   X,
   ChevronRight,
+  SlidersHorizontal,
 } from "lucide-react";
 
 interface AppSidebarNavProps {
@@ -30,7 +31,7 @@ export function AppSidebarNav({
   onClose,
   onMouseEnter,
   onMouseLeave,
-  activeTab = "notion",
+  activeTab = "simulados",
   onSelectTab,
   questionsCount,
   provasCount,
@@ -79,15 +80,26 @@ export function AppSidebarNav({
       textColor: "text-amber-400",
       disabled: !hasResolverQueue,
     },
-    {
-      id: "notion",
-      label: "Notion Question",
-      description: "Integração Notion e Cadernos",
-      icon: BookMarked,
-      color: "from-purple-600 to-violet-600",
-      textColor: "text-purple-400",
-      disabled: false,
-    },
+    ...(isAdmin ? [
+      {
+        id: "notion",
+        label: "Notion Question",
+        description: "Integração Notion e Cadernos",
+        icon: BookMarked,
+        color: "from-purple-600 to-violet-600",
+        textColor: "text-purple-400",
+        disabled: false,
+      },
+      {
+        id: "admin",
+        label: "Painel Admin",
+        description: "Questões, tipos e regras de simulados",
+        icon: SlidersHorizontal,
+        color: "from-blue-600 to-cyan-600",
+        textColor: "text-blue-400",
+        disabled: false,
+      },
+    ] : []),
 
   ];
 
@@ -114,7 +126,7 @@ export function AppSidebarNav({
               <GraduationCap className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-sm font-black text-white tracking-tight leading-none flex items-center gap-1.5">
+              <h2 className="text-sm font-normal text-white tracking-tight leading-none flex items-center gap-1.5">
                 Navegação <span className="text-blue-400">Banco</span>
               </h2>
               <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">
@@ -135,7 +147,7 @@ export function AppSidebarNav({
             {/* Conteúdo com Scroll */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
               <div className="px-2 py-1 flex items-center justify-between">
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                <span className="text-[10px] font-normal text-slate-500 uppercase tracking-widest">
                   Menu de Navegação
                 </span>
               </div>
@@ -169,19 +181,19 @@ export function AppSidebarNav({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1">
                           <span
-                            className={`text-xs font-black truncate transition-colors ${
+                            className={`text-xs font-normal truncate transition-colors ${
                               isSelected ? "text-white" : "text-slate-200 group-hover:text-white"
                             }`}
                           >
                             {item.label}
                           </span>
                           {item.count !== undefined && (
-                            <span className="px-2 py-0.5 text-[9px] font-black bg-white/10 rounded-md text-slate-300 shrink-0">
+                            <span className="px-2 py-0.5 text-[9px] font-normal bg-white/10 rounded-md text-slate-300 shrink-0">
                               {item.count}
                             </span>
                           )}
                           {item.badge && (
-                            <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/30 uppercase tracking-wider shrink-0">
+                            <span className="text-[8px] font-normal px-1.5 py-0.5 rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/30 uppercase tracking-wider shrink-0">
                               {item.badge}
                             </span>
                           )}

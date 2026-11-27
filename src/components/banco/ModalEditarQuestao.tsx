@@ -9,7 +9,7 @@ import {
   ExternalLink,
   AlertCircle,
 } from "lucide-react";
-import { supabase, supabasePublic } from "../../lib/supabase";
+import { safeUpdateQuestoesByIds, type QuestaoWritePayload } from "../../lib/questoesMutation";
 import { getQuestionIds, normalizeDifficultyLabel } from "../../lib/questionService";
 import type { BancoQuestion } from "./QuestionsTable";
 import type { OrgNodeDB } from "./CadernosTab";
@@ -108,7 +108,7 @@ export function ModalEditarQuestao({
       const cleanAno = ano.trim() || null;
       const cleanMateria = materia.trim() || null;
 
-      const updatePayload: Record<string, any> = {
+      const updatePayload: QuestaoWritePayload = {
         Enunciado: enunciado,
         "Pergunta problema": perguntaProblema,
         "Texto de apoio": textoApoio || null,
@@ -135,42 +135,9 @@ export function ModalEditarQuestao({
         organizacao_id: organizacaoId || null,
       };
 
-      let updateRes = await supabase
-        .from("questoes")
-        .update(updatePayload)
-        .eq("id", questao.id);
-
-      if (updateRes.error) {
-        updateRes = await supabasePublic
-          .from("questoes")
-          .update(updatePayload)
-          .eq("id", questao.id);
-      }
-
-      if (updateRes.error) {
-        const msg = updateRes.error.message || "";
-        const missingCols = /column|schema cache|Idg|Idtec|Idq|Disciplina/i.test(msg);
-        const anoTypeErr = /invalid input syntax for type integer/i.test(msg);
-        if ((missingCols || anoTypeErr) && !cleanIdg && !cleanIdtec) {
-          const fallbackPayload = { ...updatePayload };
-          delete fallbackPayload.Idq;
-          delete fallbackPayload.Idg;
-          delete fallbackPayload.Idtec;
-          if (/Disciplina/i.test(msg)) delete fallbackPayload.Disciplina;
-          if (anoTypeErr && typeof fallbackPayload.Ano === "string") {
-            const yrMatch = fallbackPayload.Ano.match(/\b(19|20)\d{2}\b/);
-            fallbackPayload.Ano = yrMatch ? Number(yrMatch[0]) : null;
-          }
-          let retry = await supabase.from("questoes").update(fallbackPayload).eq("id", questao.id);
-          if (retry.error) {
-            retry = await supabasePublic.from("questoes").update(fallbackPayload).eq("id", questao.id);
-          }
-          updateRes = retry;
-        }
-      }
-
-      if (updateRes.error) {
-        throw new Error(updateRes.error.message);
+      const updateError = await safeUpdateQuestoesByIds([questao.id], updatePayload);
+      if (updateError) {
+        throw new Error(updateError);
       }
 
       const updatedObj: BancoQuestion = {
@@ -227,21 +194,21 @@ export function ModalEditarQuestao({
         <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-white/[0.06] bg-white/[0.02]">
           <div className="flex items-center gap-2 min-w-0 flex-wrap">
             <span className="w-2 h-2 rounded-full bg-indigo-400 shrink-0" />
-            <h3 className="text-sm font-semibold text-slate-200 truncate">
+            <h3 className="text-sm font-normal text-slate-200 truncate">
               Editar Questão #{questao.id}
             </h3>
             {idq && (
-              <span className="text-[10px] font-mono font-medium text-amber-400/90 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded">
+              <span className="text-[10px] font-mono font-normal text-amber-400/90 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded">
                 QC: {idq}
               </span>
             )}
             {idg && (
-              <span className="text-[10px] font-mono font-medium text-cyan-400/90 bg-cyan-400/10 border border-cyan-400/20 px-2 py-0.5 rounded">
+              <span className="text-[10px] font-mono font-normal text-cyan-400/90 bg-cyan-400/10 border border-cyan-400/20 px-2 py-0.5 rounded">
                 Gran: {idg}
               </span>
             )}
             {idtec && (
-              <span className="text-[10px] font-mono font-medium text-violet-400/90 bg-violet-400/10 border border-violet-400/20 px-2 py-0.5 rounded">
+              <span className="text-[10px] font-mono font-normal text-violet-400/90 bg-violet-400/10 border border-violet-400/20 px-2 py-0.5 rounded">
                 TEC: {idtec}
               </span>
             )}
@@ -266,7 +233,7 @@ export function ModalEditarQuestao({
 
           {/* Pasta / Hierarquia de Organização */}
           <div className="space-y-1.5 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]">
-            <label className="text-[11px] font-medium text-slate-300 flex items-center gap-1.5">
+            <label className="text-[11px] font-normal text-slate-300 flex items-center gap-1.5">
               <FolderTree size={12} className="text-indigo-400" />
               Caso / Pasta de Destino (organizacao_nos)
             </label>
@@ -287,7 +254,7 @@ export function ModalEditarQuestao({
           {/* Disciplina, Tópico, Ordem, Dificuldade */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div className="sm:col-span-2">
-              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Disciplina / Matéria</label>
+              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">Disciplina / Matéria</label>
               <input
                 type="text"
                 value={materia}
@@ -297,7 +264,7 @@ export function ModalEditarQuestao({
               />
             </div>
             <div>
-              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Ordem</label>
+              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">Ordem</label>
               <input
                 type="number"
                 value={ordem}
@@ -307,7 +274,7 @@ export function ModalEditarQuestao({
               />
             </div>
             <div>
-              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Dificuldade</label>
+              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">Dificuldade</label>
               <select
                 value={dificuldade}
                 onChange={(e) => setDificuldade(e.target.value)}
@@ -328,7 +295,7 @@ export function ModalEditarQuestao({
           {/* IDs por Plataforma: Idq, Idg, Idtec */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="text-[10.5px] font-medium text-amber-300/90 block mb-1">Idq (Qconcursos)</label>
+              <label className="text-[10.5px] font-normal text-amber-300/90 block mb-1">Idq (Qconcursos)</label>
               <input
                 type="text"
                 value={idq}
@@ -338,7 +305,7 @@ export function ModalEditarQuestao({
               />
             </div>
             <div>
-              <label className="text-[10.5px] font-medium text-cyan-300/90 block mb-1">Idg (Gran)</label>
+              <label className="text-[10.5px] font-normal text-cyan-300/90 block mb-1">Idg (Gran)</label>
               <input
                 type="text"
                 value={idg}
@@ -348,7 +315,7 @@ export function ModalEditarQuestao({
               />
             </div>
             <div>
-              <label className="text-[10.5px] font-medium text-violet-300/90 block mb-1">Idtec (TEC)</label>
+              <label className="text-[10.5px] font-normal text-violet-300/90 block mb-1">Idtec (TEC)</label>
               <input
                 type="text"
                 value={idtec}
@@ -362,7 +329,7 @@ export function ModalEditarQuestao({
           {/* Prova, Banca, Ano (Data), Link */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Prova (Órgão abreviado)</label>
+              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">Prova (Órgão abreviado)</label>
               <input
                 type="text"
                 value={prova}
@@ -372,7 +339,7 @@ export function ModalEditarQuestao({
               />
             </div>
             <div>
-              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Banca (ou IA)</label>
+              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">Banca (ou IA)</label>
               <input
                 type="text"
                 list="bancas-sugestoes"
@@ -395,7 +362,7 @@ export function ModalEditarQuestao({
               </datalist>
             </div>
             <div>
-              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Ano / Data Aplicação</label>
+              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">Ano / Data Aplicação</label>
               <input
                 type="text"
                 value={ano}
@@ -408,7 +375,7 @@ export function ModalEditarQuestao({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Tópico / Subtema</label>
+              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">Tópico / Subtema</label>
               <input
                 type="text"
                 value={tema}
@@ -418,7 +385,7 @@ export function ModalEditarQuestao({
               />
             </div>
             <div>
-              <label className="text-[10.5px] font-medium text-slate-400 block mb-1">Link da Questão</label>
+              <label className="text-[10.5px] font-normal text-slate-400 block mb-1">Link da Questão</label>
               <div className="relative flex items-center">
                 <input
                   type="text"
@@ -445,7 +412,7 @@ export function ModalEditarQuestao({
           {/* Texto de Apoio */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-[10.5px] font-medium text-slate-400">Texto de Apoio (Opcional)</label>
+              <label className="text-[10.5px] font-normal text-slate-400">Texto de Apoio (Opcional)</label>
               <button
                 type="button"
                 onClick={() => setShowTextoApoio(!showTextoApoio)}
@@ -467,7 +434,7 @@ export function ModalEditarQuestao({
 
           {/* Enunciado */}
           <div>
-            <label className="text-[10.5px] font-medium text-slate-300 block mb-1">
+            <label className="text-[10.5px] font-normal text-slate-300 block mb-1">
               Enunciado / Contexto (Opcional)
             </label>
             <textarea
@@ -481,7 +448,7 @@ export function ModalEditarQuestao({
 
           {/* Pergunta problema */}
           <div>
-            <label className="text-[10.5px] font-medium text-indigo-300/90 block mb-1">
+            <label className="text-[10.5px] font-normal text-indigo-300/90 block mb-1">
               Pergunta Problema (O que de fato pergunta)
             </label>
             <textarea
@@ -496,13 +463,13 @@ export function ModalEditarQuestao({
           {/* Alternativas e Gabarito */}
           <div className="space-y-2 p-3.5 rounded-xl bg-white/[0.015] border border-white/[0.04]">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-medium text-slate-300">Alternativas</span>
+              <span className="text-[11px] font-normal text-slate-300">Alternativas</span>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] text-slate-400 font-medium">Gabarito:</span>
+                <span className="text-[10px] text-slate-400 font-normal">Gabarito:</span>
                 <select
                   value={gabarito}
                   onChange={(e) => setGabarito(e.target.value)}
-                  className="bg-[#111623] border border-emerald-500/40 text-emerald-300 rounded px-2 py-0.5 text-xs font-bold focus:outline-none"
+                  className="bg-[#111623] border border-emerald-500/40 text-emerald-300 rounded px-2 py-0.5 text-xs font-normal focus:outline-none"
                 >
                   <option value="">—</option>
                   <option value="A">A</option>
@@ -525,7 +492,7 @@ export function ModalEditarQuestao({
               return (
                 <div key={letra} className="flex items-center gap-2">
                   <span
-                    className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors ${
+                    className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-normal shrink-0 transition-colors ${
                       isCorreta
                         ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
                         : "bg-white/[0.04] text-slate-400 border border-white/[0.08]"
@@ -549,7 +516,7 @@ export function ModalEditarQuestao({
 
           {/* Comentário */}
           <div>
-            <label className="text-[10.5px] font-medium text-slate-400 block mb-1">
+            <label className="text-[10.5px] font-normal text-slate-400 block mb-1">
               Comentário / Resolução
             </label>
             <textarea
@@ -577,7 +544,7 @@ export function ModalEditarQuestao({
             type="button"
             onClick={handleSalvar}
             disabled={salvando}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-normal transition-colors disabled:opacity-50"
           >
             {salvando ? (
               <>

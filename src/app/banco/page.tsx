@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   GraduationCap,
-  ArrowLeft,
   Layers,
   Loader2,
   RefreshCw,
@@ -18,16 +17,11 @@ import {
   Printer,
   Target,
   ClipboardList,
-  PlayCircle,
-  CheckCircle2,
-  Clock3,
-  Search,
-  Filter,
-  X,
   BookMarked,
   CheckCheck,
   LampDesk,
   RotateCw,
+  SlidersHorizontal,
 } from "lucide-react";
 import { supabase, supabasePublic } from "../../lib/supabase";
 import { AuthModal } from "../../components/AuthModal";
@@ -41,7 +35,15 @@ import { ModalEditarQuestao } from "../../components/banco/ModalEditarQuestao";
 import VerificadorIDsTab from "../../components/banco/VerificadorIDsTab";
 import StudyCorner3DTab from "../../components/banco/StudyCorner3DTab";
 import FlashcardsView from "../../components/flashcards/FlashcardsView";
-import { normalizarQuestao } from "../../lib/questionService";
+import SimuladosTab from "../../components/banco/SimuladosTab";
+import AdminManagerTab from "../../components/banco/AdminManagerTab";
+import {
+  DEFAULT_SIMULADOS_CONFIG,
+  SIMULADOS_CONFIG_STORAGE_KEY,
+  normalizeSimuladosConfig,
+  type SimuladosConfig,
+} from "../../lib/simuladosConfig";
+import { normalizarQuestao, sortQuestoesByOrdem } from "../../lib/questionService";
 
 // ──────────────────────────────────────────────
 // Types
@@ -60,7 +62,7 @@ export interface QuestionStats {
 /** Mapa questao_id → stats (derivado do histórico completo) */
 type UserAnswers = Record<string, QuestionStats>;
 
-type ActiveTab = "banco" | "resolver" | "simulados" | "desempenho" | "fixacao" | "notion" | "cantinho" | "flashcards" | "cadernos" | "verificador";
+type ActiveTab = "banco" | "resolver" | "simulados" | "desempenho" | "fixacao" | "notion" | "cantinho" | "flashcards" | "cadernos" | "verificador" | "admin";
 
 // ──────────────────────────────────────────────
 // Helpers
@@ -128,7 +130,7 @@ export default function BancoPage() {
   const [duvidas, setDuvidas] = useState<Set<string>>(new Set());
 
   // UI
-  const [activeTab, setActiveTab]   = useState<ActiveTab>("notion");
+  const [activeTab, setActiveTab]   = useState<ActiveTab>("simulados");
   const [selectedQuestion, setSelectedQuestion] = useState<BancoQuestion | null>(null);
   const [resolverQueue, setResolverQueue] = useState<BancoQuestion[]>([]);
   const [resolverIndex, setResolverIndex] = useState(0);
@@ -136,12 +138,61 @@ export default function BancoPage() {
   const [filteredQuestions, setFilteredQuestions] = useState<BancoQuestion[]>([]);
   const [isSaving, setIsSaving]     = useState(false);
   const [selectedSimulado, setSelectedSimulado] = useState<string | null>(null);
-  const [simuladoSearch, setSimuladoSearch]     = useState("");
-  const [simuladoStatusFilter, setSimuladoStatusFilter] = useState<"todos" | "concluidos" | "em_andamento" | "nao_iniciados">("todos");
-  const [simuladoFamiliaFilter, setSimuladoFamiliaFilter] = useState<string>("todas");
   const [isAdmin, setIsAdmin]       = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<BancoQuestion | null>(null);
   const [orgNodes, setOrgNodes]     = useState<any[]>([]);
+  const [simuladosConfig, setSimuladosConfig] = useState<SimuladosConfig>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = window.localStorage.getItem(SIMULADOS_CONFIG_STORAGE_KEY);
+        if (raw) return normalizeSimuladosConfig(JSON.parse(raw));
+      } catch {
+        // ignore storage errors
+      }
+    }
+    return DEFAULT_SIMULADOS_CONFIG;
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/simulados-config")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        const normalized = normalizeSimuladosConfig(data);
+        setSimuladosConfig(normalized);
+        try {
+          window.localStorage.setItem(SIMULADOS_CONFIG_STORAGE_KEY, JSON.stringify(normalized));
+        } catch {
+          // ignore
+        }
+      })
+      .catch(() => {
+        // fallback to local/default
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleSaveSimuladosConfig = useCallback(async (next: SimuladosConfig) => {
+    const normalized = normalizeSimuladosConfig(next);
+    setSimuladosConfig(normalized);
+    try {
+      window.localStorage.setItem(SIMULADOS_CONFIG_STORAGE_KEY, JSON.stringify(normalized));
+    } catch {
+      // ignore
+    }
+    try {
+      await fetch("/api/simulados-config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(normalized),
+      });
+    } catch (err) {
+      console.error("Erro ao salvar configurações de simulados:", err);
+    }
+  }, []);
 
   const fetchOrgNodes = useCallback(async () => {
     try {
@@ -432,6 +483,10 @@ export default function BancoPage() {
     [questions]
   );
 
+  const ADMIN_ONLY_TABS: ActiveTab[] = ["notion", "cantinho", "flashcards", "cadernos", "verificador", "admin"];
+  const effectiveTab: ActiveTab =
+    !isAdmin && ADMIN_ONLY_TABS.includes(activeTab) ? "simulados" : activeTab;
+
   // ──────────────────────────────────────────────
   // Render
   // ──────────────────────────────────────────────
@@ -445,14 +500,14 @@ export default function BancoPage() {
             <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center shrink-0">
               <GraduationCap size={16} className="text-white" />
             </div>
-            <span className="sm:hidden text-xs font-black text-white tracking-tight truncate">
+            <span className="sm:hidden text-xs font-normal text-white tracking-tight truncate">
               Banco
             </span>
             <div className="hidden sm:block">
-              <h1 className="text-sm font-black text-white tracking-tight leading-none">
+              <h1 className="text-sm font-normal text-white tracking-tight leading-none">
                 Banco <span className="text-blue-500">de Questões</span>
               </h1>
-              <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mt-0.5">
+              <p className="text-[9px] font-normal text-slate-600 uppercase tracking-[0.2em] mt-0.5">
                 Estação de Treinamento
               </p>
             </div>
@@ -463,7 +518,7 @@ export default function BancoPage() {
           {/* Botão de Destaque Imprimir Simulado na Topbar */}
           <button
             onClick={() => setShowGlobalPrintModal(true)}
-            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 min-h-[36px] py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[11px] font-black uppercase tracking-wider transition-colors shrink-0"
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 min-h-[36px] py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[11px] font-normal uppercase tracking-wider transition-colors shrink-0"
           >
             <Printer size={13} />
             <span className="hidden sm:inline">Imprimir Simulado</span>
@@ -483,12 +538,12 @@ export default function BancoPage() {
               <div className="w-5 h-5 rounded-full bg-blue-600/30 flex items-center justify-center shrink-0">
                 <User size={10} className="text-blue-400" />
               </div>
-              <span className="text-[11px] font-bold text-slate-300 max-w-[68px] sm:max-w-[110px] truncate">{displayName}</span>
+              <span className="text-[11px] font-normal text-slate-300 max-w-[68px] sm:max-w-[110px] truncate">{displayName}</span>
             </div>
           ) : (
             <button
               onClick={() => setShowAuthModal(true)}
-              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 min-h-[36px] py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-colors shrink-0"
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 min-h-[36px] py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[11px] font-normal uppercase tracking-widest transition-colors shrink-0"
             >
               <Lock size={11} /> Entrar
             </button>
@@ -503,13 +558,16 @@ export default function BancoPage() {
             { id: "resolver",   icon: <Layers size={13} />,         label: "Questão Ativa", badge: selectedQuestion ? "●" : null },
             { id: "simulados",  icon: <ClipboardList size={13} />,  label: "Simulados", count: provasDisponiveis.length },
             { id: "desempenho", icon: <BarChart3 size={13} />,      label: "Desempenho", badge: resolverQueue.length > 0 ? "●" : null },
-            { id: "notion",     icon: <BookMarked size={13} />,     label: "Notion Question" },
-            { id: "cantinho",   icon: <LampDesk size={13} />,       label: "Cantinho 3D" },
-            { id: "flashcards", icon: <RotateCw size={13} />,       label: "Flashcards 3D" },
-            ...(isAdmin ? [{ id: "cadernos", icon: <Layers size={13} />, label: "Cadernos" }] : []),
-            { id: "verificador", icon: <CheckCheck size={13} />, label: "Confrontar IDs" },
+            ...(isAdmin ? [
+              { id: "notion",      icon: <BookMarked size={13} />,  label: "Notion Question" },
+              { id: "cantinho",    icon: <LampDesk size={13} />,    label: "Cantinho 3D" },
+              { id: "flashcards",  icon: <RotateCw size={13} />,    label: "Flashcards 3D" },
+              { id: "cadernos",    icon: <Layers size={13} />,           label: "Cadernos" },
+              { id: "verificador", icon: <CheckCheck size={13} />,       label: "Confrontar IDs" },
+              { id: "admin",       icon: <SlidersHorizontal size={13} />, label: "Admin" },
+            ] : []),
           ].map(tab => {
-            const isSelected = activeTab === tab.id;
+            const isSelected = effectiveTab === tab.id;
             const isDisabled = (tab.id === "resolver" && !selectedQuestion);
 
             return (
@@ -518,10 +576,11 @@ export default function BancoPage() {
                 onClick={() => {
                   if (isDisabled) return;
                   if (tab.id === "desempenho" && resolverQueue.length === 0) return;
+                  if (!isAdmin && ADMIN_ONLY_TABS.includes(tab.id as ActiveTab)) return;
                   setActiveTab(tab.id as ActiveTab);
                 }}
                 disabled={isDisabled}
-                className={`relative px-3 sm:px-3.5 py-2 sm:py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 sm:gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 ${
+                className={`relative px-3 sm:px-3.5 py-2 sm:py-1.5 rounded-xl text-[11px] font-normal flex items-center gap-1.5 sm:gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 ${
                   isSelected
                     ? "bg-blue-600/15 text-blue-400 border border-blue-500/30"
                     : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border border-transparent"
@@ -532,7 +591,7 @@ export default function BancoPage() {
                 </span>
                 <span>{tab.label}</span>
                 {tab.count !== undefined && (
-                  <span className={`px-1.5 py-0.2 rounded-md text-[9px] font-black tabular-nums ${
+                  <span className={`px-1.5 py-0.2 rounded-md text-[9px] font-normal tabular-nums ${
                     isSelected ? "bg-blue-500/20 text-blue-300" : "bg-white/[0.06] text-slate-400"
                   }`}>
                     {tab.count}
@@ -550,7 +609,7 @@ export default function BancoPage() {
       {/* Main */}
       <main className="w-full max-w-[1920px] mx-auto px-2.5 sm:px-8 py-4 sm:py-6">
           {/* ── BANCO ── */}
-          {activeTab === "banco" && (
+          {effectiveTab === "banco" && (
             <div>
               {loadingQuestions || loadingUser ? (
                 <div className="flex flex-col items-center justify-center py-32 gap-6">
@@ -596,7 +655,7 @@ export default function BancoPage() {
           )}
 
           {/* ── RESOLVER ── */}
-          {activeTab === "resolver" && selectedQuestion && (
+          {effectiveTab === "resolver" && selectedQuestion && (
             <div className="w-full max-w-[1750px] mx-auto px-0 sm:px-4">
               <div className="w-full h-full min-h-[calc(100vh-200px)] flex flex-col">
                 <QuestionResolver
@@ -618,7 +677,7 @@ export default function BancoPage() {
                   isAdmin={isAdmin}
                   onEditQuestion={(q) => setEditingQuestion(q)}
                   onSelectProva={(provaName) => {
-                    const newQueue = questions.filter(q => q.prova === provaName);
+                    const newQueue = sortQuestoesByOrdem(questions.filter(q => q.prova === provaName));
                     if (newQueue.length > 0) {
                       setResolverQueue(newQueue);
                       setResolverIndex(0);
@@ -631,7 +690,7 @@ export default function BancoPage() {
           )}
 
           {/* ── DESEMPENHO ── */}
-          {activeTab === "desempenho" && resolverQueue.length > 0 && (() => {
+          {effectiveTab === "desempenho" && resolverQueue.length > 0 && (() => {
             const answeredCount = resolverQueue.filter(q => userAnswers[String(q.id)]).length;
             const correctCount = resolverQueue.filter(q => userAnswers[String(q.id)]?.isCorrect).length;
             const errorCount = answeredCount - correctCount;
@@ -898,559 +957,62 @@ export default function BancoPage() {
           })()}
 
           {/* ── SIMULADOS ── */}
-          {activeTab === "simulados" && (() => {
-            // ─── 1. Estruturação e Parser das Provas ──────────────────────────
-            interface ProvaData {
-              rawName: string;
-              familia: string;
-              numero: string;
-              tipo: string;
-              concurso: string;
-              questions: typeof questions;
-              answered: number;
-              correct: number;
-            }
-
-            function parseProvaDetails(rawName: string): { familia: string; numero: string; tipo: string; concurso: string } {
-              const parts = rawName.split(/\s*[-–]\s*/).map(s => s.trim()).filter(Boolean);
-
-              let familia = "Geral";
-              let numero = "01";
-              let tipo = "SIMULADO";
-              let concurso = "GERAL";
-
-              if (parts.length >= 4) {
-                if (/^\d+$/.test(parts[1])) {
-                  familia = parts[0];
-                  numero = parts[1].padStart(2, '0');
-                  tipo = parts[2].toUpperCase();
-                  concurso = parts[3];
-                } else if (/^\d+$/.test(parts[2])) {
-                  familia = parts[0];
-                  tipo = parts[1].toUpperCase();
-                  numero = parts[2].padStart(2, '0');
-                  concurso = parts[3];
-                } else {
-                  familia = parts[0];
-                  tipo = (parts[2] || parts[1]).toUpperCase();
-                  concurso = parts[3];
-                  const num = rawName.match(/\b\d+\b/);
-                  if (num) numero = num[0].padStart(2, '0');
-                }
-              } else if (parts.length === 3) {
-                familia = parts[0];
-                concurso = parts[2];
-                const num = parts[1].match(/\d+/);
-                if (num) {
-                  numero = num[0].padStart(2, '0');
-                  tipo = parts[1].replace(/\d+/, '').trim().toUpperCase() || "SIMULADO";
-                } else {
-                  tipo = parts[1].toUpperCase();
-                }
-              } else if (parts.length === 2) {
-                familia = parts[0];
-                const num = parts[1].match(/\d+/);
-                if (num) {
-                  numero = num[0].padStart(2, '0');
-                  tipo = parts[1].replace(/\d+/, '').trim().toUpperCase() || "SIMULADO";
-                } else {
-                  tipo = parts[1].toUpperCase();
-                }
-              } else {
-                const num = rawName.match(/\d+/);
-                if (num) numero = num[0].padStart(2, '0');
-                familia = rawName.replace(/\d+/, '').trim() || "Geral";
-              }
-
-              return { familia, numero, tipo, concurso };
-            }
-
-            const mapaProvas: Record<string, ProvaData> = {};
-            for (const q of questions) {
-              const provaName = q.prova ?? "Sem Prova";
-              if (!mapaProvas[provaName]) {
-                const meta = parseProvaDetails(provaName);
-                mapaProvas[provaName] = {
-                  rawName: provaName,
-                  ...meta,
-                  questions: [],
-                  answered: 0,
-                  correct: 0,
-                };
-              }
-              mapaProvas[provaName].questions.push(q);
-              const ans = userAnswers[String(q.id)];
-              if (ans) {
-                mapaProvas[provaName].answered++;
-                if (ans.isCorrect) mapaProvas[provaName].correct++;
-              }
-            }
-
-            const blocos: Record<string, { familia: string; concurso: string; tipos: Record<string, ProvaData[]> }> = {};
-            for (const p of Object.values(mapaProvas)) {
-              const blocoKey = `${p.familia} · ${p.concurso}`;
-              if (!blocos[blocoKey]) {
-                blocos[blocoKey] = { familia: p.familia, concurso: p.concurso, tipos: {} };
-              }
-              if (!blocos[blocoKey].tipos[p.tipo]) {
-                blocos[blocoKey].tipos[p.tipo] = [];
-              }
-              blocos[blocoKey].tipos[p.tipo].push(p);
-            }
-
-            for (const b of Object.values(blocos)) {
-              for (const t of Object.keys(b.tipos)) {
-                b.tipos[t].sort((a, b) => a.numero.localeCompare(b.numero, undefined, { numeric: true }));
-              }
-            }
-
-            if (selectedSimulado && mapaProvas[selectedSimulado]) {
-              const d = mapaProvas[selectedSimulado];
-              const total = d.questions.length;
-              const answered = d.answered;
-              const correct = d.correct;
-              const errors = answered - correct;
-              const remaining = total - answered;
-              const accuracy = answered > 0 ? Math.round((correct / answered) * 100) : 0;
-              const progress = total > 0 ? Math.round((answered / total) * 100) : 0;
-              const status = answered === 0 ? "nao_iniciado" : answered === total ? "concluido" : "em_andamento";
-
-              return (
-                <div>
-                  <div className="flex flex-wrap items-center gap-3 mb-6">
-                    <button
-                      onClick={() => setSelectedSimulado(null)}
-                      className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center text-slate-400 hover:text-slate-200 transition-colors shrink-0"
-                    >
-                      <ArrowLeft size={14} />
-                    </button>
-                    <div className="min-w-0 flex-1">
-                      <h2 className="text-sm font-semibold text-slate-200 truncate">{selectedSimulado}</h2>
-                    </div>
-                    <div className="w-full sm:w-auto sm:ml-auto flex gap-2">
-                      <button
-                        onClick={() => {
-                          if (!user) { setShowAuthModal(true); return; }
-                          const qi = status === "concluido" ? 0 : d.questions.findIndex(q => !userAnswers[String(q.id)]);
-                          const startIdx = qi >= 0 ? qi : 0;
-                          setResolverQueue(d.questions);
-                          setResolverIndex(startIdx);
-                          setSelectedQuestion(d.questions[startIdx]);
-                          setActiveTab("resolver");
-                        }}
-                        className={`w-full sm:w-auto justify-center px-4 py-2 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 transition-colors ${
-                          status === "nao_iniciado" ? "bg-blue-600 hover:bg-blue-500 text-white"
-                          : status === "concluido" ? "bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.1] text-slate-300"
-                          : "bg-amber-500/20 border border-amber-500/20 hover:bg-amber-500/30 text-amber-300"
-                        }`}
-                      >
-                        {status === "nao_iniciado" && <><PlayCircle size={13} /> Iniciar Prova</>}
-                        {status === "em_andamento" && <><Clock3 size={13} /> Continuar ({remaining} restantes)</>}
-                        {status === "concluido" && <><CheckCircle2 size={13} /> Rever Respostas</>}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                    {[
-                      { label: "Total Questões", value: total, color: "text-slate-200", bg: "bg-white/[0.03]" },
-                      { label: "Respondidas", value: answered, color: "text-slate-200", bg: "bg-white/[0.03]" },
-                      { label: "Acertos", value: correct, color: "text-emerald-300", bg: "bg-emerald-500/10 border border-emerald-500/10" },
-                      { label: "Erros", value: errors, color: "text-rose-300", bg: "bg-rose-500/10 border border-rose-500/10" },
-                    ].map(m => (
-                      <div key={m.label} className={`rounded-xl p-4 text-center ${m.bg}`}>
-                        <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">{m.label}</div>
-                        <div className={`text-2xl font-semibold tabular-nums ${m.color}`}>{m.value}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mb-6 space-y-1.5">
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-slate-500">{progress}% concluído</span>
-                      <span className={`tabular-nums ${accuracy >= 70 ? "text-emerald-400" : accuracy >= 50 ? "text-amber-400" : answered === 0 ? "text-slate-500" : "text-rose-400"}`}>
-                        {answered > 0 ? `${accuracy}% de acerto` : "—"}
-                      </span>
-                    </div>
-                    <div className="h-2 w-full bg-white/[0.05] rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${accuracy >= 70 ? "bg-emerald-500" : accuracy >= 50 ? "bg-amber-500" : answered === 0 ? "bg-slate-700" : "bg-rose-500"}`}
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="bg-[#0c1120] border border-white/[0.08] rounded-2xl p-5">
-                    <p className="text-[11px] text-slate-500 mb-4">Clique em uma questão para responder ou visualizar</p>
-                    <div className="flex flex-wrap gap-2">
-                      {d.questions.map((q, qi) => {
-                        const ans = userAnswers[String(q.id)];
-                        let cls = "bg-white/[0.04] text-slate-500 border-white/[0.05] hover:bg-white/[0.08]";
-                        if (ans) cls = ans.isCorrect
-                          ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30"
-                          : "bg-rose-500/20 text-rose-400 border-rose-500/30 hover:bg-rose-500/30";
-                        return (
-                          <button
-                            key={q.id}
-                            onClick={() => {
-                              if (!user) { setShowAuthModal(true); return; }
-                              setResolverQueue(d.questions);
-                              setResolverIndex(qi);
-                              setSelectedQuestion(q);
-                              setActiveTab("resolver");
-                            }}
-                            className={`w-9 h-9 rounded-xl border text-[11px] font-bold transition-colors ${cls}`}
-                          >
-                            {qi + 1}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            // ─── Lista de Famílias Únicas para o Filtro ───────────────────────
-            const todasFamilias = Array.from(new Set(Object.values(mapaProvas).map(p => p.familia))).sort();
-
-            // ─── Renderização Principal: Réplica idêntica do Dashboard da Imagem (Versão Compacta + Filtros) ─────
-            return (
-              <div className="space-y-5">
-                {/* BARRA DE FILTROS SUPERIOR COMPACTA */}
-                <div className="bg-[#0b0f1d] border border-white/[0.08] rounded-2xl p-3 flex flex-col md:flex-row items-center justify-between gap-3">
-                  {/* Busca por texto */}
-                  <div className="relative flex-1 w-full">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
-                    <input
-                      type="text"
-                      placeholder="Buscar por prova, nº, concurso, família..."
-                      value={simuladoSearch}
-                      onChange={(e) => setSimuladoSearch(e.target.value)}
-                      className="w-full bg-[#151b2d] border border-white/10 rounded-xl pl-9 pr-8 py-1.5 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/50 transition-colors"
-                    />
-                    {simuladoSearch && (
-                      <button
-                        onClick={() => setSimuladoSearch("")}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Filtro de Família */}
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
-                    <select
-                      value={simuladoFamiliaFilter}
-                      onChange={(e) => setSimuladoFamiliaFilter(e.target.value)}
-                      className="w-full sm:w-auto bg-[#151b2d] border border-white/10 rounded-xl px-3 py-2 sm:py-1.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/50 transition-colors"
-                    >
-                      <option value="todas">Todas as Famílias</option>
-                      {todasFamilias.map(f => (
-                        <option key={f} value={f}>{f}</option>
-                      ))}
-                    </select>
-
-                    {/* Filtro de Status (Pills) */}
-                    <div className="flex items-center bg-[#151b2d] border border-white/10 rounded-xl p-1 gap-1 overflow-x-auto no-scrollbar max-w-full">
-                      {[
-                        { id: "todos", label: "Todos" },
-                        { id: "concluidos", label: "🟢 Feitos" },
-                        { id: "em_andamento", label: "🔴 Andamento" },
-                        { id: "nao_iniciados", label: "⚪ Virgens" },
-                      ].map(st => (
-                        <button
-                          key={st.id}
-                          onClick={() => setSimuladoStatusFilter(st.id as any)}
-                          className={`px-2.5 py-1.5 sm:py-1 rounded-lg text-[10px] font-bold transition-colors shrink-0 ${
-                            simuladoStatusFilter === st.id
-                              ? "bg-blue-600 text-white"
-                              : "text-slate-400 hover:text-slate-200"
-                          }`}
-                        >
-                          {st.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* LISTAGEM DE BLOCOS EM GRID 2 COLUNAS LADO A LADO */}
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
-                  {Object.entries(blocos).map(([blocoKey, bloco]) => {
-                    // Filtrar provas pela busca, família e status
-                    if (simuladoFamiliaFilter !== "todas" && bloco.familia !== simuladoFamiliaFilter) {
-                      return null;
-                    }
-
-                    const tiposFiltrados: Record<string, ProvaData[]> = {};
-
-                    for (const [tipoNome, provasDoTipo] of Object.entries(bloco.tipos)) {
-                      const provasMatching = provasDoTipo.filter(p => {
-                        // Busca por texto
-                        if (simuladoSearch.trim()) {
-                          const term = simuladoSearch.toLowerCase();
-                          const matchName = p.rawName.toLowerCase().includes(term);
-                          const matchNum = p.numero.includes(term);
-                          const matchFam = p.familia.toLowerCase().includes(term);
-                          const matchConc = p.concurso.toLowerCase().includes(term);
-                          if (!matchName && !matchNum && !matchFam && !matchConc) return false;
-                        }
-
-                        // Filtro de Status
-                        const qTot = p.questions.length;
-                        const isConcluida = p.answered === qTot && qTot > 0;
-                        const isEmAndamento = p.answered > 0 && !isConcluida;
-                        const isNaoIniciada = p.answered === 0;
-
-                        if (simuladoStatusFilter === "concluidos" && !isConcluida) return false;
-                        if (simuladoStatusFilter === "em_andamento" && !isEmAndamento) return false;
-                        if (simuladoStatusFilter === "nao_iniciados" && !isNaoIniciada) return false;
-
-                        return true;
-                      });
-
-                      if (provasMatching.length > 0) {
-                        tiposFiltrados[tipoNome] = provasMatching;
-                      }
-                    }
-
-                    if (Object.keys(tiposFiltrados).length === 0) return null;
-
-                    const todasProvas = Object.values(tiposFiltrados).flat();
-                    let concluidasCount = 0;
-                    let emAndamentoCount = 0;
-                    let naoIniciadasCount = 0;
-                    let totalQuestõesBloco = 0;
-                    let respondidasQuestõesBloco = 0;
-                    let acertosQuestõesBloco = 0;
-
-                    todasProvas.forEach(p => {
-                      const qTot = p.questions.length;
-                      totalQuestõesBloco += qTot;
-                      respondidasQuestõesBloco += p.answered;
-                      acertosQuestõesBloco += p.correct;
-                      if (p.answered === 0) naoIniciadasCount++;
-                      else if (p.answered === qTot) concluidasCount++;
-                      else emAndamentoCount++;
-                    });
-
-                    const pendentesQuestõesBloco = totalQuestõesBloco - respondidasQuestõesBloco;
-                    const aproveitamentoGeral = respondidasQuestõesBloco > 0 
-                      ? Math.round((acertosQuestõesBloco / respondidasQuestõesBloco) * 100) 
-                      : 0;
-
-                    return (
-                      <div
-                        key={blocoKey}
-                        className="bg-[#0b0f1d] border border-white/[0.08] rounded-2xl p-3.5 sm:p-4 space-y-3 flex flex-col justify-between"
-                      >
-                        {/* 1. TOPO SUPERIOR (Familiaridade / Concurso | Status Globais) */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-white/[0.05]">
-                          {/* Seletor Pill (2G | BLOCO) */}
-                          <div className="flex items-center bg-[#151b2d] border border-white/10 rounded-xl p-1 shadow-inner shrink-0">
-                            <span className="bg-blue-600 text-white font-black text-[10px] px-2.5 py-0.5 rounded-lg uppercase tracking-wider shadow-sm">
-                              {bloco.familia}
-                            </span>
-                            <span className="text-slate-400 font-bold text-[10px] px-2 py-0.5 uppercase tracking-wider">
-                              {bloco.concurso}
-                            </span>
-                          </div>
-
-                          {/* Indicadores no canto superior direito */}
-                          <div className="flex items-center gap-3 ml-auto text-[10px]">
-                            <div className="flex items-center gap-1 text-right">
-                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                              <span className="text-[8px] font-bold text-slate-400 uppercase">CONC:</span>
-                              <span className="font-black text-slate-100 tabular-nums">{concluidasCount}</span>
-                            </div>
-
-                            <div className="flex items-center gap-1 text-right">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                              <span className="text-[8px] font-bold text-slate-400 uppercase">AND:</span>
-                              <span className="font-black text-slate-100 tabular-nums">{emAndamentoCount}</span>
-                            </div>
-
-                            <div className="flex items-center gap-1 text-right">
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" />
-                              <span className="text-[8px] font-bold text-slate-400 uppercase">VIRG:</span>
-                              <span className="font-black text-slate-100 tabular-nums">{naoIniciadasCount}</span>
-                            </div>
-
-                            <div className="pl-2.5 border-l border-white/10 text-right">
-                              <div className="text-[8px] font-extrabold text-slate-400 uppercase">APROV.</div>
-                              <div className="text-sm font-black text-white tabular-nums leading-none">
-                                {aproveitamentoGeral}<span className="text-[10px] font-bold text-slate-400">%</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 2. LINHA DE CAPACIDADES GERAIS */}
-                        <div className="bg-[#070a14] border border-white/[0.05] rounded-xl p-2.5 sm:p-3 flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex items-center gap-3 sm:gap-4 flex-wrap text-[11px]">
-                            <div>
-                              <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">TOTAL</div>
-                              <div className="text-sm font-black text-white tabular-nums">
-                                {totalQuestõesBloco} <span className="text-[9px] font-bold text-slate-500">Q</span>
-                              </div>
-                            </div>
-
-                            <div className="h-5 w-px bg-white/10" />
-
-                            <div>
-                              <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">FEITAS</div>
-                              <div className="text-sm font-black text-emerald-400 tabular-nums">
-                                {respondidasQuestõesBloco} <span className="text-[9px] font-bold text-emerald-500/70">RES</span>
-                              </div>
-                            </div>
-
-                            <div className="h-5 w-px bg-white/10" />
-
-                            <div>
-                              <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">PENDENTES</div>
-                              <div className="text-sm font-black text-blue-400 tabular-nums">
-                                {pendentesQuestõesBloco} <span className="text-[9px] font-bold text-blue-500/70">PEND</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* STATUS GLOBAL BADGE */}
-                          <div>
-                            <span className="px-2.5 py-0.5 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-400 text-[8px] font-black uppercase tracking-widest shadow-[0_0_8px_rgba(245,158,11,0.12)]">
-                              STATUS: {aproveitamentoGeral >= 70 ? "ALTO RENDIMENTO" : "EM ANDAMENTO"}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* 3. SEÇÕES DE TIPOS (SIMULADO, PROVAS, etc.) */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-0.5">
-                          {Object.entries(tiposFiltrados).map(([tipoNome, provasDoTipo]) => {
-                            const tipoTotalQ = provasDoTipo.reduce((s, p) => s + p.questions.length, 0);
-                            const tipoAnsweredQ = provasDoTipo.reduce((s, p) => s + p.answered, 0);
-                            const tipoPendingQ = tipoTotalQ - tipoAnsweredQ;
-
-                            // Agrupar provas pela matéria dominante
-                            const porMateria: Record<string, ProvaData[]> = {};
-                            for (const prova of provasDoTipo) {
-                              const freq: Record<string, number> = {};
-                              prova.questions.forEach(q => {
-                                const m = q.materia || "Geral";
-                                freq[m] = (freq[m] || 0) + 1;
-                              });
-                              const matDom = Object.entries(freq).sort((a, b) => b[1] - a[1])[0]?.[0] || "Geral";
-                              if (!porMateria[matDom]) porMateria[matDom] = [];
-                              porMateria[matDom].push(prova);
-                            }
-                            const materias = Object.keys(porMateria).sort();
-
-                            return (
-                              <div key={tipoNome} className="space-y-2 bg-[#080c18] border border-white/[0.04] rounded-xl p-3">
-                                {/* Cabeçalho do Tipo */}
-                                <div className="flex items-center justify-between pb-1 border-b border-white/[0.06]">
-                                  <h4 className="text-[10px] font-black text-slate-200 uppercase tracking-widest flex items-center gap-1">
-                                    <span className="w-1 h-2 bg-blue-500 rounded-full" />
-                                    {tipoNome}
-                                  </h4>
-                                  <div className="flex items-center gap-2 text-[9px] font-mono">
-                                    <span className="text-slate-400">TOT: <strong className="text-slate-200 font-bold">{tipoTotalQ}</strong></span>
-                                    <span className="text-slate-400">FEITOS: <strong className="text-emerald-400 font-bold">{tipoAnsweredQ}</strong></span>
-                                    <span className="text-slate-400">PEND: <strong className="text-blue-400 font-bold">{tipoPendingQ}</strong></span>
-                                  </div>
-                                </div>
-
-                                {/* GRID DE PROVAS agrupadas por Matéria dominante */}
-                                <div className="space-y-1.5 pt-0.5">
-                                  {materias.map(mat => {
-                                    const provasMat = porMateria[mat];
-                                    const matAnswered = provasMat.reduce((s, p) => s + p.answered, 0);
-                                    const matTotal   = provasMat.reduce((s, p) => s + p.questions.length, 0);
-                                    return (
-                                      <div key={mat}>
-                                        {/* Sub-header da Matéria */}
-                                        {materias.length > 1 && (
-                                          <div className="flex items-center justify-between mb-1">
-                                            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 truncate max-w-[65%]">{mat}</span>
-                                            <span className="text-[9px] font-mono text-slate-600 tabular-nums">{matAnswered}/{matTotal}</span>
-                                          </div>
-                                        )}
-                                        <div className="flex flex-wrap gap-1.5">
-                                          {provasMat.map(prova => {
-                                            const qTot = prova.questions.length;
-                                            const isConcluida = prova.answered === qTot && qTot > 0;
-                                            const isEmAndamento = prova.answered > 0 && !isConcluida;
-
-                                            let tileStyle = "bg-[#0f1422] border-white/[0.08] text-slate-500 hover:border-slate-500 hover:text-slate-300";
-                                            if (isConcluida) {
-                                              tileStyle = "bg-[#0a2318] border-emerald-500/50 text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.15)]";
-                                            } else if (isEmAndamento) {
-                                              tileStyle = "bg-[#271018] border-rose-500/50 text-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.15)]";
-                                            }
-
-                                            return (
-                                              <button
-                                                key={prova.rawName}
-                                                onClick={() => {
-                                                  setResolverQueue(prova.questions);
-                                                  setResolverIndex(0);
-                                                  setSelectedQuestion(prova.questions[0]);
-                                                  setActiveTab("desempenho");
-                                                }}
-                                                title={`${prova.rawName} — ${prova.answered}/${qTot} feitas · clique para ver o desempenho`}
-                                                className={`w-7 h-7 rounded-md border font-mono font-bold text-[10px] transition-colors flex items-center justify-center ${tileStyle}`}
-                                              >
-                                                {prova.numero}
-                                              </button>
-                                            );
-                                          })}
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
+          {effectiveTab === "simulados" && (
+            <SimuladosTab
+              questions={questions}
+              userAnswers={userAnswers}
+              selectedSimuladoKey={selectedSimulado}
+              onSelectSimuladoKey={setSelectedSimulado}
+              config={simuladosConfig}
+              onStartSimulado={(orderedQuestions, startIdx) => {
+                if (!user) { setShowAuthModal(true); return; }
+                if (orderedQuestions.length === 0) return;
+                const safeIdx = Math.max(0, Math.min(startIdx, orderedQuestions.length - 1));
+                setResolverQueue(orderedQuestions);
+                setResolverIndex(safeIdx);
+                setSelectedQuestion(orderedQuestions[safeIdx]);
+                setActiveTab("resolver");
+              }}
+              onOpenDesempenho={(orderedQuestions) => {
+                if (orderedQuestions.length === 0) return;
+                setResolverQueue(orderedQuestions);
+                setResolverIndex(0);
+                setSelectedQuestion(orderedQuestions[0]);
+                setActiveTab("desempenho");
+              }}
+            />
+          )}
 
           {/* ── FIXAÇÃO (oculta) ── */}
-          {activeTab === "fixacao" && (
+          {effectiveTab === "fixacao" && (
             <div>
               <FixationDashboardView />
             </div>
           )}
 
-          {/* ── NOTION QUESTION ── */}
-          {activeTab === "notion" && (
+          {/* ── NOTION QUESTION (ADMIN APENAS) ── */}
+          {effectiveTab === "notion" && isAdmin && (
             <div>
               <NotionQuestionTab user={user} />
             </div>
           )}
 
-          {/* ── CANTINHO 3D ── */}
-          {activeTab === "cantinho" && (
+          {/* ── CANTINHO 3D (ADMIN APENAS) ── */}
+          {effectiveTab === "cantinho" && isAdmin && (
             <div>
               <StudyCorner3DTab user={user} onRequireAuth={() => setShowAuthModal(true)} />
             </div>
           )}
 
-          {/* ── FLASHCARDS 3D ── */}
-          {activeTab === "flashcards" && (
+          {/* ── FLASHCARDS 3D (ADMIN APENAS) ── */}
+          {effectiveTab === "flashcards" && isAdmin && (
             <div className="w-full max-w-[1600px] mx-auto">
               <FlashcardsView />
             </div>
           )}
 
           {/* ── CADERNOS (ADMIN APENAS) ── */}
-          {activeTab === "cadernos" && isAdmin && (
+          {effectiveTab === "cadernos" && isAdmin && (
             <div>
               {loadingQuestions ? (
                 <div className="flex flex-col items-center justify-center py-32 gap-6">
@@ -1484,8 +1046,8 @@ export default function BancoPage() {
             </div>
           )}
 
-          {/* ── VERIFICADOR / CONFRONTAR IDS ── */}
-          {activeTab === "verificador" && (
+          {/* ── VERIFICADOR / CONFRONTAR IDS (ADMIN APENAS) ── */}
+          {effectiveTab === "verificador" && isAdmin && (
             <div className="w-full max-w-6xl mx-auto">
               <VerificadorIDsTab
                 questions={questions}
@@ -1498,6 +1060,33 @@ export default function BancoPage() {
                 }}
                 onEditQuestion={(q) => setEditingQuestion(q)}
                 onRefreshQuestions={fetchQuestions}
+              />
+            </div>
+          )}
+
+          {/* ── PAINEL ADMIN (ADMIN APENAS) ── */}
+          {effectiveTab === "admin" && isAdmin && (
+            <div className="w-full max-w-[1680px] mx-auto">
+              <AdminManagerTab
+                questions={questions}
+                orgNodes={orgNodes}
+                simuladosConfig={simuladosConfig}
+                onSaveSimuladosConfig={handleSaveSimuladosConfig}
+                onRefreshQuestions={fetchQuestions}
+                onEditQuestion={(q) => setEditingQuestion(q)}
+                onOpenResolver={(q, queue) => {
+                  if (!user) { setShowAuthModal(true); return; }
+                  const qList = queue.length > 0 ? queue : [q];
+                  const idx = qList.findIndex((item) => item.id === q.id);
+                  setResolverQueue(qList);
+                  setResolverIndex(idx >= 0 ? idx : 0);
+                  setSelectedQuestion(q);
+                  setActiveTab("resolver");
+                }}
+                onOpenSimuladoInLibrary={(key) => {
+                  setSelectedSimulado(key);
+                  setActiveTab("simulados");
+                }}
               />
             </div>
           )}
