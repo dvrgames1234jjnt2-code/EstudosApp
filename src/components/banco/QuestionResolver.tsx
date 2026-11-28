@@ -366,9 +366,9 @@ export default function QuestionResolver({
   const isWrong = showFeedback && selectedOption !== gabarito;
 
   return (
-    <div className="flex flex-col h-full min-h-0 w-full bg-[#0b0d12] rounded-xl border border-white/[0.08] p-2.5 sm:p-3 relative overflow-x-hidden">
+    <div className="flex flex-col w-full bg-[#0b0d12] rounded-xl border border-white/[0.08] p-3 sm:p-5 relative">
 
-      <div className="w-full flex flex-col flex-1 min-h-0">
+      <div className="w-full flex flex-col">
 
         {/* ── Top bar: progresso + navegação ── */}
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3 shrink-0 px-1 sm:px-2 pb-2.5 border-b border-white/[0.08]">
@@ -476,11 +476,11 @@ export default function QuestionResolver({
         </div>
 
         {/* ── Content / Split View Container ── */}
-        <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4 overflow-hidden">
+        <div className="flex flex-col lg:flex-row gap-4 w-full">
 
           {/* Coluna Esquerda: Resolução da Questão */}
-          <div className={`flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1 ${splitView ? "w-full lg:w-1/2" : ""}`}>
-            <div className={`${splitView ? "w-full" : "max-w-3xl mx-auto"} rounded-xl border border-white/[0.07] bg-[#101319] p-3 sm:p-4`}>
+          <div className={`w-full ${splitView ? "lg:w-1/2" : ""}`}>
+            <div className={`${splitView ? "w-full" : "w-full max-w-4xl mx-auto"} rounded-2xl border border-white/[0.07] bg-[#101319] p-4 sm:p-7 shadow-xl`}>
 
             {/* Barra de progresso fina */}
             <div className="h-0.5 bg-white/[0.06] rounded-full mb-2 overflow-hidden">
