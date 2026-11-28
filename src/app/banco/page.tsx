@@ -62,7 +62,7 @@ export interface QuestionStats {
 /** Mapa questao_id → stats (derivado do histórico completo) */
 type UserAnswers = Record<string, QuestionStats>;
 
-type ActiveTab = "banco" | "resolver" | "simulados" | "desempenho" | "fixacao" | "notion" | "cantinho" | "flashcards" | "cadernos" | "verificador" | "admin";
+type ActiveTab = "banco" | "resolver" | "simulados" | "fixacao" | "notion" | "flashcards" | "cadernos" | "verificador" | "admin";
 
 // ──────────────────────────────────────────────
 // Helpers
@@ -564,7 +564,7 @@ export default function BancoPage() {
     [questions]
   );
 
-  const ADMIN_ONLY_TABS: ActiveTab[] = ["notion", "cantinho", "flashcards", "cadernos", "verificador", "admin"];
+  const ADMIN_ONLY_TABS: ActiveTab[] = ["notion", "flashcards", "cadernos", "verificador", "admin"];
   const effectiveTab: ActiveTab =
     !isAdmin && ADMIN_ONLY_TABS.includes(activeTab) ? "simulados" : activeTab;
 
@@ -638,10 +638,8 @@ export default function BancoPage() {
           {[
             { id: "resolver",   icon: <Layers size={13} />,         label: "Questão Ativa", badge: selectedQuestion ? "●" : null },
             { id: "simulados",  icon: <ClipboardList size={13} />,  label: "Simulados", count: provasDisponiveis.length },
-            { id: "desempenho", icon: <BarChart3 size={13} />,      label: "Desempenho", badge: resolverQueue.length > 0 ? "●" : null },
             ...(isAdmin ? [
               { id: "notion",      icon: <BookMarked size={13} />,  label: "Notion Question" },
-              { id: "cantinho",    icon: <LampDesk size={13} />,    label: "Cantinho 3D" },
               { id: "flashcards",  icon: <RotateCw size={13} />,    label: "Flashcards 3D" },
               { id: "cadernos",    icon: <Layers size={13} />,           label: "Cadernos" },
               { id: "verificador", icon: <CheckCheck size={13} />,       label: "Confrontar IDs" },
@@ -770,272 +768,7 @@ export default function BancoPage() {
             </div>
           )}
 
-          {/* ── DESEMPENHO ── */}
-          {effectiveTab === "desempenho" && resolverQueue.length > 0 && (() => {
-            const answeredCount = resolverQueue.filter(q => userAnswers[String(q.id)]).length;
-            const correctCount = resolverQueue.filter(q => userAnswers[String(q.id)]?.isCorrect).length;
-            const errorCount = answeredCount - correctCount;
-            const progressPercent = resolverQueue.length > 0 ? Math.round((answeredCount / resolverQueue.length) * 100) : 0;
-            const successPercent = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
 
-            const topicsMap: Record<string, { total: number; correct: number }> = {};
-            resolverQueue.forEach(q => {
-              const t = q.tema || q.materia || "Sem Tópico";
-              if (!topicsMap[t]) topicsMap[t] = { total: 0, correct: 0 };
-              topicsMap[t].total += 1;
-              if (userAnswers[String(q.id)]?.isCorrect) {
-                topicsMap[t].correct += 1;
-              }
-            });
-
-            // Detecta se o resolverQueue é um subconjunto (filtrado) do total
-            const isQueueFiltered = resolverQueue.length < questions.length;
-            // Exibe a prova única do filtro, ou "Filtro Ativo" se misturadas, ou "Todas as Questões"
-            const uniqueProvas = Array.from(new Set(resolverQueue.map(q => q.prova).filter(Boolean)));
-            const currentProvaName = uniqueProvas.length === 1
-              ? uniqueProvas[0]!
-              : (isQueueFiltered ? "Filtro Ativo" : "Todas as Questões");
-            const filteredLabel = isQueueFiltered
-              ? `${resolverQueue.length} de ${questions.length} questões`
-              : `${questions.length} questões`;
-
-            return (
-              <div className="w-full max-w-6xl mx-auto px-0 sm:px-4">
-                <div className="flex flex-col h-full min-h-0 w-full bg-[#0b0f19] rounded-2xl sm:rounded-[2rem] border border-white/[0.04] p-3.5 sm:p-8 relative overflow-x-clip gap-4 sm:gap-6">
-                  {/* Header */}
-                  <div className="flex flex-wrap items-center justify-between px-3 sm:px-4 py-3 bg-[#121626] rounded-2xl border border-white/[0.04] gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-xl bg-[#0b0f19] flex items-center justify-center shrink-0">
-                        <BarChart3 size={14} className="text-blue-500" />
-                      </div>
-                      <div className="relative min-w-0">
-                        <h2 className="text-sm font-black text-white leading-none">Desempenho & Resultados</h2>
-                        <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                          <div className="relative group cursor-pointer max-w-full">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 transition-colors max-w-[200px] sm:max-w-xs truncate ${isQueueFiltered ? 'text-blue-300 bg-blue-500/20 border border-blue-500/30' : 'text-slate-400 bg-[#1e2436] hover:text-slate-200'}`}>
-                              {isQueueFiltered && <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />}
-                              <span className="truncate">{currentProvaName}</span> <ChevronDown size={10} className="opacity-50 shrink-0" />
-                            </span>
-                            <div className="absolute top-full left-0 mt-1.5 w-max max-w-[calc(100vw-3rem)] bg-[#1e2436] border border-white/[0.04] rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible z-50 max-h-56 overflow-y-auto custom-scrollbar">
-                              <div className="p-1.5 space-y-0.5">
-                                {provasDisponiveis?.map((prova) => (
-                                  <button key={prova} onClick={() => {
-                                    const newQueue = questions.filter(q => q.prova === prova);
-                                    if (newQueue.length > 0) {
-                                      setResolverQueue(newQueue);
-                                      setResolverIndex(0);
-                                      setSelectedQuestion(newQueue[0]);
-                                    }
-                                  }}
-                                    className={`w-full text-left px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-colors ${
-                                      prova === currentProvaName ? "text-blue-400 bg-blue-500/10" : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]"
-                                    }`}>{prova}</button>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                          {/* Badge de quantidade filtrada */}
-                          {isQueueFiltered && (
-                            <span className="text-[9px] font-black text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
-                              {filteredLabel}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    {isQueueFiltered && (
-                      <button
-                        onClick={() => { setResolverQueue(questions); setResolverIndex(0); }}
-                        className="px-3 py-1.5 rounded-lg bg-blue-600/10 border border-blue-500/20 text-[10px] font-medium text-blue-400 hover:bg-blue-600/20 transition-colors flex items-center gap-1.5 shrink-0"
-                      >
-                        <RefreshCw size={10} /> Ver Todas
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="p-4 bg-[#111623] rounded-xl border border-white/[0.06] flex items-center justify-between">
-                      <div>
-                        <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Progresso Geral</div>
-                        <div className="text-xl font-normal text-slate-200 mt-1 tabular-nums">
-                          {answeredCount} <span className="text-xs text-slate-500">/ {resolverQueue.length} respondidas</span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-lg font-semibold text-blue-400 tabular-nums">{progressPercent}%</span>
-                      </div>
-                    </div>
-
-                    <div className="p-4 bg-[#111623] rounded-xl border border-white/[0.06] flex items-center justify-between">
-                      <div>
-                        <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Taxa de Acerto</div>
-                        <div className="text-xl font-normal text-slate-200 mt-1 tabular-nums">
-                          {correctCount} <span className="text-xs text-slate-500">acertos</span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className={`text-lg font-semibold tabular-nums ${successPercent >= 70 ? 'text-emerald-400' : successPercent >= 50 ? 'text-amber-400' : 'text-rose-400'}`}>
-                          {successPercent}%
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="p-3 bg-[#111623] rounded-xl border border-white/[0.06] flex items-center justify-between gap-3">
-                      <div className="flex gap-2 flex-1">
-                        <div className="flex-1 py-1.5 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
-                          <div className="text-[9px] font-medium text-emerald-400 uppercase">Acertos</div>
-                          <div className="text-base font-semibold text-emerald-300 tabular-nums">{correctCount}</div>
-                        </div>
-                        <div className="flex-1 py-1.5 px-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-center">
-                          <div className="text-[9px] font-medium text-rose-400 uppercase">Erros</div>
-                          <div className="text-base font-semibold text-rose-300 tabular-nums">{errorCount}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2 p-3 bg-[#111623] rounded-xl border border-white/[0.06]">
-                    <span className="text-[11px] text-slate-400 font-medium mr-2 flex items-center gap-1.5">
-                      <Target size={13} className="text-blue-400" /> Ações Rápidas:
-                    </span>
-                    {errorCount > 0 && (
-                      <button
-                        onClick={() => {
-                          const errQueue = resolverQueue.filter(q => userAnswers[String(q.id)] && !userAnswers[String(q.id)]?.isCorrect);
-                          setResolverQueue(errQueue); setResolverIndex(0); setSelectedQuestion(errQueue[0]); setActiveTab("resolver");
-                        }}
-                        className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg text-[11px] font-medium text-rose-300 transition-colors flex items-center gap-1.5 outline-none"
-                      >
-                        Refazer Erros ({errorCount})
-                      </button>
-                    )}
-                    {resolverQueue.length - answeredCount > 0 && (
-                      <button
-                        onClick={() => {
-                          const unQueue = resolverQueue.filter(q => !userAnswers[String(q.id)]);
-                          setResolverQueue(unQueue); setResolverIndex(0); setSelectedQuestion(unQueue[0]); setActiveTab("resolver");
-                        }}
-                        className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg text-[11px] font-medium text-blue-300 transition-colors flex items-center gap-1.5 outline-none"
-                      >
-                        Resolver Pendentes ({resolverQueue.length - answeredCount})
-                      </button>
-                    )}
-                    {Array.from(duvidas).length > 0 && (
-                      <button
-                        onClick={() => {
-                          const duvQueue = resolverQueue.filter(q => duvidas.has(String(q.id)));
-                          setResolverQueue(duvQueue); setResolverIndex(0); setSelectedQuestion(duvQueue[0]); setActiveTab("resolver");
-                        }}
-                        className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-lg text-[11px] font-medium text-amber-300 transition-colors flex items-center gap-1.5 outline-none"
-                      >
-                        Praticar Dúvidas ({resolverQueue.filter(q => duvidas.has(String(q.id))).length})
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
-                    <div className="bg-[#111623] rounded-xl border border-white/[0.06] p-5 flex flex-col">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-xs font-semibold text-slate-200">Gabarito e Navegação</h3>
-                        <span className="text-[10px] text-slate-500 font-medium">Agrupado por Matéria</span>
-                      </div>
-                      <div className="space-y-3 pt-1">
-                        {(() => {
-                          const gabaritoPorMateria: Record<string, { q: BancoQuestion; idx: number }[]> = {};
-                          resolverQueue?.forEach((q, idx) => {
-                            const mat = q.materia || "Geral";
-                            if (!gabaritoPorMateria[mat]) gabaritoPorMateria[mat] = [];
-                            gabaritoPorMateria[mat].push({ q, idx });
-                          });
-
-                          return Object.entries(gabaritoPorMateria).map(([mat, items]) => {
-                            const feitasMat = items.filter(i => userAnswers?.[String(i.q.id)]).length;
-                            const acertosMat = items.filter(i => userAnswers?.[String(i.q.id)]?.isCorrect).length;
-
-                            return (
-                              <div key={mat} className="space-y-1.5 border-b border-white/[0.04] pb-2.5 last:border-0 last:pb-0">
-                                <div className="flex items-center justify-between text-[10px] font-semibold text-slate-300">
-                                  <span className="truncate flex items-center gap-1">
-                                    <span className="w-1 h-1 rounded-full bg-blue-400" />
-                                    {mat}
-                                  </span>
-                                  <span className="text-[9px] text-slate-500 font-mono font-normal">
-                                    {feitasMat}/{items.length} feitas {feitasMat > 0 && `(${acertosMat} acertos)`}
-                                  </span>
-                                </div>
-
-                                <div className="flex flex-wrap gap-1">
-                                  {items.map(({ q, idx }) => {
-                                    const ans = userAnswers?.[String(q.id)];
-                                    const isCurrent = idx === resolverIndex;
-                                    const isMarkedDuvida = duvidas.has(String(q.id));
-                                    
-                                    let boxStyle = "bg-white/[0.03] text-slate-400 hover:bg-white/[0.07] border-white/[0.08]";
-                                    if (ans) {
-                                      boxStyle = ans.isCorrect
-                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                                        : "bg-rose-500/10 text-rose-400 border-rose-500/30";
-                                    }
-                                    if (isCurrent) {
-                                      boxStyle = isCurrent
-                                        ? ans
-                                          ? ans.isCorrect
-                                            ? "bg-emerald-500/20 text-emerald-300 border-2 border-blue-500"
-                                            : "bg-rose-500/20 text-rose-300 border-2 border-blue-500"
-                                          : "bg-blue-500/20 text-blue-300 border-2 border-blue-500"
-                                        : boxStyle;
-                                    }
-
-                                    return (
-                                      <button
-                                        key={q.id}
-                                        onClick={() => { setResolverIndex(idx); setSelectedQuestion(q); setActiveTab("resolver"); }}
-                                        className={`relative w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-medium border shrink-0 outline-none ${boxStyle}`}
-                                      >
-                                        {idx + 1}
-                                        {isMarkedDuvida && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 border border-[#111623]" />}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            );
-                          });
-                        })()}
-                      </div>
-                    </div>
-
-                    <div className="bg-[#111623] rounded-xl border border-white/[0.06] p-5 overflow-hidden flex flex-col">
-                      <h3 className="text-xs font-semibold text-slate-200 mb-4">Desempenho por Tópico</h3>
-                      <div className="space-y-3.5 flex-1 overflow-y-auto custom-scrollbar pr-2">
-                        {Object.entries(topicsMap).map(([topic, data], idx) => {
-                          const topicAcc = data.total > 0 ? Math.round((data.correct / data.total) * 100) : 0;
-                          return (
-                            <div key={topic} className="space-y-1.5">
-                              <div className="flex items-center justify-between text-[12px]">
-                                <span className="text-slate-300 font-normal truncate max-w-[70%]">{idx + 1}. {topic}</span>
-                                <span className="text-[11px] text-slate-400 tabular-nums">
-                                  {data.correct}/{data.total} <span className="text-slate-500">({topicAcc}%)</span>
-                                </span>
-                              </div>
-                              <div className="h-1.5 w-full bg-white/[0.05] rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full ${
-                                    topicAcc >= 70 ? "bg-emerald-500" : topicAcc >= 50 ? "bg-amber-500" : "bg-rose-500"
-                                  }`}
-                                  style={{ width: `${topicAcc}%` }}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
 
           {/* ── SIMULADOS ── */}
           {effectiveTab === "simulados" && (
@@ -1059,7 +792,7 @@ export default function BancoPage() {
                 setResolverQueue(orderedQuestions);
                 setResolverIndex(0);
                 setSelectedQuestion(orderedQuestions[0]);
-                setActiveTab("desempenho");
+                setActiveTab("resolver");
               }}
             />
           )}
@@ -1078,12 +811,7 @@ export default function BancoPage() {
             </div>
           )}
 
-          {/* ── CANTINHO 3D (ADMIN APENAS) ── */}
-          {effectiveTab === "cantinho" && isAdmin && (
-            <div>
-              <StudyCorner3DTab user={user} onRequireAuth={() => setShowAuthModal(true)} />
-            </div>
-          )}
+
 
           {/* ── FLASHCARDS 3D (ADMIN APENAS) ── */}
           {effectiveTab === "flashcards" && isAdmin && (
