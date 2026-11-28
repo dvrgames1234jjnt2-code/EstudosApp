@@ -576,16 +576,16 @@ export default function BancoPage() {
   // Render
   // ──────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-200 font-sans">
+    <div className="min-h-screen w-full max-w-full overflow-x-clip bg-[#020617] text-slate-200 font-sans">
 
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 h-14 sm:h-16 border-b border-white/[0.05] bg-[#020617] px-3 sm:px-8 flex items-center justify-between gap-2 sm:gap-4">
+      <nav className="sticky top-0 z-50 h-14 sm:h-16 border-b border-white/[0.05] bg-[#020617] px-2.5 sm:px-8 flex items-center justify-between gap-1.5 sm:gap-4 w-full">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center shrink-0">
               <GraduationCap size={16} className="text-white" />
             </div>
-            <span className="sm:hidden text-xs font-normal text-white tracking-tight truncate">
+            <span className="hidden xs:inline sm:hidden text-xs font-normal text-white tracking-tight truncate">
               Banco
             </span>
             <div className="hidden sm:block">
@@ -610,7 +610,7 @@ export default function BancoPage() {
           >
             <Printer size={13} />
             <span className="hidden sm:inline">Imprimir Simulado</span>
-            <span className="sm:hidden">Imprimir</span>
+            <span className="sm:hidden">PDF</span>
           </button>
 
           <button
@@ -626,12 +626,12 @@ export default function BancoPage() {
               <div className="w-5 h-5 rounded-full bg-blue-600/30 flex items-center justify-center shrink-0">
                 <User size={10} className="text-blue-400" />
               </div>
-              <span className="text-[11px] font-normal text-slate-300 max-w-[68px] sm:max-w-[110px] truncate">{displayName}</span>
+              <span className="hidden sm:inline text-[11px] font-normal text-slate-300 max-w-[110px] truncate">{displayName}</span>
             </div>
           ) : (
             <button
               onClick={() => setShowAuthModal(true)}
-              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 min-h-[36px] py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[11px] font-normal uppercase tracking-widest transition-colors shrink-0"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 min-h-[36px] py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[11px] font-normal uppercase tracking-widest transition-colors shrink-0"
             >
               <Lock size={11} /> Entrar
             </button>
@@ -693,7 +693,7 @@ export default function BancoPage() {
       </div>
 
       {/* Main */}
-      <main className="w-full max-w-[1920px] mx-auto px-2.5 sm:px-8 py-4 sm:py-6">
+      <main className="w-full max-w-[1920px] min-w-0 mx-auto px-2.5 sm:px-8 py-3 sm:py-6 overflow-x-clip">
           {/* ── BANCO ── */}
           {effectiveTab === "banco" && (
             <div>
@@ -742,8 +742,8 @@ export default function BancoPage() {
 
           {/* ── RESOLVER ── */}
           {effectiveTab === "resolver" && selectedQuestion && (
-            <div className="w-full max-w-[1750px] mx-auto px-0 sm:px-4">
-              <div className="w-full h-full min-h-[calc(100vh-200px)] flex flex-col">
+            <div className="w-full max-w-[1750px] min-w-0 mx-auto px-0 sm:px-4">
+              <div className="w-full min-w-0 flex flex-col">
                 <QuestionResolver
                   question={resolverQueue[resolverIndex]}
                   questionIndex={resolverIndex}

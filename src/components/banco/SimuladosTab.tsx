@@ -19,8 +19,10 @@ import {
   AlertCircle,
   Circle,
   Ban,
+  Printer,
 } from "lucide-react";
 import type { BancoQuestion } from "./QuestionsTable";
+import { PrintSimuladoModal } from "./PrintSimuladoModal";
 import { isQuestaoAnulada, sortQuestoesByOrdem } from "../../lib/questionService";
 import {
   DEFAULT_SIMULADOS_CONFIG,
@@ -172,25 +174,25 @@ function Ebook3DCard({
     >
       {/* Palco com perspectiva 3D compacto */}
       <div
-        className="relative mx-auto w-full max-w-[138px] aspect-[3/4]"
+        className="relative mx-auto w-full max-w-full sm:max-w-[138px] aspect-[3/4]"
         style={{ perspective: "950px" }}
       >
         {/* Sombra na prateleira */}
         <div
           aria-hidden="true"
-          className="absolute -bottom-2 left-2.5 right-1 h-3 rounded-full bg-black/75 blur-[6px] transition-transform duration-300 ease-out group-hover:scale-x-105 group-hover:opacity-90 motion-reduce:transition-none"
+          className="hidden sm:block absolute -bottom-2 left-2.5 right-1 h-3 rounded-full bg-black/75 blur-[6px] transition-transform duration-300 ease-out group-hover:scale-x-105 group-hover:opacity-90 motion-reduce:transition-none"
         />
 
-        {/* Volume 3D do eBook */}
+        {/* Volume 3D do eBook (reto no mobile para leitura sem zoom; inclinado no desktop) */}
         <div
           style={{ transformStyle: "preserve-3d" }}
-          className="relative w-full h-full transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none [transform:rotateY(-15deg)_rotateX(3deg)] group-hover:[transform:rotateY(-3deg)_rotateX(0deg)_translateY(-5px)]"
+          className="relative w-full h-full transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none [transform:none] sm:[transform:rotateY(-15deg)_rotateX(3deg)] sm:group-hover:[transform:rotateY(-3deg)_rotateX(0deg)_translateY(-5px)]"
         >
           {/* Contracapa (fundo traseiro com leve saliência) */}
           <div
             aria-hidden="true"
             style={{ transform: "translateZ(-6px)" }}
-            className={`absolute inset-0 rounded-r-[7px] rounded-l-[2px] border border-white/[0.08] ${palette.spineBg}`}
+            className={`hidden sm:block absolute inset-0 rounded-r-[7px] rounded-l-[2px] border border-white/[0.08] ${palette.spineBg}`}
           />
 
           {/* Bloco lateral de páginas (espessura 3D real no eixo X+) */}
@@ -202,7 +204,7 @@ function Ebook3DCard({
               backgroundImage:
                 "repeating-linear-gradient(to right, #d4cec2 0px, #d4cec2 1px, #b4ada0 1px, #b4ada0 2px)",
             }}
-            className="absolute top-[3px] bottom-[3px] right-[1.5px] w-[12px] rounded-r-[2px] shadow-inner"
+            className="hidden sm:block absolute top-[3px] bottom-[3px] right-[1.5px] w-[12px] rounded-r-[2px] shadow-inner"
           >
             <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/35" />
           </div>
@@ -224,7 +226,7 @@ function Ebook3DCard({
           {/* Capa frontal do eBook */}
           <div
             style={{ transform: "translateZ(6px)" }}
-            className={`relative w-full h-full rounded-r-[7px] rounded-l-[2px] bg-gradient-to-br ${palette.coverBg} border border-white/[0.11] shadow-[0_10px_22px_-10px_rgba(0,0,0,0.85)] overflow-hidden flex flex-col justify-between p-2.5`}
+            className={`relative w-full h-full rounded-lg sm:rounded-r-[7px] sm:rounded-l-[2px] bg-gradient-to-br ${palette.coverBg} border border-white/[0.11] shadow-[0_10px_22px_-10px_rgba(0,0,0,0.85)] overflow-hidden flex flex-col justify-between p-3 sm:p-2.5`}
           >
             {/* Vinco físico da lombada */}
             <div
@@ -244,12 +246,12 @@ function Ebook3DCard({
 
             {/* Cabeçalho da capa: Banca e Ano */}
             <div className="relative pl-1.5 space-y-1">
-              <div className="flex items-center justify-between gap-1 text-[8.5px] tracking-[0.1em] uppercase">
+              <div className="flex items-center justify-between gap-1 text-[10.5px] sm:text-[8.5px] tracking-[0.06em] sm:tracking-[0.1em] uppercase">
                 <span className={`truncate font-normal ${palette.bancaText}`}>
                   {book.banca}
                 </span>
                 {book.ano && (
-                  <span className="text-white/45 font-mono tabular-nums shrink-0">
+                  <span className="text-white/55 sm:text-white/45 font-mono tabular-nums shrink-0">
                     {book.ano}
                   </span>
                 )}
@@ -259,24 +261,24 @@ function Ebook3DCard({
 
             {/* Título central da Prova */}
             <div className="relative pl-1.5 my-auto py-1 space-y-1">
-              <h3 className="text-[11px] font-normal text-slate-100 leading-[1.3] line-clamp-3 [text-wrap:balance] group-hover:text-white transition-colors">
+              <h3 className="text-[13px] sm:text-[11px] font-normal text-slate-100 leading-[1.35] sm:leading-[1.3] line-clamp-3 [text-wrap:balance] group-hover:text-white transition-colors">
                 {book.displayTitle}
               </h3>
-              <p className="text-[9.5px] text-slate-400 truncate">
+              <p className="text-[11px] sm:text-[9.5px] text-slate-400 truncate">
                 {book.typeLabel ? `${book.typeLabel} · ${book.disciplinaPrincipal}` : book.disciplinaPrincipal}
               </p>
             </div>
 
             {/* Rodapé da capa: Progresso e Status */}
             <div className="relative pl-1.5 space-y-1.5">
-              <div className="flex items-center justify-between gap-1 text-[9px] text-slate-400 tabular-nums">
+              <div className="flex items-center justify-between gap-1 text-[11px] sm:text-[9px] text-slate-300 sm:text-slate-400 tabular-nums">
                 <span>
                   {book.questions.length} {book.questions.length === 1 ? "q." : "qs."}
                 </span>
-                <span className="font-mono text-slate-300">{book.progress}%</span>
+                <span className="font-mono text-slate-200 sm:text-slate-300">{book.progress}%</span>
               </div>
 
-              <div className="h-[2.5px] w-full rounded-full bg-black/40 overflow-hidden">
+              <div className="h-[3px] sm:h-[2.5px] w-full rounded-full bg-black/40 overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-300 ${
                     book.status === "concluido"
@@ -289,27 +291,27 @@ function Ebook3DCard({
                 />
               </div>
 
-              <div className="flex items-center justify-between gap-1 text-[8.5px]">
+              <div className="flex items-center justify-between gap-1 text-[10.5px] sm:text-[8.5px]">
                 <span
                   className={`flex items-center gap-1 truncate ${
                     book.status === "concluido"
                       ? "text-emerald-300"
                       : book.status === "em_andamento"
                       ? "text-amber-300"
-                      : "text-slate-400"
+                      : "text-slate-300 sm:text-slate-400"
                   }`}
                 >
                   {book.status === "concluido" ? (
-                    <CheckCircle2 size={9} className="shrink-0" />
+                    <CheckCircle2 size={10} className="shrink-0 sm:w-[9px] sm:h-[9px]" />
                   ) : book.status === "em_andamento" ? (
-                    <Clock3 size={9} className="shrink-0" />
+                    <Clock3 size={10} className="shrink-0 sm:w-[9px] sm:h-[9px]" />
                   ) : (
-                    <BookOpen size={9} className="shrink-0" />
+                    <BookOpen size={10} className="shrink-0 sm:w-[9px] sm:h-[9px]" />
                   )}
                   <span className="truncate">{statusLabel}</span>
                 </span>
                 {book.answered > 0 && (
-                  <span className="text-slate-400 font-mono tabular-nums shrink-0">
+                  <span className="text-slate-300 sm:text-slate-400 font-mono tabular-nums shrink-0">
                     {book.accuracy}%
                   </span>
                 )}
@@ -336,6 +338,7 @@ export default function SimuladosTab({
   const [bancaFilter, setBancaFilter] = useState("todas");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("todos");
   const [expandedBancas, setExpandedBancas] = useState<Record<string, boolean>>({});
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
   const hasActiveFilter =
     Boolean(searchTerm.trim()) || bancaFilter !== "todas" || statusFilter !== "todos";
@@ -605,7 +608,7 @@ export default function SimuladosTab({
         : nextUnansweredIdx;
 
     return (
-      <div className="space-y-6">
+      <div className="w-full min-w-0 space-y-5 sm:space-y-6">
         {/* Cabeçalho do Simulado Aberto */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-white/[0.06]">
           <div className="flex items-start sm:items-center gap-3 min-w-0">
@@ -615,11 +618,11 @@ export default function SimuladosTab({
               className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-slate-400 hover:text-white transition-colors shrink-0"
               aria-label="Voltar para lista de simulados"
             >
-              <ArrowLeft size={15} />
+              <ArrowLeft size={16} />
             </button>
 
-            <div className="min-w-0 space-y-1">
-              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+            <div className="min-w-0 space-y-1 flex-1">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-400">
                 <span className={palette.bancaText}>{selectedBook.banca}</span>
                 {selectedBook.typeLabel && (
                   <>
@@ -640,24 +643,34 @@ export default function SimuladosTab({
                   </>
                 )}
                 <span aria-hidden="true">·</span>
-                <span className="truncate">{selectedBook.disciplinaPrincipal}</span>
+                <span className="break-words">{selectedBook.disciplinaPrincipal}</span>
               </div>
-              <h2 className="text-lg sm:text-xl font-normal text-white tracking-tight [text-wrap:balance]">
+              <h2 className="text-lg sm:text-xl font-normal text-white tracking-tight [text-wrap:balance] break-words">
                 {selectedBook.displayTitle}
               </h2>
               {selectedBook.instructions && (
-                <p className="text-xs text-slate-400 pt-0.5 max-w-2xl leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-400 pt-0.5 max-w-2xl leading-relaxed break-words">
                   {selectedBook.instructions}
                 </p>
               )}
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowPrintModal(true)}
+              className="min-h-[44px] sm:min-h-0 px-3.5 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-200 text-xs font-normal flex items-center justify-center gap-2 transition-colors whitespace-nowrap"
+              title="Imprimir este simulado em formato compacto"
+            >
+              <Printer size={14} />
+              <span>Imprimir</span>
+            </button>
+
             <button
               type="button"
               onClick={() => onOpenDesempenho(selectedBook.questions)}
-              className="px-4 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-200 text-xs font-normal flex items-center gap-2 transition-colors whitespace-nowrap"
+              className="min-h-[44px] sm:min-h-0 px-3.5 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-200 text-xs font-normal flex items-center justify-center gap-2 transition-colors whitespace-nowrap"
             >
               <BarChart3 size={14} />
               <span>Desempenho</span>
@@ -666,7 +679,7 @@ export default function SimuladosTab({
             <button
               type="button"
               onClick={() => onStartSimulado(selectedBook.questions, startIdx)}
-              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-normal flex items-center gap-2 transition-colors whitespace-nowrap"
+              className="flex-1 sm:flex-initial min-h-[44px] sm:min-h-0 px-4 sm:px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-normal flex items-center justify-center gap-2 transition-colors whitespace-nowrap"
             >
               {selectedBook.status === "nao_iniciado" && (
                 <>
@@ -831,23 +844,31 @@ export default function SimuladosTab({
             })}
           </div>
         </div>
+
+        <PrintSimuladoModal
+          isOpen={showPrintModal}
+          onClose={() => setShowPrintModal(false)}
+          questions={selectedBook.questions}
+          title={selectedBook.displayTitle}
+          subTitle={[selectedBook.banca, selectedBook.typeLabel, selectedBook.ano].filter(Boolean).join(" · ")}
+        />
       </div>
     );
   }
 
   // 4. Estante Principal de eBooks 3D agrupados por Banca e Nome da Prova
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 space-y-5 sm:space-y-6">
       {/* Árvore de Bancas no estilo do Explorador de Decks (Flashcards 3D) */}
-      <div className="bg-[#12141a] border border-white/[0.06] rounded-xl overflow-hidden">
+      <div className="bg-[#12141a] border border-white/[0.06] rounded-xl overflow-hidden w-full min-w-0">
         {/* Barra superior da árvore + busca e filtros */}
-        <div className="px-3.5 pt-3.5 pb-3 border-b border-white/[0.06] space-y-2.5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-xs font-normal tracking-wide text-slate-200 truncate">
+        <div className="px-3 sm:px-3.5 pt-3.5 pb-3 border-b border-white/[0.06] space-y-2.5">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2 min-w-0 flex-1">
+              <span className="text-sm sm:text-xs font-normal tracking-wide text-slate-200 truncate">
                 Explorador de Simulados
               </span>
-              <span className="text-[11px] font-light text-slate-500 tabular-nums shrink-0">
+              <span className="text-xs sm:text-[11px] font-light text-slate-400 sm:text-slate-500 tabular-nums break-words">
                 {overview.totalBancas} {overview.totalBancas === 1 ? "banca" : "bancas"} ·{" "}
                 {overview.totalProvas} {overview.totalProvas === 1 ? "caderno" : "cadernos"} ·{" "}
                 {overview.totalRespondidas}/{overview.totalQuestoes} resp.
@@ -1036,8 +1057,8 @@ export default function SimuladosTab({
 
                   {/* Ramo da árvore com linha sutil de conexão e cadernos 3D */}
                   {isExpanded && (
-                    <div className="ml-3 pl-3 border-l border-white/[0.07] mt-1 mb-2.5 pt-2 pb-1 pr-1">
-                      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-x-4 gap-y-5">
+                    <div className="ml-1.5 sm:ml-3 pl-2.5 sm:pl-3 border-l border-white/[0.07] mt-1 mb-2.5 pt-2 pb-1 pr-0.5 sm:pr-1">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3 sm:gap-x-4 sm:gap-y-5">
                         {shelf.books.map((book) => (
                           <Ebook3DCard
                             key={book.key}

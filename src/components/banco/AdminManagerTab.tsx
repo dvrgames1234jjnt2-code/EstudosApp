@@ -1541,9 +1541,9 @@ export default function AdminManagerTab({
   }, []);
 
   return (
-    <div className="space-y-4">
+    <div className="w-full min-w-0 overflow-x-clip space-y-4">
       {/* Painel Principal Admin (Estilo SaaS Limpo) */}
-      <div className="bg-[#12141a] border border-white/[0.06] rounded-xl overflow-hidden">
+      <div className="bg-[#12141a] border border-white/[0.06] rounded-xl overflow-x-clip w-full min-w-0">
         {/* Topbar de Navegação do Painel Admin */}
         <div className="px-4 py-3.5 border-b border-white/[0.06] flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <div className="space-y-0.5">
@@ -1600,7 +1600,7 @@ export default function AdminManagerTab({
             SUB-ABA 1: GESTÃO COMPLETA DE QUESTÕES
            ═══════════════════════════════════════════════════════════════════ */}
         {subTab === "questoes" && (
-          <div className="p-4 space-y-4">
+          <div className="p-3 sm:p-4 space-y-4">
             {/* Ações primárias e busca */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
               <div className="relative flex-1">
@@ -1862,26 +1862,26 @@ export default function AdminManagerTab({
 
             {/* Painel de Manipulação em Lote */}
             {selectedIds.size > 0 && (
-              <div className="p-3.5 rounded-xl bg-[#0d111a] border border-blue-500/30 space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="p-3 sm:p-3.5 rounded-xl bg-[#0d111a] border border-blue-500/30 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                   <span className="text-xs font-normal text-blue-300">
                     Edição em lote ({selectedIds.size}{" "}
                     {selectedIds.size === 1 ? "questão" : "questões"})
                   </span>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <span className="text-[11px] text-slate-400">Ordem inicial:</span>
                       <input
                         type="number"
                         value={bulkStartOrdem}
                         onChange={(e) => setBulkStartOrdem(e.target.value)}
-                        className="w-16 bg-[#121622] border border-white/[0.1] rounded px-2 py-1 text-xs text-slate-200 tabular-nums"
+                        className="w-20 sm:w-16 bg-[#121622] border border-white/[0.1] rounded px-2 py-1 text-xs text-slate-200 tabular-nums"
                       />
                       <button
                         type="button"
                         disabled={busy}
                         onClick={() => void handleBulkRenumberOrdem()}
-                        className="px-2.5 py-1 rounded-md bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 text-xs flex items-center gap-1 transition-colors"
+                        className="min-h-[36px] sm:min-h-0 px-2.5 py-1 rounded-md bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 text-xs flex items-center gap-1 transition-colors"
                       >
                         <Hash size={12} />
                         <span>Numerar Ordem</span>
@@ -1898,7 +1898,7 @@ export default function AdminManagerTab({
                           ids: selectedQuestoesArray.map((q) => q.id),
                         })
                       }
-                      className="px-2.5 py-1 rounded-md bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-1 transition-colors"
+                      className="min-h-[36px] sm:min-h-0 px-2.5 py-1 rounded-md bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-1 transition-colors"
                     >
                       <Trash2 size={12} />
                       <span>Excluir Lote</span>
@@ -1906,7 +1906,7 @@ export default function AdminManagerTab({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-4 lg:grid-cols-8 gap-2">
                   <input
                     type="text"
                     value={bulkProva}
@@ -1998,8 +1998,151 @@ export default function AdminManagerTab({
               </div>
             )}
 
-            {/* Tabela de Alta Densidade */}
-            <div className="border border-white/[0.06] rounded-xl overflow-x-auto">
+            {/* Lista Mobile (Cards responsivos para celular) */}
+            <div className="md:hidden divide-y divide-white/[0.06] border border-white/[0.06] rounded-xl overflow-hidden bg-[#0d0f14]">
+              {pagedQuestions.length === 0 ? (
+                <div className="py-10 px-4 text-center text-sm text-slate-500">
+                  Nenhuma questão encontrada com esses filtros.
+                </div>
+              ) : (
+                pagedQuestions.map((q) => {
+                  const qKey = String(q.id);
+                  const isSel = selectedIds.has(qKey);
+                  const curOrd = getOrdemNum(q);
+                  const curOrdStr = curOrd !== null ? String(curOrd) : "";
+                  const draftOrdVal = inlineOrdemDraft[qKey];
+                  const draftOrd = draftOrdVal !== undefined ? draftOrdVal : curOrdStr;
+                  const ordDirty = draftOrdVal !== undefined && draftOrdVal !== curOrdStr;
+                  const ids = getQuestionIds(q);
+                  const anulada = isQuestaoAnulada(q);
+
+                  return (
+                    <div
+                      key={`mob-${qKey}`}
+                      className={`p-3.5 space-y-2.5 transition-colors ${
+                        isSel ? "bg-blue-600/[0.08]" : ""
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                          <input
+                            type="checkbox"
+                            checked={isSel}
+                            onChange={() => handleToggleSelectRow(qKey)}
+                            aria-label={`Selecionar questão ${q.id}`}
+                            className="mt-1 w-4 h-4 rounded border-white/20 bg-slate-900 accent-blue-600 shrink-0"
+                          />
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <div className="flex items-center flex-wrap gap-1.5 text-xs">
+                              <span className="font-mono text-slate-400 tabular-nums">#{q.id}</span>
+                              <span className="font-mono text-emerald-400">
+                                Gab: {q.Gabarito || q.respostaCorreta || "—"}
+                              </span>
+                              {anulada ? (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium text-amber-300 bg-amber-500/15 border border-amber-500/30">
+                                  Anulada
+                                </span>
+                              ) : (q.dificuldade || q.status) ? (
+                                <span className="text-[11px] text-slate-400 bg-white/[0.04] border border-white/[0.06] px-1.5 py-0.5 rounded">
+                                  {q.dificuldade || q.status}
+                                </span>
+                              ) : null}
+                            </div>
+
+                            <div className="text-xs text-slate-200 font-normal break-words">
+                              {q.prova || <span className="text-slate-500">Sem Prova</span>}
+                              {getBanca(q) ? ` · ${getBanca(q)}` : ""}
+                              {q.Ano ? ` · ${q.Ano}` : ""}
+                            </div>
+
+                            <div className="text-xs text-blue-400/90 break-words">
+                              {getDisciplina(q)}
+                              {q.tema ? ` · ${q.tema}` : ""}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <p className="text-sm text-slate-200 leading-relaxed line-clamp-3 break-words">
+                        {q.title || q.perguntaProblema || "Sem enunciado"}
+                      </p>
+
+                      {(ids.idq || ids.idg || ids.idtec) && (
+                        <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px] text-slate-400">
+                          {ids.idq && <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">Q:{ids.idq}</span>}
+                          {ids.idg && <span className="px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">G:{ids.idg}</span>}
+                          {ids.idtec && <span className="px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-300 border border-violet-500/20">T:{ids.idtec}</span>}
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-white/[0.05]">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-slate-400">Ordem:</span>
+                          <input
+                            type="number"
+                            value={draftOrd}
+                            onChange={(e) => handleDraftOrdemChange(qKey, e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") void handleSaveInlineOrdem(q);
+                            }}
+                            placeholder="—"
+                            className="w-16 bg-[#121622] border border-white/[0.1] rounded px-2 py-1 text-slate-200 font-mono tabular-nums focus:outline-none focus:border-blue-500"
+                          />
+                          {ordDirty && (
+                            <button
+                              type="button"
+                              onClick={() => void handleSaveInlineOrdem(q)}
+                              title="Salvar Ordem"
+                              className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded bg-blue-600 text-white hover:bg-blue-500"
+                            >
+                              <Check size={14} />
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => onEditQuestion(q)}
+                            title="Editar questão"
+                            className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-lg bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:text-amber-300"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleDuplicateQuestion(q)}
+                            title="Duplicar questão"
+                            className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-lg bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:text-blue-300"
+                          >
+                            <Copy size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenResolverFromRow(q)}
+                            title="Abrir no resolvedor"
+                            className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-lg bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:text-emerald-300"
+                          >
+                            <Play size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRequestDeleteRow(q)}
+                            title="Excluir questão"
+                            className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-lg bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:text-rose-400"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Tabela de Alta Densidade (Desktop) */}
+            <div className="hidden md:block border border-white/[0.06] rounded-xl overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[920px]">
                 <thead>
                   <tr className="border-b border-white/[0.06] bg-[#0d0f14] text-[11px] font-normal text-slate-400">
@@ -2325,12 +2468,12 @@ export default function AdminManagerTab({
                       </div>
 
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                           <select
                             value={mergeTargetKey}
                             onChange={(e) => setMergeTargetKey(e.target.value)}
                             aria-label="Mesclar com outro simulado"
-                            className="bg-[#12141a] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-slate-300 max-w-[220px]"
+                            className="bg-[#12141a] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-slate-300 w-full sm:w-auto sm:max-w-[220px]"
                           >
                             <option value="">Mesclar com outro simulado...</option>
                             {allSimuladoGroups
@@ -2596,17 +2739,17 @@ export default function AdminManagerTab({
                           return (
                             <div
                               key={q.id}
-                              className="px-3 py-2 flex items-center justify-between gap-2 hover:bg-white/[0.025] text-xs"
+                              className="px-3 py-2.5 sm:py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-white/[0.025] text-xs"
                             >
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <span className="w-8 font-mono text-[11px] text-slate-400 tabular-nums shrink-0">
+                              <div className="flex items-start sm:items-center gap-2.5 min-w-0">
+                                <span className="w-8 font-mono text-[11px] text-slate-400 tabular-nums shrink-0 pt-0.5 sm:pt-0">
                                   {ord !== null ? `#${ord}` : "—"}
                                 </span>
-                                <div className="min-w-0">
-                                  <div className="text-slate-200 truncate">
+                                <div className="min-w-0 flex-1">
+                                  <div className="text-slate-200 line-clamp-2 sm:truncate">
                                     {q.title || q.perguntaProblema || `Questão #${q.id}`}
                                   </div>
-                                  <div className="text-[11px] text-slate-500 truncate tabular-nums flex items-center gap-1.5">
+                                  <div className="text-[11px] text-slate-500 truncate tabular-nums flex flex-wrap items-center gap-1.5">
                                     <span>
                                       ID {q.id} · {getDisciplina(q)} · Gab:{" "}
                                       {q.Gabarito || q.respostaCorreta || "—"}
@@ -2620,13 +2763,13 @@ export default function AdminManagerTab({
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-1 shrink-0">
+                              <div className="flex items-center justify-end gap-1 shrink-0">
                                 <button
                                   type="button"
                                   disabled={busy || idx === 0}
                                   onClick={() => void handleSwapQuestionOrder(idx, idx - 1)}
                                   title="Subir na ordem"
-                                  className="p-1 rounded text-slate-400 hover:text-white disabled:opacity-25"
+                                  className="min-w-[34px] min-h-[34px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-1 rounded text-slate-400 hover:text-white disabled:opacity-25"
                                 >
                                   <ArrowUp size={13} />
                                 </button>
@@ -2635,7 +2778,7 @@ export default function AdminManagerTab({
                                   disabled={busy || idx === activeGroup.questions.length - 1}
                                   onClick={() => void handleSwapQuestionOrder(idx, idx + 1)}
                                   title="Descer na ordem"
-                                  className="p-1 rounded text-slate-400 hover:text-white disabled:opacity-25"
+                                  className="min-w-[34px] min-h-[34px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-1 rounded text-slate-400 hover:text-white disabled:opacity-25"
                                 >
                                   <ArrowDown size={13} />
                                 </button>
@@ -2643,7 +2786,7 @@ export default function AdminManagerTab({
                                   type="button"
                                   onClick={() => onEditQuestion(q)}
                                   title="Editar questão"
-                                  className="p-1 rounded text-slate-400 hover:text-amber-300"
+                                  className="min-w-[34px] min-h-[34px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-1 rounded text-slate-400 hover:text-amber-300"
                                 >
                                   <Pencil size={13} />
                                 </button>
@@ -2652,7 +2795,7 @@ export default function AdminManagerTab({
                                   disabled={busy}
                                   onClick={() => void handleDetachFromSimulado(q)}
                                   title="Remover deste simulado (limpa PROVA)"
-                                  className="p-1 rounded text-slate-400 hover:text-rose-400"
+                                  className="min-w-[34px] min-h-[34px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-1 rounded text-slate-400 hover:text-rose-400"
                                 >
                                   <X size={13} />
                                 </button>
@@ -2952,7 +3095,68 @@ export default function AdminManagerTab({
                 </div>
               )}
 
-              <div className="border border-white/[0.06] rounded-xl overflow-x-auto bg-[#0d0f14]">
+              {/* Lista Mobile de Simulados Cronometrados */}
+              <div className="md:hidden divide-y divide-white/[0.05] border border-white/[0.06] rounded-xl overflow-hidden bg-[#0d0f14]">
+                {timedSimulados.length === 0 ? (
+                  <div className="py-8 px-4 text-center text-sm text-slate-500">
+                    {loadingTimed
+                      ? "Carregando simulados cronometrados..."
+                      : "Nenhum simulado cronometrado cadastrado na tabela simulados."}
+                  </div>
+                ) : (
+                  timedSimulados.map((sim) => (
+                    <div key={`mob-timed-${sim.id}`} className="p-3.5 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 space-y-0.5">
+                          <div className="text-sm text-slate-100 font-normal break-words">
+                            {sim.titulo || sim.title || "Sem título"}
+                          </div>
+                          <div className="text-xs text-slate-400 flex flex-wrap items-center gap-1.5">
+                            <span className="font-mono text-slate-500">{sim.id}</span>
+                            <span>·</span>
+                            <span>{sim.autor || "—"}</span>
+                            {sim.ano ? <span>· {sim.ano}</span> : null}
+                            <span>·</span>
+                            <span className="font-mono text-slate-300 tabular-nums">
+                              {sim.duracao_minutos ?? 300} min
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        <a
+                          href={`/simulado?id=${encodeURIComponent(sim.id)}`}
+                          className="min-h-[38px] px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-slate-200 text-xs inline-flex items-center gap-1.5"
+                        >
+                          <ExternalLink size={12} />
+                          <span>Abrir</span>
+                        </a>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => void handleOpenEditTimedSimulado(sim)}
+                          className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-lg bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:text-amber-300"
+                          title="Editar"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleDeleteTimedSimulado(sim.id)}
+                          className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-lg bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:text-rose-400"
+                          title="Excluir"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Tabela Desktop de Simulados Cronometrados */}
+              <div className="hidden md:block border border-white/[0.06] rounded-xl overflow-x-auto bg-[#0d0f14]">
                 <table className="w-full text-left border-collapse min-w-[680px] text-xs">
                   <thead>
                     <tr className="border-b border-white/[0.06] text-[11px] font-normal text-slate-400">

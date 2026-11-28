@@ -359,24 +359,24 @@ const QuestaoRowItem = React.memo(function QuestaoRowItem({
 
         {/* No mobile, Status + Ações ficam alinhados no topo direito do card */}
         <div className="flex md:hidden items-center gap-1.5 shrink-0">
-          {isDuvida && <Flag size={10} className="fill-amber-400/90 text-amber-400/90 shrink-0" />}
+          {isDuvida && <Flag size={11} className="fill-amber-400/90 text-amber-400/90 shrink-0" />}
           {isAnulada ? (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-semibold text-amber-300 bg-amber-500/15 border border-amber-500/35 shrink-0">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold text-amber-300 bg-amber-500/15 border border-amber-500/35 shrink-0">
               <Ban size={10} className="text-amber-400 shrink-0" />
               Anulada
             </span>
           ) : isErro ? (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-semibold text-rose-300 bg-rose-950/60 border border-rose-500/35 tabular-nums">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold text-rose-300 bg-rose-950/60 border border-rose-500/35 tabular-nums">
               <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
               {errorCount > 1 ? `Errou ${errorCount}×` : "Errou"}
             </span>
           ) : isAcerto ? (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-medium text-emerald-300 bg-emerald-950/50 border border-emerald-700/40">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium text-emerald-300 bg-emerald-950/50 border border-emerald-700/40">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
               Acertou{errorCount > 0 ? ` (${errorCount}e)` : ""}
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] text-slate-500 bg-white/[0.03] border border-white/[0.06]">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] text-slate-400 bg-white/[0.03] border border-white/[0.06]">
               Aberta
             </span>
           )}
@@ -390,18 +390,18 @@ const QuestaoRowItem = React.memo(function QuestaoRowItem({
       </div>
 
       {/* Coluna 3 (Desktop) / Metadado (Mobile): Prova / Ano */}
-      <div className="flex items-center gap-1.5 text-[10.5px] text-slate-300 min-w-0 truncate">
-        <span className="truncate font-medium text-slate-200/90" title={`${provaVal || "—"} ${anoVal}`}>
+      <div className="flex flex-wrap md:flex-nowrap items-center gap-1.5 text-xs md:text-[10.5px] text-slate-300 min-w-0 md:truncate">
+        <span className="break-words md:truncate font-medium text-slate-200/90" title={`${provaVal || "—"} ${anoVal}`}>
           {provaVal || <span className="text-slate-600">—</span>}
         </span>
         {anoVal && (
-          <span className="text-[10px] text-slate-400 font-mono shrink-0 tabular-nums">
+          <span className="text-[11px] md:text-[10px] text-slate-400 font-mono shrink-0 tabular-nums">
             · {anoVal}
           </span>
         )}
         {/* No mobile exibe Banca inline junto de Prova/Ano */}
         {bancaVal && (
-          <span className="md:hidden text-[10px] text-indigo-300/90 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.2 rounded truncate max-w-[120px]">
+          <span className="md:hidden text-[11px] text-indigo-300/90 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded truncate max-w-[160px]">
             {bancaVal}
           </span>
         )}
@@ -640,8 +640,7 @@ const TreeNodeItem = React.memo(function TreeNodeItem({
             onDropQuestion(qId, node.id);
           }
         }}
-        style={{ paddingLeft: `${Math.min(depth, 3) * 10 + 6}px` }}
-        className={`flex items-center justify-between gap-2 py-2 sm:py-1.5 pr-2 sm:pr-3 rounded-lg cursor-pointer transition-colors group ${
+        className={`flex items-center justify-between gap-2 px-2 py-2 sm:py-1.5 rounded-lg cursor-pointer transition-colors group ${
           isDragOver
             ? "bg-indigo-600/20 border border-indigo-500 text-white"
             : "hover:bg-white/[0.04] text-slate-300 hover:text-white"
@@ -662,18 +661,17 @@ const TreeNodeItem = React.memo(function TreeNodeItem({
                 className={isOpen ? "" : "-rotate-90"}
               />
             ) : (
-              <span className="w-2 h-2 rounded-full bg-slate-700 inline-block" />
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-700 inline-block" />
             )}
           </button>
 
-          {/* Ícone de pasta dourada conforme a imagem do usuário */}
           <span className="text-amber-400 text-sm shrink-0">📁</span>
 
-          <span className="text-[12px] font-normal tracking-wide truncate">
+          <span className="text-[12.5px] sm:text-[12px] font-normal tracking-wide truncate">
             {node.nome}
           </span>
 
-          <span className="text-[10px] text-slate-500 font-mono">
+          <span className="text-[10.5px] text-slate-500 font-mono tabular-nums shrink-0">
             ({node.questoes.length + node.totalDescendentesQuestoes})
           </span>
         </div>
@@ -746,9 +744,13 @@ const TreeNodeItem = React.memo(function TreeNodeItem({
         </div>
       </div>
 
-      {/* Filhos e Questões */}
+      {/* Filhos e Questões — alinhados na mesma linha guia hierárquica */}
       {isOpen && (
-        <div className="flex flex-col">
+        <div
+          className={`flex flex-col gap-0.5 my-0.5 border-l border-white/[0.08] ${
+            depth >= 3 ? "ml-2.5 sm:ml-3.5 pl-2 sm:pl-2.5" : "ml-3 sm:ml-3.5 pl-2.5 sm:pl-3"
+          }`}
+        >
           {/* Subpastas */}
           {node.filhos.map(filho => (
             <TreeNodeItem
@@ -772,86 +774,127 @@ const TreeNodeItem = React.memo(function TreeNodeItem({
             />
           ))}
 
-          {/* Questões diretamente vinculadas a este nó (com renderização progressiva) */}
-          {node.questoes.slice(0, visibleQuestionsLimit).map((q) => {
-            q = getQuestionWithCurrentDifficulty(q);
-            const catKey = resolveCategory(q);
-            const catInfo = CATEGORIES.find(c => c.key === catKey);
-            const st = userAnswers[String(q.id)];
-            const isAcerto = st?.isCorrect === true;
-            const isErro = st?.isCorrect === false;
-            const ordemVal = q.Ordem ?? q.ordem;
-
-            return (
-              <div
-                key={q.id}
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData("text/plain", String(q.id));
-                  e.dataTransfer.setData("questao_id", String(q.id));
-                  e.dataTransfer.effectAllowed = "move";
-                }}
-                onClick={() => onOpenQuestion(q, node.questoes)}
-                style={{ paddingLeft: `${Math.min(depth + 1, 4) * 10 + 6}px` }}
-                className="flex items-center justify-between gap-2 py-1.5 sm:py-1 pr-2 sm:pr-3 rounded-lg hover:bg-white/[0.04] cursor-pointer text-slate-300 hover:text-white transition-colors group"
-              >
-                <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                  <span className="text-slate-500 group-hover:text-slate-300 shrink-0">📄</span>
-                  {ordemVal !== undefined && ordemVal !== null && (
-                    <span className="text-[10px] font-mono text-slate-400 shrink-0">#{ordemVal}</span>
-                  )}
-                  <PlatformIdsBadges questao={q} compact />
-                  {(q.prova || q.Banca || q.banca) && (
-                    <span className="hidden sm:inline text-[10px] text-slate-400 truncate max-w-[160px]">
-                      {[q.prova, q.Ano, q.Banca || q.banca].filter(Boolean).join(" · ")}
-                    </span>
-                  )}
-                  <span
-                    className="w-1.5 h-1.5 rounded-full shrink-0"
-                    style={{ backgroundColor: catInfo?.textColor || "#c69238" }}
-                    title={catInfo?.label}
-                  />
-                </div>
-
-                {isAcerto && (
-                  <span className="text-[9px] font-normal text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.2 rounded-full shrink-0">
-                    Acertou
-                  </span>
-                )}
-                {isErro && (
-                  <span className="text-[9px] font-normal text-rose-400 bg-rose-950/40 border border-rose-800/40 px-2 py-0.2 rounded-full shrink-0">
-                    Errou
-                  </span>
-                )}
-              </div>
-            );
-          })}
-
-          {node.questoes.length > visibleQuestionsLimit && (
+          {/* Questões diretamente vinculadas a este nó */}
+          {node.questoes.length > 0 && (
             <div
-              style={{ paddingLeft: `${Math.min(depth + 1, 4) * 10 + 6}px` }}
-              className="flex items-center gap-2 py-1.5"
+              className={`flex flex-col gap-1 ${
+                node.filhos.length > 0 ? "mt-1 pt-1.5 border-t border-white/[0.05]" : ""
+              }`}
             >
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setVisibleQuestionsLimit(v => v + 80);
-                }}
-                className="px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-[10px] font-normal text-slate-300 transition-colors"
-              >
-                Mostrar mais (+{Math.min(80, node.questoes.length - visibleQuestionsLimit)} de {node.questoes.length - visibleQuestionsLimit})
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setVisibleQuestionsLimit(node.questoes.length);
-                }}
-                className="px-2 py-1 rounded-md text-[10px] font-normal text-indigo-400 hover:text-indigo-300 transition-colors"
-              >
-                Exibir todas ({node.questoes.length})
-              </button>
+              {node.questoes.slice(0, visibleQuestionsLimit).map((q) => {
+                q = getQuestionWithCurrentDifficulty(q);
+                const catKey = resolveCategory(q);
+                const catInfo = CATEGORIES.find(c => c.key === catKey);
+                const isAnulada = isQuestaoAnulada(q);
+                const st = userAnswers[String(q.id)];
+                const isAcerto = !isAnulada && st?.isCorrect === true;
+                const isErro = !isAnulada && st?.isCorrect === false;
+                const isDuvida = duvidas.has(String(q.id));
+                const ordemVal = q.Ordem ?? q.ordem;
+
+                return (
+                  <div
+                    key={q.id}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData("text/plain", String(q.id));
+                      e.dataTransfer.setData("questao_id", String(q.id));
+                      e.dataTransfer.effectAllowed = "move";
+                    }}
+                    onClick={() => onOpenQuestion(q, node.questoes)}
+                    className={`flex items-center justify-between gap-2 px-2.5 py-2 sm:py-1.5 rounded-lg border cursor-pointer transition-colors group min-w-0 ${
+                      isAnulada
+                        ? "bg-amber-500/[0.03] hover:bg-amber-500/[0.07] border-amber-500/15 hover:border-amber-500/30 text-slate-300"
+                        : isErro
+                        ? "bg-rose-500/[0.04] hover:bg-rose-500/[0.08] border-rose-500/20 hover:border-rose-500/35 text-slate-200"
+                        : isAcerto
+                        ? "bg-emerald-500/[0.025] hover:bg-emerald-500/[0.06] border-emerald-500/15 hover:border-emerald-500/30 text-slate-200"
+                        : "bg-white/[0.015] hover:bg-white/[0.045] border-white/[0.04] hover:border-white/[0.10] text-slate-300 hover:text-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span
+                        className={`w-4 h-4 flex items-center justify-center shrink-0 ${
+                          isAnulada
+                            ? "text-amber-400"
+                            : isAcerto
+                            ? "text-emerald-400"
+                            : isErro
+                            ? "text-rose-400"
+                            : "text-slate-500 group-hover:text-slate-300"
+                        }`}
+                      >
+                        {isAnulada ? <Ban size={12} /> : <FileText size={12} />}
+                      </span>
+
+                      <span className="w-8 sm:w-9 text-[11px] font-mono tabular-nums text-slate-400 shrink-0">
+                        {ordemVal !== undefined && ordemVal !== null && String(ordemVal).trim() !== ""
+                          ? `#${ordemVal}`
+                          : "—"}
+                      </span>
+
+                      <div className="min-w-0 flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                        <PlatformIdsBadges questao={q} compact />
+
+                        {(q.prova || q.Banca || q.banca) && (
+                          <span className="hidden md:inline text-[11px] text-slate-400 truncate max-w-[220px]">
+                            {[q.prova, q.Ano, q.Banca || q.banca].filter(Boolean).join(" · ")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {isDuvida && (
+                        <Flag size={10} className="fill-amber-400/90 text-amber-400/90 shrink-0" />
+                      )}
+                      <span
+                        className="w-2 h-2 rounded-full shrink-0"
+                        style={{ backgroundColor: catInfo?.textColor || "#c69238" }}
+                        title={catInfo?.label}
+                      />
+                      {isAnulada ? (
+                        <span className="text-[10px] font-medium text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-md shrink-0">
+                          Anulada
+                        </span>
+                      ) : isAcerto ? (
+                        <span className="text-[10px] font-medium text-emerald-300 bg-emerald-950/50 border border-emerald-700/40 px-2 py-0.5 rounded-md shrink-0">
+                          Acertou
+                        </span>
+                      ) : isErro ? (
+                        <span className="text-[10px] font-medium text-rose-300 bg-rose-950/60 border border-rose-500/35 px-2 py-0.5 rounded-md shrink-0">
+                          Errou
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {node.questoes.length > visibleQuestionsLimit && (
+                <div className="flex flex-wrap items-center gap-2 pt-1.5 pb-0.5 pl-1">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setVisibleQuestionsLimit(v => v + 80);
+                    }}
+                    className="px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-[11px] font-normal text-slate-300 transition-colors"
+                  >
+                    Mostrar mais (+{Math.min(80, node.questoes.length - visibleQuestionsLimit)} de {node.questoes.length - visibleQuestionsLimit})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setVisibleQuestionsLimit(node.questoes.length);
+                    }}
+                    className="px-2 py-1 rounded-md text-[11px] font-normal text-indigo-400 hover:text-indigo-300 transition-colors"
+                  >
+                    Exibir todas ({node.questoes.length})
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -3219,7 +3262,7 @@ export default function CadernosTab({
 
   return (
     <QuestionClassificationContext.Provider value={classificationContextValue}>
-    <div className="flex w-full max-w-[1200px] mx-auto flex-col gap-3 sm:gap-4 bg-[#0a0e18] rounded-xl sm:rounded-2xl border border-white/[0.07] p-2.5 sm:p-4 relative overflow-hidden">
+    <div className="flex w-full min-w-0 max-w-[1200px] mx-auto flex-col gap-3 sm:gap-4 bg-[#0a0e18] rounded-xl sm:rounded-2xl border border-white/[0.07] p-2.5 sm:p-4 relative overflow-x-clip">
 
       {/* ── Toolbar Superior: Caderno de Erros ── */}
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 pb-3 border-b border-white/[0.07] relative z-10">
@@ -3903,12 +3946,12 @@ export default function CadernosTab({
           )}
         </div>
       ) : viewMode === "arvore" ? (
-        <div className="flex flex-col gap-2 p-3 sm:p-4 bg-[#0d1220] rounded-xl border border-white/[0.07] relative z-10">
-          <div className="flex items-center justify-between border-b border-white/[0.06] pb-2 mb-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <span>📁</span> Estrutura Hierárquica de Pastas (organizacao_nos)
+        <div className="flex flex-col gap-2 p-3 sm:p-4 bg-[#0d1220] rounded-xl border border-white/[0.07] relative z-10 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-white/[0.06] pb-2 mb-2">
+            <span className="text-xs sm:text-[11px] font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+              <span>📁</span> Estrutura Hierárquica de Pastas
             </span>
-            <span className="text-[10px] text-slate-500 italic">
+            <span className="text-[11px] sm:text-[10px] text-slate-400 sm:text-slate-500 italic">
               Arraste e solte questões em qualquer pasta para alterar a vinculação
             </span>
           </div>
@@ -4278,7 +4321,7 @@ export default function CadernosTab({
       {/* ── MODAL DE RESOLUÇÃO FOCADA (IGUAL ABA QUESTÃO ATIVA) ── */}
       {modalQuestion && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-1.5 sm:p-4 md:p-6 overflow-y-auto">
-          <div className="relative w-full max-w-7xl min-h-[min(78vh,760px)] max-h-[98vh] sm:max-h-[96vh] bg-[#0c101c] border border-white/10 rounded-xl sm:rounded-2xl shadow-lg overflow-y-auto custom-scrollbar p-2.5 sm:p-6 md:p-8 flex flex-col my-auto">
+          <div className="relative w-full max-w-7xl max-h-[94dvh] sm:min-h-[min(78vh,760px)] sm:max-h-[96vh] bg-[#0c101c] border border-white/10 rounded-xl sm:rounded-2xl shadow-lg overflow-y-auto custom-scrollbar p-2 sm:p-6 md:p-8 flex flex-col my-auto">
             <QuestionResolver
               question={modalQueue[modalIndex] || modalQuestion}
               questionIndex={modalIndex}

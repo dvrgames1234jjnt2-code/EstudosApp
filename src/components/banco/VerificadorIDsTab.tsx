@@ -712,7 +712,7 @@ export default function VerificadorIDsTab({
   };
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full min-w-0 overflow-x-clip space-y-5 sm:space-y-6">
       {/* ── Top Bar Informativa ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
         <div>
@@ -925,10 +925,10 @@ export default function VerificadorIDsTab({
           {/* Barra de Ações e Filtros */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
             {/* Filtros por status */}
-            <div className="flex items-center gap-1.5 overflow-x-auto">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <button
                 onClick={() => setFiltroStatus("todos")}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
+                className={`min-h-[36px] sm:min-h-0 px-3 py-1.5 rounded-lg text-xs sm:text-[11px] font-medium transition-colors ${
                   filtroStatus === "todos"
                     ? "bg-blue-600/20 text-blue-300 border border-blue-500/30"
                     : "text-slate-400 hover:text-white bg-transparent"
@@ -938,7 +938,7 @@ export default function VerificadorIDsTab({
               </button>
               <button
                 onClick={() => setFiltroStatus("faltantes")}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
+                className={`min-h-[36px] sm:min-h-0 px-3 py-1.5 rounded-lg text-xs sm:text-[11px] font-medium transition-colors ${
                   filtroStatus === "faltantes"
                     ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
                     : "text-slate-400 hover:text-white bg-transparent"
@@ -948,7 +948,7 @@ export default function VerificadorIDsTab({
               </button>
               <button
                 onClick={() => setFiltroStatus("cadastradas")}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
+                className={`min-h-[36px] sm:min-h-0 px-3 py-1.5 rounded-lg text-xs sm:text-[11px] font-medium transition-colors ${
                   filtroStatus === "cadastradas"
                     ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                     : "text-slate-400 hover:text-white bg-transparent"
@@ -959,8 +959,8 @@ export default function VerificadorIDsTab({
             </div>
 
             {/* Busca + Ações de Cópia */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="relative min-w-[180px]">
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+              <div className="relative w-full sm:w-auto sm:min-w-[200px] flex-1 sm:flex-initial">
                 <Search
                   size={12}
                   className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500"
@@ -970,7 +970,7 @@ export default function VerificadorIDsTab({
                   value={buscaResultado}
                   onChange={(e) => setBuscaResultado(e.target.value)}
                   placeholder="Filtrar por ID ou texto..."
-                  className="w-full pl-8 pr-3 py-1.5 bg-[#070b14] border border-white/[0.08] rounded-lg text-[11px] text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/40"
+                  className="w-full min-h-[38px] sm:min-h-0 pl-8 pr-3 py-1.5 bg-[#070b14] border border-white/[0.08] rounded-lg text-xs sm:text-[11px] text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-blue-500/40"
                 />
               </div>
 
@@ -1028,21 +1028,21 @@ export default function VerificadorIDsTab({
                 const rowKey = `${item.plataforma}-${item.idNormalizado}`;
 
                 return (
-                  <div key={`mob-${rowKey}`} className="p-3.5 space-y-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                  <div key={`mob-${rowKey}`} className="p-4 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-wrap flex-1">
                         {item.encontrada ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                             No Banco
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                             Inédita
                           </span>
                         )}
-                        <span className="font-mono text-xs font-semibold text-slate-200 truncate">
+                        <span className="font-mono text-[13px] font-semibold text-slate-200 break-all">
                           {item.idNormalizado}
                         </span>
                         {renderPlatformBadge(item)}
@@ -1055,9 +1055,9 @@ export default function VerificadorIDsTab({
                             target="_blank"
                             rel="noopener noreferrer"
                             title="Abrir link da questão"
-                            className="p-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-blue-400"
+                            className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-blue-400"
                           >
-                            <ExternalLink size={12} />
+                            <ExternalLink size={14} />
                           </a>
                         )}
                         {item.encontrada && item.questao ? (
@@ -1066,23 +1066,23 @@ export default function VerificadorIDsTab({
                               <button
                                 onClick={() => onEditQuestion(item.questao!)}
                                 title="Editar questão (Admin)"
-                                className="p-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-amber-400"
+                                className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-amber-400"
                               >
-                                <Pencil size={12} />
+                                <Pencil size={14} />
                               </button>
                             )}
                             <button
                               onClick={() => onSelectQuestion(item.questao!)}
-                              className="px-2.5 py-1.5 rounded-lg bg-blue-600 text-white text-[10px] font-medium flex items-center gap-1"
+                              className="min-h-[36px] px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium flex items-center gap-1"
                             >
-                              <Play size={10} />
+                              <Play size={11} />
                               <span>Resolver</span>
                             </button>
                           </>
                         ) : (
                           <button
                             onClick={() => navigator.clipboard.writeText(item.idNormalizado)}
-                            className="px-2.5 py-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-300 text-[10px] font-medium"
+                            className="min-h-[36px] px-3 py-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-300 text-xs font-medium"
                           >
                             Copiar
                           </button>
@@ -1091,22 +1091,22 @@ export default function VerificadorIDsTab({
                     </div>
 
                     {item.encontrada && item.questao ? (
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap text-xs">
                           <span className="font-medium text-blue-400">
                             {item.questao.materia}
                           </span>
                           {item.questao.tema && (
-                            <span className="text-slate-500">• {item.questao.tema}</span>
+                            <span className="text-slate-400">• {item.questao.tema}</span>
                           )}
                         </div>
-                        <p className="text-[11px] text-slate-300 line-clamp-2">
+                        <p className="text-[13px] text-slate-200 leading-relaxed line-clamp-3 break-words">
                           {item.questao.perguntaProblema || item.questao.title}
                         </p>
                         {renderQuestionIdCoverage(item.questao)}
                       </div>
                     ) : (
-                      <p className="text-[11px] text-slate-500 italic">
+                      <p className="text-xs text-slate-500 italic">
                         Questão ainda não cadastrada no sistema.
                       </p>
                     )}

@@ -57,7 +57,7 @@ export default function FlashcardDashboard({
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="w-full min-w-0 overflow-x-clip space-y-6 sm:space-y-8">
       {/* Stats Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">
         <div className="bg-[#14171d] border border-white/[0.07] rounded-2xl p-4 sm:p-6">
@@ -174,7 +174,38 @@ export default function FlashcardDashboard({
         </div>
       ) : (
         <div className="bg-[#14171d] border border-white/[0.08] rounded-2xl overflow-hidden">
-          <div className="max-h-[500px] overflow-auto">
+          <div className="sm:hidden divide-y divide-white/[0.06] max-h-[540px] overflow-y-auto">
+            {filteredFlashcards.map(card => (
+              <button
+                key={card.id}
+                type="button"
+                onClick={() => onStartStudy([card])}
+                className="w-full text-left p-4 hover:bg-white/[0.04] active:bg-white/[0.06] transition-colors space-y-2"
+              >
+                <p className="text-slate-100 text-sm font-normal leading-relaxed line-clamp-2 break-words">
+                  {card.pergunta}
+                </p>
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <span className="text-slate-400 truncate">
+                    {card.materia || 'Geral'}
+                  </span>
+                  <span
+                    className={`font-medium shrink-0 ${
+                      card.feedback === 'Automático'
+                        ? 'text-emerald-400'
+                        : card.feedback === 'Esqueci'
+                        ? 'text-rose-400'
+                        : 'text-slate-300'
+                    }`}
+                  >
+                    {card.feedback || 'Novo'}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <div className="hidden sm:block max-h-[500px] overflow-auto">
             <table className="w-full text-left min-w-[520px]">
               <thead className="sticky top-0 bg-[#101319] border-b border-white/[0.08] z-10">
                 <tr>

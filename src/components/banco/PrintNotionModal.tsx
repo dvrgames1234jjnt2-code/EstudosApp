@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import {
-  Printer, X, CheckCircle2, Columns2, Square,
-  Layers, FileText, Loader2, Sparkles, BookOpen
+  Printer, X, Columns2, Square,
+  Loader2, Sparkles, BookOpen
 } from 'lucide-react';
 
 export interface PrintableNotionQuestion {
@@ -74,28 +74,32 @@ export function buildNotionPrintHTML(
   subTitle: string,
   options: {
     columns: '2' | '1';
-    imageDensity: 'compacto' | 'medio' | 'original';
+    imageDensity: 'ultra' | 'compacto' | 'medio' | 'original';
     gabaritoMode: 'completo' | 'tabela' | 'nenhum';
+    gabaritoNewPage?: boolean;
   }
 ): string {
   const isTwoCols = options.columns === '2';
 
-  // Alturas máximas por densidade:
-  // Compacto: ~200px para caber de 4 a 6 questões por coluna (até 12 por folha!)
   const imgMaxHeight =
-    options.imageDensity === 'compacto' ? '205px' :
-    options.imageDensity === 'medio' ? '270px' : 'none';
+    options.imageDensity === 'ultra' ? '155px' :
+    options.imageDensity === 'compacto' ? '200px' :
+    options.imageDensity === 'medio' ? '265px' : 'none';
+
+  const textFontSize = options.imageDensity === 'ultra' ? '9px' : '10px';
+  const itemGap = options.imageDensity === 'ultra' ? '4.5px' : '7px';
+  const pageMargin = options.imageDensity === 'ultra' ? '6mm 7.5mm 7mm 7.5mm' : '8mm 10mm 9mm 10mm';
 
   const today = new Date().toLocaleDateString('pt-BR');
 
   // Questões HTML
   const questionsHtml = questions.map((q, idx) => {
     const qNum = String(idx + 1).padStart(2, '0');
-    const origNum = q.numero && q.numero !== String(idx + 1) ? ` (Q.${q.numero})` : '';
+    const origNum = q.numero && q.numero !== String(idx + 1) ? `Q.${q.numero}` : '';
 
     const imgs = (q.imageUrls || []).filter(u => u && u.trim() !== '');
     const textHtml = q.enunciadoTexto?.trim()
-      ? `<div style="font-size:11.5px;line-height:1.45;margin:4px 0 6px;color:#111827;">${cleanPrintText(q.enunciadoTexto)}</div>`
+      ? `<div class="q-text">${cleanPrintText(q.enunciadoTexto)}</div>`
       : '';
     const imgsHtml = imgs.length > 0
       ? imgs.map((u, i) => `
@@ -105,38 +109,38 @@ export function buildNotionPrintHTML(
         `).join('')
       : (textHtml ? '' : `<div class="q-no-img">[Sem imagem cadastrada]</div>`);
 
+    const metaParts = [
+      origNum,
+      q.caseLabel || 'Geral',
+      q.topic || '',
+    ].filter(Boolean).map(p => cleanPrintText(p));
+
     return `
-      <div class="print-question">
+      <article class="print-question">
         <div class="q-head">
-          <div class="q-left">
-            <span class="q-badge">Q.${qNum}</span>
-            <span class="q-orig">${origNum}</span>
-            <span class="q-caso">${cleanPrintText(q.caseLabel || 'Geral')}</span>
-          </div>
-          ${q.topic ? `<span class="q-topic">${cleanPrintText(q.topic)}</span>` : ''}
+          <span class="q-num">${qNum}.</span>
+          <span class="q-meta">${metaParts.join(' · ')}</span>
         </div>
         ${textHtml}
         ${imgsHtml}
-      </div>
+      </article>
     `;
   }).join('');
 
   // Gabarito HTML no final
   let gabaritoHtml = '';
   if (options.gabaritoMode !== 'nenhum' && questions.length > 0) {
-    // Tabela rápida
     const cellsHtml = questions.map((q, idx) => {
       const qNum = String(idx + 1).padStart(2, '0');
       const letter = extractGabaritoLetter(q.respostaText);
       return `
         <div class="g-cell">
-          <div class="g-num">Q.${qNum}</div>
-          <div class="g-resp">${letter}</div>
+          <span class="g-num">${qNum}</span>
+          <span class="g-resp">${letter}</span>
         </div>
       `;
     }).join('');
 
-    // Resoluções detalhadas (se existirem comentários ou imagens de resolução)
     let resolucoesHtml = '';
     if (options.gabaritoMode === 'completo') {
       const questionsWithResolucao = questions.filter(
@@ -146,18 +150,18 @@ export function buildNotionPrintHTML(
       if (questionsWithResolucao.length > 0) {
         resolucoesHtml = `
           <div class="resolucoes-section">
-            <h3 class="resolucoes-title">RESOLUÇÕES E COMENTÁRIOS DETALHADOS</h3>
+            <h3 class="resolucoes-title">Resoluções e Comentários</h3>
             <div class="resolucoes-columns">
               ${questionsWithResolucao.map((q) => {
                 const qNum = String(questions.indexOf(q) + 1).padStart(2, '0');
                 const rImgs = (q.respostaImageUrls || []).filter(u => u && u.trim() !== '');
+                const meta = [q.caseLabel, q.topic].filter(Boolean).map(cleanPrintText).join(' · ');
 
                 return `
                   <div class="resolucao-item">
                     <div class="resolucao-item-head">
-                      <strong>Questão ${qNum}</strong>
-                      ${q.caseLabel ? `<span>• ${cleanPrintText(q.caseLabel)}</span>` : ''}
-                      ${q.topic ? `<span>— ${cleanPrintText(q.topic)}</span>` : ''}
+                      <strong>${qNum}.</strong>
+                      ${meta ? `<span>${meta}</span>` : ''}
                     </div>
                     ${q.respostaText ? `<div class="resolucao-text">${cleanPrintText(q.respostaText)}</div>` : ''}
                     ${rImgs.map(u => `<img src="${u.trim()}" class="resolucao-img" />`).join('')}
@@ -171,13 +175,10 @@ export function buildNotionPrintHTML(
     }
 
     gabaritoHtml = `
-      <div class="gabarito-page">
+      <div class="gabarito-page${options.gabaritoNewPage ? ' gabarito-break' : ''}">
         <div class="gabarito-header">
-          <div class="gabarito-title-row">
-            <h2>FOLHA DE GABARITO & RESPOSTAS</h2>
-            <span class="badge-total">TOTAL: ${questions.length} QUESTÕES</span>
-          </div>
-          <p class="gabarito-sub">Gabarito correspondente às questões deste simulado / caderno de estudos:</p>
+          <h2>Gabarito Oficial</h2>
+          <span class="badge-total">${questions.length} questões</span>
         </div>
 
         <div class="gabarito-grid">
@@ -204,153 +205,141 @@ export function buildNotionPrintHTML(
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      font-size: 11px;
-      color: #111827;
+      font-size: ${textFontSize};
+      color: #0f172a;
       background: #ffffff;
-      line-height: 1.4;
+      line-height: 1.3;
       -webkit-font-smoothing: antialiased;
     }
 
     .page {
-      max-width: 900px;
+      max-width: 960px;
       margin: 0 auto;
-      padding: 16px 20px;
+      padding: 12px 16px;
     }
 
-    /* ── Cabeçalho Principal ── */
+    /* ── Cabeçalho fino e minimalista ── */
     .header {
-      border-bottom: 2px solid #0f172a;
-      padding-bottom: 10px;
-      margin-bottom: 14px;
+      border-bottom: 1px solid #0f172a;
+      padding-bottom: 4px;
+      margin-bottom: 7px;
     }
     .header-top {
       display: flex;
       align-items: baseline;
       justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 4px;
+      gap: 10px;
+    }
+    .header-title-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      min-width: 0;
+      flex-wrap: wrap;
     }
     .header h1 {
-      font-size: 15px;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.015em;
       color: #0f172a;
     }
-    .header .badge {
-      font-family: monospace;
-      font-size: 10px;
-      font-weight: 800;
-      background: #f1f5f9;
-      border: 1px solid #cbd5e1;
-      padding: 2px 7px;
-      border-radius: 4px;
-      white-space: nowrap;
-    }
     .header .subtitle {
-      font-size: 10px;
-      color: #475569;
-      margin-bottom: 8px;
+      font-size: 8.5px;
+      color: #64748b;
     }
-    .header-fields {
-      display: grid;
-      grid-template-columns: 2fr 1fr 1.2fr;
-      gap: 10px;
-      border-top: 1px solid #e2e8f0;
-      padding-top: 7px;
-      font-size: 10px;
+    .header .count-meta {
+      font-size: 8.5px;
       font-weight: 600;
       color: #334155;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .header-fields {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-top: 0.5pt solid #e2e8f0;
+      margin-top: 3px;
+      padding-top: 3px;
+      font-size: 8px;
+      color: #475569;
+    }
+    .header-field {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      white-space: nowrap;
+    }
+    .header-field-grow {
+      flex: 1;
+      min-width: 120px;
+    }
+    .field-line {
+      flex: 1;
+      border-bottom: 0.5pt solid #cbd5e1;
+      height: 8px;
+      display: inline-block;
     }
 
-    /* ── Container de Questões (Alta Densidade) ── */
+    /* ── Container de Questões ── */
     .questions-container {
       ${isTwoCols ? `
         column-count: 2;
-        column-gap: 14px;
-        column-rule: 1px solid #e2e8f0;
+        column-gap: 10px;
+        column-rule: 0.5pt solid #e2e8f0;
         width: 100%;
       ` : `
         display: flex;
         flex-direction: column;
-        gap: 12px;
       `}
     }
 
-    /* ── Cada Questão Individual ── */
+    /* ── Cada Questão ── */
     .print-question {
       break-inside: avoid;
       page-break-inside: avoid;
-      display: inline-block;
+      display: block;
       width: 100%;
-      box-sizing: border-box;
-      margin-bottom: 10px;
-      padding-bottom: 8px;
-      border-bottom: 1px dashed #cbd5e1;
-      vertical-align: top;
+      margin-bottom: ${itemGap};
+      padding-bottom: ${itemGap};
+      border-bottom: 0.5pt solid #e2e8f0;
     }
 
     .q-head {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-      margin-bottom: 4px;
+      align-items: baseline;
+      gap: 4px;
+      margin-bottom: 2px;
       line-height: 1.2;
-    }
-    .q-left {
-      display: flex;
-      align-items: center;
-      gap: 5px;
       min-width: 0;
-      flex-wrap: wrap;
     }
-    .q-badge {
-      font-size: 10.5px;
-      font-weight: 800;
+    .q-num {
+      font-size: ${textFontSize};
+      font-weight: 700;
       color: #0f172a;
-      background: #f1f5f9;
-      border: 1px solid #94a3b8;
-      padding: 1px 5px;
-      border-radius: 3px;
-      display: inline-flex;
-      align-items: center;
+      font-variant-numeric: tabular-nums;
       flex-shrink: 0;
     }
-    .q-orig {
-      font-size: 9px;
+    .q-meta {
+      font-size: 7.5px;
       color: #64748b;
-      font-weight: 600;
-    }
-    .q-caso {
-      font-size: 9px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      color: #2563eb;
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      padding: 1px 5px;
-      border-radius: 3px;
-      max-width: 140px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      min-width: 0;
     }
-    .q-topic {
-      font-size: 9px;
-      font-weight: 600;
-      color: #475569;
-      text-align: right;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 130px;
+    .q-text {
+      font-size: ${textFontSize};
+      line-height: 1.3;
+      margin: 2px 0;
+      color: #0f172a;
     }
 
     .q-img-wrap {
       text-align: center;
-      margin-top: 4px;
+      margin-top: 2px;
     }
     .q-img {
       display: block;
@@ -360,143 +349,132 @@ export function buildNotionPrintHTML(
       height: auto;
       margin: 0 auto;
       object-fit: contain;
-      border-radius: 3px;
-      border: 1px solid #e2e8f0;
       background: #ffffff !important;
       filter: none !important;
       -webkit-filter: none !important;
     }
     .q-no-img {
-      font-size: 9.5px;
+      font-size: 8px;
       color: #94a3b8;
       font-style: italic;
-      padding: 6px 0;
+      padding: 2px 0;
     }
 
-    /* ── Gabarito no Final (Quebra de Página Obrigatória) ── */
+    /* ── Gabarito Compacto ── */
     .gabarito-page {
+      margin-top: 8px;
+      padding-top: 5px;
+      border-top: 1px solid #0f172a;
+    }
+    .gabarito-break {
       page-break-before: always;
       break-before: page;
-      margin-top: 24px;
-      padding-top: 16px;
-      border-top: 2px solid #0f172a;
+      margin-top: 0;
     }
     .gabarito-header {
-      margin-bottom: 12px;
-    }
-    .gabarito-title-row {
       display: flex;
-      align-items: center;
+      align-items: baseline;
       justify-content: space-between;
       margin-bottom: 4px;
     }
-    .gabarito-title-row h2 {
-      font-size: 14px;
-      font-weight: 900;
+    .gabarito-header h2 {
+      font-size: 9px;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
       color: #0f172a;
     }
     .badge-total {
-      font-size: 10px;
-      font-weight: 800;
-      background: #f1f5f9;
-      border: 1px solid #cbd5e1;
-      padding: 2px 7px;
-      border-radius: 4px;
-      font-family: monospace;
-    }
-    .gabarito-sub {
-      font-size: 10px;
+      font-size: 8px;
       color: #64748b;
+      font-variant-numeric: tabular-nums;
     }
 
-    /* ── Grid Compacto de Respostas ── */
     .gabarito-grid {
       display: grid;
-      grid-template-columns: repeat(10, 1fr);
-      gap: 5px;
-      margin-bottom: 20px;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 2px;
+      margin-bottom: 6px;
     }
     @media (max-width: 600px) {
-      .gabarito-grid { grid-template-columns: repeat(5, 1fr); }
+      .gabarito-grid { grid-template-columns: repeat(6, 1fr); }
     }
     .g-cell {
-      border: 1px solid #94a3b8;
-      border-radius: 4px;
-      padding: 3px 2px;
-      text-align: center;
-      background: #f8fafc;
+      border: 0.5pt solid #cbd5e1;
+      border-radius: 2px;
+      padding: 1.5px 2px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2px;
+      background: #ffffff;
+      font-variant-numeric: tabular-nums;
     }
     .g-num {
-      font-size: 8px;
-      font-weight: 700;
+      font-size: 7px;
       color: #64748b;
     }
     .g-resp {
-      font-size: 13px;
-      font-weight: 900;
+      font-size: 8.5px;
+      font-weight: 700;
       color: #0f172a;
-      margin-top: 1px;
     }
 
     /* ── Resoluções Detalhadas ── */
     .resolucoes-section {
-      margin-top: 20px;
-      border-top: 1.5px solid #cbd5e1;
-      padding-top: 12px;
+      margin-top: 6px;
+      border-top: 0.5pt solid #e2e8f0;
+      padding-top: 5px;
     }
     .resolucoes-title {
-      font-size: 11px;
-      font-weight: 900;
+      font-size: 8.5px;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
       color: #334155;
-      margin-bottom: 10px;
+      margin-bottom: 4px;
     }
     .resolucoes-columns {
       column-count: 2;
-      column-gap: 14px;
-      column-rule: 1px solid #e2e8f0;
+      column-gap: 10px;
+      column-rule: 0.5pt solid #e2e8f0;
     }
     .resolucao-item {
       break-inside: avoid;
       page-break-inside: avoid;
-      display: inline-block;
+      display: block;
       width: 100%;
-      box-sizing: border-box;
-      margin-bottom: 10px;
-      padding: 6px 8px;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 5px;
-      font-size: 10px;
+      margin-bottom: 4px;
+      padding-bottom: 4px;
+      border-bottom: 0.5pt solid #e2e8f0;
+      font-size: 8.2px;
     }
     .resolucao-item-head {
       display: flex;
-      align-items: center;
+      align-items: baseline;
       gap: 4px;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
       color: #0f172a;
-      font-size: 10px;
+      font-size: 8.2px;
       flex-wrap: wrap;
+    }
+    .resolucao-item-head span {
+      color: #64748b;
+      font-size: 7.5px;
     }
     .resolucao-text {
       color: #334155;
-      margin-bottom: 4px;
-      line-height: 1.4;
+      line-height: 1.28;
       white-space: pre-line;
     }
     .resolucao-img {
       display: block;
       max-width: 100%;
-      max-height: 190px;
+      max-height: 145px;
       width: auto;
       height: auto;
-      margin: 4px auto 0 auto;
+      margin: 3px auto 0;
       object-fit: contain;
-      border-radius: 3px;
-      border: 1px solid #cbd5e1;
       background: #ffffff !important;
       filter: none !important;
     }
@@ -505,7 +483,7 @@ export function buildNotionPrintHTML(
     @media print {
       @page {
         size: A4 portrait;
-        margin: 8mm 10mm 10mm 10mm;
+        margin: ${pageMargin};
       }
       body {
         background: #ffffff !important;
@@ -522,7 +500,7 @@ export function buildNotionPrintHTML(
         break-inside: avoid !important;
         page-break-inside: avoid !important;
       }
-      .gabarito-page {
+      .gabarito-break {
         break-before: page !important;
         page-break-before: always !important;
       }
@@ -537,14 +515,16 @@ export function buildNotionPrintHTML(
   <div class="page">
     <div class="header">
       <div class="header-top">
-        <h1>${title}</h1>
-        <span class="badge">TOTAL: ${questions.length} QUESTÕES</span>
+        <div class="header-title-wrap">
+          <h1>${cleanPrintText(title)}</h1>
+          ${subTitle ? `<span class="subtitle">· ${cleanPrintText(subTitle)}</span>` : ''}
+        </div>
+        <span class="count-meta">${questions.length} ${questions.length === 1 ? 'questão' : 'questões'}</span>
       </div>
-      <p class="subtitle">${subTitle || 'Caderno de Estudos — Estação de Treinamento'}</p>
       <div class="header-fields">
-        <div><strong>Aluno(a):</strong> ____________________________________</div>
-        <div><strong>Data:</strong> ${today}</div>
-        <div><strong>Nota / Acertos:</strong> ________ / ${questions.length}</div>
+        <div class="header-field header-field-grow"><span>Nome:</span><span class="field-line"></span></div>
+        <div class="header-field"><span>Data:</span><span>${today}</span></div>
+        <div class="header-field"><span>Acertos:</span><span>____ / ${questions.length}</span></div>
       </div>
     </div>
 
@@ -588,8 +568,9 @@ export function PrintNotionModal({
   loadingProgress,
 }: PrintNotionModalProps) {
   const [columns, setColumns] = useState<'2' | '1'>('2');
-  const [imageDensity, setImageDensity] = useState<'compacto' | 'medio' | 'original'>('compacto');
-  const [gabaritoMode, setGabaritoMode] = useState<'completo' | 'tabela' | 'nenhum'>('completo');
+  const [imageDensity, setImageDensity] = useState<'ultra' | 'compacto' | 'medio' | 'original'>('ultra');
+  const [gabaritoMode, setGabaritoMode] = useState<'completo' | 'tabela' | 'nenhum'>('tabela');
+  const [gabaritoNewPage, setGabaritoNewPage] = useState(false);
 
   if (!isOpen) return null;
 
@@ -603,6 +584,7 @@ export function PrintNotionModal({
       columns,
       imageDensity,
       gabaritoMode,
+      gabaritoNewPage,
     });
 
     const win = window.open('', '_blank', 'width=950,height=750');
@@ -630,17 +612,17 @@ export function PrintNotionModal({
             </div>
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-black text-white uppercase tracking-wider truncate">
+                <h2 className="text-sm font-semibold text-white truncate">
                   Imprimir: {title}
                 </h2>
                 {!isLoading && questions.length > 0 && (
-                  <span className="text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full shrink-0 font-mono">
-                    {questions.length} Q
+                  <span className="text-[11px] font-mono text-indigo-300 shrink-0 tabular-nums">
+                    · {questions.length} Q
                   </span>
                 )}
               </div>
               <p className="text-[11px] text-slate-400 truncate">
-                {subTitle || 'Gera folha econômica com máximo de questões por folha e gabarito no final'}
+                {subTitle || 'Diagramação fina e compacta — máximo de questões por folha'}
               </p>
             </div>
           </div>
@@ -654,103 +636,117 @@ export function PrintNotionModal({
         </div>
 
         {/* ── Barra de Configurações de Impressão ── */}
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:px-5 bg-[#0a0f1d] border-b border-white/[0.06] shrink-0">
-          <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 p-3 sm:px-5 bg-[#0a0f1d] border-b border-white/[0.06] shrink-0">
+          <div className="flex items-center gap-3 flex-wrap">
 
             {/* Layout de Colunas */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Layout:</span>
-              <div className="flex items-center gap-1 bg-[#101526] p-0.5 rounded-lg border border-white/[0.08]">
-                <button
-                  type="button"
-                  onClick={() => setColumns('2')}
-                  title="2 Colunas (Economiza até 60% de papel, mais questões por folha)"
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10.5px] font-bold transition-colors ${
-                    columns === '2'
-                      ? 'bg-indigo-600 text-white'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <Columns2 size={12} />
-                  <span>2 Colunas</span>
-                  <span className="text-[8.5px] bg-white/20 px-1 rounded uppercase tracking-wider">Máx</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setColumns('1')}
-                  title="1 Coluna tradicional"
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10.5px] font-bold transition-colors ${
-                    columns === '1'
-                      ? 'bg-indigo-600 text-white'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <Square size={11} />
-                  <span>1 Coluna</span>
-                </button>
-              </div>
+            <div className="flex items-center gap-1 bg-[#101526] p-0.5 rounded-lg border border-white/[0.08]">
+              <button
+                type="button"
+                onClick={() => setColumns('2')}
+                title="2 Colunas (mais questões por folha)"
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-normal transition-colors ${
+                  columns === '2'
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Columns2 size={12} />
+                <span>2 Colunas</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setColumns('1')}
+                title="1 Coluna tradicional"
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-normal transition-colors ${
+                  columns === '1'
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Square size={11} />
+                <span>1 Coluna</span>
+              </button>
             </div>
 
-            {/* Densidade das Imagens */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tamanho:</span>
-              <div className="flex items-center gap-1 bg-[#101526] p-0.5 rounded-lg border border-white/[0.08]">
-                <button
-                  type="button"
-                  onClick={() => setImageDensity('compacto')}
-                  className={`px-2 py-1 rounded-md text-[10.5px] font-bold transition-colors ${
-                    imageDensity === 'compacto' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  Compacto
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setImageDensity('medio')}
-                  className={`px-2 py-1 rounded-md text-[10.5px] font-bold transition-colors ${
-                    imageDensity === 'medio' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  Médio
-                </button>
-              </div>
+            {/* Densidade */}
+            <div className="flex items-center gap-1 bg-[#101526] p-0.5 rounded-lg border border-white/[0.08]">
+              <button
+                type="button"
+                onClick={() => setImageDensity('ultra')}
+                className={`px-2 py-1 rounded-md text-[11px] font-normal transition-colors ${
+                  imageDensity === 'ultra' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Máx/Folha
+              </button>
+              <button
+                type="button"
+                onClick={() => setImageDensity('compacto')}
+                className={`px-2 py-1 rounded-md text-[11px] font-normal transition-colors ${
+                  imageDensity === 'compacto' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Compacto
+              </button>
+              <button
+                type="button"
+                onClick={() => setImageDensity('medio')}
+                className={`px-2 py-1 rounded-md text-[11px] font-normal transition-colors ${
+                  imageDensity === 'medio' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Médio
+              </button>
             </div>
 
             {/* Gabarito no final */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Gabarito:</span>
-              <div className="flex items-center gap-1 bg-[#101526] p-0.5 rounded-lg border border-white/[0.08]">
-                <button
-                  type="button"
-                  onClick={() => setGabaritoMode('completo')}
-                  title="Tabela de respostas + Resoluções completas na última folha"
-                  className={`px-2 py-1 rounded-md text-[10.5px] font-bold transition-colors ${
-                    gabaritoMode === 'completo' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  Completo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGabaritoMode('tabela')}
-                  title="Apenas a grade compacta de letras na última folha"
-                  className={`px-2 py-1 rounded-md text-[10.5px] font-bold transition-colors ${
-                    gabaritoMode === 'tabela' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  Tabela
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGabaritoMode('nenhum')}
-                  className={`px-2 py-1 rounded-md text-[10.5px] font-bold transition-colors ${
-                    gabaritoMode === 'nenhum' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  Sem
-                </button>
-              </div>
+            <div className="flex items-center gap-1 bg-[#101526] p-0.5 rounded-lg border border-white/[0.08]">
+              <button
+                type="button"
+                onClick={() => setGabaritoMode('tabela')}
+                title="Grade compacta de respostas"
+                className={`px-2 py-1 rounded-md text-[11px] font-normal transition-colors ${
+                  gabaritoMode === 'tabela' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Gabarito
+              </button>
+              <button
+                type="button"
+                onClick={() => setGabaritoMode('completo')}
+                title="Grade de respostas + Resoluções comentadas"
+                className={`px-2 py-1 rounded-md text-[11px] font-normal transition-colors ${
+                  gabaritoMode === 'completo' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                + Resoluções
+              </button>
+              <button
+                type="button"
+                onClick={() => setGabaritoMode('nenhum')}
+                className={`px-2 py-1 rounded-md text-[11px] font-normal transition-colors ${
+                  gabaritoMode === 'nenhum' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Sem
+              </button>
             </div>
+
+            {gabaritoMode !== 'nenhum' && (
+              <button
+                type="button"
+                onClick={() => setGabaritoNewPage(v => !v)}
+                className={`px-2 py-1 rounded-lg border text-[11px] font-normal transition-colors ${
+                  gabaritoNewPage
+                    ? 'bg-white/[0.08] border-white/[0.15] text-slate-200'
+                    : 'bg-[#101526] border-white/[0.08] text-slate-400 hover:text-slate-200'
+                }`}
+                title="Alternar entre imprimir gabarito na mesma folha ou em página separada"
+              >
+                {gabaritoNewPage ? 'Gab. separado' : 'Gab. junto'}
+              </button>
+            )}
 
           </div>
 
@@ -793,8 +789,12 @@ export function PrintNotionModal({
                   <Sparkles size={12} className="text-amber-400" />
                   Diagramação pronta: <strong>{questions.length} questões</strong> em <strong>{columns === '2' ? '2 Colunas' : '1 Coluna'}</strong>.
                 </span>
-                <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md font-bold">
-                  {gabaritoMode !== 'nenhum' ? 'Gabarito posicionado na última folha' : 'Sem folha de gabarito'}
+                <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md font-medium">
+                  {gabaritoMode === 'nenhum'
+                    ? 'Sem folha de gabarito'
+                    : gabaritoNewPage
+                    ? 'Gabarito em folha separada'
+                    : 'Gabarito compacto ao final'}
                 </span>
               </div>
 
@@ -853,7 +853,7 @@ export function PrintNotionModal({
         {/* ── Footer ── */}
         <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-white/[0.08] bg-[#111627] shrink-0">
           <span className="text-[10.5px] text-slate-400">
-            Dica: No diálogo de impressão do navegador, marque <em>"Gráficos de segundo plano"</em> para preservar linhas e badges.
+            Dica: No diálogo de impressão do navegador, marque <em>&ldquo;Gráficos de segundo plano&rdquo;</em> para preservar linhas divisórias.
           </span>
           <div className="flex items-center gap-2">
             <button

@@ -369,27 +369,27 @@ export default function QuestionResolver({
   const isWrong = showFeedback && selectedOption !== gabarito;
 
   return (
-    <div className="flex flex-col w-full bg-[#0b0d12] rounded-xl border border-white/[0.08] p-3 sm:p-5 relative">
+    <div className="flex flex-col w-full min-w-0 overflow-x-clip bg-[#0b0d12] rounded-xl border border-white/[0.08] p-2.5 sm:p-5 relative">
 
-      <div className="w-full flex flex-col">
+      <div className="w-full min-w-0 flex flex-col">
 
         {/* ── Top bar: progresso + navegação ── */}
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-3 shrink-0 px-1 sm:px-2 pb-2.5 border-b border-white/[0.08]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3 shrink-0 px-1 sm:px-2 pb-2.5 border-b border-white/[0.08]">
 
           {/* Esquerda: voltar + número + prova */}
-            <div className="flex items-center gap-2 min-w-0">
-            <button onClick={onBackToBank} className="text-slate-600 hover:text-white transition-colors p-1.5 sm:p-1 shrink-0">
-              <ArrowLeft size={17} />
+            <div className="flex items-start sm:items-center gap-2 min-w-0 w-full sm:w-auto">
+            <button onClick={onBackToBank} className="text-slate-500 hover:text-white transition-colors p-2 sm:p-1 shrink-0" aria-label="Voltar">
+              <ArrowLeft size={18} />
             </button>
             <div className="w-8 h-8 rounded-md bg-emerald-400/10 border border-emerald-300/20 flex items-center justify-center text-xs font-medium text-emerald-200 shrink-0">
               {questionIndex + 1}
             </div>
-            <div className="min-w-0">
-              <div className="text-[11px] font-semibold text-slate-300 max-w-[170px] sm:max-w-xs truncate">
+            <div className="min-w-0 flex-1">
+              <div className="text-xs sm:text-[11px] font-medium text-slate-200 break-words sm:max-w-xs sm:truncate">
                 {question.prova || "Simulado Padrão"}
                 {question.Ano ? ` · ${question.Ano}` : ""}
               </div>
-              <div className="text-[10px] text-slate-500 tabular-nums flex items-center gap-1.5 flex-wrap">
+              <div className="text-[11px] sm:text-[10px] text-slate-400 sm:text-slate-500 tabular-nums flex items-center gap-1.5 flex-wrap">
                 <span>ID {question.id}</span>
                 {(question.Ordem ?? question.ordem) !== undefined && (question.Ordem ?? question.ordem) !== null && (
                   <span className="text-indigo-300/90">· Ordem #{question.Ordem ?? question.ordem}</span>
@@ -408,13 +408,13 @@ export default function QuestionResolver({
           </div>
 
           {/* Direita: ações */}
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="flex flex-wrap items-center justify-between sm:justify-end gap-1.5 w-full sm:w-auto">
 
             {/* Imprimir */}
             <button
               onClick={() => setShowPrintModal(true)}
               title="Imprimir / gerar PDF"
-              className="px-2.5 py-1.5 rounded-lg border border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200 text-[11px] font-medium transition-colors flex items-center gap-1.5"
+              className="min-h-[36px] sm:min-h-0 px-2.5 py-1.5 rounded-lg border border-white/[0.08] hover:bg-white/[0.04] text-slate-300 sm:text-slate-400 hover:text-slate-200 text-xs sm:text-[11px] font-medium transition-colors flex items-center gap-1.5"
             >
               <Printer size={13} /> Imprimir
             </button>
@@ -423,10 +423,10 @@ export default function QuestionResolver({
             <div className="relative">
               <button
                 onClick={() => setShowHistory(!showHistory)}
-                className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-medium transition-colors flex items-center gap-1.5 ${
+                className={`min-h-[36px] sm:min-h-0 px-2.5 py-1.5 rounded-lg border text-xs sm:text-[11px] font-medium transition-colors flex items-center gap-1.5 ${
                   showHistory
                     ? "border-blue-500/30 bg-blue-500/10 text-blue-300"
-                    : "border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200"
+                    : "border-white/[0.08] hover:bg-white/[0.04] text-slate-300 sm:text-slate-400 hover:text-slate-200"
                 }`}
               >
                 Histórico <ChevronDown size={11} className={showHistory ? "rotate-180" : ""} />
@@ -469,15 +469,15 @@ export default function QuestionResolver({
             </div>
 
             {/* Progresso + Prev/Next */}
-            <div className="flex items-center gap-1 bg-white/[0.03] border border-white/[0.06] rounded-lg px-1.5 py-0.5 sm:px-2 sm:py-1">
-              <button onClick={handlePrev} disabled={questionIndex === 0} aria-label="Questão anterior" className="p-1.5 sm:p-0.5 text-slate-500 hover:text-white disabled:opacity-25 transition-colors">
-                <ChevronLeft size={16} className="sm:w-[15px] sm:h-[15px]" />
+            <div className="flex items-center gap-1 bg-white/[0.03] border border-white/[0.06] rounded-lg px-2 py-1 ml-auto sm:ml-0">
+              <button onClick={handlePrev} disabled={questionIndex === 0} aria-label="Questão anterior" className="p-1.5 sm:p-0.5 text-slate-400 hover:text-white disabled:opacity-25 transition-colors">
+                <ChevronLeft size={17} className="sm:w-[15px] sm:h-[15px]" />
               </button>
-              <span className="text-[11px] font-medium text-slate-500 tabular-nums min-w-[2.75rem] sm:min-w-[3rem] text-center">
+              <span className="text-xs sm:text-[11px] font-medium text-slate-300 sm:text-slate-500 tabular-nums min-w-[3rem] text-center">
                 {questionIndex + 1} / {totalQuestions}
               </span>
-              <button onClick={handleNext} disabled={questionIndex === totalQuestions - 1} aria-label="Próxima questão" className="p-1.5 sm:p-0.5 text-slate-500 hover:text-white disabled:opacity-25 transition-colors">
-                <ChevronRight size={16} className="sm:w-[15px] sm:h-[15px]" />
+              <button onClick={handleNext} disabled={questionIndex === totalQuestions - 1} aria-label="Próxima questão" className="p-1.5 sm:p-0.5 text-slate-400 hover:text-white disabled:opacity-25 transition-colors">
+                <ChevronRight size={17} className="sm:w-[15px] sm:h-[15px]" />
               </button>
             </div>
 
@@ -485,11 +485,11 @@ export default function QuestionResolver({
         </div>
 
         {/* ── Content / Split View Container ── */}
-        <div className="flex flex-col lg:flex-row gap-4 w-full">
+        <div className="flex flex-col lg:flex-row gap-4 w-full min-w-0">
 
           {/* Coluna Esquerda: Resolução da Questão */}
-          <div className={`w-full ${splitView ? "lg:w-1/2" : ""}`}>
-            <div className={`${splitView ? "w-full" : "w-full max-w-4xl mx-auto"} rounded-2xl border border-white/[0.07] bg-[#101319] p-4 sm:p-7 shadow-xl`}>
+          <div className={`w-full min-w-0 ${splitView ? "lg:w-1/2" : ""}`}>
+            <div className={`${splitView ? "w-full" : "w-full max-w-4xl mx-auto"} min-w-0 rounded-2xl border border-white/[0.07] bg-[#101319] p-3.5 sm:p-7 shadow-xl`}>
 
             {/* Barra de progresso fina */}
             <div className="h-0.5 bg-white/[0.06] rounded-full mb-2 overflow-hidden">
@@ -586,12 +586,12 @@ export default function QuestionResolver({
 
             {/* Texto de Apoio colapsável */}
             {textoApoio && showTextoApoio && (
-              <div className="overflow-hidden mb-6">
-                <div className="p-4 sm:p-5 rounded-xl bg-[#111623] border-l-[3px] border-blue-500 border border-white/[0.06]">
-                  <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-blue-400 mb-2.5">
+              <div className="overflow-hidden mb-5">
+                <div className="p-3.5 sm:p-5 rounded-xl bg-[#111623] border-l-[3px] border-blue-500 border border-white/[0.06]">
+                  <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-blue-400 mb-2">
                     <FileText size={12} /> Texto de Apoio
                   </div>
-                  <div className="text-[13.5px] text-slate-300 leading-relaxed">
+                  <div className="question-rich-text text-[14.5px] sm:text-[13.5px] text-slate-200/90 leading-relaxed break-words [overflow-wrap:anywhere]">
                     {formatQuestionText(textoApoio)}
                   </div>
                 </div>
@@ -600,14 +600,14 @@ export default function QuestionResolver({
 
             {/* ── Enunciado ── */}
             {question.title && question.title.trim() && (
-              <div className="text-xs sm:text-[13px] font-normal text-slate-200/75 leading-5 mb-2">
+              <div className="question-rich-text text-[15px] sm:text-[13.5px] font-normal text-slate-200/85 leading-relaxed mb-3 break-words [overflow-wrap:anywhere]">
                 {formatQuestionText(question.title)}
               </div>
             )}
 
             {/* Pergunta-Problema */}
             {question.perguntaProblema && question.perguntaProblema.trim() && question.perguntaProblema.trim() !== question.title?.trim() && (
-              <div className="text-xs sm:text-[13px] text-slate-200/75 font-normal leading-5 mb-2.5 pl-2.5 border-l border-white/15">
+              <div className="question-rich-text text-[15px] sm:text-[13.5px] text-slate-200/85 font-normal leading-relaxed mb-3.5 pl-3 border-l border-white/15 break-words [overflow-wrap:anywhere]">
                 {formatQuestionText(question.perguntaProblema)}
               </div>
             )}
@@ -683,17 +683,17 @@ export default function QuestionResolver({
                     key={letter}
                     onClick={() => handleSelect(letter)}
                     disabled={showFeedback || isAnulada}
-                    className={`w-full flex items-start gap-2.5 px-3 py-2.5 min-h-11 rounded-none text-left transition-colors duration-150 border-b border-white/[0.06] outline-none group ${
+                    className={`w-full flex items-start gap-3 px-3 sm:px-3.5 py-3 sm:py-2.5 min-h-[48px] sm:min-h-11 rounded-none text-left transition-colors duration-150 border-b border-white/[0.06] outline-none group ${
                       strikethroughs[letter] ? "opacity-30" : ""
                     } ${cardCls}`}
                   >
                     {/* Badge circular */}
-                    <div className={`w-6 h-6 rounded-sm border flex items-center justify-center shrink-0 text-[10px] font-normal mt-0.5 ${badgeCls}`}>
+                    <div className={`w-7 h-7 sm:w-6 sm:h-6 rounded-sm border flex items-center justify-center shrink-0 text-xs sm:text-[10px] font-normal mt-0.5 ${badgeCls}`}>
                       {letter}
                     </div>
 
                     {/* Texto */}
-                      <span className={`text-xs leading-[1.15rem] flex-1 font-normal pt-0.5 ${
+                      <span className={`question-rich-text text-[14px] sm:text-[12.5px] leading-relaxed flex-1 font-normal pt-0.5 break-words [overflow-wrap:anywhere] ${
                         strikethroughs[letter] ? "line-through text-slate-700" : textCls
                       }`}>
                       {formatQuestionText(text)}
@@ -721,7 +721,7 @@ export default function QuestionResolver({
                             : "text-slate-500 sm:text-slate-600 hover:text-rose-400 hover:bg-rose-500/5"
                         }`}
                       >
-                        <Scissors size={12} />
+                        <Scissors size={13} />
                       </span>
                     )}
                   </button>
@@ -730,10 +730,10 @@ export default function QuestionResolver({
             </div>
 
             {/* ── Botões de Ação ── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 pb-1 mt-3 border-t border-white/[0.05]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-3.5 pb-1 mt-3 border-t border-white/[0.05]">
               <label
                 onClick={() => onToggleDuvida?.(question.id)}
-                className="flex items-center gap-2 cursor-pointer group select-none"
+                className="flex items-center gap-2 cursor-pointer group select-none min-h-[36px] sm:min-h-0"
               >
                 <div className={`w-4 h-4 rounded border transition-colors flex items-center justify-center ${
                   isDuvida
@@ -744,8 +744,8 @@ export default function QuestionResolver({
                     <Check size={11} className="text-amber-400" />
                   )}
                 </div>
-                <span className={`text-[12px] transition-colors ${
-                  isDuvida ? "text-amber-400" : "text-slate-500 group-hover:text-slate-400"
+                <span className={`text-[13px] sm:text-[12px] transition-colors ${
+                  isDuvida ? "text-amber-400" : "text-slate-400 sm:text-slate-500 group-hover:text-slate-300"
                 }`}>
                   Fiquei em dúvida
                 </span>
@@ -753,7 +753,7 @@ export default function QuestionResolver({
 
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 {isAnulada ? (
-                  <span className="min-h-[40px] sm:min-h-0 px-3.5 py-2 rounded-lg text-xs font-medium bg-amber-500/10 text-amber-300 border border-amber-500/30 flex items-center justify-center gap-1.5 flex-1 sm:flex-initial cursor-not-allowed">
+                  <span className="min-h-[44px] sm:min-h-0 px-3.5 py-2 rounded-lg text-xs font-medium bg-amber-500/10 text-amber-300 border border-amber-500/30 flex items-center justify-center gap-1.5 flex-1 sm:flex-initial cursor-not-allowed">
                     <Ban size={13} />
                     Questão Anulada
                   </span>
@@ -761,7 +761,7 @@ export default function QuestionResolver({
                   <button
                     onClick={handleConfirm}
                     disabled={isSaving || !selectedOption}
-                    className={`min-h-[40px] sm:min-h-0 px-4 py-2 rounded-lg text-xs font-medium transition-colors flex-1 sm:flex-initial justify-center flex items-center ${
+                    className={`min-h-[44px] sm:min-h-0 px-4 py-2 rounded-lg text-[13px] sm:text-xs font-medium transition-colors flex-1 sm:flex-initial justify-center flex items-center ${
                       selectedOption
                         ? "bg-blue-600 hover:bg-blue-500 text-white"
                         : "bg-white/[0.04] text-slate-600 border border-white/[0.05] cursor-not-allowed"
@@ -773,17 +773,17 @@ export default function QuestionResolver({
 
                 <button
                   onClick={() => setShowFeedback(!showFeedback)}
-                  className="min-h-[40px] sm:min-h-0 px-3 py-2 rounded-lg border border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200 text-xs font-medium transition-colors"
+                  className="min-h-[44px] sm:min-h-0 px-3 py-2 rounded-lg border border-white/[0.08] hover:bg-white/[0.04] text-slate-300 sm:text-slate-400 hover:text-slate-200 text-[13px] sm:text-xs font-medium transition-colors"
                 >
                   {showFeedback ? "Ocultar gabarito" : "Ver gabarito"}
                 </button>
 
                 <button
                   onClick={() => setShowComment(!showComment)}
-                  className={`min-h-[40px] sm:min-h-0 px-3 py-2 rounded-lg border text-xs font-medium transition-colors flex items-center gap-2 ${
+                  className={`min-h-[44px] sm:min-h-0 px-3 py-2 rounded-lg border text-[13px] sm:text-xs font-medium transition-colors flex items-center gap-2 ${
                     showComment
                       ? "border-purple-500/30 bg-purple-500/10 text-purple-300"
-                      : "border-white/[0.08] hover:bg-white/[0.04] text-slate-400 hover:text-slate-200"
+                      : "border-white/[0.08] hover:bg-white/[0.04] text-slate-300 sm:text-slate-400 hover:text-slate-200"
                   }`}
                 >
                   <MessageSquare size={13} />
@@ -798,17 +798,17 @@ export default function QuestionResolver({
             {/* ── Comentário ── */}
             {showComment && (
               <div className="overflow-hidden">
-                <div className="mt-4 p-5 rounded-xl bg-[#111623] border-l-[3px] border-purple-500 border border-white/[0.06]">
+                <div className="mt-4 p-4 sm:p-5 rounded-xl bg-[#111623] border-l-[3px] border-purple-500 border border-white/[0.06]">
                   <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-purple-400 mb-3">
                     <BrainCircuit size={13} />
                     Comentário da questão
                   </div>
                   {comentarioTexto ? (
-                    <div className="text-[13.5px] text-[#D6D6D6] leading-relaxed">
+                    <div className="question-rich-text text-[14.5px] sm:text-[13.5px] text-[#D6D6D6] leading-relaxed break-words [overflow-wrap:anywhere]">
                       {formatQuestionText(comentarioTexto)}
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 text-[12px] text-slate-500">
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
                       <AlertCircle size={13} className="text-amber-400" />
                       Esta questão ainda não possui comentário cadastrado.
                     </div>

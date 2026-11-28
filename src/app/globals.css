@@ -12,11 +12,47 @@
 }
 
 html, body {
+  width: 100%;
+  max-width: 100%;
   overflow-x: clip;
-  max-width: 100vw;
+  overscroll-behavior-x: none;
+  -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
   /* Cor base suavizada — cinza confortável, sem branco puro */
   color: #B0B8C8;
+}
+
+button, a, select, input, textarea, label {
+  touch-action: manipulation;
+}
+
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+.question-rich-text img,
+.question-rich-text video,
+.question-rich-text svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.question-rich-text table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.question-rich-text pre,
+.question-rich-text code {
+  max-width: 100%;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 @theme inline {

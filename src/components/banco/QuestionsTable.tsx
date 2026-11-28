@@ -1049,7 +1049,7 @@ const MobileQuestionRow = memo(function MobileQuestionRow({
       }`}
     >
       <div className="flex items-start gap-3">
-        <div className="pt-0.5 shrink-0" onClick={e => e.stopPropagation()}>
+        <div className="pt-1 shrink-0" onClick={e => e.stopPropagation()}>
           <input
             type="checkbox"
             checked={!!isSelected}
@@ -1058,14 +1058,14 @@ const MobileQuestionRow = memo(function MobileQuestionRow({
           />
         </div>
         <div className="flex-1 min-w-0">
-          <span className="text-[9px] font-black text-blue-400 uppercase tracking-wider">{q.materia}</span>
-          <p className="text-xs font-bold text-slate-200 leading-relaxed mt-0.5 line-clamp-2">{q.title || q.perguntaProblema || "Sem enunciado"}</p>
+          <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider block truncate">{q.materia}</span>
+          <p className="text-sm font-normal text-slate-100 leading-relaxed mt-0.5 line-clamp-3 break-words">{q.title || q.perguntaProblema || "Sem enunciado"}</p>
         </div>
       </div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${statusCfg.bg}`}>
-            <span className={`w-1 h-1 rounded-full ${statusCfg.dot}`} />
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase border ${statusCfg.bg}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`} />
             {statusCfg.label}
           </span>
           {onToggleDuvida && (
@@ -1076,36 +1076,36 @@ const MobileQuestionRow = memo(function MobileQuestionRow({
                 onToggleDuvida(q.id);
               }}
               title={isDuvida ? "Em Dúvida" : "Marcar Dúvida"}
-              className={`p-2 rounded-lg text-xs transition-colors ${
+              className={`min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-xs transition-colors ${
                 isDuvida ? "text-amber-400 bg-amber-400/10" : "text-slate-500 hover:text-slate-400"
               }`}
             >
-              <Flag size={12} className={isDuvida ? "fill-amber-400" : ""} />
+              <Flag size={13} className={isDuvida ? "fill-amber-400" : ""} />
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {isAdmin && onEdit && (
             <button
               onClick={e => { e.stopPropagation(); onEdit(q); }}
               title="Editar questão (Admin)"
-              className="p-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-amber-400 transition-colors"
+              className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-amber-400 transition-colors"
             >
-              <Pencil size={12} />
+              <Pencil size={14} />
             </button>
           )}
           {isAdmin && onDelete && (
             <button
               onClick={e => { e.stopPropagation(); onDelete(q); }}
               title="Excluir questão (Admin)"
-              className="p-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+              className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
             >
-              <Trash2 size={12} />
+              <Trash2 size={14} />
             </button>
           )}
           <button
             onClick={e => { e.stopPropagation(); onSelect(q); }}
-            className={`px-3.5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+            className={`min-h-[38px] px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider ${
               isAnulada
                 ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
                 : 'bg-blue-600 text-white'
