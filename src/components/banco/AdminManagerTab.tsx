@@ -37,6 +37,7 @@ import { supabase, supabasePublic } from "../../lib/supabase";
 import { safeInsertQuestao, safeUpdateQuestoesByIds } from "../../lib/questoesMutation";
 import {
   getQuestionIds,
+  isQuestaoAnulada,
   matchesPlataforma,
   sortQuestoesByOrdem,
   type PlataformaFiltro,
@@ -266,9 +267,15 @@ const AdminQuestionRow = React.memo(function AdminQuestionRow({
         <div className="font-mono text-emerald-400">
           {q.Gabarito || q.respostaCorreta || "—"}
         </div>
-        <div className="text-slate-400 truncate max-w-[95px]">
-          {q.dificuldade || q.status || "—"}
-        </div>
+        {isQuestaoAnulada(q) ? (
+          <span className="inline-flex items-center px-1.5 py-0.5 mt-0.5 rounded text-[10px] font-medium text-amber-300 bg-amber-500/15 border border-amber-500/30">
+            Anulada
+          </span>
+        ) : (
+          <div className="text-slate-400 truncate max-w-[95px]">
+            {q.dificuldade || q.status || "—"}
+          </div>
+        )}
       </td>
       <td className="py-2 px-2.5 font-mono text-[10.5px] text-slate-400">
         <div className="truncate max-w-[115px]">
@@ -2599,9 +2606,16 @@ export default function AdminManagerTab({
                                   <div className="text-slate-200 truncate">
                                     {q.title || q.perguntaProblema || `Questão #${q.id}`}
                                   </div>
-                                  <div className="text-[11px] text-slate-500 truncate tabular-nums">
-                                    ID {q.id} · {getDisciplina(q)} · Gab:{" "}
-                                    {q.Gabarito || q.respostaCorreta || "—"}
+                                  <div className="text-[11px] text-slate-500 truncate tabular-nums flex items-center gap-1.5">
+                                    <span>
+                                      ID {q.id} · {getDisciplina(q)} · Gab:{" "}
+                                      {q.Gabarito || q.respostaCorreta || "—"}
+                                    </span>
+                                    {isQuestaoAnulada(q) && (
+                                      <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-medium text-amber-300 bg-amber-500/15 border border-amber-500/30 shrink-0">
+                                        Anulada
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                               </div>

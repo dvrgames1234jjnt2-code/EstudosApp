@@ -29,11 +29,13 @@ import {
   ExternalLink,
   Pencil,
   Columns2,
-  X
+  X,
+  Ban,
+  Check
 } from "lucide-react";
 import { PrintSimuladoModal } from "./PrintSimuladoModal";
 import type { BancoQuestion } from "./QuestionsTable";
-import { getQuestionIds } from "../../lib/questionService";
+import { getQuestionIds, isQuestaoAnulada } from "../../lib/questionService";
 
 interface QuestionResolverProps {
   question: BancoQuestion;
@@ -302,6 +304,7 @@ export default function QuestionResolver({
     question["Comentário"] ||
     (question as any).Comentario;
 
+  const isAnulada = isQuestaoAnulada(question);
   const alternativas: Record<string, string> = {};
   for (const letter of LETTERS) {
     const val = question[`Alternativa ${letter}` as keyof BancoQuestion] as string | undefined;
@@ -310,12 +313,12 @@ export default function QuestionResolver({
   const hasAlternativas = Object.keys(alternativas).length > 0;
 
   const handleSelect = (letter: string) => {
-    if (showFeedback || strikethroughs[letter]) return;
+    if (isAnulada || showFeedback || strikethroughs[letter]) return;
     setSelectedOption(letter);
   };
 
   const handleConfirm = async () => {
-    if (!selectedOption) return;
+    if (isAnulada || !selectedOption) return;
     const isCorrect = selectedOption === gabarito;
     await onAnswer(question.id, selectedOption, isCorrect);
     setShowFeedback(true);
@@ -340,7 +343,7 @@ export default function QuestionResolver({
   };
 
   const toggleStrikethrough = (letter: string) => {
-    if (showFeedback) return;
+    if (isAnulada || showFeedback) return;
     setStrikethroughs(prev => ({ ...prev, [letter]: !prev[letter] }));
   };
 
@@ -393,6 +396,12 @@ export default function QuestionResolver({
                 )}
                 {(question.Banca || question.banca) && (
                   <span className="text-slate-400">· {question.Banca || question.banca}</span>
+                )}
+                {isAnulada && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded">
+                    <Ban size={9} />
+                    Anulada
+                  </span>
                 )}
               </div>
             </div>
@@ -495,6 +504,12 @@ export default function QuestionResolver({
               <span className="text-[11px] font-normal text-slate-400 bg-white/[0.04] border border-white/[0.07] px-2.5 py-1 rounded-md">
                 {question.Disciplina || question.materia || "Geral"}
               </span>
+              {isAnulada && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-300 bg-amber-500/15 border border-amber-500/35 px-2.5 py-1 rounded-md">
+                  <Ban size={11} />
+                  Questão Anulada
+                </span>
+              )}
               {(question.Banca || question.banca) && (
                 <span className="text-[11px] font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-md">
                   {question.Banca || question.banca}
@@ -597,8 +612,18 @@ export default function QuestionResolver({
               </div>
             )}
 
+            {/* Aviso de Questão Anulada */}
+            {isAnulada && (
+              <div className="flex items-start sm:items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-amber-500/35 bg-amber-500/10 text-amber-200 mb-4 text-xs font-normal">
+                <Ban size={15} className="text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
+                <span>
+                  Questão anulada pela banca. Ela permanece visível na lista e aqui para consulta, mas não é possível respondê-la.
+                </span>
+              </div>
+            )}
+
             {/* Banner de Feedback */}
-            {showFeedback && selectedOption && (
+            {showFeedback && selectedOption && !isAnulada && (
               <div
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl border mb-5 text-[13px] font-medium ${
                   isCorrect
@@ -629,7 +654,11 @@ export default function QuestionResolver({
                 let badgeCls = "border-white/[0.10] text-slate-400/80 bg-black/10";
                 let textCls = "text-slate-200/75";
 
-                if (showFeedback) {
+                if (isAnulada) {
+                  cardCls = "bg-[#11161e]/80 border-transparent opacity-65 cursor-not-allowed";
+                  badgeCls = "border-amber-500/25 text-amber-300/80 bg-amber-500/[0.06]";
+                  textCls = "text-slate-400";
+                } else if (showFeedback) {
                   if (isCorrectAnswer) {
                       cardCls = "border-transparent bg-emerald-300/[0.08] cursor-default";
                     badgeCls = "border-emerald-300/40 text-emerald-200 bg-emerald-300/[0.08]";
@@ -653,7 +682,7 @@ export default function QuestionResolver({
                   <button
                     key={letter}
                     onClick={() => handleSelect(letter)}
-                    disabled={showFeedback}
+                    disabled={showFeedback || isAnulada}
                     className={`w-full flex items-start gap-2.5 px-3 py-2.5 min-h-11 rounded-none text-left transition-colors duration-150 border-b border-white/[0.06] outline-none group ${
                       strikethroughs[letter] ? "opacity-30" : ""
                     } ${cardCls}`}
@@ -671,15 +700,15 @@ export default function QuestionResolver({
                     </span>
 
                     {/* Ícones feedback */}
-                    {showFeedback && isCorrectAnswer && (
+                    {showFeedback && isCorrectAnswer && !isAnulada && (
                       <CheckCircle2 size={16} className="text-emerald-400 mt-1.5 shrink-0" />
                     )}
-                    {showFeedback && isSelected && !isCorrectAnswer && (
+                    {showFeedback && isSelected && !isCorrectAnswer && !isAnulada && (
                       <XCircle size={16} className="text-rose-400 mt-1.5 shrink-0" />
                     )}
 
                     {/* Cortar alternativa */}
-                    {!showFeedback && (
+                    {!showFeedback && !isAnulada && (
                       <span
                         role="button"
                         tabIndex={0}
@@ -712,9 +741,7 @@ export default function QuestionResolver({
                     : "border-white/[0.12] bg-transparent group-hover:bg-white/[0.04]"
                 }`}>
                   {isDuvida && (
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path d="M2 5l2.5 2.5L8 2.5" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
+                    <Check size={11} className="text-amber-400" />
                   )}
                 </div>
                 <span className={`text-[12px] transition-colors ${
@@ -725,7 +752,12 @@ export default function QuestionResolver({
               </label>
 
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                {!showFeedback && (
+                {isAnulada ? (
+                  <span className="min-h-[40px] sm:min-h-0 px-3.5 py-2 rounded-lg text-xs font-medium bg-amber-500/10 text-amber-300 border border-amber-500/30 flex items-center justify-center gap-1.5 flex-1 sm:flex-initial cursor-not-allowed">
+                    <Ban size={13} />
+                    Questão Anulada
+                  </span>
+                ) : !showFeedback && (
                   <button
                     onClick={handleConfirm}
                     disabled={isSaving || !selectedOption}

@@ -43,7 +43,8 @@ import {
   normalizeSimuladosConfig,
   type SimuladosConfig,
 } from "../../lib/simuladosConfig";
-import { normalizarQuestao, sortQuestoesByOrdem } from "../../lib/questionService";
+import { normalizarQuestao, sortQuestoesByOrdem, isQuestaoAnulada } from "../../lib/questionService";
+import { PWAInstallButton } from "../../components/PWAInstallButton";
 
 // ──────────────────────────────────────────────
 // Types
@@ -398,6 +399,9 @@ export default function BancoPage() {
   // ── Salvar resposta no historico_respostas ─
   const handleAnswer = async (questionId: any, answer: string, isCorrect: boolean) => {
     if (!user) return;
+    const targetQ =
+      questions.find((item) => String(item.id) === String(questionId)) ?? selectedQuestion;
+    if (isQuestaoAnulada(targetQ)) return;
     setIsSaving(true);
     const now   = new Date();
     const date  = now.toISOString().slice(0, 10);          // "2026-07-19"
@@ -596,6 +600,9 @@ export default function BancoPage() {
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          {/* Botão Baixar Aplicativo (PWA) */}
+          <PWAInstallButton />
+
           {/* Botão de Destaque Imprimir Simulado na Topbar */}
           <button
             onClick={() => setShowGlobalPrintModal(true)}

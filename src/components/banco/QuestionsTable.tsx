@@ -29,9 +29,11 @@ import {
   AlertTriangle,
   Loader2,
   Flag,
+  Ban,
+  Eye,
 } from 'lucide-react';
 import { supabase, supabasePublic } from '../../lib/supabase';
-import { getQuestionIds, matchesPlataforma, type PlataformaFiltro } from '../../lib/questionService';
+import { getQuestionIds, isQuestaoAnulada, matchesPlataforma, type PlataformaFiltro } from '../../lib/questionService';
 import { PrintSimuladoModal } from './PrintSimuladoModal';
 import { ImportJsonModal } from './ImportJsonModal';
 
@@ -224,13 +226,15 @@ export default function QuestionsTable({
       const matchesPlat = matchesPlataforma(q, plataformaFilter);
 
       const status = getStatus(q.id);
+      const isAnulada = isQuestaoAnulada(q);
       const isDuv = duvidas ? duvidas.has(String(q.id)) : false;
       const matchesStatus =
         statusFilter === 'Todos' ||
+        (statusFilter === 'Anulada' && isAnulada) ||
         (statusFilter === 'Duvidas' && isDuv) ||
-        (statusFilter === 'Acertadas' && status === 'Acertei') ||
-        (statusFilter === 'Erradas' && status === 'Errei') ||
-        (statusFilter === 'Pendente' && status === 'Pendente');
+        (statusFilter === 'Acertadas' && !isAnulada && status === 'Acertei') ||
+        (statusFilter === 'Erradas' && !isAnulada && status === 'Errei') ||
+        (statusFilter === 'Pendente' && !isAnulada && status === 'Pendente');
 
       return matchesSearch && matchesMateria && matchesProva && matchesPlat && matchesStatus;
     });
@@ -530,6 +534,7 @@ export default function QuestionsTable({
               onChange: setStatusFilter,
               options: [
                 { value: 'Todos', label: 'Status: Tudo' },
+                { value: 'Anulada', label: 'Status: Anuladas' },
                 { value: 'Duvidas', label: 'Status: Com Dúvida 🚩' },
                 { value: 'Acertadas', label: 'Acertadas' },
                 { value: 'Erradas', label: 'Erradas' },
@@ -886,8 +891,12 @@ const QuestionRow = memo(function QuestionRow({
   onToggleDuvida,
 }: any) {
   const status = getStatus(q.id);
+  const isAnulada = isQuestaoAnulada(q);
 
   const statusCfg = (() => {
+    if (isAnulada) {
+      return { bg: 'bg-amber-500/15 text-amber-300 border-amber-500/30', dot: 'bg-amber-400', label: 'Anulada', icon: <Ban size={10} /> };
+    }
     switch (status) {
       case 'Acertei': return { bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', dot: 'bg-emerald-500', label: 'Acertada', icon: <CheckCircle2 size={10} /> };
       case 'Errei': return { bg: 'bg-rose-500/10 text-rose-400 border-rose-500/20', dot: 'bg-rose-500', label: 'Incorreta', icon: <XCircle size={10} /> };
@@ -982,12 +991,20 @@ const QuestionRow = memo(function QuestionRow({
           <button
             onClick={() => onSelect(q)}
             className={`px-3 py-1.5 text-[10px] font-black rounded-lg uppercase tracking-wider flex items-center gap-1 ${
-              status === 'Pendente'
+              isAnulada
+                ? 'bg-amber-500/10 text-amber-300 border border-amber-500/25 hover:bg-amber-500/20'
+                : status === 'Pendente'
                 ? 'bg-blue-600 hover:bg-blue-700 text-white'
                 : 'bg-white/[0.05] text-slate-300 hover:bg-white/[0.1]'
             }`}
           >
-            {status === 'Pendente' ? <><Play size={9} fill="currentColor" /> Responder</> : <><RotateCcw size={9} /> Refazer</>}
+            {isAnulada ? (
+              <><Eye size={10} /> Ver</>
+            ) : status === 'Pendente' ? (
+              <><Play size={9} fill="currentColor" /> Responder</>
+            ) : (
+              <><RotateCcw size={9} /> Refazer</>
+            )}
           </button>
         </div>
       </td>
@@ -1012,7 +1029,11 @@ const MobileQuestionRow = memo(function MobileQuestionRow({
   onToggleDuvida,
 }: any) {
   const status = getStatus(q.id);
+  const isAnulada = isQuestaoAnulada(q);
   const statusCfg = (() => {
+    if (isAnulada) {
+      return { bg: 'bg-amber-500/15 text-amber-300 border-amber-500/30', dot: 'bg-amber-400', label: 'Anulada' };
+    }
     switch (status) {
       case 'Acertei': return { bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', dot: 'bg-emerald-500', label: 'Acertada' };
       case 'Errei': return { bg: 'bg-rose-500/10 text-rose-400 border-rose-500/20', dot: 'bg-rose-500', label: 'Incorreta' };
@@ -1084,9 +1105,13 @@ const MobileQuestionRow = memo(function MobileQuestionRow({
           )}
           <button
             onClick={e => { e.stopPropagation(); onSelect(q); }}
-            className="px-3.5 py-2 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest"
+            className={`px-3.5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+              isAnulada
+                ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                : 'bg-blue-600 text-white'
+            }`}
           >
-            {status === 'Pendente' ? 'Responder' : 'Refazer'}
+            {isAnulada ? 'Ver' : status === 'Pendente' ? 'Responder' : 'Refazer'}
           </button>
         </div>
       </div>

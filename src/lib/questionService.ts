@@ -164,6 +164,13 @@ export function sortQuestoesByOrdem<T extends Partial<BancoQuestion> & Record<st
   return [...list].sort(compareQuestoesByOrdem);
 }
 
+export function isQuestaoAnulada(q?: { status?: unknown; Status?: unknown } | null): boolean {
+  if (!q) return false;
+  const raw = String(q.status ?? q.Status ?? '').trim().toLowerCase();
+  if (!raw) return false;
+  return raw === 'anulada' || raw === 'anulado' || raw.includes('anulad');
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Normalização: linha do DB → BancoQuestionComPath
 // ─────────────────────────────────────────────────────────────────────────────

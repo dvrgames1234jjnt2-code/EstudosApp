@@ -18,9 +18,10 @@ import {
   X,
   AlertCircle,
   Circle,
+  Ban,
 } from "lucide-react";
 import type { BancoQuestion } from "./QuestionsTable";
-import { sortQuestoesByOrdem } from "../../lib/questionService";
+import { isQuestaoAnulada, sortQuestoesByOrdem } from "../../lib/questionService";
 import {
   DEFAULT_SIMULADOS_CONFIG,
   shouldShowBookInLibrary,
@@ -428,12 +429,24 @@ export default function SimuladosTab({
         }
 
         const total = orderedQuestions.length;
+        const answerableTotal = orderedQuestions.filter(
+          (q) => !isQuestaoAnulada(q) || Boolean(userAnswers[String(q.id)])
+        ).length;
         const errors = answered - correct;
-        const remaining = total - answered;
-        const progress = total > 0 ? Math.round((answered / total) * 100) : 0;
+        const remaining = Math.max(0, answerableTotal - answered);
+        const progress =
+          answerableTotal > 0
+            ? Math.min(100, Math.round((answered / answerableTotal) * 100))
+            : total > 0
+            ? 100
+            : 0;
         const accuracy = answered > 0 ? Math.round((correct / answered) * 100) : 0;
         const status: StatusSimulado =
-          answered === 0 ? "nao_iniciado" : answered === total ? "concluido" : "em_andamento";
+          answered === 0
+            ? "nao_iniciado"
+            : answerableTotal > 0 && answered >= answerableTotal
+            ? "concluido"
+            : "em_andamento";
 
         const disciplinaPrincipal =
           discCounts.size > 1
@@ -584,7 +597,7 @@ export default function SimuladosTab({
   if (selectedBook) {
     const palette = getPaletteForBanca(selectedBook.banca, selectedBook.paletteIndex);
     const nextUnansweredIdx = selectedBook.questions.findIndex(
-      (q) => !userAnswers[String(q.id)]
+      (q) => !isQuestaoAnulada(q) && !userAnswers[String(q.id)]
     );
     const startIdx =
       selectedBook.status === "concluido" || nextUnansweredIdx < 0
@@ -753,7 +766,7 @@ export default function SimuladosTab({
               </p>
             </div>
 
-            <div className="flex items-center gap-4 text-xs text-slate-400">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs text-slate-400">
               <span className="inline-flex items-center gap-1.5">
                 <Check size={12} className="text-emerald-400" />
                 Acertou
@@ -761,6 +774,10 @@ export default function SimuladosTab({
               <span className="inline-flex items-center gap-1.5">
                 <AlertCircle size={12} className="text-rose-400" />
                 Errou
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Ban size={11} className="text-amber-400" />
+                Anulada
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Circle size={10} className="text-slate-500" />
@@ -772,6 +789,7 @@ export default function SimuladosTab({
           <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
             {selectedBook.questions.map((q, qi) => {
               const ans = userAnswers[String(q.id)];
+              const anulada = isQuestaoAnulada(q);
               const ordemNum = q.Ordem ?? q.ordem;
               const displayNumber =
                 ordemNum !== undefined && ordemNum !== null && String(ordemNum).trim() !== ""
@@ -781,7 +799,10 @@ export default function SimuladosTab({
 
               let cls =
                 "bg-white/[0.03] text-slate-300 border-white/[0.08] hover:bg-white/[0.08] hover:border-white/20";
-              if (ans) {
+              if (anulada) {
+                cls =
+                  "bg-amber-500/15 text-amber-300 border-amber-500/35 hover:bg-amber-500/25";
+              } else if (ans) {
                 cls = ans.isCorrect
                   ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/35 hover:bg-emerald-500/25"
                   : "bg-rose-500/15 text-rose-300 border-rose-500/35 hover:bg-rose-500/25";
@@ -792,10 +813,12 @@ export default function SimuladosTab({
                   key={q.id}
                   type="button"
                   onClick={() => onStartSimulado(selectedBook.questions, qi)}
-                  title={`Questão ${displayNumber} · ${disc}`}
+                  title={`Questão ${displayNumber} · ${disc}${anulada ? " · Anulada" : ""}`}
                   className={`min-h-[42px] px-2 py-1.5 rounded-xl border text-xs font-mono tabular-nums transition-colors flex items-center justify-center gap-1.5 ${cls}`}
                 >
-                  {ans ? (
+                  {anulada ? (
+                    <Ban size={11} className="text-amber-400 shrink-0" />
+                  ) : ans ? (
                     ans.isCorrect ? (
                       <Check size={11} className="text-emerald-400 shrink-0" />
                     ) : (

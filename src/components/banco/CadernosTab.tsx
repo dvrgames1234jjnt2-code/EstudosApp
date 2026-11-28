@@ -40,6 +40,7 @@ import {
   Printer,
   AlertTriangle,
   FileJson,
+  Ban,
 } from "lucide-react";
 import type { BancoQuestion } from "./QuestionsTable";
 import QuestionResolver from "./QuestionResolver";
@@ -47,6 +48,7 @@ import { supabase, supabasePublic } from "../../lib/supabase";
 import {
   compareQuestoesByOrdem,
   getQuestionIds,
+  isQuestaoAnulada,
   matchesPlataforma,
   sortQuestoesByOrdem,
   type PlataformaFiltro,
@@ -302,8 +304,9 @@ const QuestaoRowItem = React.memo(function QuestaoRowItem({
   const categoryInfo = CATEGORIES.find(c => c.key === catKey);
   const catLabel = displayedQuestion.dificuldade || categoryInfo?.label || "Média";
   const catColor = categoryInfo?.textColor || "#c69238";
-  const isErro = stats?.isCorrect === false;
-  const isAcerto = stats?.isCorrect === true;
+  const isAnulada = isQuestaoAnulada(questao);
+  const isErro = !isAnulada && stats?.isCorrect === false;
+  const isAcerto = !isAnulada && stats?.isCorrect === true;
   const errorCount = stats?.errorCount || 0;
   const ordemVal = questao.Ordem ?? questao.ordem;
   const bancaVal = (questao.Banca || questao.banca || "").trim();
@@ -357,7 +360,12 @@ const QuestaoRowItem = React.memo(function QuestaoRowItem({
         {/* No mobile, Status + Ações ficam alinhados no topo direito do card */}
         <div className="flex md:hidden items-center gap-1.5 shrink-0">
           {isDuvida && <Flag size={10} className="fill-amber-400/90 text-amber-400/90 shrink-0" />}
-          {isErro ? (
+          {isAnulada ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-semibold text-amber-300 bg-amber-500/15 border border-amber-500/35 shrink-0">
+              <Ban size={10} className="text-amber-400 shrink-0" />
+              Anulada
+            </span>
+          ) : isErro ? (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-semibold text-rose-300 bg-rose-950/60 border border-rose-500/35 tabular-nums">
               <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
               {errorCount > 1 ? `Errou ${errorCount}×` : "Errou"}
@@ -483,7 +491,12 @@ const QuestaoRowItem = React.memo(function QuestaoRowItem({
         {isDuvida && (
           <Flag size={10} className="fill-amber-400/90 text-amber-400/90 shrink-0" />
         )}
-        {isErro ? (
+        {isAnulada ? (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-semibold text-amber-300 bg-amber-500/15 border border-amber-500/35 shrink-0">
+            <Ban size={10} className="text-amber-400 shrink-0" />
+            Anulada
+          </span>
+        ) : isErro ? (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-semibold text-rose-300 bg-rose-950/60 border border-rose-500/35 shrink-0">
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
             {errorCount > 1 ? `Errou ${errorCount}×` : "Errou"}
