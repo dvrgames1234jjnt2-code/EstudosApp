@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef, useDeferredValue } from "react";
 import { createContext, useContext } from "react";
 import {
   ChevronRight,
@@ -45,6 +45,7 @@ import type { BancoQuestion } from "./QuestionsTable";
 import QuestionResolver from "./QuestionResolver";
 import { supabase, supabasePublic } from "../../lib/supabase";
 import {
+  compareQuestoesByOrdem,
   getQuestionIds,
   matchesPlataforma,
   sortQuestoesByOrdem,
@@ -108,12 +109,16 @@ interface CadernosTabProps {
   questions: BancoQuestion[];
   userAnswers: Record<string, QuestionStats>;
   duvidas: Set<string>;
+  initialOrgNodes?: OrgNodeDB[];
+  onOrgNodesChanged?: (nodes: OrgNodeDB[]) => void;
   onSelectQuestion: (q: BancoQuestion, queue: BancoQuestion[]) => void;
   onAnswer?: (questionId: any, answer: string, isCorrect: boolean) => Promise<void>;
   onToggleDuvida?: (questaoId: any) => Promise<void>;
   user: any;
   onShowAuth: () => void;
   onRefreshQuestions?: () => void;
+  onPatchQuestionsLocal?: (updates: { id: string | number; patch: Partial<BancoQuestion> }[]) => void;
+  onRemoveQuestionsLocal?: (ids: (string | number)[]) => void;
   isAdmin?: boolean;
   userId?: string;
 }
@@ -245,13 +250,15 @@ function PlatformIdsBadges({ questao, compact = false }: { questao: BancoQuestio
 // Componente: QuestaoRowItem — Colunas completas do Caderno de Erros
 // Ordem | Plataforma / IDs | Prova / Ano | Banca | Dificuldade | Erros / Status | Ações
 // ─────────────────────────────────────────────────────────────────────────────
-function QuestaoRowItem({
+const QuestaoRowItem = React.memo(function QuestaoRowItem({
   questao,
   numero,
   casoNome,
   stats,
   isDuvida,
   onOpenResolver,
+  onOpenQuestion,
+  queue,
   isAdmin,
   onEdit,
   onMove,
@@ -262,7 +269,9 @@ function QuestaoRowItem({
   casoNome: string;
   stats?: QuestionStats;
   isDuvida: boolean;
-  onOpenResolver: () => void;
+  onOpenResolver?: () => void;
+  onOpenQuestion?: (q: BancoQuestion, queue: BancoQuestion[]) => void;
+  queue?: BancoQuestion[];
   isAdmin?: boolean;
   onEdit?: (q: BancoQuestion) => void;
   onMove?: (q: BancoQuestion) => void;
@@ -321,7 +330,10 @@ function QuestaoRowItem({
         e.dataTransfer.setData("questao_id", String(questao.id));
         e.dataTransfer.effectAllowed = "move";
       }}
-      onClick={onOpenResolver}
+      onClick={() => {
+        if (onOpenQuestion && queue) onOpenQuestion(questao, queue);
+        else onOpenResolver?.();
+      }}
       className={`flex flex-col md:grid md:grid-cols-[54px_minmax(130px,1.2fr)_minmax(115px,1fr)_minmax(90px,0.85fr)_110px_118px_auto] md:items-center gap-1.5 md:gap-2.5 py-2 md:py-1.5 px-2.5 transition-colors duration-150 rounded-lg group cursor-pointer select-none border ${
         isErro
           ? "bg-rose-500/[0.045] hover:bg-rose-500/[0.085] border-rose-500/20 hover:border-rose-500/35"
@@ -526,7 +538,7 @@ function QuestaoRowItem({
       )}
     </div>
   );
-}
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Componente: Árvore Recursiva de Pastas (Exatamente o print do usuário!)
@@ -535,9 +547,10 @@ function QuestaoRowItem({
 //         📁 Underwriting
 //             📄 123456
 // ─────────────────────────────────────────────────────────────────────────────
-function TreeNodeItem({
+const TreeNodeItem = React.memo(function TreeNodeItem({
   node,
   depth = 0,
+  ancestors,
   userAnswers,
   duvidas,
   onOpenQuestion,
@@ -554,6 +567,7 @@ function TreeNodeItem({
 }: {
   node: HierarchyTreeNode;
   depth?: number;
+  ancestors?: Set<string>;
   userAnswers: Record<string, QuestionStats>;
   duvidas: Set<string>;
   onOpenQuestion: (q: BancoQuestion, queue: BancoQuestion[]) => void;
@@ -568,8 +582,17 @@ function TreeNodeItem({
   onChangeDifficulty?: (q: BancoQuestion, difficulty: string) => Promise<void>;
   getQuestionWithCurrentDifficulty: (q: BancoQuestion) => BancoQuestion;
 }) {
-  const [isOpen, setIsOpen] = useState(depth === 0);
+  const [isOpen, setIsOpen] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [visibleQuestionsLimit, setVisibleQuestionsLimit] = useState(60);
+
+  const nextAncestors = useMemo(() => {
+    const next = new Set(ancestors);
+    next.add(node.id);
+    return next;
+  }, [ancestors, node.id]);
+
+  if (ancestors?.has(node.id)) return null;
 
   const hasChildren = node.filhos.length > 0 || node.questoes.length > 0;
 
@@ -719,6 +742,7 @@ function TreeNodeItem({
               key={filho.id}
               node={filho}
               depth={depth + 1}
+              ancestors={nextAncestors}
               userAnswers={userAnswers}
               duvidas={duvidas}
               onOpenQuestion={onOpenQuestion}
@@ -735,8 +759,8 @@ function TreeNodeItem({
             />
           ))}
 
-          {/* Questões diretamente vinculadas a este nó */}
-          {node.questoes.map((q) => {
+          {/* Questões diretamente vinculadas a este nó (com renderização progressiva) */}
+          {node.questoes.slice(0, visibleQuestionsLimit).map((q) => {
             q = getQuestionWithCurrentDifficulty(q);
             const catKey = resolveCategory(q);
             const catInfo = CATEGORIES.find(c => c.key === catKey);
@@ -777,29 +801,58 @@ function TreeNodeItem({
                 </div>
 
                 {isAcerto && (
-                  <span className="text-[9px] font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.2 rounded-full shrink-0">
+                  <span className="text-[9px] font-normal text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.2 rounded-full shrink-0">
                     Acertou
                   </span>
                 )}
                 {isErro && (
-                  <span className="text-[9px] font-bold text-rose-400 bg-rose-950/40 border border-rose-800/40 px-2 py-0.2 rounded-full shrink-0">
+                  <span className="text-[9px] font-normal text-rose-400 bg-rose-950/40 border border-rose-800/40 px-2 py-0.2 rounded-full shrink-0">
                     Errou
                   </span>
                 )}
               </div>
             );
           })}
+
+          {node.questoes.length > visibleQuestionsLimit && (
+            <div
+              style={{ paddingLeft: `${Math.min(depth + 1, 4) * 10 + 6}px` }}
+              className="flex items-center gap-2 py-1.5"
+            >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setVisibleQuestionsLimit(v => v + 80);
+                }}
+                className="px-2.5 py-1 rounded-md bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-[10px] font-normal text-slate-300 transition-colors"
+              >
+                Mostrar mais (+{Math.min(80, node.questoes.length - visibleQuestionsLimit)} de {node.questoes.length - visibleQuestionsLimit})
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setVisibleQuestionsLimit(node.questoes.length);
+                }}
+                className="px-2 py-1 rounded-md text-[10px] font-normal text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                Exibir todas ({node.questoes.length})
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
-}
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Componente: CasoAccordion (Caso / Subpasta que é Drop Target no modo Notion)
 // ─────────────────────────────────────────────────────────────────────────────
-function CasoAccordion({
+const CasoAccordion = React.memo(function CasoAccordion({
   caso,
+  caderno,
   index,
   userAnswers,
   duvidas,
@@ -818,6 +871,7 @@ function CasoAccordion({
   onOpenMoverCaso,
 }: {
   caso: CasoGroup;
+  caderno?: CadernoItem;
   index: number;
   userAnswers: Record<string, QuestionStats>;
   duvidas: Set<string>;
@@ -833,10 +887,11 @@ function CasoAccordion({
   onAddSubfolder?: (casoId: string) => void;
   onDeleteCaso?: (casoId: string, casoNome: string, questoes?: BancoQuestion[]) => void;
   onPrintCaso?: (caso: CasoGroup) => void;
-  onOpenMoverCaso?: (caso: CasoGroup) => void;
+  onOpenMoverCaso?: (caso: CasoGroup, caderno?: CadernoItem) => void;
 }) {
   const [isOpen, setIsOpen] = useState(index === 0);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [visibleLimit, setVisibleLimit] = useState(60);
 
   const stats = useMemo(() => {
     let acertos = 0;
@@ -950,8 +1005,8 @@ function CasoAccordion({
                   <span
                     role="button"
                     tabIndex={0}
-                    onClick={() => onOpenMoverCaso(caso)}
-                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpenMoverCaso(caso); } }}
+                    onClick={() => onOpenMoverCaso(caso, caderno)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpenMoverCaso(caso, caderno); } }}
                     title="Mover este subcaso para outro caderno"
                     className="inline-flex items-center gap-1 px-2 sm:px-1.5 py-1 sm:py-0.5 rounded bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/25 text-[10px] sm:text-[9.5px] font-normal text-indigo-300 transition-colors cursor-pointer"
                   >
@@ -1062,7 +1117,7 @@ function CasoAccordion({
                 <span className="text-right">Ações</span>
               </div>
 
-              {caso.questoes.map((sourceQuestion, qIdx) => {
+              {caso.questoes.slice(0, visibleLimit).map((sourceQuestion, qIdx) => {
                 const q = getQuestionWithCurrentDifficulty(sourceQuestion);
                 return (
                 <QuestaoRowItem
@@ -1072,7 +1127,8 @@ function CasoAccordion({
                   casoNome={caso.nome}
                   stats={userAnswers[String(q.id)]}
                   isDuvida={duvidas.has(String(q.id))}
-                  onOpenResolver={() => onOpenQuestion(q, caso.questoes)}
+                  onOpenQuestion={onOpenQuestion}
+                  queue={caso.questoes}
                   isAdmin={isAdmin}
                   onEdit={onEditQuestao}
                   onMove={onMoveQuestao}
@@ -1081,13 +1137,32 @@ function CasoAccordion({
                 />
                 );
               })}
+
+              {caso.questoes.length > visibleLimit && (
+                <div className="flex items-center justify-center gap-2 pt-2 pb-1">
+                  <button
+                    type="button"
+                    onClick={() => setVisibleLimit(v => v + 80)}
+                    className="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-[11px] font-normal text-slate-300 transition-colors"
+                  >
+                    Mostrar mais (+{Math.min(80, caso.questoes.length - visibleLimit)} de {caso.questoes.length - visibleLimit})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVisibleLimit(caso.questoes.length)}
+                    className="px-2.5 py-1.5 rounded-lg text-[11px] font-normal text-indigo-400 hover:text-indigo-300 transition-colors"
+                  >
+                    Exibir todas ({caso.questoes.length})
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
       )}
     </div>
   );
-}
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Componente: CadernoDedicatedView (Tela focada no Caderno com filtro de Plataforma e Erros)
@@ -1135,7 +1210,7 @@ function CadernoDedicatedView({
   onPrintCaderno?: (caderno: CadernoItem) => void;
   onPrintCaso?: (caso: CasoGroup) => void;
   onDeleteCaderno?: (caderno: CadernoItem) => void;
-  onOpenMoverCaso?: (caso: CasoGroup, caderno: CadernoItem) => void;
+  onOpenMoverCaso?: (caso: CasoGroup, caderno?: CadernoItem) => void;
   plataformaFiltro: PlataformaFiltro;
   onChangePlataformaFiltro: (plat: PlataformaFiltro) => void;
 }) {
@@ -1421,6 +1496,7 @@ function CadernoDedicatedView({
               <CasoAccordion
                 key={caso.id}
                 caso={caso}
+                caderno={caderno}
                 index={idx}
                 userAnswers={userAnswers}
                 duvidas={duvidas}
@@ -1436,7 +1512,7 @@ function CadernoDedicatedView({
                 onAddSubfolder={onOpenNovaPastaModal}
                 onDeleteCaso={onDeleteCaso}
                 onPrintCaso={onPrintCaso}
-                onOpenMoverCaso={onOpenMoverCaso ? (c) => onOpenMoverCaso(c, caderno) : undefined}
+                onOpenMoverCaso={onOpenMoverCaso}
               />
             ))}
           </div>
@@ -1604,6 +1680,8 @@ export default function CadernosTab({
   questions,
   userAnswers,
   duvidas,
+  initialOrgNodes,
+  onOrgNodesChanged,
   onSelectQuestion,
   onAnswer,
   onToggleDuvida,
@@ -1611,6 +1689,8 @@ export default function CadernosTab({
   userId,
   onShowAuth,
   onRefreshQuestions,
+  onPatchQuestionsLocal,
+  onRemoveQuestionsLocal,
   isAdmin = false,
 }: CadernosTabProps) {
   const [selectedCadernoId, setSelectedCadernoId] = useState<string | null>(null);
@@ -1620,6 +1700,8 @@ export default function CadernosTab({
   const [bancaFiltro, setBancaFiltro] = useState<string>("Todas");
   const [statusFiltro, setStatusFiltro] = useState<"todas" | "erros" | "mais_erros" | "nao_feitas" | "duvidas">("todas");
   const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
+  const [expandedCasosView, setExpandedCasosView] = useState<Set<string>>(() => new Set());
 
   // Alternante de matérias: guarda quais estão ABERTAS (Set vazio = todas fechadas por padrão)
   const [materiasAbertas, setMateriasAbertas] = useState<Set<string>>(new Set());
@@ -1667,7 +1749,9 @@ export default function CadernosTab({
   const [painelCadernosAbertos, setPainelCadernosAbertos] = useState<Set<string>>(() => new Set());
 
   // Estado dos nós de organização carregados do Supabase
-  const [dbNodes, setDbNodes] = useState<OrgNodeDB[]>([]);
+  const [dbNodes, setDbNodes] = useState<OrgNodeDB[]>(() => initialOrgNodes || []);
+  const [questionToDelete, setQuestionToDelete] = useState<BancoQuestion | null>(null);
+  const [deletingSingleQuestion, setDeletingSingleQuestion] = useState(false);
   const [difficultyOverrides, setDifficultyOverrides] = useState<Map<string, string>>(new Map());
   const [isNovaPastaModalOpen, setIsNovaPastaModalOpen] = useState(false);
   const [isImportJsonOpen, setIsImportJsonOpen] = useState(false);
@@ -1734,8 +1818,11 @@ export default function CadernosTab({
 
   const handlePrintNode = useCallback((node: HierarchyTreeNode) => {
     const allNodeQuestions: BancoQuestion[] = [...node.questoes];
+    const visited = new Set<string>([node.id]);
     function collect(n: HierarchyTreeNode) {
       for (const child of n.filhos) {
+        if (visited.has(child.id)) continue;
+        visited.add(child.id);
         allNodeQuestions.push(...child.questoes);
         collect(child);
       }
@@ -1766,16 +1853,26 @@ export default function CadernosTab({
       }
 
       if (!res.error && res.data) {
-        setDbNodes(res.data as OrgNodeDB[]);
+        const loaded = res.data as OrgNodeDB[];
+        setDbNodes(loaded);
+        onOrgNodesChanged?.(loaded);
       }
     } catch (e) {
       console.warn("Aviso ao buscar organizacao_nos:", e);
     }
-  }, []);
+  }, [onOrgNodesChanged]);
 
   useEffect(() => {
-    carregarNos();
-  }, [carregarNos]);
+    if (initialOrgNodes && initialOrgNodes.length > 0 && dbNodes.length === 0) {
+      setDbNodes(initialOrgNodes);
+    }
+  }, [initialOrgNodes, dbNodes.length]);
+
+  useEffect(() => {
+    if (!initialOrgNodes || initialOrgNodes.length === 0) {
+      void carregarNos();
+    }
+  }, [carregarNos, initialOrgNodes]);
 
   // Handlers de Administração de Questões e Casos
   const handleEditQuestao = useCallback((q: BancoQuestion) => {
@@ -1786,11 +1883,13 @@ export default function CadernosTab({
   const handleEditSuccess = useCallback((updated: BancoQuestion) => {
     showToast("Questão atualizada com sucesso!");
     setModalQueue((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
-    if (modalQuestion && modalQuestion.id === updated.id) {
-      setModalQuestion(updated);
+    setModalQuestion((prev) => (prev && prev.id === updated.id ? updated : prev));
+    if (onPatchQuestionsLocal) {
+      onPatchQuestionsLocal([{ id: updated.id, patch: updated }]);
+    } else if (onRefreshQuestions) {
+      onRefreshQuestions();
     }
-    if (onRefreshQuestions) onRefreshQuestions();
-  }, [onRefreshQuestions, modalQuestion]);
+  }, [onPatchQuestionsLocal, onRefreshQuestions]);
 
   const handleChangeDifficulty = useCallback(async (question: BancoQuestion, difficulty: string) => {
     if (!userId) {
@@ -1862,9 +1961,14 @@ export default function CadernosTab({
       return next;
     });
     showToast(`Questão movida para "${targetNodeName}" com sucesso!`);
-    carregarNos();
-    if (onRefreshQuestions) onRefreshQuestions();
-  }, [movingQuestaoIds, carregarNos, onRefreshQuestions]);
+    if (onPatchQuestionsLocal) {
+      onPatchQuestionsLocal(
+        movingQuestaoIds.map((id) => ({ id, patch: { organizacao_id: targetNodeId } }))
+      );
+    } else if (onRefreshQuestions) {
+      onRefreshQuestions();
+    }
+  }, [movingQuestaoIds, onPatchQuestionsLocal, onRefreshQuestions]);
 
   const handleOpenRenameCaso = useCallback((casoId: string, currentNome: string) => {
     if (!isAdminState) return;
@@ -1873,9 +1977,13 @@ export default function CadernosTab({
 
   const handleRenameSuccess = useCallback((nodeId: string, newNome: string) => {
     showToast(`Pasta renomeada para "${newNome}" com sucesso!`);
-    carregarNos();
-    if (onRefreshQuestions) onRefreshQuestions();
-  }, [carregarNos, onRefreshQuestions]);
+    setDbNodes((prev) => {
+      const next = prev.map((n) => (String(n.id) === String(nodeId) ? { ...n, nome: newNome } : n));
+      onOrgNodesChanged?.(next);
+      return next;
+    });
+    void carregarNos();
+  }, [carregarNos, onOrgNodesChanged]);
 
   // Exclusão definitiva de questões em lotes seguros, limpando FKs (duvidas e historico_respostas)
   const deleteQuestionsPermanently = useCallback(async (qIds: (string | number)[]) => {
@@ -1910,25 +2018,31 @@ export default function CadernosTab({
     }
   }, []);
 
-  const handleDeleteQuestao = useCallback(async (q: BancoQuestion) => {
+  const handleDeleteQuestao = useCallback((q: BancoQuestion) => {
     if (!isAdminState) {
       showToast("Apenas administradores autorizados podem excluir questões.", "error");
       return;
     }
-    const confirmDel = window.confirm(
-      `Deseja realmente excluir a questão #${q.id}${(q as any).ID_Qconcursos ? ` (${(q as any).ID_Qconcursos})` : ""}? Esta ação não pode ser desfeita.`
-    );
-    if (!confirmDel) return;
+    setQuestionToDelete(q);
+  }, [isAdminState]);
 
+  const confirmDeleteSingleQuestion = useCallback(async () => {
+    if (!questionToDelete) return;
+    setDeletingSingleQuestion(true);
     try {
-      await deleteQuestionsPermanently([q.id]);
+      await deleteQuestionsPermanently([questionToDelete.id]);
       showToast("Questão excluída com sucesso!");
-      if (onRefreshQuestions) onRefreshQuestions();
+      const deletedId = questionToDelete.id;
+      setQuestionToDelete(null);
+      if (onRemoveQuestionsLocal) onRemoveQuestionsLocal([deletedId]);
+      else if (onRefreshQuestions) onRefreshQuestions();
     } catch (e: any) {
       console.error("Erro ao excluir questão:", e);
       showToast(e.message || "Erro ao excluir questão.", "error");
+    } finally {
+      setDeletingSingleQuestion(false);
     }
-  }, [isAdminState, deleteQuestionsPermanently, onRefreshQuestions]);
+  }, [questionToDelete, deleteQuestionsPermanently, onRemoveQuestionsLocal, onRefreshQuestions]);
 
   // Exclusão recursiva de nós em organizacao_nos (folhas primeiro para não violar parent_id_fkey)
   const deleteOrgNodeHierarchy = useCallback(async (rootNodeId: string, deleteLinkedQuestions = true) => {
@@ -2053,7 +2167,10 @@ export default function CadernosTab({
     const rootNode = unfilteredTreeRootsRef.current.find(r => r.id === mat.id);
     const allQuestions: BancoQuestion[] = [];
     if (rootNode) {
+      const visited = new Set<string>();
       const collect = (n: HierarchyTreeNode) => {
+        if (visited.has(n.id)) return;
+        visited.add(n.id);
         allQuestions.push(...n.questoes);
         for (const f of n.filhos) collect(f);
       };
@@ -2112,8 +2229,14 @@ export default function CadernosTab({
         : `${label} "${target.nome}" excluído(a)!`
     );
     await carregarNos();
-    if (onRefreshQuestions) onRefreshQuestions();
-  }, [isAdminState, selectedCadernoId, materiaFiltro, deleteQuestionsPermanently, deleteOrgNodeHierarchy, carregarNos, onRefreshQuestions]);
+    if (deleteQuestions && qCount > 0 && onRemoveQuestionsLocal) {
+      onRemoveQuestionsLocal(target.questoes.map(q => q.id));
+    } else if (!deleteQuestions && qCount > 0 && onPatchQuestionsLocal) {
+      onPatchQuestionsLocal(target.questoes.map(q => ({ id: q.id, patch: { organizacao_id: undefined } })));
+    } else if (onRefreshQuestions) {
+      onRefreshQuestions();
+    }
+  }, [isAdminState, selectedCadernoId, materiaFiltro, deleteQuestionsPermanently, deleteOrgNodeHierarchy, carregarNos, onRemoveQuestionsLocal, onPatchQuestionsLocal, onRefreshQuestions]);
 
   // Verifica se candidateId é descendente de ancestorId para impedir ciclos na árvore
   const isNodeDescendant = useCallback((ancestorId: string, candidateId: string): boolean => {
@@ -2292,30 +2415,28 @@ export default function CadernosTab({
     [plataformaFiltro, bancaFiltro, statusFiltro, userAnswers, duvidas]
   );
 
-  // ── 2. Montar Estrutura Hierárquica em Árvore Completa (preservando organizacao_nos) ──
-  const { treeRoots, unfilteredTreeRoots, materiasAgrupadas, unfilteredMaterias, todosCadernos, unfilteredCadernos, parentOptions } = useMemo(() => {
-    const hasActiveQuestionFilter =
-      plataformaFiltro !== "todas" || bancaFiltro !== "Todas" || statusFiltro !== "todas";
+  // ── 2. Montar Estrutura Hierárquica em Árvore Completa (com proteção anti-ciclo e cache separado) ──
+  const buildHierarchyFromQuestions = useCallback(
+    (sourceQuestions: BancoQuestion[], sortByErrors: boolean, answersMap: Record<string, QuestionStats>) => {
+      const sortList = (list: BancoQuestion[]) => {
+        if (sortByErrors) {
+          return [...list].sort((a, b) => {
+            const errDiff = (answersMap[String(b.id)]?.errorCount || 0) - (answersMap[String(a.id)]?.errorCount || 0);
+            if (errDiff !== 0) return errDiff;
+            return compareQuestoesByOrdem(a, b);
+          });
+        }
+        return sortQuestoesByOrdem(list);
+      };
 
-    const sortList = (list: BancoQuestion[]) => {
-      if (statusFiltro === "mais_erros") {
-        return [...list].sort((a, b) => {
-          const errDiff = (userAnswers[String(b.id)]?.errorCount || 0) - (userAnswers[String(a.id)]?.errorCount || 0);
-          if (errDiff !== 0) return errDiff;
-          return sortQuestoesByOrdem([a, b])[0] === a ? -1 : 1;
-        });
-      }
-      return sortQuestoesByOrdem(list);
-    };
-
-    const buildTree = (applyQuestionFilter: boolean) => {
       const nodeMap = new Map<string, HierarchyTreeNode>();
-
       dbNodes.forEach(n => {
-        nodeMap.set(String(n.id), {
-          id: String(n.id),
+        const idStr = String(n.id);
+        const parentStr = n.parent_id ? String(n.parent_id) : null;
+        nodeMap.set(idStr, {
+          id: idStr,
           nome: n.nome.trim(),
-          parent_id: n.parent_id ? String(n.parent_id) : null,
+          parent_id: parentStr && parentStr !== idStr ? parentStr : null,
           tipo: n.tipo,
           ordem: n.ordem ?? 0,
           filhos: [],
@@ -2325,27 +2446,57 @@ export default function CadernosTab({
       });
 
       const roots: HierarchyTreeNode[] = [];
+      const rootByLower = new Map<string, HierarchyTreeNode>();
+      const attachedIds = new Set<string>();
+
       nodeMap.forEach(node => {
         if (node.parent_id && nodeMap.has(node.parent_id)) {
           nodeMap.get(node.parent_id)!.filhos.push(node);
         } else {
           roots.push(node);
+          attachedIds.add(node.id);
+          const key = node.nome.toLowerCase();
+          if (!rootByLower.has(key)) rootByLower.set(key, node);
         }
       });
 
-      const sortChildren = (node: HierarchyTreeNode) => {
+      // Quebra eventuais ciclos desconexos em organizacao_nos promovendo o primeiro nó do ciclo para raiz
+      nodeMap.forEach(node => {
+        if (attachedIds.has(node.id)) return;
+        let curr: string | null = node.parent_id;
+        const seen = new Set<string>([node.id]);
+        let reachesRoot = false;
+        while (curr && nodeMap.has(curr)) {
+          if (attachedIds.has(curr)) {
+            reachesRoot = true;
+            break;
+          }
+          if (seen.has(curr)) break;
+          seen.add(curr);
+          curr = nodeMap.get(curr)!.parent_id;
+        }
+        if (!reachesRoot) {
+          node.parent_id = null;
+          roots.push(node);
+          attachedIds.add(node.id);
+        }
+      });
+
+      const sortChildren = (node: HierarchyTreeNode, visited = new Set<string>()) => {
+        if (visited.has(node.id)) return;
+        visited.add(node.id);
+        node.filhos = node.filhos.filter(child => !visited.has(child.id));
         node.filhos.sort((a, b) => {
           const orderA = a.ordem && a.ordem > 0 ? a.ordem : Number.MAX_SAFE_INTEGER;
           const orderB = b.ordem && b.ordem > 0 ? b.ordem : Number.MAX_SAFE_INTEGER;
           return orderA - orderB || a.nome.localeCompare(b.nome, "pt-BR");
         });
-        node.filhos.forEach(sortChildren);
+        node.filhos.forEach(child => sortChildren(child, visited));
       };
-      roots.forEach(sortChildren);
+      const sortVisited = new Set<string>();
+      roots.forEach(r => sortChildren(r, sortVisited));
 
       const unlinkedQuestions: BancoQuestion[] = [];
-      const sourceQuestions = applyQuestionFilter ? questions.filter(questionMatchesFilters) : questions;
-
       sourceQuestions.forEach(q => {
         const effectiveOrgId = orgOverrides.get(String(q.id)) || (q as any).organizacao_id;
         if (effectiveOrgId && nodeMap.has(String(effectiveOrgId))) {
@@ -2355,12 +2506,42 @@ export default function CadernosTab({
         }
       });
 
+      const cadByRootAndLower = new Map<string, Map<string, HierarchyTreeNode>>();
+      const casoByCadAndLower = new Map<string, Map<string, HierarchyTreeNode>>();
+
+      const getCadMap = (root: HierarchyTreeNode) => {
+        let m = cadByRootAndLower.get(root.id);
+        if (!m) {
+          m = new Map();
+          for (const f of root.filhos) {
+            const k = f.nome.toLowerCase();
+            if (!m.has(k)) m.set(k, f);
+          }
+          cadByRootAndLower.set(root.id, m);
+        }
+        return m;
+      };
+
+      const getCasoMap = (cad: HierarchyTreeNode) => {
+        let m = casoByCadAndLower.get(cad.id);
+        if (!m) {
+          m = new Map();
+          for (const f of cad.filhos) {
+            const k = f.nome.toLowerCase();
+            if (!m.has(k)) m.set(k, f);
+          }
+          casoByCadAndLower.set(cad.id, m);
+        }
+        return m;
+      };
+
       unlinkedQuestions.forEach(q => {
         const matName = (q.materia || (q as any).Disciplina || "Conhecimentos Bancários").trim();
-        let root = roots.find(r => r.nome.toLowerCase() === matName.toLowerCase());
+        const matLower = matName.toLowerCase();
+        let root = rootByLower.get(matLower);
         if (!root) {
           root = {
-            id: `root_virt_${matName.toLowerCase()}`,
+            id: `root_virt_${matLower}`,
             nome: matName,
             parent_id: null,
             tipo: "materia",
@@ -2371,13 +2552,16 @@ export default function CadernosTab({
           };
           roots.push(root);
           nodeMap.set(root.id, root);
+          rootByLower.set(matLower, root);
         }
 
         const cadName = ((q as any).topico || (q as any)["Tópico"] || q.tema || (q as any).PROVA || "Geral").trim();
-        let cad = root.filhos.find(f => f.nome.toLowerCase() === cadName.toLowerCase());
+        const cadLower = cadName.toLowerCase();
+        const cadMap = getCadMap(root);
+        let cad = cadMap.get(cadLower);
         if (!cad) {
           cad = {
-            id: `cad_virt_${root.id}_${cadName.toLowerCase()}`,
+            id: `cad_virt_${root.id}_${cadLower}`,
             nome: cadName,
             parent_id: root.id,
             tipo: "caderno",
@@ -2388,13 +2572,16 @@ export default function CadernosTab({
           };
           root.filhos.push(cad);
           nodeMap.set(cad.id, cad);
+          cadMap.set(cadLower, cad);
         }
 
         const casoName = ((q as any).assunto || (q as any)["Assunto"] || (q as any)["Pergunta problema"] || "Geral").trim();
-        let caso = cad.filhos.find(f => f.nome.toLowerCase() === casoName.toLowerCase());
+        const casoLower = casoName.toLowerCase();
+        const casoMap = getCasoMap(cad);
+        let caso = casoMap.get(casoLower);
         if (!caso) {
           caso = {
-            id: `caso_virt_${cad.id}_${casoName.toLowerCase()}`,
+            id: `caso_virt_${cad.id}_${casoLower}`,
             nome: casoName,
             parent_id: cad.id,
             tipo: "caso",
@@ -2405,27 +2592,34 @@ export default function CadernosTab({
           };
           cad.filhos.push(caso);
           nodeMap.set(caso.id, caso);
+          casoMap.set(casoLower, caso);
         }
 
         caso.questoes.push(q);
       });
 
-      const sortAndCount = (node: HierarchyTreeNode): number => {
+      const countVisited = new Set<string>();
+      const sortAndCount = (node: HierarchyTreeNode, filterEmpty: boolean): number => {
+        if (countVisited.has(node.id)) return 0;
+        countVisited.add(node.id);
         node.questoes = sortList(node.questoes);
         let total = node.questoes.length;
-        if (applyQuestionFilter) {
-          node.filhos = node.filhos.filter(child => sortAndCount(child) > 0);
+        if (filterEmpty) {
+          node.filhos = node.filhos.filter(child => sortAndCount(child, true) > 0);
           total = node.questoes.length + node.filhos.reduce((acc, c) => acc + c.questoes.length + c.totalDescendentesQuestoes, 0);
         } else {
           for (const child of node.filhos) {
-            total += sortAndCount(child);
+            total += sortAndCount(child, false);
           }
         }
         node.totalDescendentesQuestoes = total - node.questoes.length;
         return total;
       };
 
-      const finalRoots = applyQuestionFilter ? roots.filter(r => sortAndCount(r) > 0) : (roots.forEach(r => sortAndCount(r)), roots);
+      const filterEmpty = sourceQuestions.length < questions.length;
+      const finalRoots = filterEmpty
+        ? roots.filter(r => sortAndCount(r, true) > 0)
+        : (roots.forEach(r => sortAndCount(r, false)), roots);
 
       const materiasList: MateriaGroup[] = [];
       const cadernosList: CadernoItem[] = [];
@@ -2440,8 +2634,11 @@ export default function CadernosTab({
           if (cadNode.filhos.length > 0) {
             cadNode.filhos.forEach(casoNode => {
               const casoAllQuestions: BancoQuestion[] = [...casoNode.questoes];
+              const subVisited = new Set<string>([casoNode.id]);
               function collectSubQuestions(n: HierarchyTreeNode) {
                 for (const sub of n.filhos) {
+                  if (subVisited.has(sub.id)) continue;
+                  subVisited.add(sub.id);
                   casoAllQuestions.push(...sub.questoes);
                   collectSubQuestions(sub);
                 }
@@ -2499,12 +2696,13 @@ export default function CadernosTab({
       cadernosList.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 
       return { finalRoots, materiasList, cadernosList };
-    };
+    },
+    [dbNodes, orgOverrides, questions.length]
+  );
 
-    const rawTree = buildTree(false);
-    const filteredTree = hasActiveQuestionFilter ? buildTree(true) : rawTree;
-
-    // Opções completas de organizacao_nos para o select de criar pasta
+  // Árvore completa cacheada independentemente de respostas/filtros de usuário
+  const rawTreeData = useMemo(() => {
+    const rawTree = buildHierarchyFromQuestions(questions, false, userAnswers);
     const options: { id: string; nome: string; nivel: string }[] = [];
     rawTree.finalRoots.forEach(rn => {
       options.push({ id: rn.id, nome: rn.nome, nivel: "🏛️ [Matéria Raiz]" });
@@ -2515,17 +2713,27 @@ export default function CadernosTab({
         });
       });
     });
+    return { rawTree, parentOptions: options };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dbNodes, questions, orgOverrides]);
 
-    return {
-      treeRoots: filteredTree.finalRoots,
-      unfilteredTreeRoots: rawTree.finalRoots,
-      materiasAgrupadas: filteredTree.materiasList,
-      unfilteredMaterias: rawTree.materiasList,
-      todosCadernos: filteredTree.cadernosList,
-      unfilteredCadernos: rawTree.cadernosList,
-      parentOptions: options,
-    };
-  }, [dbNodes, questions, orgOverrides, plataformaFiltro, bancaFiltro, statusFiltro, questionMatchesFilters, userAnswers]);
+  const filteredTree = useMemo(() => {
+    const hasActiveQuestionFilter =
+      plataformaFiltro !== "todas" || bancaFiltro !== "Todas" || statusFiltro !== "todas";
+    if (!hasActiveQuestionFilter) {
+      return rawTreeData.rawTree;
+    }
+    const matched = questions.filter(questionMatchesFilters);
+    return buildHierarchyFromQuestions(matched, statusFiltro === "mais_erros", userAnswers);
+  }, [rawTreeData.rawTree, plataformaFiltro, bancaFiltro, statusFiltro, questions, questionMatchesFilters, buildHierarchyFromQuestions, userAnswers]);
+
+  const treeRoots = filteredTree.finalRoots;
+  const unfilteredTreeRoots = rawTreeData.rawTree.finalRoots;
+  const materiasAgrupadas = filteredTree.materiasList;
+  const unfilteredMaterias = rawTreeData.rawTree.materiasList;
+  const todosCadernos = filteredTree.cadernosList;
+  const unfilteredCadernos = rawTreeData.rawTree.cadernosList;
+  const parentOptions = rawTreeData.parentOptions;
 
   useEffect(() => {
     unfilteredCadernosRef.current = unfilteredCadernos;
@@ -2740,46 +2948,74 @@ export default function CadernosTab({
     }
   };
 
+  const classificationContextValue = useMemo(
+    () => ({ difficultyOverrides, onChangeDifficulty: handleChangeDifficulty }),
+    [difficultyOverrides, handleChangeDifficulty]
+  );
+
+  // Índice de busca pré-computado para evitar recalcular IDs/lowercase a cada tecla digitada
+  const questionSearchIndex = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const q of questions) {
+      const { idq, idg, idtec } = getQuestionIds(q);
+      const banca = String((q as any).Banca || (q as any).banca || "").toLowerCase();
+      const prova = String(q.prova || (q as any).PROVA || "").toLowerCase();
+      map.set(
+        String(q.id),
+        `${idq} ${idg} ${idtec} ${banca} ${prova}`.toLowerCase()
+      );
+    }
+    return map;
+  }, [questions]);
+
   // Filtragem de matérias (busca também por IDs QC/Gran/TEC, Banca e Prova)
   const materiasFiltradas = useMemo(() => {
-    const term = search.trim().toLowerCase();
+    const term = deferredSearch.trim().toLowerCase();
     return materiasAgrupadas.filter(m => {
       if (materiaFiltro !== "Todas" && m.nome !== materiaFiltro) return false;
       if (term) {
         const matchMateria = m.nome.toLowerCase().includes(term);
+        if (matchMateria) return true;
         const matchCaderno = m.cadernos.some(c => {
           if (c.nome.toLowerCase().includes(term)) return true;
-          return c.questoes.some(q => {
-            const { idq, idg, idtec } = getQuestionIds(q);
-            const banca = String((q as any).Banca || (q as any).banca || "").toLowerCase();
-            const prova = String(q.prova || (q as any).PROVA || "").toLowerCase();
-            return (
-              (idq && idq.toLowerCase().includes(term)) ||
-              (idg && idg.toLowerCase().includes(term)) ||
-              (idtec && idtec.toLowerCase().includes(term)) ||
-              banca.includes(term) ||
-              prova.includes(term)
-            );
-          });
+          return c.questoes.some(q => questionSearchIndex.get(String(q.id))?.includes(term));
         });
-        if (!matchMateria && !matchCaderno) return false;
+        if (!matchCaderno) return false;
       }
       return true;
     });
-  }, [materiasAgrupadas, materiaFiltro, search]);
+  }, [materiasAgrupadas, materiaFiltro, deferredSearch, questionSearchIndex]);
+
+  const handleOpenMoverCasoFromDedicated = useCallback((casoObj: CasoGroup, cad?: CadernoItem) => {
+    if (!cad) return;
+    setSubcasoToMove({
+      id: casoObj.id,
+      nome: casoObj.nome,
+      cadernoId: cad.id,
+      cadernoNome: cad.nome,
+      questoes: casoObj.questoes,
+    });
+  }, []);
+
+  const handleBackFromDedicated = useCallback(() => {
+    setSelectedCadernoId(null);
+    setCadernoFiltro("Todos");
+  }, []);
+
+  const handleOpenNovaPastaWithParent = useCallback((parentCadernoId: string) => {
+    setModalDefaultParentId(parentCadernoId);
+    setIsNovaPastaModalOpen(true);
+  }, []);
 
   // ── Se estiver na visão dedicada de um Caderno Selecionado ──
   if (selectedCaderno) {
     return (
       <div className="flex w-full max-w-[1200px] mx-auto flex-col gap-3 sm:gap-4 bg-[#080d1a] rounded-xl sm:rounded-2xl border border-white/[0.06] p-2.5 sm:p-5 relative overflow-hidden">
 
-          <QuestionClassificationContext.Provider value={{ difficultyOverrides, onChangeDifficulty: handleChangeDifficulty }}>
+          <QuestionClassificationContext.Provider value={classificationContextValue}>
           <CadernoDedicatedView
           caderno={selectedCaderno}
-          onBack={() => {
-            setSelectedCadernoId(null);
-            setCadernoFiltro("Todos");
-          }}
+          onBack={handleBackFromDedicated}
           userAnswers={userAnswers}
           duvidas={duvidas}
           onOpenQuestion={handleOpenQuestionInModal}
@@ -2791,10 +3027,7 @@ export default function CadernosTab({
             }
           }}
           onDropQuestion={handleDropQuestion}
-          onOpenNovaPastaModal={(parentCadernoId) => {
-            setModalDefaultParentId(parentCadernoId);
-            setIsNovaPastaModalOpen(true);
-          }}
+          onOpenNovaPastaModal={handleOpenNovaPastaWithParent}
           isAdmin={isAdminState}
           onEditQuestao={handleEditQuestao}
           onMoveQuestao={handleOpenMoveModal}
@@ -2806,15 +3039,7 @@ export default function CadernosTab({
           onPrintCaderno={handlePrintCaderno}
           onPrintCaso={handlePrintCaso}
           onDeleteCaderno={handleDeleteCaderno}
-          onOpenMoverCaso={(casoObj, cad) =>
-            setSubcasoToMove({
-              id: casoObj.id,
-              nome: casoObj.nome,
-              cadernoId: cad.id,
-              cadernoNome: cad.nome,
-              questoes: casoObj.questoes,
-            })
-          }
+          onOpenMoverCaso={handleOpenMoverCasoFromDedicated}
           plataformaFiltro={plataformaFiltro}
           onChangePlataformaFiltro={setPlataformaFiltro}
         />
@@ -2918,6 +3143,46 @@ export default function CadernosTab({
           subTitle={printModalData.subTitle}
         />
 
+        {/* Modal Confirmação Excluir Questão Individual */}
+        {questionToDelete && (
+          <div className="fixed inset-0 z-[115] flex items-center justify-center p-4 bg-black/80">
+            <div className="w-full max-w-md bg-[#0c1220] border border-rose-500/30 rounded-2xl p-5 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+                  <AlertTriangle size={18} />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-normal text-white">
+                    Excluir Questão #{questionToDelete.id}?
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1 line-clamp-3">
+                    {questionToDelete.title || questionToDelete.perguntaProblema || "Esta ação não pode ser desfeita."}
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.08]">
+                <button
+                  type="button"
+                  disabled={deletingSingleQuestion}
+                  onClick={() => setQuestionToDelete(null)}
+                  className="px-3.5 py-1.5 rounded-lg border border-white/[0.1] text-xs font-normal text-slate-300"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={deletingSingleQuestion}
+                  onClick={() => void confirmDeleteSingleQuestion()}
+                  className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-xs font-normal text-white flex items-center gap-1.5"
+                >
+                  <Trash2 size={13} />
+                  <span>{deletingSingleQuestion ? "Excluindo..." : "Excluir"}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Toast Notification */}
         {toastMsg && (
           <div
@@ -2940,7 +3205,7 @@ export default function CadernosTab({
   }
 
   return (
-    <QuestionClassificationContext.Provider value={{ difficultyOverrides, onChangeDifficulty: handleChangeDifficulty }}>
+    <QuestionClassificationContext.Provider value={classificationContextValue}>
     <div className="flex w-full max-w-[1200px] mx-auto flex-col gap-3 sm:gap-4 bg-[#0a0e18] rounded-xl sm:rounded-2xl border border-white/[0.07] p-2.5 sm:p-4 relative overflow-hidden">
 
       {/* ── Toolbar Superior: Caderno de Erros ── */}
@@ -3439,7 +3704,7 @@ export default function CadernosTab({
                                     </div>
                                   </div>
                                   <div className="mt-2 flex flex-wrap gap-1.5">
-                                    {caso.questoes.map((q, index) => {
+                                    {(expandedCasosView.has(`cp:${caso.id}`) ? caso.questoes : caso.questoes.slice(0, 60)).map((q, index) => {
                                       const answer = userAnswers[String(q.id)];
                                       const doubt = duvidas.has(String(q.id));
                                       const qStatus = answer ? (answer.isCorrect ? "Acertou" : "Errou") : doubt ? "Dúvida · não respondida" : "Não respondida";
@@ -3454,6 +3719,15 @@ export default function CadernosTab({
                                         </button>
                                       );
                                     })}
+                                    {caso.questoes.length > 60 && !expandedCasosView.has(`cp:${caso.id}`) && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setExpandedCasosView(prev => new Set(prev).add(`cp:${caso.id}`))}
+                                        className="inline-flex items-center rounded border border-indigo-500/25 bg-indigo-500/10 px-2 py-1 text-[10px] font-normal text-indigo-300 hover:bg-indigo-500/20 transition-colors"
+                                      >
+                                        +{caso.questoes.length - 60} questões
+                                      </button>
+                                    )}
                                     {caso.questoes.length === 0 && <span className="text-[9px] text-slate-600">Este caso ainda não tem questões.</span>}
                                   </div>
                                 </section>
@@ -3570,7 +3844,7 @@ export default function CadernosTab({
                                       <span className="shrink-0 text-slate-600">{caso.questoes.length} q.</span>
                                     </div>
                                     <div className="flex flex-wrap gap-1 sm:gap-[3px] pl-2 sm:pl-4" aria-label={`${caso.nome}: ${caseCorrect} acertos, ${caseWrong} erros, ${caseOpen} não respondidas${caseDoubt ? `, ${caseDoubt} dúvidas` : ""}`}>
-                                      {caso.questoes.map((q, idx) => {
+                                      {(expandedCasosView.has(`mp:${caso.id}`) ? caso.questoes : caso.questoes.slice(0, 100)).map((q, idx) => {
                                         const answer = userAnswers[String(q.id)];
                                         const markedDoubt = duvidas.has(String(q.id));
                                         const statusClass = answer
@@ -3592,6 +3866,15 @@ export default function CadernosTab({
                                           </button>
                                         );
                                       })}
+                                      {caso.questoes.length > 100 && !expandedCasosView.has(`mp:${caso.id}`) && (
+                                        <button
+                                          type="button"
+                                          onClick={() => setExpandedCasosView(prev => new Set(prev).add(`mp:${caso.id}`))}
+                                          className="px-1.5 h-7 sm:h-[15px] rounded-[3px] border border-indigo-500/30 bg-indigo-500/10 text-[9px] text-indigo-300 hover:bg-indigo-500/20 transition-colors"
+                                        >
+                                          +{caso.questoes.length - 100}
+                                        </button>
+                                      )}
                                   </div>
                                 </div>
                               );
@@ -3628,14 +3911,16 @@ export default function CadernosTab({
                 onOpenQuestion={handleOpenQuestionInModal}
                 onDropQuestion={handleDropQuestion}
                 onDropNodeToParent={handleDropNodeToParent}
-                onAddSubfolder={(parentId) => {
-                  setModalDefaultParentId(parentId);
-                  setIsNovaPastaModalOpen(true);
-                }}
+                onAddSubfolder={handleOpenNovaPastaWithParent}
                 onMoveNode={(targetNode) => {
+                  const visited = new Set<string>([targetNode.id]);
                   const collectQuestions = (n: HierarchyTreeNode): BancoQuestion[] => {
                     const list = [...n.questoes];
-                    for (const child of n.filhos) list.push(...collectQuestions(child));
+                    for (const child of n.filhos) {
+                      if (visited.has(child.id)) continue;
+                      visited.add(child.id);
+                      list.push(...collectQuestions(child));
+                    }
                     return list;
                   };
                   const parentName =
@@ -3651,9 +3936,14 @@ export default function CadernosTab({
                 }}
                 onRenameNode={handleOpenRenameCaso}
                 onDeleteNode={(targetNode) => {
+                  const visited = new Set<string>([targetNode.id]);
                   const collectQuestions = (n: HierarchyTreeNode): BancoQuestion[] => {
                     const list = [...n.questoes];
-                    for (const child of n.filhos) list.push(...collectQuestions(child));
+                    for (const child of n.filhos) {
+                      if (visited.has(child.id)) continue;
+                      visited.add(child.id);
+                      list.push(...collectQuestions(child));
+                    }
                     return list;
                   };
                   setDeleteTarget({
@@ -4056,6 +4346,46 @@ export default function CadernosTab({
             }}
           />
         </>
+      )}
+
+      {/* Modal Confirmação Excluir Questão Individual */}
+      {questionToDelete && (
+        <div className="fixed inset-0 z-[115] flex items-center justify-center p-4 bg-black/80">
+          <div className="w-full max-w-md bg-[#0c1220] border border-rose-500/30 rounded-2xl p-5 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+                <AlertTriangle size={18} />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-normal text-white">
+                  Excluir Questão #{questionToDelete.id}?
+                </h3>
+                <p className="text-xs text-slate-400 mt-1 line-clamp-3">
+                  {questionToDelete.title || questionToDelete.perguntaProblema || "Esta ação não pode ser desfeita."}
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t border-white/[0.08]">
+              <button
+                type="button"
+                disabled={deletingSingleQuestion}
+                onClick={() => setQuestionToDelete(null)}
+                className="px-3.5 py-1.5 rounded-lg border border-white/[0.1] text-xs font-normal text-slate-300"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={deletingSingleQuestion}
+                onClick={() => void confirmDeleteSingleQuestion()}
+                className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-xs font-normal text-white flex items-center gap-1.5"
+              >
+                <Trash2 size={13} />
+                <span>{deletingSingleQuestion ? "Excluindo..." : "Excluir"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Toast Notification */}

@@ -455,6 +455,84 @@ export default function BancoPage() {
     }
   };
 
+  const handleRefreshQuestionsSilent = useCallback(() => {
+    void fetchQuestions(true);
+  }, [fetchQuestions]);
+
+  const handlePatchQuestionsLocal = useCallback(
+    (updates: { id: string | number; patch: Partial<BancoQuestion> }[]) => {
+      if (updates.length === 0) return;
+      const patchMap = new Map<string, Partial<BancoQuestion>>();
+      for (const item of updates) {
+        patchMap.set(String(item.id), item.patch);
+      }
+      const applyPatch = (list: BancoQuestion[]) =>
+        list.map((q) => {
+          const p = patchMap.get(String(q.id));
+          return p ? { ...q, ...p } : q;
+        });
+
+      setQuestions(applyPatch);
+      setFilteredQuestions(applyPatch);
+      setResolverQueue(applyPatch);
+      setSelectedQuestion((prev) => {
+        if (!prev) return null;
+        const p = patchMap.get(String(prev.id));
+        return p ? { ...prev, ...p } : prev;
+      });
+    },
+    []
+  );
+
+  const handleRemoveQuestionsLocal = useCallback((ids: (string | number)[]) => {
+    if (ids.length === 0) return;
+    const removed = new Set(ids.map((id) => String(id)));
+    const keep = (list: BancoQuestion[]) => list.filter((q) => !removed.has(String(q.id)));
+    setQuestions(keep);
+    setFilteredQuestions(keep);
+    setResolverQueue(keep);
+    setSelectedQuestion((prev) => (prev && removed.has(String(prev.id)) ? null : prev));
+  }, []);
+
+  const handleShowAuthModal = useCallback(() => setShowAuthModal(true), []);
+  const handleEditQuestionFromChild = useCallback((q: BancoQuestion) => setEditingQuestion(q), []);
+
+  const handleSelectQuestionForCadernos = useCallback(
+    (q: BancoQuestion, queue: BancoQuestion[]) => {
+      if (!user) {
+        setShowAuthModal(true);
+        return;
+      }
+      setResolverQueue(queue);
+      const idx = queue.findIndex((x) => x.id === q.id);
+      setResolverIndex(idx >= 0 ? idx : 0);
+      setSelectedQuestion(q);
+      setActiveTab("resolver");
+    },
+    [user]
+  );
+
+  const handleOpenResolverFromAdmin = useCallback(
+    (q: BancoQuestion, queue: BancoQuestion[]) => {
+      if (!user) {
+        setShowAuthModal(true);
+        return;
+      }
+      const qList = queue.length > 0 ? queue : [q];
+      const idx = qList.findIndex((item) => item.id === q.id);
+      setResolverQueue(qList);
+      setResolverIndex(idx >= 0 ? idx : 0);
+      setSelectedQuestion(q);
+      setActiveTab("resolver");
+    },
+    [user]
+  );
+
+  const handleOpenSimuladoInLibrary = useCallback((key: string) => {
+    setSelectedSimulado(key);
+    setActiveTab("simulados");
+  }, []);
+
   // ── Auth helper ───────────────────────────
   const handleAuthSuccess = async (
     email: string, password?: string,
@@ -1029,20 +1107,17 @@ export default function BancoPage() {
                   questions={questions}
                   userAnswers={userAnswers}
                   duvidas={duvidas}
-                  onSelectQuestion={(q, queue) => {
-                    if (!user) { setShowAuthModal(true); return; }
-                    setResolverQueue(queue);
-                    const idx = queue.findIndex(x => x.id === q.id);
-                    setResolverIndex(idx >= 0 ? idx : 0);
-                    setSelectedQuestion(q);
-                    setActiveTab("resolver");
-                  }}
+                  initialOrgNodes={orgNodes}
+                  onOrgNodesChanged={setOrgNodes}
+                  onSelectQuestion={handleSelectQuestionForCadernos}
                   onAnswer={handleAnswer}
                   onToggleDuvida={handleToggleDuvida}
                   user={user}
                   userId={user?.id}
-                  onShowAuth={() => setShowAuthModal(true)}
-                  onRefreshQuestions={() => fetchQuestions(true)}
+                  onShowAuth={handleShowAuthModal}
+                  onRefreshQuestions={handleRefreshQuestionsSilent}
+                  onPatchQuestionsLocal={handlePatchQuestionsLocal}
+                  onRemoveQuestionsLocal={handleRemoveQuestionsLocal}
                   isAdmin={isAdmin}
                 />
               )}
@@ -1061,8 +1136,8 @@ export default function BancoPage() {
                   setResolverIndex(0);
                   setActiveTab("resolver");
                 }}
-                onEditQuestion={(q) => setEditingQuestion(q)}
-                onRefreshQuestions={() => fetchQuestions(true)}
+                onEditQuestion={handleEditQuestionFromChild}
+                onRefreshQuestions={handleRefreshQuestionsSilent}
               />
             </div>
           )}
@@ -1075,21 +1150,12 @@ export default function BancoPage() {
                 orgNodes={orgNodes}
                 simuladosConfig={simuladosConfig}
                 onSaveSimuladosConfig={handleSaveSimuladosConfig}
-                onRefreshQuestions={() => fetchQuestions(true)}
-                onEditQuestion={(q) => setEditingQuestion(q)}
-                onOpenResolver={(q, queue) => {
-                  if (!user) { setShowAuthModal(true); return; }
-                  const qList = queue.length > 0 ? queue : [q];
-                  const idx = qList.findIndex((item) => item.id === q.id);
-                  setResolverQueue(qList);
-                  setResolverIndex(idx >= 0 ? idx : 0);
-                  setSelectedQuestion(q);
-                  setActiveTab("resolver");
-                }}
-                onOpenSimuladoInLibrary={(key) => {
-                  setSelectedSimulado(key);
-                  setActiveTab("simulados");
-                }}
+                onRefreshQuestions={handleRefreshQuestionsSilent}
+                onPatchQuestionsLocal={handlePatchQuestionsLocal}
+                onRemoveQuestionsLocal={handleRemoveQuestionsLocal}
+                onEditQuestion={handleEditQuestionFromChild}
+                onOpenResolver={handleOpenResolverFromAdmin}
+                onOpenSimuladoInLibrary={handleOpenSimuladoInLibrary}
               />
             </div>
           )}

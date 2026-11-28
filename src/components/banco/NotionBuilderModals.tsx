@@ -118,14 +118,14 @@ function ImageAttachmentZone({
       : "border-indigo-500/30 hover:border-indigo-400/50 focus-within:border-indigo-400/60";
 
   return (
-    <div className="flex flex-col gap-2" onPaste={handlePaste}>
+    <div className="flex flex-col gap-2.5" onPaste={handlePaste}>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-          <ImageIcon size={11} className={accentColor === "emerald" ? "text-emerald-400" : "text-indigo-400"} />
+        <span className="text-[11.5px] font-normal text-slate-400 flex items-center gap-1.5">
+          <ImageIcon size={12} className={accentColor === "emerald" ? "text-emerald-400" : "text-indigo-400"} />
           {label}
         </span>
         {urls.length > 0 && (
-          <span className="text-[10px] text-slate-500 tabular-nums">
+          <span className="text-[11px] font-normal text-slate-500 tabular-nums">
             {urls.length} {urls.length === 1 ? "imagem" : "imagens"}
           </span>
         )}
@@ -147,8 +147,8 @@ function ImageAttachmentZone({
           }
         }}
         onClick={() => fileInputRef.current?.click()}
-        className={`flex flex-col items-center justify-center gap-1.5 px-3 py-3 rounded-xl border border-dashed cursor-pointer transition-colors outline-none ${borderAccent} ${
-          dragOver ? "bg-indigo-500/15" : "bg-[#0a0f1d] hover:bg-white/[0.02]"
+        className={`flex flex-col items-center justify-center gap-1.5 px-4 py-4 rounded-xl border border-dashed cursor-pointer transition-colors outline-none ${borderAccent} ${
+          dragOver ? "bg-indigo-500/15" : "bg-[#090e1b] hover:bg-white/[0.02]"
         }`}
       >
         <input
@@ -165,25 +165,25 @@ function ImageAttachmentZone({
           }}
         />
         {uploading ? (
-          <div className="flex items-center gap-2 text-xs text-indigo-300 py-1">
+          <div className="flex items-center gap-2 text-[12px] font-normal text-indigo-300 py-1">
             <Loader2 size={14} className="animate-spin" />
             <span>Enviando imagem para o Supabase...</span>
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-300">
+            <div className="flex items-center gap-2 text-[12px] font-normal text-slate-300">
               <Upload size={13} className={accentColor === "emerald" ? "text-emerald-400" : "text-indigo-400"} />
-              <span>Clique para enviar, arraste ou cole um print (<kbd className="px-1 py-0.5 rounded bg-white/10 text-[10px] font-mono">Ctrl+V</kbd>)</span>
+              <span>Clique para enviar, arraste ou cole um print (<kbd className="px-1.5 py-0.5 rounded bg-white/[0.08] text-[10.5px] font-mono">Ctrl+V</kbd>)</span>
             </div>
-            <span className="text-[10px] text-slate-500">PNG, JPG, WebP — armazenada permanentemente</span>
+            <span className="text-[11px] font-normal text-slate-500">PNG, JPG, WebP — armazenada permanentemente</span>
           </>
         )}
       </div>
 
       {/* Campo de URL alternativa */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <Link2 size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-600" />
+          <Link2 size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             type="url"
             value={urlInput}
@@ -195,24 +195,24 @@ function ImageAttachmentZone({
               }
             }}
             placeholder="Ou cole a URL da imagem (https://...)"
-            className="w-full pl-7 pr-2.5 py-1.5 bg-[#0a0f1d] border border-white/[0.08] rounded-lg text-[11px] text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500/40 font-mono"
+            className="w-full pl-8 pr-3 py-2 bg-[#090e1b] border border-white/[0.08] rounded-xl text-[12px] font-normal text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-400/40 font-mono"
           />
         </div>
         <button
           type="button"
           onClick={handleAddUrl}
           disabled={!urlInput.trim()}
-          className="px-2.5 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] disabled:opacity-40 text-[10px] font-bold text-slate-300 border border-white/[0.08] transition-colors shrink-0"
+          className="px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-40 text-[11.5px] font-normal text-slate-300 border border-white/[0.08] transition-colors shrink-0"
         >
           + URL
         </button>
       </div>
 
-      {err && <p className="text-[11px] text-rose-400">{err}</p>}
+      {err && <p className="text-[11.5px] font-normal text-rose-400">{err}</p>}
 
       {/* Previews */}
       {urls.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-1">
           {urls.map((u, idx) => (
             <div
               key={`${u}-${idx}`}
@@ -223,7 +223,7 @@ function ImageAttachmentZone({
                 type="button"
                 onClick={() => onChange(urls.filter((_, i) => i !== idx))}
                 title="Remover imagem"
-                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/80 hover:bg-rose-600 text-white flex items-center justify-center border border-white/20 transition-colors"
+                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-lg bg-black/80 hover:bg-rose-600 text-white flex items-center justify-center border border-white/15 transition-colors"
               >
                 <Trash2 size={11} />
               </button>
@@ -304,34 +304,34 @@ export function CreateCasoModal({
     >
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md bg-[#0d1220] border border-white/[0.1] rounded-2xl overflow-hidden flex flex-col"
+        className="w-full max-w-md bg-[#0c1220] border border-white/[0.09] rounded-2xl overflow-hidden flex flex-col"
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08]">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
-              <FolderPlus size={15} className="text-indigo-400" />
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-white/[0.07]">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-indigo-500/12 border border-indigo-400/20 flex items-center justify-center shrink-0">
+              <FolderPlus size={15} className="text-indigo-300" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm font-black text-white">
+              <h3 className="text-[15px] font-normal text-slate-100">
                 {isSubcaso ? "Novo Subcaso" : "Novo Caso"}
               </h3>
-              <p className="text-[11px] text-slate-400 truncate">
-                Dentro de: <span className="text-indigo-300 font-medium">{parentNome}</span>
+              <p className="text-[12px] font-normal text-slate-400 truncate">
+                Dentro de: <span className="text-indigo-300">{parentNome}</span>
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-500 hover:text-slate-300 p-1 rounded-lg hover:bg-white/[0.05]"
+            className="text-slate-500 hover:text-slate-200 p-1.5 rounded-lg hover:bg-white/[0.05] transition-colors"
           >
             <X size={16} />
           </button>
         </div>
 
-        <div className="p-5 flex flex-col gap-3">
+        <div className="p-5 sm:p-6 flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+            <label className="text-[11.5px] font-normal text-slate-400">
               {isSubcaso ? "Nome do Subcaso *" : "Nome do Caso *"}
             </label>
             <input
@@ -343,24 +343,24 @@ export function CreateCasoModal({
                   ? "Ex: Subcaso 1 - Casos especiais"
                   : "Ex: Caso 5 - Taxa proporcional"
               }
-              className="px-3.5 py-2.5 bg-[#080d18] border border-white/[0.1] rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500/60"
+              className="px-3.5 py-2.5 bg-[#080d18] border border-white/[0.09] rounded-xl text-[12.5px] font-normal text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-400/50"
             />
           </div>
-          {error && <p className="text-xs text-rose-400">{error}</p>}
+          {error && <p className="text-[12px] font-normal text-rose-400">{error}</p>}
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-white/[0.06] bg-white/[0.01]">
+        <div className="flex items-center justify-end gap-2.5 px-5 sm:px-6 py-4 border-t border-white/[0.06] bg-white/[0.01]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-200"
+            className="px-4 py-2 rounded-xl text-[12px] font-normal text-slate-400 hover:text-slate-200 transition-colors"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-500/25 hover:bg-indigo-500/35 border border-indigo-400/30 disabled:opacity-50 text-indigo-100 text-[12px] font-normal transition-colors"
           >
             {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
             {saving ? "Salvando..." : isSubcaso ? "Criar Subcaso" : "Criar Caso"}
@@ -660,19 +660,19 @@ export function QuestaoBuilderModal({
     >
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-3xl max-h-[92vh] bg-[#0d1220] border border-white/[0.12] rounded-2xl flex flex-col overflow-hidden"
+        className="w-full max-w-3xl max-h-[92vh] bg-[#0c1220] border border-white/[0.09] rounded-2xl flex flex-col overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
-              <FileText size={15} className="text-indigo-400" />
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-white/[0.07] shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-indigo-500/12 border border-indigo-400/20 flex items-center justify-center shrink-0">
+              <FileText size={15} className="text-indigo-300" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white tracking-tight">
+              <h3 className="text-[15px] font-normal text-slate-100 tracking-tight">
                 {editingQuestao ? "Editar Questão" : "Nova Questão no Caderno"}
               </h3>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[12px] font-normal text-slate-400">
                 Escolha Caso/Subcaso, anexe imagem ou escreva a pergunta e coloque a resposta.
               </p>
             </div>
@@ -680,27 +680,27 @@ export function QuestaoBuilderModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-500 hover:text-slate-200 p-1.5 rounded-lg hover:bg-white/[0.05]"
+            className="text-slate-500 hover:text-slate-200 p-1.5 rounded-lg hover:bg-white/[0.05] transition-colors"
           >
             <X size={17} />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-5 overflow-y-auto custom-scrollbar flex flex-col gap-5">
+        <div className="p-5 sm:p-6 overflow-y-auto custom-scrollbar flex flex-col gap-5">
           {/* Bloco 1: Onde salvar (Caderno -> Caso -> Subcaso) */}
-          <div className="p-4 rounded-2xl bg-[#101627] border border-white/[0.07] flex flex-col gap-3">
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#101627]/85 border border-white/[0.06] flex flex-col gap-3.5">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">
+              <span className="text-[12.5px] font-normal text-indigo-300">
                 1. Onde guardar (Caderno / Caso / Subcaso)
               </span>
-              {loadingTree && <Loader2 size={12} className="animate-spin text-indigo-400" />}
+              {loadingTree && <Loader2 size={13} className="animate-spin text-indigo-400" />}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
               {/* Caderno */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11.5px] font-normal text-slate-400">
                   Caderno
                 </label>
                 <select
@@ -712,7 +712,7 @@ export function QuestaoBuilderModal({
                     setSelectedSubcasoId("");
                     void loadTree(nextRoot);
                   }}
-                  className="px-2.5 py-2 bg-[#080d18] border border-white/[0.1] rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500/50"
+                  className="px-3 py-2 bg-[#080d18] border border-white/[0.09] rounded-xl text-[12.5px] font-normal text-slate-200 focus:outline-none focus:border-indigo-400/50"
                 >
                   {blocks.map((b) => (
                     <option key={b.id} value={b.block_id}>
@@ -723,15 +723,15 @@ export function QuestaoBuilderModal({
               </div>
 
               {/* Caso */}
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <label className="text-[11.5px] font-normal text-slate-400">
                     Caso *
                   </label>
                   <button
                     type="button"
                     onClick={() => setCreatingCaso((v) => !v)}
-                    className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5"
+                    className="text-[11px] font-normal text-indigo-300 hover:text-indigo-200 flex items-center gap-0.5"
                   >
                     <Plus size={10} /> Novo Caso
                   </button>
@@ -742,7 +742,7 @@ export function QuestaoBuilderModal({
                     setSelectedCasoId(e.target.value);
                     setSelectedSubcasoId("");
                   }}
-                  className="px-2.5 py-2 bg-[#080d18] border border-white/[0.1] rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500/50"
+                  className="px-3 py-2 bg-[#080d18] border border-white/[0.09] rounded-xl text-[12.5px] font-normal text-slate-200 focus:outline-none focus:border-indigo-400/50"
                 >
                   {tree.length === 0 ? (
                     <option value="">Nenhum caso ainda</option>
@@ -755,7 +755,7 @@ export function QuestaoBuilderModal({
                   )}
                 </select>
                 {creatingCaso && (
-                  <div className="flex items-center gap-1 mt-1">
+                  <div className="flex items-center gap-1.5 mt-1">
                     <input
                       value={novoCasoNome}
                       onChange={(e) => setNovoCasoNome(e.target.value)}
@@ -766,13 +766,13 @@ export function QuestaoBuilderModal({
                         }
                       }}
                       placeholder="Nome do novo caso..."
-                      className="flex-1 min-w-0 px-2.5 py-1.5 bg-[#080d18] border border-indigo-500/40 rounded-lg text-[11px] text-white focus:outline-none"
+                      className="flex-1 min-w-0 px-3 py-1.5 bg-[#080d18] border border-indigo-400/35 rounded-lg text-[12px] font-normal text-slate-100 focus:outline-none"
                     />
                     <button
                       type="button"
                       onClick={handleInlineCreateCaso}
                       disabled={savingCaso || !novoCasoNome.trim()}
-                      className="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-[10px] font-bold"
+                      className="px-3 py-1.5 rounded-lg bg-indigo-500/25 hover:bg-indigo-500/35 border border-indigo-400/30 disabled:opacity-50 text-indigo-100 text-[11px] font-normal"
                     >
                       {savingCaso ? "..." : "Criar"}
                     </button>
@@ -781,16 +781,16 @@ export function QuestaoBuilderModal({
               </div>
 
               {/* Subcaso (opcional) */}
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <label className="text-[11.5px] font-normal text-slate-400">
                     Subcaso (opcional)
                   </label>
                   {selectedCasoId && (
                     <button
                       type="button"
                       onClick={() => setCreatingSubcaso((v) => !v)}
-                      className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5"
+                      className="text-[11px] font-normal text-indigo-300 hover:text-indigo-200 flex items-center gap-0.5"
                     >
                       <Plus size={10} /> Novo Subcaso
                     </button>
@@ -800,7 +800,7 @@ export function QuestaoBuilderModal({
                   value={selectedSubcasoId}
                   disabled={!selectedCasoId}
                   onChange={(e) => setSelectedSubcasoId(e.target.value)}
-                  className="px-2.5 py-2 bg-[#080d18] border border-white/[0.1] rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500/50 disabled:opacity-40"
+                  className="px-3 py-2 bg-[#080d18] border border-white/[0.09] rounded-xl text-[12.5px] font-normal text-slate-200 focus:outline-none focus:border-indigo-400/50 disabled:opacity-40"
                 >
                   <option value="">Direto no Caso (sem subcaso)</option>
                   {flatSubcasos.map((s) => (
@@ -811,7 +811,7 @@ export function QuestaoBuilderModal({
                   ))}
                 </select>
                 {creatingSubcaso && selectedCasoId && (
-                  <div className="flex items-center gap-1 mt-1">
+                  <div className="flex items-center gap-1.5 mt-1">
                     <input
                       value={novoSubcasoNome}
                       onChange={(e) => setNovoSubcasoNome(e.target.value)}
@@ -822,13 +822,13 @@ export function QuestaoBuilderModal({
                         }
                       }}
                       placeholder="Nome do novo subcaso..."
-                      className="flex-1 min-w-0 px-2.5 py-1.5 bg-[#080d18] border border-indigo-500/40 rounded-lg text-[11px] text-white focus:outline-none"
+                      className="flex-1 min-w-0 px-3 py-1.5 bg-[#080d18] border border-indigo-400/35 rounded-lg text-[12px] font-normal text-slate-100 focus:outline-none"
                     />
                     <button
                       type="button"
                       onClick={handleInlineCreateSubcaso}
                       disabled={savingSubcaso || !novoSubcasoNome.trim()}
-                      className="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-[10px] font-bold"
+                      className="px-3 py-1.5 rounded-lg bg-indigo-500/25 hover:bg-indigo-500/35 border border-indigo-400/30 disabled:opacity-50 text-indigo-100 text-[11px] font-normal"
                     >
                       {savingSubcaso ? "..." : "Criar"}
                     </button>
@@ -839,37 +839,37 @@ export function QuestaoBuilderModal({
           </div>
 
           {/* Bloco 2: Número, Tópico e Classificação */}
-          <div className="flex flex-col gap-3">
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11.5px] font-normal text-slate-400">
                   Número
                 </label>
                 <input
                   value={numero}
                   onChange={(e) => setNumero(e.target.value)}
                   placeholder="Ex: 1"
-                  className="px-3 py-2 bg-[#080d18] border border-white/[0.1] rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500/50 tabular-nums"
+                  className="px-3.5 py-2 bg-[#080d18] border border-white/[0.09] rounded-xl text-[12.5px] font-normal text-slate-100 focus:outline-none focus:border-indigo-400/50 tabular-nums"
                 />
               </div>
-              <div className="flex flex-col gap-1 sm:col-span-3">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+              <div className="flex flex-col gap-1.5 sm:col-span-3">
+                <label className="text-[11.5px] font-normal text-slate-400">
                   Tópico / Título curto (opcional)
                 </label>
                 <input
                   value={topico}
                   onChange={(e) => setTopico(e.target.value)}
                   placeholder="Ex: Banca CESGRANRIO — Juros simples"
-                  className="px-3 py-2 bg-[#080d18] border border-white/[0.1] rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500/50"
+                  className="px-3.5 py-2 bg-[#080d18] border border-white/[0.09] rounded-xl text-[12.5px] font-normal text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-400/50"
                 />
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+            <div className="flex flex-col gap-2">
+              <label className="text-[11.5px] font-normal text-slate-400">
                 Classificação / Dificuldade
               </label>
-              <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
                 {MODAL_CATEGORIES.map((cat) => {
                   const active = categoria === cat.key;
                   return (
@@ -878,11 +878,11 @@ export function QuestaoBuilderModal({
                       type="button"
                       onClick={() => setCategoria(cat.key)}
                       style={{
-                        borderColor: active ? cat.color : "rgba(255,255,255,0.08)",
-                        backgroundColor: active ? `${cat.color}25` : "#080d18",
-                        color: active ? "#ffffff" : "#94a3b8",
+                        borderColor: active ? `${cat.color}88` : "rgba(255,255,255,0.08)",
+                        backgroundColor: active ? `${cat.color}22` : "#080d18",
+                        color: active ? "#f1f5f9" : "#94a3b8",
                       }}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[12px] font-normal transition-colors"
                     >
                       <span>{cat.emoji}</span>
                       <span>{cat.label}</span>
@@ -894,13 +894,13 @@ export function QuestaoBuilderModal({
           </div>
 
           {/* Bloco 3: Pergunta (Texto + Imagens) */}
-          <div className="p-4 rounded-2xl bg-[#101627] border border-white/[0.07] flex flex-col gap-3">
-            <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#101627]/85 border border-white/[0.06] flex flex-col gap-3.5">
+            <span className="text-[12.5px] font-normal text-indigo-300">
               2. Pergunta (Escreva e/ou anexe imagem)
             </span>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11.5px] font-normal text-slate-400">
                 Texto da Pergunta (opcional)
               </label>
               <textarea
@@ -908,7 +908,7 @@ export function QuestaoBuilderModal({
                 onChange={(e) => setEnunciadoTexto(e.target.value)}
                 rows={4}
                 placeholder="Digite o enunciado da questão, alternativas A–E ou anotações..."
-                className="w-full px-3 py-2.5 bg-[#080d18] border border-white/[0.1] rounded-xl text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500/50 leading-relaxed resize-y"
+                className="w-full px-3.5 py-2.5 bg-[#080d18] border border-white/[0.09] rounded-xl text-[12.5px] font-normal text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-400/50 leading-relaxed resize-y"
               />
             </div>
 
@@ -922,18 +922,18 @@ export function QuestaoBuilderModal({
           </div>
 
           {/* Bloco 4: Resposta / Gabarito */}
-          <div className="p-4 rounded-2xl bg-[#0e1722] border border-emerald-500/20 flex flex-col gap-3">
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#0d1722]/85 border border-emerald-400/18 flex flex-col gap-3.5">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
-                <Sparkles size={11} /> 3. Resposta e Gabarito
+              <span className="text-[12.5px] font-normal text-emerald-300 flex items-center gap-1.5">
+                <Sparkles size={13} /> 3. Resposta e Gabarito
               </span>
-              <div className="flex items-center gap-1 flex-wrap">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 {["A", "B", "C", "D", "E", "Certo", "Errado"].map((opt) => (
                   <button
                     key={opt}
                     type="button"
                     onClick={() => handleQuickGabarito(opt)}
-                    className="px-2 py-0.5 rounded-md bg-white/[0.04] hover:bg-emerald-500/20 border border-white/[0.08] hover:border-emerald-500/40 text-[10px] font-bold text-slate-300 hover:text-emerald-300 transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-emerald-500/18 border border-white/[0.08] hover:border-emerald-400/35 text-[11px] font-normal text-slate-300 hover:text-emerald-200 transition-colors"
                   >
                     {opt}
                   </button>
@@ -941,8 +941,8 @@ export function QuestaoBuilderModal({
               </div>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11.5px] font-normal text-slate-400">
                 Resposta / Comentário escrito (opcional)
               </label>
               <textarea
@@ -950,7 +950,7 @@ export function QuestaoBuilderModal({
                 onChange={(e) => setGabaritoTexto(e.target.value)}
                 rows={3}
                 placeholder="Ex: Letra B — Fórmula J = C · i · t..."
-                className="w-full px-3 py-2.5 bg-[#080d18] border border-white/[0.1] rounded-xl text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 leading-relaxed resize-y"
+                className="w-full px-3.5 py-2.5 bg-[#080d18] border border-white/[0.09] rounded-xl text-[12.5px] font-normal text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-400/50 leading-relaxed resize-y"
               />
             </div>
 
@@ -964,29 +964,29 @@ export function QuestaoBuilderModal({
           </div>
 
           {error && (
-            <div className="px-3.5 py-2.5 rounded-xl bg-rose-950/50 border border-rose-500/30 text-xs text-rose-300">
+            <div className="px-4 py-3 rounded-xl bg-rose-950/40 border border-rose-400/25 text-[12.5px] font-normal text-rose-300">
               {error}
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-t border-white/[0.08] bg-white/[0.01] shrink-0">
-          <span className="text-[10px] text-slate-500 hidden sm:inline">
+        <div className="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-t border-white/[0.07] bg-white/[0.01] shrink-0">
+          <span className="text-[11px] font-normal text-slate-500 hidden sm:inline">
             Dica: você pode colar prints direto com Ctrl+V nas áreas de imagem.
           </span>
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-2.5 ml-auto">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-200"
+              className="px-4 py-2 rounded-xl text-[12px] font-normal text-slate-400 hover:text-slate-200 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider transition-colors"
+              className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-indigo-500/25 hover:bg-indigo-500/35 border border-indigo-400/30 disabled:opacity-50 text-indigo-100 text-[12.5px] font-normal transition-colors"
             >
               {saving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
               {saving ? "Salvando..." : editingQuestao ? "Salvar Alterações" : "Criar Questão"}
@@ -1126,35 +1126,35 @@ export function MoveQuestaoModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-lg bg-[#0d1220] border border-white/[0.1] rounded-2xl overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08]">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
-              <FolderInput size={15} className="text-indigo-400" />
+      <div className="w-full max-w-lg bg-[#0c1220] border border-white/[0.09] rounded-2xl overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-white/[0.07]">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-indigo-500/12 border border-indigo-400/20 flex items-center justify-center shrink-0">
+              <FolderInput size={15} className="text-indigo-300" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm font-black text-white">Jogar Questão em Caso / Subcaso</h3>
-              <p className="text-[11px] text-slate-400 truncate">
+              <h3 className="text-[15px] font-normal text-slate-100">Jogar Questão em Caso / Subcaso</h3>
+              <p className="text-[12px] font-normal text-slate-400 truncate">
                 Questão {questao.numero} {questao.topic ? `— ${questao.topic}` : ""}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-200 p-1 rounded-lg">
+          <button onClick={onClose} className="text-slate-500 hover:text-slate-200 p-1.5 rounded-lg hover:bg-white/[0.05] transition-colors">
             <X size={16} />
           </button>
         </div>
 
-        <div className="p-5 flex flex-col gap-4 max-h-[65vh] overflow-y-auto custom-scrollbar">
+        <div className="p-5 sm:p-6 flex flex-col gap-4 max-h-[65vh] overflow-y-auto custom-scrollbar">
           {loading ? (
-            <div className="flex items-center justify-center py-8 gap-2 text-xs text-slate-400">
+            <div className="flex items-center justify-center py-8 gap-2 text-[12.5px] font-normal text-slate-400">
               <Loader2 size={14} className="animate-spin text-indigo-400" /> Carregando casos e subcasos...
             </div>
           ) : (
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+            <div className="flex flex-col gap-2">
+              <span className="text-[11.5px] font-normal text-slate-400">
                 Selecione o destino (Caso ou Subcaso)
               </span>
-              <div className="flex flex-col gap-1 max-h-60 overflow-y-auto pr-1">
+              <div className="flex flex-col gap-1.5 max-h-60 overflow-y-auto pr-1">
                 {flatList.map((item) => {
                   const isCurrent = cleanBlockId(item.id) === cleanBlockId(fromCasoId);
                   const isSelected = cleanBlockId(item.id) === cleanBlockId(targetId);
@@ -1168,9 +1168,9 @@ export function MoveQuestaoModal({
                         setSubParentId(item.id);
                       }}
                       style={{ paddingLeft: `${12 + item.depth * 18}px` }}
-                      className={`flex items-center justify-between gap-2 pr-3 py-2 rounded-xl border text-left text-xs transition-colors ${
+                      className={`flex items-center justify-between gap-2 pr-3 py-2 rounded-xl border text-left text-[12.5px] font-normal transition-colors ${
                         isSelected
-                          ? "bg-indigo-600/20 border-indigo-500/50 text-white font-semibold"
+                          ? "bg-indigo-500/18 border-indigo-400/35 text-slate-100"
                           : "bg-white/[0.02] border-white/[0.06] text-slate-300 hover:bg-white/[0.05]"
                       }`}
                     >
@@ -1181,7 +1181,7 @@ export function MoveQuestaoModal({
                         <span className="truncate">{item.nome}</span>
                       </span>
                       {isCurrent && (
-                        <span className="text-[9px] uppercase font-bold text-slate-500 shrink-0">
+                        <span className="text-[10.5px] font-normal text-slate-500 shrink-0">
                           Atual
                         </span>
                       )}
@@ -1193,8 +1193,8 @@ export function MoveQuestaoModal({
           )}
 
           {/* Criar Subcaso rápido */}
-          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.07] flex flex-col gap-2">
-            <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider">
+          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] flex flex-col gap-2.5">
+            <span className="text-[11.5px] font-normal text-indigo-300">
               Ou criar um novo Subcaso dentro do item selecionado:
             </span>
             <div className="flex items-center gap-2">
@@ -1208,13 +1208,13 @@ export function MoveQuestaoModal({
                   }
                 }}
                 placeholder="Nome do novo subcaso..."
-                className="flex-1 px-3 py-1.5 bg-[#080d18] border border-white/[0.1] rounded-lg text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500/50"
+                className="flex-1 px-3 py-2 bg-[#080d18] border border-white/[0.09] rounded-xl text-[12px] font-normal text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-400/50"
               />
               <button
                 type="button"
                 onClick={handleCreateSubAndSelect}
                 disabled={creatingSub || !newSubName.trim()}
-                className="px-3 py-1.5 rounded-lg bg-indigo-600/80 hover:bg-indigo-600 disabled:opacity-40 text-white text-[11px] font-bold flex items-center gap-1 shrink-0"
+                className="px-3.5 py-2 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/25 disabled:opacity-40 text-indigo-100 text-[11.5px] font-normal flex items-center gap-1.5 shrink-0"
               >
                 {creatingSub ? <Loader2 size={11} className="animate-spin" /> : <Plus size={11} />}
                 Criar Subcaso
@@ -1222,14 +1222,14 @@ export function MoveQuestaoModal({
             </div>
           </div>
 
-          {error && <p className="text-xs text-rose-400">{error}</p>}
+          {error && <p className="text-[12px] font-normal text-rose-400">{error}</p>}
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-white/[0.06] bg-white/[0.01]">
+        <div className="flex items-center justify-end gap-2.5 px-5 sm:px-6 py-4 border-t border-white/[0.06] bg-white/[0.01]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-200"
+            className="px-4 py-2 rounded-xl text-[12px] font-normal text-slate-400 hover:text-slate-200 transition-colors"
           >
             Cancelar
           </button>
@@ -1237,7 +1237,7 @@ export function MoveQuestaoModal({
             type="button"
             onClick={handleConfirmMove}
             disabled={saving || !targetId || cleanBlockId(targetId) === cleanBlockId(fromCasoId)}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-xs font-black uppercase tracking-wider transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-500/25 hover:bg-indigo-500/35 border border-indigo-400/30 disabled:opacity-40 text-indigo-100 text-[12px] font-normal transition-colors"
           >
             {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
             {saving ? "Movendo..." : "Mover Questão"}

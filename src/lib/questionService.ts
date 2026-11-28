@@ -149,17 +149,19 @@ export function matchesPlataforma(q: Partial<BancoQuestion> & Record<string, any
   return true;
 }
 
+export function compareQuestoesByOrdem<T extends Partial<BancoQuestion> & Record<string, any>>(a: T, b: T): number {
+  const rawA: unknown = a.Ordem ?? a.ordem;
+  const rawB: unknown = b.Ordem ?? b.ordem;
+  const ordA = rawA !== undefined && rawA !== null && String(rawA).trim() !== '' && !Number.isNaN(Number(rawA)) ? Number(rawA) : Number.MAX_SAFE_INTEGER;
+  const ordB = rawB !== undefined && rawB !== null && String(rawB).trim() !== '' && !Number.isNaN(Number(rawB)) ? Number(rawB) : Number.MAX_SAFE_INTEGER;
+  if (ordA !== ordB) return ordA - ordB;
+  const idA = Number(a.id) || 0;
+  const idB = Number(b.id) || 0;
+  return idA - idB;
+}
+
 export function sortQuestoesByOrdem<T extends Partial<BancoQuestion> & Record<string, any>>(list: T[]): T[] {
-  return [...list].sort((a, b) => {
-    const rawA: unknown = a.Ordem ?? a.ordem;
-    const rawB: unknown = b.Ordem ?? b.ordem;
-    const ordA = rawA !== undefined && rawA !== null && String(rawA).trim() !== '' && !Number.isNaN(Number(rawA)) ? Number(rawA) : Number.MAX_SAFE_INTEGER;
-    const ordB = rawB !== undefined && rawB !== null && String(rawB).trim() !== '' && !Number.isNaN(Number(rawB)) ? Number(rawB) : Number.MAX_SAFE_INTEGER;
-    if (ordA !== ordB) return ordA - ordB;
-    const idA = Number(a.id) || 0;
-    const idB = Number(b.id) || 0;
-    return idA - idB;
-  });
+  return [...list].sort(compareQuestoesByOrdem);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

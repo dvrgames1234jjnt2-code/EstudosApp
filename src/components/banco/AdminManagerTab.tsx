@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowDown,
@@ -64,6 +64,8 @@ interface AdminManagerTabProps {
   simuladosConfig: SimuladosConfig;
   onSaveSimuladosConfig: (next: SimuladosConfig) => Promise<void>;
   onRefreshQuestions: () => void;
+  onPatchQuestionsLocal?: (updates: { id: string | number; patch: Partial<BancoQuestion> }[]) => void;
+  onRemoveQuestionsLocal?: (ids: (string | number)[]) => void;
   onEditQuestion: (q: BancoQuestion) => void;
   onOpenResolver: (q: BancoQuestion, queue: BancoQuestion[]) => void;
   onOpenSimuladoInLibrary: (key: string) => void;
@@ -136,12 +138,185 @@ async function updateQuestaoByIds(
 
 async function deleteQuestoesByIds(ids: (string | number)[]): Promise<string | null> {
   if (ids.length === 0) return null;
-  let res = await supabase.from("questoes").delete().in("id", ids);
-  if (res.error) {
-    res = await supabasePublic.from("questoes").delete().in("id", ids);
+  const CHUNK_SIZE = 80;
+  for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+    const chunk = ids.slice(i, i + CHUNK_SIZE);
+    let res = await supabase.from("questoes").delete().in("id", chunk);
+    if (res.error) {
+      res = await supabasePublic.from("questoes").delete().in("id", chunk);
+    }
+    if (res.error) return res.error.message;
   }
-  return res.error ? res.error.message : null;
+  return null;
 }
+
+async function runInBatches<T>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T, idx: number) => Promise<string | null>
+): Promise<string | null> {
+  for (let i = 0; i < items.length; i += concurrency) {
+    const slice = items.slice(i, i + concurrency);
+    const results = await Promise.all(slice.map((item, offset) => worker(item, i + offset)));
+    const firstErr = results.find((r) => r !== null);
+    if (firstErr) return firstErr;
+  }
+  return null;
+}
+
+interface AdminQuestionRowProps {
+  q: BancoQuestion;
+  isSel: boolean;
+  draftOrdVal: string | undefined;
+  onToggleSelect: (qKey: string) => void;
+  onDraftChange: (qKey: string, val: string) => void;
+  onSaveInlineOrdem: (q: BancoQuestion) => void;
+  onEditQuestion: (q: BancoQuestion) => void;
+  onDuplicateQuestion: (q: BancoQuestion) => void;
+  onOpenResolverSingle: (q: BancoQuestion) => void;
+  onRequestDelete: (q: BancoQuestion) => void;
+}
+
+const AdminQuestionRow = React.memo(function AdminQuestionRow({
+  q,
+  isSel,
+  draftOrdVal,
+  onToggleSelect,
+  onDraftChange,
+  onSaveInlineOrdem,
+  onEditQuestion,
+  onDuplicateQuestion,
+  onOpenResolverSingle,
+  onRequestDelete,
+}: AdminQuestionRowProps) {
+  const qKey = String(q.id);
+  const curOrd = getOrdemNum(q);
+  const curOrdStr = curOrd !== null ? String(curOrd) : "";
+  const draftOrd = draftOrdVal !== undefined ? draftOrdVal : curOrdStr;
+  const ordDirty = draftOrdVal !== undefined && draftOrdVal !== curOrdStr;
+  const ids = getQuestionIds(q);
+
+  return (
+    <tr
+      className={`transition-colors ${
+        isSel ? "bg-blue-600/[0.08]" : "hover:bg-white/[0.025]"
+      }`}
+    >
+      <td className="py-2 px-3 text-center">
+        <input
+          type="checkbox"
+          checked={isSel}
+          onChange={() => onToggleSelect(qKey)}
+          aria-label={`Selecionar questão ${q.id}`}
+          className="rounded border-white/20 bg-slate-900 accent-blue-600"
+        />
+      </td>
+      <td className="py-2 px-2.5 font-mono text-[11px] text-slate-400 tabular-nums">
+        #{q.id}
+      </td>
+      <td className="py-2 px-2.5">
+        <div className="flex items-center gap-1">
+          <input
+            type="number"
+            value={draftOrd}
+            onChange={(e) => onDraftChange(qKey, e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") onSaveInlineOrdem(q);
+            }}
+            placeholder="—"
+            className="w-14 bg-[#0d0f14] border border-white/[0.08] rounded px-1.5 py-1 text-[11px] text-slate-200 font-mono tabular-nums focus:outline-none focus:border-blue-500"
+          />
+          {ordDirty && (
+            <button
+              type="button"
+              onClick={() => onSaveInlineOrdem(q)}
+              title="Salvar Ordem"
+              className="p-1 rounded bg-blue-600 text-white hover:bg-blue-500"
+            >
+              <Check size={11} />
+            </button>
+          )}
+        </div>
+      </td>
+      <td className="py-2 px-3">
+        <div className="truncate max-w-[180px] text-slate-200 font-normal">
+          {q.prova || <span className="text-slate-500 font-normal">Sem Prova</span>}
+        </div>
+        <div className="text-[11px] text-slate-400 truncate max-w-[180px]">
+          {getBanca(q) || "Sem Banca"}
+          {q.Ano ? ` · ${q.Ano}` : ""}
+        </div>
+      </td>
+      <td className="py-2 px-3">
+        <div className="truncate max-w-[165px] text-slate-300">
+          {getDisciplina(q)}
+        </div>
+        {q.tema && (
+          <div className="text-[11px] text-slate-500 truncate max-w-[165px]">
+            {q.tema}
+          </div>
+        )}
+      </td>
+      <td className="py-2 px-3">
+        <p className="text-slate-300 line-clamp-2 max-w-[340px] leading-snug">
+          {q.title || q.perguntaProblema || "Sem enunciado"}
+        </p>
+      </td>
+      <td className="py-2 px-2.5 text-[11px] tabular-nums">
+        <div className="font-mono text-emerald-400">
+          {q.Gabarito || q.respostaCorreta || "—"}
+        </div>
+        <div className="text-slate-400 truncate max-w-[95px]">
+          {q.dificuldade || q.status || "—"}
+        </div>
+      </td>
+      <td className="py-2 px-2.5 font-mono text-[10.5px] text-slate-400">
+        <div className="truncate max-w-[115px]">
+          {ids.idq ? `Q:${ids.idq}` : ""}
+          {ids.idg ? ` G:${ids.idg}` : ""}
+          {ids.idtec ? ` T:${ids.idtec}` : ""}
+          {!ids.idq && !ids.idg && !ids.idtec ? "—" : ""}
+        </div>
+      </td>
+      <td className="py-2 px-3 text-right">
+        <div className="flex items-center justify-end gap-1">
+          <button
+            type="button"
+            onClick={() => onEditQuestion(q)}
+            title="Editar questão"
+            className="p-1.5 rounded-md text-slate-400 hover:text-amber-300 hover:bg-white/[0.06] transition-colors"
+          >
+            <Pencil size={13} />
+          </button>
+          <button
+            type="button"
+            onClick={() => onDuplicateQuestion(q)}
+            title="Duplicar questão"
+            className="p-1.5 rounded-md text-slate-400 hover:text-blue-300 hover:bg-white/[0.06] transition-colors"
+          >
+            <Copy size={13} />
+          </button>
+          <button
+            type="button"
+            onClick={() => onOpenResolverSingle(q)}
+            title="Abrir no resolvedor"
+            className="p-1.5 rounded-md text-slate-400 hover:text-emerald-300 hover:bg-white/[0.06] transition-colors"
+          >
+            <Play size={13} />
+          </button>
+          <button
+            type="button"
+            onClick={() => onRequestDelete(q)}
+            title="Excluir questão"
+            className="p-1.5 rounded-md text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+});
 
 export default function AdminManagerTab({
   questions,
@@ -149,6 +324,8 @@ export default function AdminManagerTab({
   simuladosConfig,
   onSaveSimuladosConfig,
   onRefreshQuestions,
+  onPatchQuestionsLocal,
+  onRemoveQuestionsLocal,
   onEditQuestion,
   onOpenResolver,
   onOpenSimuladoInLibrary,
@@ -178,6 +355,7 @@ export default function AdminManagerTab({
   // 1. ESTADO: GESTÃO DE QUESTÕES
   // ───────────────────────────────────────────────────────────────────────────
   const [qSearch, setQSearch] = useState("");
+  const deferredQSearch = useDeferredValue(qSearch);
   const [qBanca, setQBanca] = useState("todas");
   const [qProva, setQProva] = useState("todas");
   const [qDisciplina, setQDisciplina] = useState("todas");
@@ -210,6 +388,32 @@ export default function AdminManagerTab({
     ids: (string | number)[];
   } | null>(null);
 
+  // Índice pré-computado para busca instantânea sem alocar strings por tecla
+  const questionSearchIndex = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const q of questions) {
+      const ids = getQuestionIds(q);
+      map.set(
+        String(q.id),
+        [
+          String(q.id),
+          ids.idq,
+          ids.idg,
+          ids.idtec,
+          q.title || "",
+          q.perguntaProblema || "",
+          getDisciplina(q),
+          q.tema || "",
+          q.prova || "",
+          getBanca(q),
+        ]
+          .join(" ")
+          .toLowerCase()
+      );
+    }
+    return map;
+  }, [questions]);
+
   // Opções únicas para filtros
   const { allBancasList, allProvasList, allDisciplinasList, allDificuldadesList, allStatusList } =
     useMemo(() => {
@@ -238,7 +442,7 @@ export default function AdminManagerTab({
     }, [questions]);
 
   const filteredQuestions = useMemo(() => {
-    const term = qSearch.trim().toLowerCase();
+    const term = deferredQSearch.trim().toLowerCase();
     const list = questions.filter((q) => {
       if (qBanca !== "todas" && getBanca(q) !== qBanca) return false;
       if (qProva !== "todas" && String(q.prova ?? "").trim() !== qProva) return false;
@@ -252,22 +456,8 @@ export default function AdminManagerTab({
       if (qOrdemFilter === "sem_ordem" && ord !== null) return false;
 
       if (term) {
-        const ids = getQuestionIds(q);
-        const hay = [
-          String(q.id),
-          ids.idq,
-          ids.idg,
-          ids.idtec,
-          q.title || "",
-          q.perguntaProblema || "",
-          getDisciplina(q),
-          q.tema || "",
-          q.prova || "",
-          getBanca(q),
-        ]
-          .join(" ")
-          .toLowerCase();
-        if (!hay.includes(term)) return false;
+        const hay = questionSearchIndex.get(String(q.id));
+        if (!hay || !hay.includes(term)) return false;
       }
 
       return true;
@@ -289,7 +479,8 @@ export default function AdminManagerTab({
     });
   }, [
     questions,
-    qSearch,
+    questionSearchIndex,
+    deferredQSearch,
     qBanca,
     qProva,
     qDisciplina,
@@ -312,88 +503,138 @@ export default function AdminManagerTab({
     [filteredQuestions, selectedIds]
   );
 
-  const handleSaveInlineOrdem = async (q: BancoQuestion) => {
-    const key = String(q.id);
-    const raw = inlineOrdemDraft[key];
-    if (raw === undefined) return;
-    const trimmed = raw.trim();
-    const parsed = trimmed === "" ? null : Number(trimmed);
-    if (trimmed !== "" && (parsed === null || Number.isNaN(parsed))) {
-      showToast("error", "Ordem deve ser um número válido.");
-      return;
-    }
-    setBusy(true);
-    const err = await updateQuestaoByIds([q.id], { Ordem: parsed });
-    setBusy(false);
-    if (err) {
-      showToast("error", `Erro ao atualizar Ordem: ${err}`);
-      return;
-    }
-    setInlineOrdemDraft((prev) => {
-      const copy = { ...prev };
-      delete copy[key];
-      return copy;
-    });
-    showToast("success", `Ordem da questão #${q.id} atualizada.`);
-    onRefreshQuestions();
-  };
+  const applyLocalPatch = useCallback(
+    (updates: { id: string | number; patch: Partial<BancoQuestion> }[]) => {
+      if (onPatchQuestionsLocal) onPatchQuestionsLocal(updates);
+      else onRefreshQuestions();
+    },
+    [onPatchQuestionsLocal, onRefreshQuestions]
+  );
 
-  const handleDuplicateQuestion = async (q: BancoQuestion) => {
-    setBusy(true);
-    const ids = getQuestionIds(q);
-    const payload: Record<string, string | number | null> = {
-      Enunciado: q.title || null,
-      "Pergunta problema": q.perguntaProblema || null,
-      "Texto de apoio": q["Texto de apoio"] || null,
-      link: q.link || null,
-      ID_Qconcursos: ids.idq || null,
-      Idq: ids.idq || null,
-      Idg: ids.idg || null,
-      Idtec: ids.idtec || null,
-      Ordem: getOrdemNum(q) !== null ? Number(getOrdemNum(q)) + 1 : null,
-      Materia: getDisciplina(q),
-      Disciplina: getDisciplina(q),
-      tema: q.tema || null,
-      PROVA: q.prova || null,
-      Ano: q.Ano !== undefined && q.Ano !== null ? String(q.Ano) : null,
-      Banca: getBanca(q) || null,
-      Dificuldade: q.dificuldade || null,
-      Status: q.status || "Ativa",
-      Gabarito: q.Gabarito || q.respostaCorreta || null,
-      "Alternativa A": q["Alternativa A"] || null,
-      "Alternativa B": q["Alternativa B"] || null,
-      "Alternativa C": q["Alternativa C"] || null,
-      "Alternativa D": q["Alternativa D"] || null,
-      "Alternativa E": q["Alternativa E"] || null,
-      "Comentário": q.comentario || q["Comentário"] || q.explicacao || null,
-      organizacao_id: q.organizacao_id || null,
-    };
+  const applyLocalRemove = useCallback(
+    (ids: (string | number)[]) => {
+      if (onRemoveQuestionsLocal) onRemoveQuestionsLocal(ids);
+      else onRefreshQuestions();
+    },
+    [onRemoveQuestionsLocal, onRefreshQuestions]
+  );
 
-    const insertErr = await safeInsertQuestao(payload);
-    setBusy(false);
+  const handleSaveInlineOrdem = useCallback(
+    async (q: BancoQuestion) => {
+      const key = String(q.id);
+      const raw = inlineOrdemDraft[key];
+      if (raw === undefined) return;
+      const trimmed = raw.trim();
+      const parsed = trimmed === "" ? null : Number(trimmed);
+      if (trimmed !== "" && (parsed === null || Number.isNaN(parsed))) {
+        showToast("error", "Ordem deve ser um número válido.");
+        return;
+      }
+      setBusy(true);
+      const err = await updateQuestaoByIds([q.id], { Ordem: parsed });
+      setBusy(false);
+      if (err) {
+        showToast("error", `Erro ao atualizar Ordem: ${err}`);
+        return;
+      }
+      setInlineOrdemDraft((prev) => {
+        const copy = { ...prev };
+        delete copy[key];
+        return copy;
+      });
+      showToast("success", `Ordem da questão #${q.id} atualizada.`);
+      applyLocalPatch([{ id: q.id, patch: { Ordem: parsed ?? undefined, ordem: parsed ?? undefined } }]);
+    },
+    [inlineOrdemDraft, showToast, applyLocalPatch]
+  );
 
-    if (insertErr) {
-      showToast("error", `Erro ao duplicar questão: ${insertErr}`);
-      return;
-    }
-    showToast("success", `Questão #${q.id} duplicada com sucesso.`);
-    onRefreshQuestions();
-  };
+  const handleDuplicateQuestion = useCallback(
+    async (q: BancoQuestion) => {
+      setBusy(true);
+      const ids = getQuestionIds(q);
+      const payload: Record<string, string | number | null> = {
+        Enunciado: q.title || null,
+        "Pergunta problema": q.perguntaProblema || null,
+        "Texto de apoio": q["Texto de apoio"] || null,
+        link: q.link || null,
+        ID_Qconcursos: ids.idq || null,
+        Idq: ids.idq || null,
+        Idg: ids.idg || null,
+        Idtec: ids.idtec || null,
+        Ordem: getOrdemNum(q) !== null ? Number(getOrdemNum(q)) + 1 : null,
+        Materia: getDisciplina(q),
+        Disciplina: getDisciplina(q),
+        tema: q.tema || null,
+        PROVA: q.prova || null,
+        Ano: q.Ano !== undefined && q.Ano !== null ? String(q.Ano) : null,
+        Banca: getBanca(q) || null,
+        Dificuldade: q.dificuldade || null,
+        Status: q.status || "Ativa",
+        Gabarito: q.Gabarito || q.respostaCorreta || null,
+        "Alternativa A": q["Alternativa A"] || null,
+        "Alternativa B": q["Alternativa B"] || null,
+        "Alternativa C": q["Alternativa C"] || null,
+        "Alternativa D": q["Alternativa D"] || null,
+        "Alternativa E": q["Alternativa E"] || null,
+        "Comentário": q.comentario || q["Comentário"] || q.explicacao || null,
+        organizacao_id: q.organizacao_id || null,
+      };
+
+      const insertErr = await safeInsertQuestao(payload);
+      setBusy(false);
+
+      if (insertErr) {
+        showToast("error", `Erro ao duplicar questão: ${insertErr}`);
+        return;
+      }
+      showToast("success", `Questão #${q.id} duplicada com sucesso.`);
+      onRefreshQuestions();
+    },
+    [showToast, onRefreshQuestions]
+  );
 
   const handleBulkApply = async () => {
     if (selectedIds.size === 0) return;
     const payload: Record<string, string | number | null> = {};
-    if (bulkProva.trim()) payload.PROVA = bulkProva.trim();
-    if (bulkBanca.trim()) payload.Banca = bulkBanca.trim();
+    const localPatch: Partial<BancoQuestion> = {};
+    if (bulkProva.trim()) {
+      payload.PROVA = bulkProva.trim();
+      localPatch.prova = bulkProva.trim();
+    }
+    if (bulkBanca.trim()) {
+      payload.Banca = bulkBanca.trim();
+      localPatch.Banca = bulkBanca.trim();
+      localPatch.banca = bulkBanca.trim();
+    }
     if (bulkDisciplina.trim()) {
       payload.Materia = bulkDisciplina.trim();
       payload.Disciplina = bulkDisciplina.trim();
+      localPatch.materia = bulkDisciplina.trim();
+      localPatch.Disciplina = bulkDisciplina.trim();
+      localPatch.disciplina = bulkDisciplina.trim();
     }
-    if (bulkTema.trim()) payload.tema = bulkTema.trim();
-    if (bulkAno.trim()) payload.Ano = bulkAno.trim();
-    if (bulkDificuldade) payload.Dificuldade = bulkDificuldade === "__clear__" ? null : bulkDificuldade;
-    if (bulkStatus) payload.Status = bulkStatus === "__clear__" ? null : bulkStatus;
-    if (bulkOrgId !== "__keep__") payload.organizacao_id = bulkOrgId || null;
+    if (bulkTema.trim()) {
+      payload.tema = bulkTema.trim();
+      localPatch.tema = bulkTema.trim();
+    }
+    if (bulkAno.trim()) {
+      payload.Ano = bulkAno.trim();
+      localPatch.Ano = bulkAno.trim();
+    }
+    if (bulkDificuldade) {
+      const difVal = bulkDificuldade === "__clear__" ? null : bulkDificuldade;
+      payload.Dificuldade = difVal;
+      localPatch.dificuldade = difVal ?? undefined;
+    }
+    if (bulkStatus) {
+      const stVal = bulkStatus === "__clear__" ? null : bulkStatus;
+      payload.Status = stVal;
+      localPatch.status = stVal ?? undefined;
+    }
+    if (bulkOrgId !== "__keep__") {
+      payload.organizacao_id = bulkOrgId || null;
+      localPatch.organizacao_id = bulkOrgId || undefined;
+    }
 
     if (Object.keys(payload).length === 0) {
       showToast("error", "Preencha ao menos um campo para aplicar em lote.");
@@ -401,10 +642,8 @@ export default function AdminManagerTab({
     }
 
     setBusy(true);
-    const ids = Array.from(selectedIds).map((sid) => {
-      const found = questions.find((q) => String(q.id) === sid);
-      return found ? found.id : sid;
-    });
+    const idMap = new Map(questions.map((q) => [String(q.id), q.id]));
+    const ids = Array.from(selectedIds).map((sid) => idMap.get(sid) ?? sid);
     const err = await updateQuestaoByIds(ids, payload);
     setBusy(false);
 
@@ -422,7 +661,7 @@ export default function AdminManagerTab({
     setBulkDificuldade("");
     setBulkStatus("");
     setBulkOrgId("__keep__");
-    onRefreshQuestions();
+    applyLocalPatch(ids.map((id) => ({ id, patch: localPatch })));
   };
 
   const handleBulkRenumberOrdem = async () => {
@@ -433,18 +672,20 @@ export default function AdminManagerTab({
       return;
     }
     setBusy(true);
-    for (let i = 0; i < selectedQuestoesArray.length; i += 1) {
-      const q = selectedQuestoesArray[i];
-      const err = await updateQuestaoByIds([q.id], { Ordem: start + i });
-      if (err) {
-        setBusy(false);
-        showToast("error", `Erro ao renumerar questão #${q.id}: ${err}`);
-        return;
-      }
-    }
+    const updates: { id: string | number; patch: Partial<BancoQuestion> }[] = [];
+    const err = await runInBatches(selectedQuestoesArray, 8, async (q, i) => {
+      const nextOrd = start + i;
+      const e = await updateQuestaoByIds([q.id], { Ordem: nextOrd });
+      if (!e) updates.push({ id: q.id, patch: { Ordem: nextOrd, ordem: nextOrd } });
+      return e;
+    });
     setBusy(false);
+    if (updates.length > 0) applyLocalPatch(updates);
+    if (err) {
+      showToast("error", `Erro ao renumerar: ${err}`);
+      return;
+    }
     showToast("success", `Ordem renumerada (${start} até ${start + selectedQuestoesArray.length - 1}).`);
-    onRefreshQuestions();
   };
 
   const handleConfirmDelete = async () => {
@@ -456,23 +697,27 @@ export default function AdminManagerTab({
       showToast("error", `Erro ao excluir: ${err}`);
       return;
     }
+    const deletedIds = deleteTarget.ids;
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      for (const id of deleteTarget.ids) next.delete(String(id));
+      for (const id of deletedIds) next.delete(String(id));
       return next;
     });
-    showToast("success", `${deleteTarget.ids.length} ${deleteTarget.ids.length === 1 ? "questão excluída" : "questões excluídas"}.`);
+    showToast("success", `${deletedIds.length} ${deletedIds.length === 1 ? "questão excluída" : "questões excluídas"}.`);
     setDeleteTarget(null);
-    onRefreshQuestions();
+    applyLocalRemove(deletedIds);
   };
 
   // ───────────────────────────────────────────────────────────────────────────
   // 2. ESTADO: GESTÃO DE SIMULADOS DA BIBLIOTECA (eBooks 3D)
   // ───────────────────────────────────────────────────────────────────────────
   const [simSearch, setSimSearch] = useState("");
+  const deferredSimSearch = useDeferredValue(simSearch);
   const [simBancaFilter, setSimBancaFilter] = useState("todas");
   const [simVisFilter, setSimVisFilter] = useState<"todos" | "visiveis" | "abaixo" | "ocultos" | "forcados">("todos");
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
+  const [simListLimit, setSimListLimit] = useState(80);
+  const [activeGroupQuestionsLimit, setActiveGroupQuestionsLimit] = useState(80);
 
   // Edição de metadados em lote do simulado selecionado
   const [editSimProva, setEditSimProva] = useState("");
@@ -491,6 +736,7 @@ export default function AdminManagerTab({
   // Adicionar questões existentes ao simulado selecionado
   const [showAttachPanel, setShowAttachPanel] = useState(false);
   const [attachSearch, setAttachSearch] = useState("");
+  const deferredAttachSearch = useDeferredValue(attachSearch);
 
   // Modal Criar Novo Simulado (agrupando questões do banco)
   const [showCreateSimModal, setShowCreateSimModal] = useState(false);
@@ -499,9 +745,11 @@ export default function AdminManagerTab({
   const [newSimAno, setNewSimAno] = useState("");
   const [newSimTypeId, setNewSimTypeId] = useState("inedito");
   const [newSimSourceFilter, setNewSimSourceFilter] = useState("");
+  const deferredNewSimSourceFilter = useDeferredValue(newSimSourceFilter);
   const [newSimPickIds, setNewSimPickIds] = useState<Set<string>>(new Set());
 
-  const allSimuladoGroups = useMemo<SimuladoGroup[]>(() => {
+  // Agrupamento base cacheado somente por `questions`
+  const baseSimuladoGroups = useMemo(() => {
     const byProva = new Map<string, BancoQuestion[]>();
     for (const q of questions) {
       const provaName = String(q.prova ?? "").trim() || "Sem Prova";
@@ -510,7 +758,7 @@ export default function AdminManagerTab({
       else byProva.set(provaName, [q]);
     }
 
-    const groups: SimuladoGroup[] = [];
+    const groups: Omit<SimuladoGroup, "isVisibleInLibrary" | "override">[] = [];
 
     for (const [provaName, pList] of byProva.entries()) {
       const bancaCounts = new Map<string, number>();
@@ -573,8 +821,6 @@ export default function AdminManagerTab({
           disciplinaPrincipal,
           questions: ordered,
           withOrderCount,
-          isVisibleInLibrary: shouldShowBookInLibrary(ordered.length, banca, key, simuladosConfig),
-          override: simuladosConfig.bookOverrides[key],
         });
       }
     }
@@ -584,10 +830,25 @@ export default function AdminManagerTab({
       if (bCmp !== 0) return bCmp;
       return a.provaName.localeCompare(b.provaName, "pt-BR", { numeric: true });
     });
-  }, [questions, simuladosConfig]);
+  }, [questions]);
+
+  const allSimuladoGroups = useMemo<SimuladoGroup[]>(
+    () =>
+      baseSimuladoGroups.map((g) => ({
+        ...g,
+        isVisibleInLibrary: shouldShowBookInLibrary(
+          g.questions.length,
+          g.banca,
+          g.key,
+          simuladosConfig
+        ),
+        override: simuladosConfig.bookOverrides[g.key],
+      })),
+    [baseSimuladoGroups, simuladosConfig]
+  );
 
   const filteredSimuladoGroups = useMemo(() => {
-    const term = simSearch.trim().toLowerCase();
+    const term = deferredSimSearch.trim().toLowerCase();
     return allSimuladoGroups.filter((g) => {
       if (simBancaFilter !== "todas" && g.banca !== simBancaFilter) return false;
       const visMode = g.override?.visibility ?? "auto";
@@ -604,7 +865,7 @@ export default function AdminManagerTab({
       }
       return true;
     });
-  }, [allSimuladoGroups, simSearch, simBancaFilter, simVisFilter, simuladosConfig.hiddenBancas]);
+  }, [allSimuladoGroups, deferredSimSearch, simBancaFilter, simVisFilter, simuladosConfig.hiddenBancas]);
 
   const activeGroup = useMemo(
     () => allSimuladoGroups.find((g) => g.key === selectedGroupKey) || null,
@@ -613,6 +874,7 @@ export default function AdminManagerTab({
 
   const selectGroupForEdit = (group: SimuladoGroup) => {
     setSelectedGroupKey(group.key);
+    setActiveGroupQuestionsLimit(80);
     setEditSimProva(group.provaName === "Sem Prova" ? "" : group.provaName);
     setEditSimBanca(group.banca === "Outras Bancas" ? "" : group.banca);
     setEditSimAno(group.ano || "");
@@ -640,11 +902,21 @@ export default function AdminManagerTab({
 
     setBusy(true);
     const ids = activeGroup.questions.map((q) => q.id);
+    const cleanProva = editSimProva.trim();
+    const cleanBanca = editSimBanca.trim() || null;
     const payload: Record<string, string | null> = {
-      PROVA: editSimProva.trim(),
-      Banca: editSimBanca.trim() || null,
+      PROVA: cleanProva,
+      Banca: cleanBanca,
     };
-    if (editSimAno.trim()) payload.Ano = editSimAno.trim();
+    const localPatch: Partial<BancoQuestion> = {
+      prova: cleanProva,
+      Banca: cleanBanca ?? undefined,
+      banca: cleanBanca ?? undefined,
+    };
+    if (editSimAno.trim()) {
+      payload.Ano = editSimAno.trim();
+      localPatch.Ano = editSimAno.trim();
+    }
 
     const err = await updateQuestaoByIds(ids, payload);
     if (err) {
@@ -655,7 +927,7 @@ export default function AdminManagerTab({
 
     // Migra override para a nova chave se mudou Banca/Prova
     const newBanca = editSimBanca.trim() || "Outras Bancas";
-    const newProva = editSimProva.trim();
+    const newProva = cleanProva;
     const newKey = `${newBanca}:::${newProva}`;
     if (newKey !== activeGroup.key && simuladosConfig.bookOverrides[activeGroup.key]) {
       const nextOverrides = { ...simuladosConfig.bookOverrides };
@@ -667,7 +939,7 @@ export default function AdminManagerTab({
     setBusy(false);
     setSelectedGroupKey(newKey);
     showToast("success", `Metadados atualizados em ${ids.length} questões.`);
-    onRefreshQuestions();
+    applyLocalPatch(ids.map((id) => ({ id, patch: localPatch })));
   };
 
   const handleMergeSimulado = async () => {
@@ -677,9 +949,11 @@ export default function AdminManagerTab({
 
     setBusy(true);
     const ids = activeGroup.questions.map((q) => q.id);
+    const targetProva = target.provaName === "Sem Prova" ? null : target.provaName;
+    const targetBanca = target.banca === "Outras Bancas" ? null : target.banca;
     const payload: Record<string, string | null> = {
-      PROVA: target.provaName === "Sem Prova" ? null : target.provaName,
-      Banca: target.banca === "Outras Bancas" ? null : target.banca,
+      PROVA: targetProva,
+      Banca: targetBanca,
     };
     const err = await updateQuestaoByIds(ids, payload);
     setBusy(false);
@@ -689,7 +963,16 @@ export default function AdminManagerTab({
     }
     showToast("success", `${ids.length} questões movidas para "${target.provaName}".`);
     setSelectedGroupKey(target.key);
-    onRefreshQuestions();
+    applyLocalPatch(
+      ids.map((id) => ({
+        id,
+        patch: {
+          prova: targetProva ?? undefined,
+          Banca: targetBanca ?? undefined,
+          banca: targetBanca ?? undefined,
+        },
+      }))
+    );
   };
 
   const handleSaveGroupOverride = async () => {
@@ -734,18 +1017,20 @@ export default function AdminManagerTab({
   const handleRenumberGroupQuestions = async () => {
     if (!activeGroup) return;
     setBusy(true);
-    for (let i = 0; i < activeGroup.questions.length; i += 1) {
-      const q = activeGroup.questions[i];
-      const err = await updateQuestaoByIds([q.id], { Ordem: i + 1 });
-      if (err) {
-        setBusy(false);
-        showToast("error", `Erro ao numerar questão #${q.id}: ${err}`);
-        return;
-      }
-    }
+    const updates: { id: string | number; patch: Partial<BancoQuestion> }[] = [];
+    const err = await runInBatches(activeGroup.questions, 8, async (q, i) => {
+      const nextOrd = i + 1;
+      const e = await updateQuestaoByIds([q.id], { Ordem: nextOrd });
+      if (!e) updates.push({ id: q.id, patch: { Ordem: nextOrd, ordem: nextOrd } });
+      return e;
+    });
     setBusy(false);
+    if (updates.length > 0) applyLocalPatch(updates);
+    if (err) {
+      showToast("error", `Erro ao numerar questões: ${err}`);
+      return;
+    }
     showToast("success", `Questões numeradas sequencialmente de 1 a ${activeGroup.questions.length}.`);
-    onRefreshQuestions();
   };
 
   const handleSwapQuestionOrder = async (idxA: number, idxB: number) => {
@@ -759,18 +1044,29 @@ export default function AdminManagerTab({
     const ordB = getOrdemNum(qB) ?? idxB + 1;
 
     setBusy(true);
-    // Se empatados, normaliza toda a sequência antes de trocar
+    const updates: { id: string | number; patch: Partial<BancoQuestion> }[] = [];
     if (ordA === ordB) {
-      for (let i = 0; i < list.length; i += 1) {
+      const err = await runInBatches(list, 8, async (item, i) => {
         const targetPos = i === idxA ? idxB + 1 : i === idxB ? idxA + 1 : i + 1;
-        await updateQuestaoByIds([list[i].id], { Ordem: targetPos });
-      }
+        const e = await updateQuestaoByIds([item.id], { Ordem: targetPos });
+        if (!e) updates.push({ id: item.id, patch: { Ordem: targetPos, ordem: targetPos } });
+        return e;
+      });
+      setBusy(false);
+      if (updates.length > 0) applyLocalPatch(updates);
+      if (err) showToast("error", `Erro ao reordenar: ${err}`);
+      return;
     } else {
-      await updateQuestaoByIds([qA.id], { Ordem: ordB });
-      await updateQuestaoByIds([qB.id], { Ordem: ordA });
+      const [errA, errB] = await Promise.all([
+        updateQuestaoByIds([qA.id], { Ordem: ordB }),
+        updateQuestaoByIds([qB.id], { Ordem: ordA }),
+      ]);
+      setBusy(false);
+      if (!errA) updates.push({ id: qA.id, patch: { Ordem: ordB, ordem: ordB } });
+      if (!errB) updates.push({ id: qB.id, patch: { Ordem: ordA, ordem: ordA } });
+      if (updates.length > 0) applyLocalPatch(updates);
+      if (errA || errB) showToast("error", `Erro ao trocar ordem: ${errA || errB}`);
     }
-    setBusy(false);
-    onRefreshQuestions();
   };
 
   const handleDetachFromSimulado = async (q: BancoQuestion) => {
@@ -782,7 +1078,7 @@ export default function AdminManagerTab({
       return;
     }
     showToast("success", `Questão #${q.id} removida deste simulado.`);
-    onRefreshQuestions();
+    applyLocalPatch([{ id: q.id, patch: { prova: undefined } }]);
   };
 
   const handleAttachQuestionToGroup = async (q: BancoQuestion) => {
@@ -792,19 +1088,34 @@ export default function AdminManagerTab({
       return o !== null && o > max ? o : max;
     }, activeGroup.questions.length);
 
+    const targetProva = activeGroup.provaName === "Sem Prova" ? null : activeGroup.provaName;
+    const targetBanca = activeGroup.banca === "Outras Bancas" ? null : activeGroup.banca;
+    const nextOrd = maxOrdem + 1;
+
     setBusy(true);
     const err = await updateQuestaoByIds([q.id], {
-      PROVA: activeGroup.provaName === "Sem Prova" ? null : activeGroup.provaName,
-      Banca: activeGroup.banca === "Outras Bancas" ? null : activeGroup.banca,
-      Ordem: maxOrdem + 1,
+      PROVA: targetProva,
+      Banca: targetBanca,
+      Ordem: nextOrd,
     });
     setBusy(false);
     if (err) {
       showToast("error", `Erro ao vincular questão: ${err}`);
       return;
     }
-    showToast("success", `Questão #${q.id} adicionada na posição ${maxOrdem + 1}.`);
-    onRefreshQuestions();
+    showToast("success", `Questão #${q.id} adicionada na posição ${nextOrd}.`);
+    applyLocalPatch([
+      {
+        id: q.id,
+        patch: {
+          prova: targetProva ?? undefined,
+          Banca: targetBanca ?? undefined,
+          banca: targetBanca ?? undefined,
+          Ordem: nextOrd,
+          ordem: nextOrd,
+        },
+      },
+    ]);
   };
 
   const handleCreateCustomSimulado = async () => {
@@ -822,20 +1133,38 @@ export default function AdminManagerTab({
     const cleanProva = newSimProva.trim();
     const cleanBanca = newSimBanca.trim() || null;
     const cleanAno = newSimAno.trim() || null;
+    const updates: { id: string | number; patch: Partial<BancoQuestion> }[] = [];
 
-    for (let i = 0; i < picked.length; i += 1) {
+    const err = await runInBatches(picked, 8, async (q, i) => {
+      const nextOrd = i + 1;
       const payload: Record<string, string | number | null> = {
         PROVA: cleanProva,
         Banca: cleanBanca,
-        Ordem: i + 1,
+        Ordem: nextOrd,
       };
       if (cleanAno) payload.Ano = cleanAno;
-      const err = await updateQuestaoByIds([picked[i].id], payload);
-      if (err) {
-        setBusy(false);
-        showToast("error", `Erro ao criar simulado: ${err}`);
-        return;
+      const e = await updateQuestaoByIds([q.id], payload);
+      if (!e) {
+        updates.push({
+          id: q.id,
+          patch: {
+            prova: cleanProva,
+            Banca: cleanBanca ?? undefined,
+            banca: cleanBanca ?? undefined,
+            Ordem: nextOrd,
+            ordem: nextOrd,
+            ...(cleanAno ? { Ano: cleanAno } : {}),
+          },
+        });
       }
+      return e;
+    });
+
+    if (err) {
+      setBusy(false);
+      if (updates.length > 0) applyLocalPatch(updates);
+      showToast("error", `Erro ao criar simulado: ${err}`);
+      return;
     }
 
     const newKey = `${cleanBanca || "Outras Bancas"}:::${cleanProva}`;
@@ -860,7 +1189,7 @@ export default function AdminManagerTab({
     setNewSimPickIds(new Set());
     setSelectedGroupKey(newKey);
     showToast("success", `Simulado "${cleanProva}" criado com ${picked.length} questões.`);
-    onRefreshQuestions();
+    applyLocalPatch(updates);
   };
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -898,7 +1227,7 @@ export default function AdminManagerTab({
     try {
       const { data, error } = await supabase
         .from("simulados")
-        .select("id, titulo, autor, ano, duracao_minutos, data_json, created_at")
+        .select("id, titulo, autor, ano, duracao_minutos, created_at")
         .order("created_at", { ascending: false });
       if (error) {
         setTimedError(error.message);
@@ -912,12 +1241,38 @@ export default function AdminManagerTab({
     }
   }, []);
 
+  const handleOpenEditTimedSimulado = useCallback(
+    async (sim: TimedSimuladoRow) => {
+      setBusy(true);
+      const { data, error } = await supabase
+        .from("simulados")
+        .select("data_json")
+        .eq("id", sim.id)
+        .maybeSingle();
+      setBusy(false);
+      if (error) {
+        showToast("error", `Erro ao carregar JSON do simulado: ${error.message}`);
+        return;
+      }
+      setEditingTimed({
+        isNew: false,
+        id: sim.id,
+        titulo: sim.titulo || sim.title || "",
+        autor: sim.autor || "",
+        ano: sim.ano ? String(sim.ano) : "",
+        duracao_minutos: String(sim.duracao_minutos ?? 240),
+        jsonText: JSON.stringify(data?.data_json ?? sim.data_json ?? {}, null, 2),
+      });
+    },
+    [showToast]
+  );
+
   useEffect(() => {
     if (subTab !== "tipos_regras") return;
     let cancelled = false;
     supabase
       .from("simulados")
-      .select("id, titulo, autor, ano, duracao_minutos, data_json, created_at")
+      .select("id, titulo, autor, ano, duracao_minutos, created_at")
       .order("created_at", { ascending: false })
       .then(({ data, error }) => {
         if (cancelled) return;
@@ -1119,30 +1474,64 @@ export default function AdminManagerTab({
   const attachCandidates = useMemo(() => {
     if (!showAttachPanel || !activeGroup) return [];
     const currentSet = new Set(activeGroup.questions.map((q) => String(q.id)));
-    const term = attachSearch.trim().toLowerCase();
-    return questions
-      .filter((q) => {
-        if (currentSet.has(String(q.id))) return false;
-        if (!term) return true;
-        const ids = getQuestionIds(q);
-        const hay = `${q.id} ${ids.idq} ${ids.idg} ${ids.idtec} ${q.title || ""} ${q.perguntaProblema || ""} ${getDisciplina(q)} ${q.prova || ""} ${getBanca(q)}`.toLowerCase();
-        return hay.includes(term);
-      })
-      .slice(0, 30);
-  }, [showAttachPanel, activeGroup, questions, attachSearch]);
+    const term = deferredAttachSearch.trim().toLowerCase();
+    const out: BancoQuestion[] = [];
+    for (const q of questions) {
+      if (currentSet.has(String(q.id))) continue;
+      if (term) {
+        const hay = questionSearchIndex.get(String(q.id));
+        if (!hay || !hay.includes(term)) continue;
+      }
+      out.push(q);
+      if (out.length >= 30) break;
+    }
+    return out;
+  }, [showAttachPanel, activeGroup, questions, questionSearchIndex, deferredAttachSearch]);
 
   // Questões para o modal "Criar Novo Simulado"
   const newSimCandidates = useMemo(() => {
     if (!showCreateSimModal) return [];
-    const term = newSimSourceFilter.trim().toLowerCase();
-    return questions
-      .filter((q) => {
-        if (!term) return true;
-        const hay = `${q.id} ${q.title || ""} ${q.perguntaProblema || ""} ${getDisciplina(q)} ${q.prova || ""} ${getBanca(q)}`.toLowerCase();
-        return hay.includes(term);
-      })
-      .slice(0, 80);
-  }, [showCreateSimModal, questions, newSimSourceFilter]);
+    const term = deferredNewSimSourceFilter.trim().toLowerCase();
+    const out: BancoQuestion[] = [];
+    for (const q of questions) {
+      if (term) {
+        const hay = questionSearchIndex.get(String(q.id));
+        if (!hay || !hay.includes(term)) continue;
+      }
+      out.push(q);
+      if (out.length >= 80) break;
+    }
+    return out;
+  }, [showCreateSimModal, questions, questionSearchIndex, deferredNewSimSourceFilter]);
+
+  // Callbacks estáveis para linhas memoizadas da tabela de questões
+  const handleToggleSelectRow = useCallback((qKey: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(qKey)) next.delete(qKey);
+      else next.add(qKey);
+      return next;
+    });
+  }, []);
+
+  const handleDraftOrdemChange = useCallback((qKey: string, val: string) => {
+    setInlineOrdemDraft((prev) => ({ ...prev, [qKey]: val }));
+  }, []);
+
+  const handleOpenResolverFromRow = useCallback(
+    (q: BancoQuestion) => {
+      onOpenResolver(q, filteredQuestions);
+    },
+    [onOpenResolver, filteredQuestions]
+  );
+
+  const handleRequestDeleteRow = useCallback((q: BancoQuestion) => {
+    setDeleteTarget({
+      title: `Excluir Questão #${q.id}?`,
+      description: q.title || q.perguntaProblema || "Remoção permanente.",
+      ids: [q.id],
+    });
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -1649,158 +2038,20 @@ export default function AdminManagerTab({
                   ) : (
                     pagedQuestions.map((q) => {
                       const qKey = String(q.id);
-                      const isSel = selectedIds.has(qKey);
-                      const curOrd = getOrdemNum(q);
-                      const draftOrd =
-                        inlineOrdemDraft[qKey] !== undefined
-                          ? inlineOrdemDraft[qKey]
-                          : curOrd !== null
-                          ? String(curOrd)
-                          : "";
-                      const ordDirty =
-                        inlineOrdemDraft[qKey] !== undefined &&
-                        inlineOrdemDraft[qKey] !== (curOrd !== null ? String(curOrd) : "");
-                      const ids = getQuestionIds(q);
-
                       return (
-                        <tr
+                        <AdminQuestionRow
                           key={qKey}
-                          className={`transition-colors ${
-                            isSel ? "bg-blue-600/[0.08]" : "hover:bg-white/[0.025]"
-                          }`}
-                        >
-                          <td className="py-2 px-3 text-center">
-                            <input
-                              type="checkbox"
-                              checked={isSel}
-                              onChange={() =>
-                                setSelectedIds((prev) => {
-                                  const next = new Set(prev);
-                                  if (next.has(qKey)) next.delete(qKey);
-                                  else next.add(qKey);
-                                  return next;
-                                })
-                              }
-                              aria-label={`Selecionar questão ${q.id}`}
-                              className="rounded border-white/20 bg-slate-900 accent-blue-600"
-                            />
-                          </td>
-                          <td className="py-2 px-2.5 font-mono text-[11px] text-slate-400 tabular-nums">
-                            #{q.id}
-                          </td>
-                          <td className="py-2 px-2.5">
-                            <div className="flex items-center gap-1">
-                              <input
-                                type="number"
-                                value={draftOrd}
-                                onChange={(e) =>
-                                  setInlineOrdemDraft((prev) => ({
-                                    ...prev,
-                                    [qKey]: e.target.value,
-                                  }))
-                                }
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") void handleSaveInlineOrdem(q);
-                                }}
-                                placeholder="—"
-                                className="w-14 bg-[#0d0f14] border border-white/[0.08] rounded px-1.5 py-1 text-[11px] text-slate-200 font-mono tabular-nums focus:outline-none focus:border-blue-500"
-                              />
-                              {ordDirty && (
-                                <button
-                                  type="button"
-                                  onClick={() => void handleSaveInlineOrdem(q)}
-                                  title="Salvar Ordem"
-                                  className="p-1 rounded bg-blue-600 text-white hover:bg-blue-500"
-                                >
-                                  <Check size={11} />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-2 px-3">
-                            <div className="truncate max-w-[180px] text-slate-200 font-normal">
-                              {q.prova || <span className="text-slate-500 font-normal">Sem Prova</span>}
-                            </div>
-                            <div className="text-[11px] text-slate-400 truncate max-w-[180px]">
-                              {getBanca(q) || "Sem Banca"}
-                              {q.Ano ? ` · ${q.Ano}` : ""}
-                            </div>
-                          </td>
-                          <td className="py-2 px-3">
-                            <div className="truncate max-w-[165px] text-slate-300">
-                              {getDisciplina(q)}
-                            </div>
-                            {q.tema && (
-                              <div className="text-[11px] text-slate-500 truncate max-w-[165px]">
-                                {q.tema}
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-2 px-3">
-                            <p className="text-slate-300 line-clamp-2 max-w-[340px] leading-snug">
-                              {q.title || q.perguntaProblema || "Sem enunciado"}
-                            </p>
-                          </td>
-                          <td className="py-2 px-2.5 text-[11px] tabular-nums">
-                            <div className="font-mono text-emerald-400">
-                              {q.Gabarito || q.respostaCorreta || "—"}
-                            </div>
-                            <div className="text-slate-400 truncate max-w-[95px]">
-                              {q.dificuldade || q.status || "—"}
-                            </div>
-                          </td>
-                          <td className="py-2 px-2.5 font-mono text-[10.5px] text-slate-400">
-                            <div className="truncate max-w-[115px]">
-                              {ids.idq ? `Q:${ids.idq}` : ""}
-                              {ids.idg ? ` G:${ids.idg}` : ""}
-                              {ids.idtec ? ` T:${ids.idtec}` : ""}
-                              {!ids.idq && !ids.idg && !ids.idtec ? "—" : ""}
-                            </div>
-                          </td>
-                          <td className="py-2 px-3 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <button
-                                type="button"
-                                onClick={() => onEditQuestion(q)}
-                                title="Editar questão"
-                                className="p-1.5 rounded-md text-slate-400 hover:text-amber-300 hover:bg-white/[0.06] transition-colors"
-                              >
-                                <Pencil size={13} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => void handleDuplicateQuestion(q)}
-                                title="Duplicar questão"
-                                className="p-1.5 rounded-md text-slate-400 hover:text-blue-300 hover:bg-white/[0.06] transition-colors"
-                              >
-                                <Copy size={13} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => onOpenResolver(q, filteredQuestions)}
-                                title="Abrir no resolvedor"
-                                className="p-1.5 rounded-md text-slate-400 hover:text-emerald-300 hover:bg-white/[0.06] transition-colors"
-                              >
-                                <Play size={13} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setDeleteTarget({
-                                    title: `Excluir Questão #${q.id}?`,
-                                    description:
-                                      q.title || q.perguntaProblema || "Remoção permanente.",
-                                    ids: [q.id],
-                                  })
-                                }
-                                title="Excluir questão"
-                                className="p-1.5 rounded-md text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
+                          q={q}
+                          isSel={selectedIds.has(qKey)}
+                          draftOrdVal={inlineOrdemDraft[qKey]}
+                          onToggleSelect={handleToggleSelectRow}
+                          onDraftChange={handleDraftOrdemChange}
+                          onSaveInlineOrdem={(item) => void handleSaveInlineOrdem(item)}
+                          onEditQuestion={onEditQuestion}
+                          onDuplicateQuestion={(item) => void handleDuplicateQuestion(item)}
+                          onOpenResolverSingle={handleOpenResolverFromRow}
+                          onRequestDelete={handleRequestDeleteRow}
+                        />
                       );
                     })
                   )}
@@ -1913,56 +2164,69 @@ export default function AdminManagerTab({
                       Nenhum simulado encontrado.
                     </div>
                   ) : (
-                    filteredSimuladoGroups.map((g) => {
-                      const isSelected = activeGroup?.key === g.key;
-                      const typeLabel = g.override?.typeId
-                        ? simuladosConfig.simuladoTypes.find((t) => t.id === g.override?.typeId)
-                            ?.label
-                        : undefined;
-                      const visMode = g.override?.visibility ?? "auto";
-                      const statusText =
-                        visMode === "hide" || simuladosConfig.hiddenBancas.includes(g.banca)
-                          ? "Oculto"
-                          : visMode === "force_show"
-                          ? "Forçado"
-                          : g.isVisibleInLibrary
-                          ? "Visível"
-                          : `Oculto (< ${simuladosConfig.minQuestionsToShow} qs)`;
+                    <>
+                      {filteredSimuladoGroups.slice(0, simListLimit).map((g) => {
+                        const isSelected = activeGroup?.key === g.key;
+                        const typeLabel = g.override?.typeId
+                          ? simuladosConfig.simuladoTypes.find((t) => t.id === g.override?.typeId)
+                              ?.label
+                          : undefined;
+                        const visMode = g.override?.visibility ?? "auto";
+                        const statusText =
+                          visMode === "hide" || simuladosConfig.hiddenBancas.includes(g.banca)
+                            ? "Oculto"
+                            : visMode === "force_show"
+                            ? "Forçado"
+                            : g.isVisibleInLibrary
+                            ? "Visível"
+                            : `Oculto (< ${simuladosConfig.minQuestionsToShow} qs)`;
 
-                      return (
-                        <button
-                          key={g.key}
-                          type="button"
-                          onClick={() => selectGroupForEdit(g)}
-                          className={`w-full px-3.5 py-2.5 text-left transition-colors flex items-start justify-between gap-2 ${
-                            isSelected ? "bg-white/[0.08]" : "hover:bg-white/[0.04]"
-                          }`}
-                        >
-                          <div className="min-w-0 space-y-0.5">
-                            <div className="text-xs font-normal text-slate-100 truncate">
-                              {g.override?.customTitle || g.provaName}
+                        return (
+                          <button
+                            key={g.key}
+                            type="button"
+                            onClick={() => selectGroupForEdit(g)}
+                            className={`w-full px-3.5 py-2.5 text-left transition-colors flex items-start justify-between gap-2 ${
+                              isSelected ? "bg-white/[0.08]" : "hover:bg-white/[0.04]"
+                            }`}
+                          >
+                            <div className="min-w-0 space-y-0.5">
+                              <div className="text-xs font-normal text-slate-100 truncate">
+                                {g.override?.customTitle || g.provaName}
+                              </div>
+                              <div className="text-[11px] text-slate-400 truncate">
+                                {g.banca}
+                                {g.ano ? ` · ${g.ano}` : ""}
+                                {typeLabel ? ` · ${typeLabel}` : ""}
+                              </div>
                             </div>
-                            <div className="text-[11px] text-slate-400 truncate">
-                              {g.banca}
-                              {g.ano ? ` · ${g.ano}` : ""}
-                              {typeLabel ? ` · ${typeLabel}` : ""}
+                            <div className="text-right shrink-0 space-y-0.5 tabular-nums">
+                              <div className="text-xs font-mono text-slate-200">
+                                {g.questions.length} qs
+                              </div>
+                              <div
+                                className={`text-[10.5px] ${
+                                  g.isVisibleInLibrary ? "text-emerald-400" : "text-amber-400"
+                                }`}
+                              >
+                                {statusText}
+                              </div>
                             </div>
-                          </div>
-                          <div className="text-right shrink-0 space-y-0.5 tabular-nums">
-                            <div className="text-xs font-mono text-slate-200">
-                              {g.questions.length} qs
-                            </div>
-                            <div
-                              className={`text-[10.5px] ${
-                                g.isVisibleInLibrary ? "text-emerald-400" : "text-amber-400"
-                              }`}
-                            >
-                              {statusText}
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })
+                          </button>
+                        );
+                      })}
+                      {filteredSimuladoGroups.length > simListLimit && (
+                        <div className="p-2.5 text-center">
+                          <button
+                            type="button"
+                            onClick={() => setSimListLimit((v) => v + 80)}
+                            className="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-xs font-normal text-slate-300"
+                          >
+                            Mostrar mais (+{Math.min(80, filteredSimuladoGroups.length - simListLimit)})
+                          </button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -2320,7 +2584,7 @@ export default function AdminManagerTab({
                       )}
 
                       <div className="max-h-[360px] overflow-y-auto custom-scrollbar border border-white/[0.06] rounded-lg divide-y divide-white/[0.05]">
-                        {activeGroup.questions.map((q, idx) => {
+                        {activeGroup.questions.slice(0, activeGroupQuestionsLimit).map((q, idx) => {
                           const ord = getOrdemNum(q);
                           return (
                             <div
@@ -2382,6 +2646,24 @@ export default function AdminManagerTab({
                             </div>
                           );
                         })}
+                        {activeGroup.questions.length > activeGroupQuestionsLimit && (
+                          <div className="p-2.5 flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setActiveGroupQuestionsLimit((v) => v + 80)}
+                              className="px-3 py-1 rounded bg-white/[0.04] hover:bg-white/[0.08] text-xs font-normal text-slate-300"
+                            >
+                              Mostrar mais (+{Math.min(80, activeGroup.questions.length - activeGroupQuestionsLimit)})
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setActiveGroupQuestionsLimit(activeGroup.questions.length)}
+                              className="px-2.5 py-1 rounded text-xs font-normal text-blue-400 hover:text-blue-300"
+                            >
+                              Exibir todas ({activeGroup.questions.length})
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </>
@@ -2702,17 +2984,8 @@ export default function AdminManagerTab({
                               </a>
                               <button
                                 type="button"
-                                onClick={() =>
-                                  setEditingTimed({
-                                    isNew: false,
-                                    id: sim.id,
-                                    titulo: sim.titulo || sim.title || "",
-                                    autor: sim.autor || "",
-                                    ano: sim.ano ? String(sim.ano) : "",
-                                    duracao_minutos: String(sim.duracao_minutos ?? 240),
-                                    jsonText: JSON.stringify(sim.data_json ?? {}, null, 2),
-                                  })
-                                }
+                                disabled={busy}
+                                onClick={() => void handleOpenEditTimedSimulado(sim)}
                                 className="p-1.5 rounded text-slate-400 hover:text-amber-300 hover:bg-white/[0.06]"
                                 title="Editar"
                               >

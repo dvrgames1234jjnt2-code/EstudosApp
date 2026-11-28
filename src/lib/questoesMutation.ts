@@ -101,21 +101,27 @@ export async function safeUpdateQuestoesByIds(
   payload: QuestaoWritePayload
 ): Promise<string | null> {
   if (ids.length === 0) return null;
-  return runQuestaoMutation(
-    async (client, currentPayload) => {
-      const { data, error } = await client
-        .from("questoes")
-        .update(currentPayload)
-        .in("id", ids)
-        .select("id");
-      return {
-        error,
-        affectedCount: Array.isArray(data) ? data.length : 0,
-      };
-    },
-    payload,
-    true
-  );
+  const CHUNK_SIZE = 80;
+  for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+    const chunk = ids.slice(i, i + CHUNK_SIZE);
+    const err = await runQuestaoMutation(
+      async (client, currentPayload) => {
+        const { data, error } = await client
+          .from("questoes")
+          .update(currentPayload)
+          .in("id", chunk)
+          .select("id");
+        return {
+          error,
+          affectedCount: Array.isArray(data) ? data.length : 0,
+        };
+      },
+      payload,
+      true
+    );
+    if (err) return err;
+  }
+  return null;
 }
 
 export async function safeInsertQuestao(

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, memo, createContext, useContext, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
-  Plus, Trash2, ChevronDown, ChevronRight, ChevronLeft, Loader2,
+  Plus, Trash2, ChevronDown, ChevronRight, ChevronLeft, ArrowRight, Loader2,
   BookMarked, RefreshCw, X, Check, Play, Eye, EyeOff,
   Triangle, Flag, History, LayoutGrid, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw, Moon, Sun,
   Clock, HelpCircle, Filter, Flame, Calendar, BarChart3, Target, AlertTriangle,
@@ -84,8 +84,8 @@ function ClassificationValidationDropdown({
       <div
         className={`flex items-center rounded-xl border transition-colors ${
           isFiltered
-            ? "bg-indigo-500/10 border-indigo-500/40 text-white"
-            : "bg-[#0d1220] border-white/[0.10] hover:border-white/[0.20] text-slate-200"
+            ? "bg-indigo-500/12 border-indigo-400/30 text-slate-100"
+            : "bg-[#0a0f1c] border-white/[0.08] hover:border-white/[0.16] text-slate-200"
         }`}
       >
         <button
@@ -93,41 +93,41 @@ function ClassificationValidationDropdown({
           onClick={() => setOpen(v => !v)}
           aria-haspopup="listbox"
           aria-expanded={open}
-          className={`flex items-center justify-between gap-2 text-left focus:outline-none w-full sm:w-auto ${
-            compact ? "px-2.5 py-2 sm:py-1.5 min-w-0 sm:min-w-[175px]" : "px-3 py-2 sm:py-1.5 min-w-0 sm:min-w-[225px]"
+          className={`flex items-center justify-between gap-2.5 text-left focus:outline-none w-full sm:w-auto ${
+            compact ? "px-3 py-2 sm:py-1.5 min-w-0 sm:min-w-[190px]" : "px-3.5 py-2 min-w-0 sm:min-w-[235px]"
           }`}
         >
           <span className="flex items-center gap-2 min-w-0">
-            <Tag size={12} className={isFiltered ? "text-amber-400 shrink-0" : "text-indigo-400 shrink-0"} />
+            <Tag size={12} className={isFiltered ? "text-amber-300 shrink-0" : "text-indigo-400/80 shrink-0"} />
             {!compact && (
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 shrink-0">
+              <span className="text-[11.5px] font-normal text-slate-400 shrink-0">
                 Classificação:
               </span>
             )}
-            <span className="flex items-center gap-1.5 text-[11px] font-semibold truncate">
+            <span className="flex items-center gap-1.5 text-[12px] font-normal truncate">
               {selectedCat ? (
                 <>
                   {renderSwatch(selectedCat)}
-                  <span style={{ color: selectedCat.textColor }} className="font-bold truncate">
+                  <span style={{ color: selectedCat.textColor }} className="font-normal truncate">
                     {selectedCat.label}
                   </span>
                 </>
               ) : isCustom ? (
                 <>
                   <span className="text-xs leading-none">✨</span>
-                  <span className="text-purple-300 font-bold truncate">Personalizadas</span>
+                  <span className="text-purple-300 font-normal truncate">Personalizadas</span>
                 </>
               ) : isPadrao ? (
                 <>
                   <span className="text-xs leading-none">📋</span>
-                  <span className="text-slate-200 font-bold truncate">Padrão</span>
+                  <span className="text-slate-200 font-normal truncate">Padrão</span>
                 </>
               ) : (
                 <span className="text-slate-300 truncate">Todas as classificações</span>
               )}
             </span>
           </span>
-          <ChevronDown size={13} className={`text-slate-400 shrink-0 ${open ? "rotate-180" : ""}`} />
+          <ChevronDown size={13} className={`text-slate-400 shrink-0 transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
         </button>
 
         {isFiltered && (
@@ -139,7 +139,7 @@ function ClassificationValidationDropdown({
               setOpen(false);
             }}
             title="Limpar filtro de classificação"
-            className="pr-2 pl-0.5 py-1.5 text-slate-400 hover:text-white transition-colors"
+            className="pr-2.5 pl-1 py-1.5 text-slate-400 hover:text-slate-100 transition-colors"
           >
             <X size={12} />
           </button>
@@ -150,11 +150,11 @@ function ClassificationValidationDropdown({
         <div
           role="listbox"
           aria-label="Lista de validação de classificação"
-          className="absolute left-0 top-full mt-1.5 z-50 w-full min-w-[240px] sm:w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-white/[0.14] bg-[#0b101c] py-1.5 shadow-lg"
+          className="absolute left-0 top-full mt-2 z-50 w-full min-w-[250px] sm:w-68 max-w-[calc(100vw-2rem)] rounded-2xl border border-white/[0.10] bg-[#0b101e] py-2 shadow-2xl shadow-black/50"
         >
-          <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/[0.06] mb-1">
-            <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-500">
-              Lista de Validação
+          <div className="flex items-center justify-between px-3.5 py-2 border-b border-white/[0.06] mb-1">
+            <span className="text-[11px] font-normal text-slate-400">
+              Filtrar classificação
             </span>
             {isFiltered && (
               <button
@@ -163,34 +163,34 @@ function ClassificationValidationDropdown({
                   onChange("todas");
                   setOpen(false);
                 }}
-                className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors"
+                className="text-[11px] font-normal text-indigo-300 hover:text-indigo-200 transition-colors"
               >
                 Limpar
               </button>
             )}
           </div>
 
-          <div className="max-h-[300px] overflow-y-auto px-1 flex flex-col gap-0.5">
+          <div className="max-h-[320px] overflow-y-auto custom-scrollbar px-1.5 flex flex-col gap-0.5">
             <button
               type="button"
               role="option"
               aria-selected={value === "todas"}
               onClick={() => { onChange("todas"); setOpen(false); }}
-              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[12px] font-normal transition-colors ${
                 value === "todas"
-                  ? "bg-indigo-600/20 text-white"
-                  : "text-slate-300 hover:bg-white/[0.05]"
+                  ? "bg-indigo-500/18 text-slate-100"
+                  : "text-slate-300 hover:bg-white/[0.04]"
               }`}
             >
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2.5">
                 <span className="w-2.5 h-2.5 rounded-full border border-slate-500/70 shrink-0" />
                 <span>Todas as classificações</span>
               </span>
               {value === "todas" && <Check size={12} className="text-indigo-400 shrink-0" />}
             </button>
 
-            <div className="px-2.5 pt-1.5 pb-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500">
-              Níveis e Marcadores
+            <div className="px-3 pt-2.5 pb-1 text-[10.5px] font-normal text-slate-500">
+              Níveis e marcadores
             </div>
 
             {CATEGORIES.map(cat => {
@@ -202,15 +202,15 @@ function ClassificationValidationDropdown({
                   role="option"
                   aria-selected={active}
                   onClick={() => { onChange(active ? "todas" : cat.key); setOpen(false); }}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] transition-colors ${
+                  className={`w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-[12px] font-normal transition-colors ${
                     active
-                      ? "bg-indigo-600/20 text-white font-bold"
-                      : "text-slate-200 hover:bg-white/[0.05] font-medium"
+                      ? "bg-indigo-500/18 text-slate-100"
+                      : "text-slate-200 hover:bg-white/[0.04]"
                   }`}
                 >
-                  <span className="flex items-center gap-2 min-w-0">
+                  <span className="flex items-center gap-2.5 min-w-0">
                     {renderSwatch(cat)}
-                    <span style={{ color: active ? "#ffffff" : cat.textColor }} className="truncate">
+                    <span style={{ color: active ? "#f1f5f9" : cat.textColor }} className="truncate">
                       {cat.label}
                     </span>
                   </span>
@@ -219,8 +219,8 @@ function ClassificationValidationDropdown({
               );
             })}
 
-            <div className="px-2.5 pt-1.5 pb-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 border-t border-white/[0.06] mt-1">
-              Origem da Classificação
+            <div className="px-3 pt-2.5 pb-1 text-[10.5px] font-normal text-slate-500 border-t border-white/[0.06] mt-1.5">
+              Origem da classificação
             </div>
 
             <button
@@ -228,17 +228,17 @@ function ClassificationValidationDropdown({
               role="option"
               aria-selected={isCustom}
               onClick={() => { onChange(isCustom ? "todas" : "personalizadas"); setOpen(false); }}
-              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] transition-colors ${
+              className={`w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-[12px] font-normal transition-colors ${
                 isCustom
-                  ? "bg-purple-500/20 text-white font-bold"
-                  : "text-purple-300 hover:bg-white/[0.05] font-medium"
+                  ? "bg-purple-500/18 text-slate-100"
+                  : "text-purple-300/90 hover:bg-white/[0.04]"
               }`}
             >
               <span className="flex items-center gap-2">
                 <span className="text-xs leading-none">✨</span>
                 <span>Apenas Personalizadas</span>
               </span>
-              {isCustom && <Check size={12} className="text-purple-400 shrink-0" />}
+              {isCustom && <Check size={12} className="text-purple-300 shrink-0" />}
             </button>
 
             <button
@@ -246,10 +246,10 @@ function ClassificationValidationDropdown({
               role="option"
               aria-selected={isPadrao}
               onClick={() => { onChange(isPadrao ? "todas" : "padrao"); setOpen(false); }}
-              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] transition-colors ${
+              className={`w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-[12px] font-normal transition-colors ${
                 isPadrao
-                  ? "bg-slate-600/30 text-white font-bold"
-                  : "text-slate-300 hover:bg-white/[0.05] font-medium"
+                  ? "bg-slate-600/25 text-slate-100"
+                  : "text-slate-300 hover:bg-white/[0.04]"
               }`}
             >
               <span className="flex items-center gap-2">
@@ -1419,15 +1419,15 @@ function QuestaoTitleLabel({ questaoId, blocksMap }: { questaoId: string; blocks
   }, [questaoId, blocksMap]);
 
   return (
-    <div className="flex items-center gap-2 py-1.5 px-2 text-[11px] rounded-md hover:bg-white/[0.03] transition-colors">
+    <div className="flex items-center gap-2.5 py-2 px-2.5 text-[12px] rounded-xl hover:bg-white/[0.03] transition-colors">
       <span className="shrink-0">{info?.emoji ?? "📄"}</span>
       {failed ? (
-        <span className="text-slate-600 italic truncate">Questão indisponível ({questaoId.slice(0, 8)}…)</span>
+        <span className="text-slate-500 italic truncate">Questão indisponível ({questaoId.slice(0, 8)}…)</span>
       ) : (
-        <div className="flex flex-col min-w-0">
-          <span className="text-[13.5px] font-normal text-[#8E97A8] truncate">{info?.title ?? "Carregando…"}</span>
+        <div className="flex flex-col min-w-0 gap-0.5">
+          <span className="text-[13px] font-normal text-slate-300 truncate">{info?.title ?? "Carregando…"}</span>
           {info?.blocoNome && (
-            <span className="text-[9px] text-indigo-400/70 font-bold uppercase tracking-wide truncate">
+            <span className="text-[11px] text-indigo-300/75 font-normal truncate">
               {info.blocoNome}
             </span>
           )}
@@ -1684,28 +1684,28 @@ function ImagemLightbox({
       onMouseUp={handleMouseUp}
     >
       {/* Top Bar Controls */}
-      <div className="w-full px-2 sm:px-4 py-2 flex items-center gap-1.5 sm:gap-2 bg-[#070b14] border-b border-white/10 z-30 overflow-hidden" style={{ minHeight: 44 }}>
+      <div className="w-full px-3 sm:px-5 py-2.5 flex items-center gap-2 sm:gap-3 bg-[#080c17] border-b border-white/[0.07] z-30 overflow-hidden" style={{ minHeight: 48 }}>
         {/* Left Info — shrink aggressively */}
-        <div className="flex items-center gap-1.5 text-white font-bold text-xs shrink min-w-0 overflow-hidden">
-          <Maximize2 size={14} className="text-indigo-400 shrink-0 hidden sm:block" />
-          <span className="truncate max-w-[78px] sm:max-w-xs">
+        <div className="flex items-center gap-2 text-slate-100 font-normal text-[12.5px] shrink min-w-0 overflow-hidden">
+          <Maximize2 size={14} className="text-indigo-400/80 shrink-0 hidden sm:block" />
+          <span className="truncate max-w-[90px] sm:max-w-xs tabular-nums">
             {questaoNumero ? `Q${questaoNumero}` : "Imagem"}
             {questaoTopic ? ` — ${questaoTopic}` : ""}
           </span>
           {caseLabel && (
-            <span className="hidden md:inline-block px-1.5 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[10px] text-slate-300 font-normal shrink-0 truncate max-w-[100px]">
-              {caseLabel}
+            <span className="hidden md:inline-block text-[11.5px] text-slate-400 font-normal shrink-0 truncate max-w-[140px]">
+              · {caseLabel}
             </span>
           )}
         </div>
 
         {/* Toolbar Center — scrollable horizontally, no wrap */}
-        <div className="flex items-center gap-0.5 sm:gap-1 bg-white/10 p-1 rounded-xl border border-white/10 shrink-0 overflow-x-auto no-scrollbar max-w-[calc(100vw-170px)] sm:max-w-none">
+        <div className="flex items-center gap-1 bg-white/[0.04] p-1 rounded-xl border border-white/[0.08] shrink-0 overflow-x-auto no-scrollbar max-w-[calc(100vw-170px)] sm:max-w-none">
           {hasPrev && onPrev && (
             <button
               onClick={onPrev}
               title="Questão Anterior (←)"
-              className="px-2 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/60 text-indigo-200 hover:text-white border border-indigo-500/40 transition-colors text-xs font-bold flex items-center gap-1 shrink-0"
+              className="px-2 py-1 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-200 hover:text-white border border-indigo-400/25 transition-colors text-xs font-normal flex items-center gap-1 shrink-0"
             >
               <ChevronLeft size={14} />
             </button>
@@ -1714,33 +1714,33 @@ function ImagemLightbox({
           <button
             onClick={handleZoomOut}
             title="Diminuir zoom (-)"
-            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/20 text-white transition-colors shrink-0"
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-colors shrink-0"
           >
             <ZoomOut size={14} />
           </button>
 
-          <span className="text-[11px] font-mono font-bold text-slate-200 px-1 min-w-[36px] text-center shrink-0">
+          <span className="text-[11.5px] font-mono font-normal text-slate-300 px-1.5 min-w-[40px] text-center tabular-nums shrink-0">
             {Math.round(scale * 100)}%
           </span>
 
           <button
             onClick={handleZoomIn}
             title="Aumentar zoom (+)"
-            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/20 text-white transition-colors shrink-0"
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-colors shrink-0"
           >
             <ZoomIn size={14} />
           </button>
 
-          <div className="w-px h-5 bg-white/20 my-auto mx-0.5 shrink-0" />
+          <div className="w-px h-4 bg-white/[0.12] my-auto mx-0.5 shrink-0" />
 
           {/* Modo Ajustado / 100% Tela Cheia */}
           <button
             onClick={toggleFullWidth}
             title="Alternar Modo de Visualização (Tecla F)"
-            className={`px-2 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors shrink-0 ${
+            className={`px-2.5 py-1 rounded-lg text-[11.5px] font-normal flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
               !isFullWidth
-                ? "bg-indigo-600 text-white border border-indigo-400/40"
-                : "hover:bg-white/20 text-slate-200"
+                ? "bg-indigo-500/20 text-indigo-100 border border-indigo-400/30"
+                : "hover:bg-white/10 text-slate-300 border border-transparent"
             }`}
           >
             {!isFullWidth ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
@@ -1751,16 +1751,16 @@ function ImagemLightbox({
           <button
             onClick={toggleAntiBrilho}
             title="Alternar Filtro Anti-Brilho / Modo Noturno (Tecla B)"
-            className={`px-2 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors border shrink-0 ${
+            className={`px-2.5 py-1 rounded-lg text-[11.5px] font-normal flex items-center gap-1.5 transition-colors border shrink-0 whitespace-nowrap ${
               antiBrilho === 'noturno'
-                ? "bg-indigo-500/25 text-indigo-300 border-indigo-500/40"
-                : "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                ? "bg-indigo-500/18 text-indigo-200 border-indigo-400/30"
+                : "bg-amber-500/15 text-amber-200 border-amber-400/25"
             }`}
           >
             {antiBrilho === 'noturno' ? (
-              <Moon size={12} className="text-indigo-400" />
+              <Moon size={12} className="text-indigo-300" />
             ) : (
-              <Sun size={12} className="text-amber-400" />
+              <Sun size={12} className="text-amber-300" />
             )}
             <span className="hidden sm:inline">{antiBrilho === 'noturno' ? "Noturno" : "Anti-Brilho"}</span>
           </button>
@@ -1768,7 +1768,7 @@ function ImagemLightbox({
           <button
             onClick={handleReset}
             title="Resetar Zoom (0)"
-            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/20 text-slate-400 hover:text-white transition-colors shrink-0"
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors shrink-0"
           >
             <RotateCcw size={12} />
           </button>
@@ -1777,7 +1777,7 @@ function ImagemLightbox({
             <button
               onClick={onNext}
               title="Próxima Questão (→)"
-              className="px-2 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/60 text-indigo-200 hover:text-white border border-indigo-500/40 transition-colors text-xs font-bold flex items-center gap-1 shrink-0"
+              className="px-2 py-1 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-200 hover:text-white border border-indigo-400/25 transition-colors text-xs font-normal flex items-center gap-1 shrink-0"
             >
               <ChevronRight size={14} />
             </button>
@@ -1785,27 +1785,26 @@ function ImagemLightbox({
         </div>
 
         {/* Action Right: Revelar Resposta & Close — always pinned right, never hidden */}
-        <div className="flex items-center gap-1.5 ml-auto shrink-0">
+        <div className="flex items-center gap-2 ml-auto shrink-0">
           <button
             onClick={() => setShowResposta(v => !v)}
             title="Revelar ou Ocultar Resposta (Tecla R)"
-            className={`px-2.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors border shrink-0 ${
+            className={`px-3 py-1.5 rounded-xl text-[12px] font-normal flex items-center gap-1.5 transition-colors border shrink-0 whitespace-nowrap ${
               showResposta
-                ? "bg-slate-800 text-emerald-400 border-slate-700"
-                : "bg-slate-800/90 hover:bg-slate-700/90 text-slate-300 border-slate-700"
+                ? "bg-emerald-500/15 text-emerald-200 border-emerald-400/30"
+                : "bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 border-white/[0.10]"
             }`}
           >
             {showResposta ? <EyeOff size={14} className="text-emerald-400" /> : <Eye size={14} className="text-slate-400" />}
-            <span className="hidden sm:inline">{showResposta ? "Ocultar" : "✨ Revelar Resposta"}</span>
-            <span className="sm:hidden">{showResposta ? <EyeOff size={14} /> : <Eye size={14} />}</span>
+            <span className="hidden sm:inline">{showResposta ? "Ocultar Resposta" : "Revelar Resposta"}</span>
           </button>
 
           <button
             onClick={onClose}
             title="Fechar (Esc)"
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-300 border border-red-500/30 transition-colors shrink-0"
+            className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/[0.04] hover:bg-rose-500/20 text-slate-400 hover:text-rose-200 border border-white/[0.08] hover:border-rose-400/30 transition-colors shrink-0"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
       </div>
@@ -1855,7 +1854,7 @@ function ImagemLightbox({
           {loading ? (
             <div className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl bg-slate-900/95 border border-white/10">
               <Loader2 size={36} className="animate-spin text-indigo-400" />
-              <span className="text-xs font-semibold text-slate-300">Carregando questão...</span>
+              <span className="text-xs font-normal text-slate-300">Carregando questão...</span>
             </div>
           ) : (() => {
             const allImgs = (imageUrls && imageUrls.length > 0 ? imageUrls : url ? [url] : []).filter(u => u && u.trim() !== "");
@@ -1920,14 +1919,15 @@ function ImagemLightbox({
 
         {/* Right/Bottom Answer Screen Panel */}
         {showResposta && (
-          <div className="w-full h-1/2 md:h-full md:w-1/2 flex-1 bg-[#0b101d] p-3.5 sm:p-6 z-40 text-white flex flex-col gap-3 sm:gap-4 overflow-y-auto custom-scrollbar shrink-0 min-w-0 border-t md:border-t-0 md:border-l border-white/10">
-            <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-white/10 shrink-0 gap-2">
-              <span className="text-xs sm:text-base font-bold text-emerald-400 flex items-center gap-1.5 sm:gap-2 truncate">
-                <span>✨</span> Resposta e Gabarito {questaoNumero ? `— Q${questaoNumero}` : ""}
+          <div className="w-full h-1/2 md:h-full md:w-1/2 flex-1 bg-[#0b101d] p-4 sm:p-7 z-40 text-slate-100 flex flex-col gap-4 overflow-y-auto custom-scrollbar shrink-0 min-w-0 border-t md:border-t-0 md:border-l border-white/[0.08]">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08] shrink-0 gap-2">
+              <span className="text-sm sm:text-base font-normal text-emerald-300 flex items-center gap-2 truncate">
+                <Eye size={15} className="text-emerald-400 shrink-0" />
+                Resposta e Gabarito {questaoNumero ? `— Q${questaoNumero}` : ""}
               </span>
               <button
                 onClick={() => setShowResposta(false)}
-                className="text-slate-400 hover:text-white text-xs p-1.5 rounded-lg hover:bg-white/10 transition-colors shrink-0"
+                className="text-slate-400 hover:text-white text-xs p-1.5 rounded-lg hover:bg-white/[0.07] transition-colors shrink-0"
               >
                 <X size={18} />
               </button>
@@ -1945,7 +1945,7 @@ function ImagemLightbox({
                     decoding="async"
                     fetchPriority="high"
                     style={getImageFilterStyle()}
-                    className={`w-full rounded-xl border border-white/10 object-contain max-h-[55vh] ${
+                    className={`w-full rounded-xl border border-white/[0.08] object-contain max-h-[55vh] ${
                       antiBrilho === 'noturno' ? 'bg-[#0b101d]' : 'bg-slate-900/90'
                     }`}
                   />
@@ -1955,30 +1955,30 @@ function ImagemLightbox({
 
             {/* Resposta em Texto / Explicação */}
             {respostaText ? (
-              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10">
-                <p className="text-sm sm:text-base font-normal text-slate-200 whitespace-pre-wrap leading-relaxed">
+              <div className="p-4 sm:p-5 rounded-2xl bg-white/[0.025] border border-white/[0.07]">
+                <p className="text-sm sm:text-[15px] font-normal text-slate-200 whitespace-pre-wrap leading-relaxed">
                   {respostaText}
                 </p>
               </div>
             ) : (!respostaImageUrls || respostaImageUrls.length === 0) ? (
-              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 text-center">
+              <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05] text-center">
                 <p className="text-xs text-slate-400 italic">Nenhuma resposta registrada no Notion.</p>
               </div>
             ) : null}
 
             {/* Registro de Tentativas do Usuário no Rodapé do Painel */}
             {questaoId && (
-              <div className="flex items-center gap-2 mt-auto pt-4 border-t border-white/10 flex-wrap shrink-0">
-                <span className="text-xs text-slate-300 font-semibold mr-auto">Registrar tentativa:</span>
+              <div className="flex items-center gap-2.5 mt-auto pt-4 border-t border-white/[0.08] flex-wrap shrink-0">
+                <span className="text-xs text-slate-400 font-normal mr-auto">Registrar tentativa:</span>
                 
                 {onToggleDuvida && (
                   <button
                     onClick={handleToggleDuvidaLocal}
                     disabled={recordingDuvida}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors disabled:opacity-50 border ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-normal transition-colors disabled:opacity-50 border ${
                       localDuvida 
-                        ? 'bg-slate-800 text-amber-300 border-slate-700' 
-                        : 'bg-slate-800/80 hover:bg-slate-700/80 border-slate-700 text-slate-300'
+                        ? 'bg-amber-500/15 text-amber-200 border-amber-400/30' 
+                        : 'bg-white/[0.03] hover:bg-white/[0.07] border-white/[0.08] text-slate-300'
                     }`}
                   >
                     <Flag size={12} className={localDuvida ? "fill-amber-400 text-amber-400" : "text-slate-400"} /> Em dúvida
@@ -1988,21 +1988,21 @@ function ImagemLightbox({
                 <button
                   onClick={() => handleRecordAnswer(true)}
                   disabled={recording}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-200 hover:text-emerald-400 text-xs font-semibold transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-200 text-xs font-normal transition-colors disabled:opacity-50"
                 >
                   <Check size={14} className="text-emerald-400" /> Acertei
                 </button>
                 <button
                   onClick={() => handleRecordAnswer(false)}
                   disabled={recording}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-200 hover:text-rose-400 text-xs font-semibold transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-200 text-xs font-normal transition-colors disabled:opacity-50"
                 >
                   <X size={14} className="text-rose-400" /> Errei
                 </button>
 
                 {recorded && (
-                  <span className={`text-xs font-bold ml-1 ${recorded === 'acerto' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {recorded === 'acerto' ? 'Salvo! 🎉' : 'Salvo! ❌'}
+                  <span className={`text-xs font-normal ml-1 ${recorded === 'acerto' ? 'text-emerald-300' : 'text-rose-300'}`}>
+                    {recorded === 'acerto' ? 'Salvo' : 'Salvo'}
                   </span>
                 )}
               </div>
@@ -2012,11 +2012,11 @@ function ImagemLightbox({
       </div>
 
       {/* Footer hint */}
-      <div className="hidden sm:flex w-full px-4 py-2 bg-[#070b14] border-t border-white/5 text-[11px] text-slate-400 font-medium z-20 items-center justify-center gap-3 sm:gap-6 text-center flex-wrap">
-        <span>💡 Dica: <span className="text-indigo-300 font-bold">Modo Ajustado</span> ativo por padrão</span>
-        <span>• <kbd className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 rounded font-mono">B</kbd> Anti-Brilho</span>
-        <span>• <kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-slate-200">←</kbd> / <kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-slate-200">→</kbd> Pular Questão</span>
-        <span>• Aperte <kbd className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded font-mono">R</kbd> para Revelar Resposta</span>
+      <div className="hidden sm:flex w-full px-5 py-2.5 bg-[#080c17] border-t border-white/[0.05] text-[11px] text-slate-500 font-normal z-20 items-center justify-center gap-5 text-center flex-wrap">
+        <span><span className="text-indigo-300/90">Modo Ajustado</span> ativo por padrão</span>
+        <span>· <kbd className="px-1.5 py-0.5 bg-white/[0.06] text-amber-300/90 rounded font-mono text-[10px]">B</kbd> Anti-Brilho</span>
+        <span>· <kbd className="px-1.5 py-0.5 bg-white/[0.06] rounded font-mono text-[10px] text-slate-300">←</kbd> / <kbd className="px-1.5 py-0.5 bg-white/[0.06] rounded font-mono text-[10px] text-slate-300">→</kbd> Navegar</span>
+        <span>· <kbd className="px-1.5 py-0.5 bg-white/[0.06] text-emerald-300/90 rounded font-mono text-[10px]">R</kbd> Revelar resposta</span>
       </div>
     </div>,
     document.body
@@ -2537,17 +2537,6 @@ const QuestaoRow = memo(function QuestaoRow({
 
   const showHighlightStyle = (effectiveStatus === "erros" && isErro) || (effectiveStatus === "mais_erros" && (stats?.totalErros ?? 0) > 0) || (effectiveStatus === "feitas_hoje" && isFeitaHoje);
 
-  const diffBgClasses: Record<string, string> = {
-    faceis: "bg-[#0b1612]/60 hover:bg-[#0f1d18]",
-    lacuna: "bg-[#0b1612]/60 hover:bg-[#0f1d18]",
-    media: "bg-[#16120b]/60 hover:bg-[#1d180f]",
-    atencao: "bg-[#0b1216]/60 hover:bg-[#0f181d]",
-    dificil: "bg-[#160b0d]/60 hover:bg-[#1d0f11]",
-    ultrahard: "bg-[#120b16]/60 hover:bg-[#180f1d]",
-    bonus: "bg-[#120b16]/60 hover:bg-[#180f1d]",
-  };
-  const bgClass = diffBgClasses[displayedCategory] || "hover:bg-white/[0.03]";
-
   return (
     <div
       draggable={isAdmin}
@@ -2574,43 +2563,54 @@ const QuestaoRow = memo(function QuestaoRow({
           }
         }
       }}
-      className={`flex flex-col py-0 rounded-md ${
-        isDraggingOver ? "ring-2 ring-indigo-500/50 bg-indigo-500/10" : ""
+      className={`flex flex-col rounded-xl transition-colors ${
+        isDraggingOver ? "ring-2 ring-indigo-500/40 bg-indigo-500/10" : ""
       }`}
     >
       <div
         onMouseEnter={handlePrefetchQuestao}
-        className={`flex flex-wrap sm:flex-nowrap items-center gap-x-1.5 gap-y-1 py-1.5 sm:py-[2px] px-2 min-h-[34px] sm:min-h-[24px] rounded-md group ${
-        showHighlightStyle ? "bg-rose-500/[0.05]" : bgClass
+        onClick={() => { setOpen(v => !v); setShowResp(false); }}
+        className={`flex flex-wrap sm:flex-nowrap items-center gap-x-2.5 gap-y-1.5 py-2.5 sm:py-2 px-3 min-h-[40px] rounded-xl cursor-pointer group transition-colors duration-150 ${
+        showHighlightStyle
+          ? "bg-rose-500/[0.045] hover:bg-rose-500/[0.08]"
+          : open
+          ? "bg-white/[0.035]"
+          : "hover:bg-white/[0.03]"
       }`}>
         {isAdmin && (
-          <span 
-            className="cursor-grab active:cursor-grabbing p-0.5 text-slate-600 hover:text-indigo-400 transition-colors shrink-0 select-none" 
+          <span
+            onClick={(e) => e.stopPropagation()}
+            className="cursor-grab active:cursor-grabbing p-0.5 text-slate-600 hover:text-indigo-300 transition-colors shrink-0 select-none"
             title="Arrastar para reordenar questão"
           >
-            <GripVertical size={11} />
+            <GripVertical size={12} />
           </span>
         )}
 
         <button
-          onClick={() => { setOpen(v => !v); setShowResp(false); }}
-          className="text-slate-500 hover:text-slate-300 w-6 h-6 sm:w-3.5 sm:h-3.5 flex items-center justify-center shrink-0"
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setOpen(v => !v); setShowResp(false); }}
+          className="text-slate-500 group-hover:text-slate-300 w-5 h-5 flex items-center justify-center shrink-0 transition-colors"
         >
           {loading && imageUrls.filter(u => u && u.trim() !== "").length === 0 ? (
-            <Loader2 size={10} className="animate-spin text-slate-500" />
+            <Loader2 size={11} className="animate-spin text-slate-400" />
           ) : (
-            <ChevronRight size={11} className={`text-slate-500 shrink-0 ${open ? "rotate-90" : ""}`} />
+            <ChevronRight size={13} className={`text-slate-500 shrink-0 transition-transform duration-150 ${open ? "rotate-90 text-indigo-300" : ""}`} />
           )}
         </button>
 
-        <span className="text-[10px] font-normal text-slate-400 bg-white/[0.04] border border-white/[0.07] px-1.5 py-0 rounded leading-[18px] sm:leading-[16px] shrink-0 tabular-nums">
-          {questao.numero}
+        <span
+          className="w-2 h-2 rounded-full shrink-0 select-none"
+          style={{ backgroundColor: catColor }}
+          title={catLabel}
+        />
+
+        <span className="text-[12px] font-normal text-slate-400 min-w-[22px] shrink-0 tabular-nums">
+          {questao.numero || "—"}
         </span>
 
-        <span className="w-1.5 h-1.5 rounded-full shrink-0 select-none shadow-sm" style={{ backgroundColor: catColor }} title={catLabel} />
-
         <span
-          className="text-[10px] font-normal px-1.5 py-0 leading-[18px] sm:leading-[16px] rounded bg-black/20 border border-white/[0.06] shrink-0"
+          className="text-[11.5px] font-normal shrink-0 min-w-[54px]"
           style={{ color: catColor }}
         >
           {catLabel}
@@ -2626,7 +2626,7 @@ const QuestaoRow = memo(function QuestaoRow({
             const value = event.target.value as CategoryKey | "";
             void updateClassification(questao.id, value || null);
           }}
-          className="h-6 sm:h-[18px] max-w-[92px] sm:max-w-[100px] rounded border border-white/[0.08] bg-[#0b1019] px-1 py-0 text-[9.5px] leading-none text-slate-300 outline-none focus:border-indigo-500/60 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-7 max-w-[96px] sm:max-w-[104px] rounded-lg border border-white/[0.07] bg-[#0a0f1c]/90 px-2 py-0 text-[11px] font-normal text-slate-300 outline-none focus:border-indigo-400/50 hover:border-white/[0.14] transition-colors disabled:cursor-not-allowed disabled:opacity-50"
         >
           <option value="">Padrão</option>
           {CATEGORIES.map(category => (
@@ -2636,7 +2636,7 @@ const QuestaoRow = memo(function QuestaoRow({
 
         {questao.tagEmojis && questao.tagEmojis.length > 0 && (
           <span
-            className="inline-flex items-center gap-0.5 px-1 py-0 rounded bg-amber-500/10 border border-amber-500/20 text-[10px] leading-[15px] shrink-0"
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-500/[0.08] text-[11px] leading-none shrink-0"
             title="Questões com este mesmo emoji compartilham a mesma resolução e raciocínio"
           >
             {questao.tagEmojis.map((em, i) => (
@@ -2646,23 +2646,24 @@ const QuestaoRow = memo(function QuestaoRow({
         )}
 
         {questao.topic && (
-          <span className="text-[11px] sm:text-[11.5px] font-normal text-slate-300 leading-tight truncate ml-0.5 basis-full sm:basis-auto order-last sm:order-none min-w-0">
-            — {questao.topic}
+          <span className="text-[12.5px] sm:text-[13px] font-normal text-slate-200 leading-snug truncate basis-full sm:basis-auto order-last sm:order-none min-w-0">
+            {questao.topic}
           </span>
         )}
 
         {questao.caseLabel && (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0 leading-[15px] rounded-full bg-slate-800/40 border border-slate-700/50 text-[9.5px] font-medium text-slate-400 truncate shrink-0 ml-0.5 sm:ml-1 max-w-[130px] sm:max-w-none">
-            <span className="text-slate-600 font-normal">in</span> {questao.caseLabel}
+          <span className="inline-flex items-center gap-1 text-[11px] font-normal text-slate-500 truncate shrink-0 max-w-[140px] sm:max-w-[200px]">
+            <span className="text-slate-600">·</span>
+            <span className="truncate">{questao.caseLabel}</span>
           </span>
         )}
 
         {isDuvida && (
-          <Flag size={10} className="fill-red-500 text-red-500 shrink-0 ml-1" />
+          <Flag size={11} className="fill-amber-400/80 text-amber-400 shrink-0" />
         )}
 
         {rootBlockId && casoId && (
-          <div className="flex items-center gap-0.5 opacity-90 sm:opacity-45 sm:group-hover:opacity-100 ml-auto mr-0.5 sm:mr-1 shrink-0">
+          <div className="flex items-center gap-1 opacity-90 sm:opacity-40 sm:group-hover:opacity-100 ml-auto mr-1 shrink-0 transition-opacity">
             <button
               type="button"
               onClick={(e) => {
@@ -2676,9 +2677,9 @@ const QuestaoRow = memo(function QuestaoRow({
                 });
               }}
               title="Jogar questão em outro Caso ou Subcaso"
-              className="flex items-center gap-1 px-1.5 sm:px-1 py-0 h-6 sm:h-4 rounded text-[9.5px] font-medium text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06]"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-normal text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06] transition-colors"
             >
-              <FolderInput size={11} />
+              <FolderInput size={12} />
               <span className="hidden md:inline">Subcaso</span>
             </button>
             <button
@@ -2694,9 +2695,9 @@ const QuestaoRow = memo(function QuestaoRow({
                 });
               }}
               title="Editar pergunta, imagem ou resposta"
-              className="w-6 h-6 sm:w-4 sm:h-4 flex items-center justify-center rounded text-slate-400 hover:text-amber-300 hover:bg-white/[0.06]"
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-amber-300 hover:bg-white/[0.06] transition-colors"
             >
-              <Pencil size={10} />
+              <Pencil size={11} />
             </button>
             <button
               type="button"
@@ -2705,76 +2706,79 @@ const QuestaoRow = memo(function QuestaoRow({
                 void builder.deleteQuestao(rootBlockId, casoId, questao);
               }}
               title="Excluir questão"
-              className="w-6 h-6 sm:w-4 sm:h-4 flex items-center justify-center rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10"
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
             >
-              <Trash2 size={10} />
+              <Trash2 size={11} />
             </button>
           </div>
         )}
 
         {isAdmin && (
-          <div className={`flex items-center gap-0.5 opacity-80 sm:opacity-35 sm:group-hover:opacity-100 ${!(rootBlockId && casoId) ? "ml-auto" : ""} mr-1`}>
+          <div className={`flex items-center gap-0.5 opacity-80 sm:opacity-35 sm:group-hover:opacity-100 transition-opacity ${!(rootBlockId && casoId) ? "ml-auto" : ""} mr-1`}>
             <button
               onClick={(e) => { e.stopPropagation(); onMoveUp?.(questao.id); }}
               disabled={isFirst}
               title="Mover questão para cima"
-              className="w-6 h-6 sm:w-4 sm:h-4 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent"
+              className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
             >
-              <ArrowUp size={10} />
+              <ArrowUp size={11} />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onMoveDown?.(questao.id); }}
               disabled={isLast}
               title="Mover questão para baixo"
-              className="w-6 h-6 sm:w-4 sm:h-4 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent"
+              className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
             >
-              <ArrowDown size={10} />
+              <ArrowDown size={11} />
             </button>
           </div>
         )}
 
         {stats && stats.totalErros > 0 && (
-          <span className={`inline-flex items-center gap-1 px-1.5 py-0 leading-[15px] rounded-full text-[9.5px] font-bold text-rose-300 bg-rose-950/60 border border-rose-500/30 shrink-0 ${!isAdmin && !isErro && !isAcerto && !(rootBlockId && casoId) ? "ml-auto" : ""}`} title={`${stats.totalErros} erro(s) no histórico`}>
-            <span>🔥</span>
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-normal text-rose-300/90 bg-rose-500/[0.08] shrink-0 tabular-nums ${!isAdmin && !isErro && !isAcerto && !(rootBlockId && casoId) ? "ml-auto" : ""}`}
+            title={`${stats.totalErros} erro(s) no histórico`}
+          >
+            <Flame size={11} className="text-rose-400/80 shrink-0" />
             <span>{stats.totalErros} {stats.totalErros === 1 ? "erro" : "erros"}</span>
           </span>
         )}
 
         {isErro && (
-          <span className={`inline-flex items-center gap-1 px-2 py-0 leading-[15px] rounded-full text-[9.5px] font-medium text-rose-300 bg-rose-950/50 border border-rose-700/60 shrink-0 ${!isAdmin && !(stats && stats.totalErros > 0) && !(rootBlockId && casoId) ? "ml-auto" : ""}`}>
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 border border-rose-400/50 shrink-0 shadow-sm shadow-rose-500/50" />
+          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[11px] font-normal text-rose-300 bg-rose-500/[0.10] shrink-0 ${!isAdmin && !(stats && stats.totalErros > 0) && !(rootBlockId && casoId) ? "ml-auto" : ""}`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
             Errou
           </span>
         )}
         {isAcerto && (
-          <span className={`inline-flex items-center gap-1 px-2 py-0 leading-[15px] rounded-full text-[9.5px] font-medium text-emerald-300 bg-emerald-950/50 border border-emerald-700/60 shrink-0 ${!isAdmin && !(stats && stats.totalErros > 0) && !(rootBlockId && casoId) ? "ml-auto" : ""}`}>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 border border-emerald-400/50 shrink-0 shadow-sm shadow-emerald-500/50" />
+          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[11px] font-normal text-emerald-300 bg-emerald-500/[0.10] shrink-0 ${!isAdmin && !(stats && stats.totalErros > 0) && !(rootBlockId && casoId) ? "ml-auto" : ""}`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
             Acertou
           </span>
         )}
       </div>
 
       {open && (
-        <div className="ml-2.5 pl-2.5 sm:ml-6 sm:pl-4 border-l border-indigo-500/[0.15] my-2 flex flex-col gap-3">
+        <div className="ml-3 pl-3.5 sm:ml-7 sm:pl-5 border-l border-white/[0.08] my-2.5 py-1 flex flex-col gap-3.5">
           {loading && !enunciadoTexto?.trim() && imageUrls.filter(u => u && u.trim() !== "").length === 0 ? (
-            <div className="flex items-center gap-2 text-[11px] text-slate-500 italic py-2">
-              <Loader2 size={12} className="animate-spin" />
+            <div className="flex items-center gap-2 text-xs text-slate-400 py-2">
+              <Loader2 size={13} className="animate-spin text-indigo-400" />
               Carregando detalhes...
             </div>
           ) : (
             <>
               {enunciadoTexto?.trim() && (
-                <div className="max-w-2xl p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] flex flex-col gap-2">
-                  <p className="text-[13px] sm:text-[14px] text-slate-200 whitespace-pre-wrap leading-relaxed">
+                <div className="max-w-2xl p-4 sm:p-5 rounded-xl bg-[#0d1424]/90 border border-white/[0.07] flex flex-col gap-3">
+                  <p className="text-[13.5px] sm:text-[14px] font-normal text-slate-200 whitespace-pre-wrap leading-relaxed">
                     {enunciadoTexto}
                   </p>
                   {imageUrls.filter(u => u && u.trim() !== "").length === 0 && (
                     <button
                       type="button"
                       onClick={() => setZoomTextOnly(true)}
-                      className="self-start px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-slate-300 text-[10px] font-bold flex items-center gap-1.5 border border-white/[0.08] transition-colors"
+                      className="self-start px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 text-[11.5px] font-normal flex items-center gap-1.5 border border-white/[0.08] transition-colors"
                     >
-                      <Maximize2 size={11} className="text-indigo-400" />
+                      <Maximize2 size={12} className="text-indigo-400" />
                       Tela Cheia
                     </button>
                   )}
@@ -2793,71 +2797,77 @@ const QuestaoRow = memo(function QuestaoRow({
                       onClick={() => setZoomedImage(url.trim())}
                       style={getNotionImageFilterStyle(antiBrilho)}
                       className={`w-full rounded-xl border object-contain cursor-zoom-in ${
-                        antiBrilho === 'noturno' ? 'bg-[#0b101d] border-white/10' : 'bg-slate-900/90 border-slate-700/60'
+                        antiBrilho === 'noturno' ? 'bg-[#0b101d] border-white/[0.08]' : 'bg-slate-900/90 border-slate-700/60'
                       }`}
                     />
                     <button
                       onClick={() => setZoomedImage(url.trim())}
-                      className="absolute top-2 right-2 px-2.5 py-1 rounded-lg bg-black/85 hover:bg-black text-white text-[10px] font-bold flex items-center gap-1.5 border border-white/20"
+                      className="absolute top-2.5 right-2.5 px-3 py-1.5 rounded-xl bg-black/75 hover:bg-black/90 text-slate-100 text-[11px] font-normal flex items-center gap-1.5 border border-white/15 transition-colors"
                     >
-                      <Maximize2 size={12} className="text-indigo-400" />
-                      Expandir 100%
+                      <Maximize2 size={12} className="text-indigo-300" />
+                      Expandir
                     </button>
                   </div>
                 ))
               ) : !enunciadoTexto?.trim() ? (
-                <p className="text-[11px] text-slate-700 italic">Sem enunciado ou imagem registrada.</p>
+                <p className="text-xs text-slate-500 italic">Sem enunciado ou imagem registrada.</p>
               ) : null}
 
-              <button
-                onClick={() => setShowResp(v => !v)}
-                className="flex items-center gap-2 self-start px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.04] text-slate-300 hover:text-white hover:bg-white/[0.08] text-[11px] font-medium transition-colors"
-              >
-                {showResp ? <EyeOff size={11} /> : <Eye size={11} />}
-                {showResp ? "Ocultar Resposta" : "✨ Ver Resposta"}
-              </button>
-
-              {user && (
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
-                  onClick={toggleHistorico}
-                  className="flex items-center gap-2 self-start px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] text-[10px] font-medium transition-colors"
+                  onClick={() => setShowResp(v => !v)}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-[12px] font-normal transition-colors ${
+                    showResp
+                      ? "bg-emerald-500/12 border-emerald-400/25 text-emerald-200"
+                      : "border-white/[0.08] bg-white/[0.03] text-slate-300 hover:text-white hover:bg-white/[0.07]"
+                  }`}
                 >
-                  <History size={10} />
-                  {showHistorico ? "Ocultar Histórico" : "Ver Histórico de Tentativas"}
-                  {historico && historico.length > 0 && (
-                    <span className="text-[9px] text-slate-400 font-bold ml-0.5">({historico.length})</span>
-                  )}
+                  {showResp ? <EyeOff size={13} /> : <Eye size={13} />}
+                  {showResp ? "Ocultar Resposta" : "Ver Resposta"}
                 </button>
-              )}
+
+                {user && (
+                  <button
+                    onClick={toggleHistorico}
+                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-white/[0.07] bg-white/[0.02] text-slate-400 hover:text-slate-200 hover:bg-white/[0.05] text-[12px] font-normal transition-colors"
+                  >
+                    <History size={12} />
+                    {showHistorico ? "Ocultar Histórico" : "Histórico de Tentativas"}
+                    {historico && historico.length > 0 && (
+                      <span className="text-[11px] text-slate-400 tabular-nums">({historico.length})</span>
+                    )}
+                  </button>
+                )}
+              </div>
 
               {showHistorico && (
-                <div className="border border-white/[0.08] rounded-2xl p-3.5 bg-[#0d1424] flex flex-col gap-2">
+                <div className="border border-white/[0.07] rounded-2xl p-4 bg-[#0d1424]/90 flex flex-col gap-2.5 max-w-2xl">
                   {loadingHistorico ? (
-                    <div className="flex items-center gap-2 text-[11px] text-slate-500 italic py-1">
-                      <Loader2 size={11} className="animate-spin" /> Carregando histórico...
+                    <div className="flex items-center gap-2 text-xs text-slate-400 py-1">
+                      <Loader2 size={12} className="animate-spin" /> Carregando histórico...
                     </div>
                   ) : !historico || historico.length === 0 ? (
-                    <p className="text-[11px] text-slate-500 italic">Nenhuma tentativa registrada ainda.</p>
+                    <p className="text-xs text-slate-500 italic">Nenhuma tentativa registrada ainda.</p>
                   ) : (
                     <>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      <p className="text-[11.5px] text-slate-400 font-normal">
                         {historico.length} tentativa{historico.length > 1 ? "s" : ""} registrada{historico.length > 1 ? "s" : ""}
                       </p>
-                      <div className="flex flex-col gap-1 max-h-40 overflow-y-auto custom-scrollbar pr-1">
+                      <div className="flex flex-col gap-1.5 max-h-44 overflow-y-auto custom-scrollbar pr-1">
                         {historico.map((h, i) => (
                           <div
                             key={i}
-                            className="flex items-center justify-between text-[11px] px-3 py-1.5 rounded-xl bg-white/[0.02] border border-white/[0.04]"
+                            className="flex items-center justify-between text-xs px-3.5 py-2 rounded-xl bg-white/[0.02] border border-white/[0.04]"
                           >
                             <span className="text-slate-400 tabular-nums">
                               {formatDataBR(h.data)} às {h.horario?.slice(0, 5)}
                             </span>
                             <span
-                              className={`flex items-center gap-1 font-bold uppercase tracking-wide text-[10px] ${
-                                h.correto === "Sim" ? "text-emerald-400" : "text-rose-400"
+                              className={`flex items-center gap-1.5 font-normal text-[11.5px] ${
+                                h.correto === "Sim" ? "text-emerald-300" : "text-rose-300"
                               }`}
                             >
-                              {h.correto === "Sim" ? <Check size={10} /> : <X size={10} />}
+                              {h.correto === "Sim" ? <Check size={11} /> : <X size={11} />}
                               {h.correto === "Sim" ? "Acerto" : "Erro"}
                             </span>
                           </div>
@@ -2869,15 +2879,18 @@ const QuestaoRow = memo(function QuestaoRow({
               )}
 
               {showResp && (
-                <div className="border border-white/[0.08] rounded-2xl p-4 bg-[#0d1424] flex flex-col gap-3 my-1">
-                  <div className="flex items-center justify-between pb-2 border-b border-white/[0.06] flex-wrap gap-2">
-                    <span className="text-xs font-semibold text-slate-200">✨ Resposta e Gabarito</span>
-                    <span className="text-[10px] text-slate-400 bg-white/[0.04] border border-white/[0.06] px-2.5 py-0.5 rounded-full">
+                <div className="border border-white/[0.08] rounded-2xl p-4 sm:p-5 bg-[#0c1322] flex flex-col gap-3.5 my-1 max-w-2xl">
+                  <div className="flex items-center justify-between pb-2.5 border-b border-white/[0.06] flex-wrap gap-2">
+                    <span className="text-[13px] font-normal text-emerald-300 flex items-center gap-2">
+                      <Eye size={14} className="text-emerald-400" />
+                      Resposta e Gabarito
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-normal tabular-nums">
                       Questão {questao.numero || "1"}
                     </span>
                   </div>
 
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-3.5">
                     {respostaImageUrls.filter(u => u && u.trim() !== "").map((url, i) => (
                       <div key={i} className="relative group max-w-2xl">
                         <img
@@ -2889,38 +2902,38 @@ const QuestaoRow = memo(function QuestaoRow({
                           onClick={() => setZoomedImage(url.trim())}
                           style={getNotionImageFilterStyle(antiBrilho)}
                           className={`w-full rounded-xl border object-contain cursor-zoom-in ${
-                            antiBrilho === 'noturno' ? 'bg-[#0b101d] border-white/10' : 'bg-slate-900/90 border-slate-700/60'
+                            antiBrilho === 'noturno' ? 'bg-[#0b101d] border-white/[0.08]' : 'bg-slate-900/90 border-slate-700/60'
                           }`}
                         />
                         <button
                           onClick={() => setZoomedImage(url)}
-                          className="absolute top-2 right-2 px-2.5 py-1 rounded-lg bg-black/85 hover:bg-black text-white text-[10px] font-bold flex items-center gap-1.5 border border-white/20"
+                          className="absolute top-2.5 right-2.5 px-3 py-1.5 rounded-xl bg-black/75 hover:bg-black/90 text-slate-100 text-[11px] font-normal flex items-center gap-1.5 border border-white/15 transition-colors"
                         >
-                          <Maximize2 size={12} className="text-emerald-400" />
-                          Expandir 100%
+                          <Maximize2 size={12} className="text-emerald-300" />
+                          Expandir
                         </button>
                       </div>
                     ))}
                     {respostaText ? (
-                      <p className="text-[13px] sm:text-[14px] font-normal text-slate-300 whitespace-pre-wrap leading-relaxed">
+                      <p className="text-[13.5px] sm:text-[14px] font-normal text-slate-200 whitespace-pre-wrap leading-relaxed">
                         {respostaText}
                       </p>
                     ) : respostaImageUrls.length === 0 ? (
-                      <p className="text-[11px] text-slate-500 italic">Sem resposta escrita registrada no Notion.</p>
+                      <p className="text-xs text-slate-500 italic">Sem resposta escrita registrada no Notion.</p>
                     ) : null}
                   </div>
 
                   {user && (
-                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/[0.06] flex-wrap">
-                      <span className="text-[10px] text-slate-400 font-medium mr-auto">Registrar tentativa:</span>
+                    <div className="flex items-center gap-2 mt-1 pt-3 border-t border-white/[0.06] flex-wrap">
+                      <span className="text-[11.5px] text-slate-400 font-normal mr-auto">Registrar tentativa:</span>
                       
                       <button
                         onClick={handleToggleDuvidaLocal}
                         disabled={recordingDuvida}
-                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium transition-colors disabled:opacity-50 border ${
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11.5px] font-normal transition-colors disabled:opacity-50 border ${
                           isDuvida 
-                            ? 'bg-slate-800 text-amber-300 border-slate-700' 
-                            : 'bg-slate-800/80 hover:bg-slate-700/80 border-slate-700 text-slate-300'
+                            ? 'bg-amber-500/15 text-amber-200 border-amber-400/30' 
+                            : 'bg-white/[0.03] hover:bg-white/[0.07] border-white/[0.08] text-slate-300'
                         }`}
                       >
                         <Flag size={11} className={isDuvida ? "fill-amber-400 text-amber-400" : "text-slate-400"} /> Em dúvida
@@ -2929,20 +2942,20 @@ const QuestaoRow = memo(function QuestaoRow({
                       <button
                         onClick={() => handleRecordAnswer(true)}
                         disabled={recording}
-                        className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-300 hover:text-emerald-400 text-[10px] font-medium transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-200 text-[11.5px] font-normal transition-colors disabled:opacity-50"
                       >
-                        <Check size={11} className="text-emerald-400" /> Acertei
+                        <Check size={12} className="text-emerald-400" /> Acertei
                       </button>
                       <button
                         onClick={() => handleRecordAnswer(false)}
                         disabled={recording}
-                        className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-300 hover:text-rose-400 text-[10px] font-medium transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-200 text-[11.5px] font-normal transition-colors disabled:opacity-50"
                       >
-                        <X size={11} className="text-rose-400" /> Errei
+                        <X size={12} className="text-rose-400" /> Errei
                       </button>
                       {recorded && (
-                        <span className={`text-[10px] font-medium ml-1 ${recorded === 'acerto' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          {recorded === 'acerto' ? 'Salvo! 🎉' : 'Salvo! ❌'}
+                        <span className={`text-[11.5px] font-normal ml-1 ${recorded === 'acerto' ? 'text-emerald-300' : 'text-rose-300'}`}>
+                          {recorded === 'acerto' ? 'Salvo' : 'Salvo'}
                         </span>
                       )}
                     </div>
@@ -2950,63 +2963,63 @@ const QuestaoRow = memo(function QuestaoRow({
 
                     {/* Admin edit panel */}
                     {isAdmin && (
-                      <div className="mt-2 pt-2 border-t border-amber-500/20 pl-4">
+                      <div className="mt-2 pt-3 border-t border-amber-500/15">
                         <button
                           onClick={() => setShowAdminPanel(v => !v)}
-                          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold transition-colors border ${
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11.5px] font-normal transition-colors border ${
                             showAdminPanel
-                              ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                              : 'bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/20'
+                              ? 'bg-amber-500/15 border-amber-400/30 text-amber-200'
+                              : 'bg-amber-500/[0.07] border-amber-500/20 text-amber-300/90 hover:bg-amber-500/15'
                           }`}
                         >
-                          <span className="text-[12px]">🛠️</span> Editar Resposta (Admin)
+                          <Pencil size={11} /> Editar resposta (Admin)
                         </button>
 
                         {showAdminPanel && (
-                          <div className="mt-2 flex flex-col gap-3 p-3 bg-amber-500/[0.04] border border-amber-500/20 rounded-xl">
-                            <p className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">Painel Administrativo — Questão {questao.numero || questao.id.slice(0, 8)}</p>
+                          <div className="mt-2.5 flex flex-col gap-3 p-4 bg-amber-500/[0.03] border border-amber-500/20 rounded-xl">
+                            <p className="text-[11.5px] font-normal text-amber-300">Painel Administrativo — Questão {questao.numero || questao.id.slice(0, 8)}</p>
 
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Gabarito (letra)</label>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] font-normal text-slate-400">Gabarito (letra)</label>
                             <div className="flex items-center gap-1.5">
                               {['A','B','C','D','E'].map(l => (
                                 <button
                                   key={l}
                                   onClick={() => setAdminGabarito(adminGabarito === l ? '' : l)}
-                                  className={`w-8 h-8 rounded-lg text-[12px] font-black border transition-colors ${
+                                  className={`w-8 h-8 rounded-lg text-[12px] font-normal border transition-colors ${
                                     adminGabarito === l
-                                      ? 'bg-amber-500/30 border-amber-400/60 text-amber-200'
-                                      : 'bg-white/[0.03] border-white/[0.08] text-slate-400 hover:border-amber-500/30 hover:text-amber-300'
+                                      ? 'bg-amber-500/25 border-amber-400/50 text-amber-100'
+                                      : 'bg-white/[0.03] border-white/[0.08] text-slate-400 hover:border-amber-500/30 hover:text-amber-200'
                                   }`}
                                 >
                                   {l}
                                 </button>
                               ))}
                               {adminGabarito && (
-                                <span className="text-[11px] text-amber-300 font-bold ml-1">✓ {adminGabarito}</span>
+                                <span className="text-[11.5px] text-amber-300 font-normal ml-1">✓ {adminGabarito}</span>
                               )}
                             </div>
                           </div>
 
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Texto / Comentário</label>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] font-normal text-slate-400">Texto / Comentário</label>
                             <textarea
                               value={adminText}
                               onChange={e => setAdminText(e.target.value)}
                               placeholder="Digite a explicação ou comentário da resposta..."
                               rows={3}
-                              className="w-full px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500/40 resize-none"
+                              className="w-full px-3 py-2 bg-[#0a0f1c] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/40 resize-none"
                             />
                           </div>
 
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">URL da Imagem (opcional)</label>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] font-normal text-slate-400">URL da Imagem (opcional)</label>
                             <input
                               type="url"
                               value={adminImageUrl}
                               onChange={e => setAdminImageUrl(e.target.value)}
                               placeholder="https://..."
-                              className="w-full px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-amber-500/40 font-mono"
+                              className="w-full px-3 py-2 bg-[#0a0f1c] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/40 font-mono"
                             />
                             {adminImageUrl?.trim() ? (
                               <img src={adminImageUrl} alt="preview" className="mt-1 max-h-32 rounded-lg border border-white/10 object-contain bg-white/5" />
@@ -3015,14 +3028,14 @@ const QuestaoRow = memo(function QuestaoRow({
 
                           <div className="flex items-center gap-2 justify-end">
                             {adminSaved && (
-                              <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">✓ Salvo!</span>
+                              <span className="text-[11px] font-normal text-emerald-300">✓ Salvo</span>
                             )}
                             <button
                               onClick={handleAdminSave}
                               disabled={adminSaving}
-                              className="flex items-center gap-1.5 px-4 py-1.5 bg-amber-600/80 hover:bg-amber-600 disabled:opacity-50 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-colors"
+                              className="flex items-center gap-1.5 px-4 py-1.5 bg-amber-600/80 hover:bg-amber-600 disabled:opacity-50 text-white rounded-xl text-[12px] font-normal transition-colors"
                             >
-                              {adminSaving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} Salvar
+                              {adminSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Salvar
                             </button>
                           </div>
                         </div>
@@ -3208,7 +3221,7 @@ function CasoProgressMap({
       accentBar: "bg-amber-500",
       badgeBg: "bg-amber-500/15 text-amber-300 border-amber-500/25",
       icon: (
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-amber-500/20 text-[11px] font-bold text-amber-300 border border-amber-500/30">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-amber-500/20 text-[11px] font-normal text-amber-300 border border-amber-500/30">
           ?
         </span>
       ),
@@ -3267,63 +3280,61 @@ function CasoProgressMap({
       : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
 
   return (
-    <div className="my-1.5 flex flex-col gap-2">
+    <div className="my-2 flex flex-col gap-3">
       {/* Barra compacta de resumo e progresso do Caso */}
-      <div className="flex flex-col gap-1.5 rounded-xl border border-white/[0.07] bg-[#0b111d]/90 px-3 py-2">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex flex-col gap-2 rounded-2xl border border-white/[0.06] bg-[#0b111e]/90 px-4 py-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3.5 flex-wrap">
             {columnsWithItems.map(({ col, colAllItems }) => (
               <span
                 key={col.key}
-                className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-medium tabular-nums ${
-                  colAllItems.length > 0
-                    ? col.badgeBg
-                    : "border-white/[0.05] bg-white/[0.02] text-slate-500"
+                className={`inline-flex items-center gap-1.5 text-[12px] font-normal tabular-nums ${
+                  colAllItems.length > 0 ? "text-slate-200" : "text-slate-500"
                 }`}
               >
                 <span className={`h-1.5 w-1.5 rounded-full ${colAllItems.length > 0 ? col.accentBar : "bg-slate-700"}`} />
                 <span>{col.title}:</span>
-                <span className="font-semibold">{colAllItems.length}</span>
+                <span className="font-normal">{colAllItems.length}</span>
               </span>
             ))}
           </div>
 
-          <div className="flex items-center gap-2.5 text-[10px] text-slate-400">
-            <span className="hidden sm:inline-flex items-center gap-1">
-              <span className="h-2 w-2 rounded-[2px] bg-[#22c55e]" /> Acerto
+          <div className="flex items-center gap-3 text-[11px] text-slate-400">
+            <span className="hidden sm:inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-[2px] bg-[#22c55e]/85" /> Acerto
             </span>
-            <span className="hidden sm:inline-flex items-center gap-1">
-              <span className="h-2 w-2 rounded-[2px] bg-[#b91c1c]" /> Erro
+            <span className="hidden sm:inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-[2px] bg-[#b91c1c]/85" /> Erro
             </span>
-            <span className="hidden sm:inline-flex items-center gap-1">
-              <span className="h-2 w-2 rounded-[2px] bg-[#ca8a04]" /> Dúvida
+            <span className="hidden sm:inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-[2px] bg-[#ca8a04]/85" /> Dúvida
             </span>
-            <span className="hidden sm:inline-flex items-center gap-1">
+            <span className="hidden sm:inline-flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-[2px] border border-white/20 bg-slate-800" /> Aberta
             </span>
-            <span className="font-semibold text-emerald-400/90 tabular-nums">
+            <span className="font-normal text-emerald-300/90 tabular-nums">
               {pctDominadas}% dominado
             </span>
           </div>
         </div>
 
         {totalCount > 0 && (
-          <div className="flex h-1 w-full overflow-hidden rounded-full bg-slate-800/90">
+          <div className="flex h-1 w-full overflow-hidden rounded-full bg-slate-800/80">
             {dominadasCount > 0 && (
               <div
-                className="bg-emerald-500"
+                className="bg-emerald-500/80"
                 style={{ width: `${(dominadasCount / totalCount) * 100}%` }}
               />
             )}
             {duvidasCount > 0 && (
               <div
-                className="bg-amber-500"
+                className="bg-amber-500/80"
                 style={{ width: `${(duvidasCount / totalCount) * 100}%` }}
               />
             )}
             {naoDominadasCount > 0 && (
               <div
-                className="bg-slate-600/70"
+                className="bg-slate-600/60"
                 style={{ width: `${(naoDominadasCount / totalCount) * 100}%` }}
               />
             )}
@@ -3331,12 +3342,12 @@ function CasoProgressMap({
         )}
 
         {sharedEmojiLegend.length > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-            <span className="text-[10px] text-amber-300/80 font-medium">Mesma resolução e raciocínio:</span>
+          <div className="flex items-center gap-2 flex-wrap pt-1">
+            <span className="text-[11px] text-amber-300/75 font-normal">Mesma resolução e raciocínio:</span>
             {sharedEmojiLegend.map((g, i) => (
               <span
                 key={`${g.emoji}-${i}`}
-                className="inline-flex items-center gap-1 rounded-md border border-amber-500/20 bg-amber-500/[0.07] px-1.5 py-0.5 text-[10px] text-amber-200/90 tabular-nums"
+                className="inline-flex items-center gap-1 rounded-lg border border-amber-500/15 bg-amber-500/[0.05] px-2 py-0.5 text-[11px] text-amber-200/90 tabular-nums"
               >
                 <span>{g.emoji}</span>
                 <span className="text-slate-300">{g.nums.join(", ")}</span>
@@ -3347,24 +3358,24 @@ function CasoProgressMap({
       </div>
 
       {/* Colunas ativas (apenas colunas com questões para evitar espaços vazios) */}
-      <div className={`grid gap-2.5 ${gridColsClass}`}>
+      <div className={`grid gap-3 ${gridColsClass}`}>
         {activeColumns.map(({ col, colRows, colAllItems }) => {
           const nonEmptyCategories = visibleCategories.filter(cat => colRows[cat.key].length > 0);
 
           return (
             <section
               key={col.key}
-              className="flex flex-col rounded-xl border border-white/[0.08] bg-[#0e1523]/95 px-3 py-2.5 shadow-md"
+              className="flex flex-col rounded-2xl border border-white/[0.06] bg-[#0d1422]/90 px-4 py-3"
             >
               {/* Cabeçalho compacto da Coluna */}
-              <div className="flex items-center justify-between gap-2 border-b border-white/[0.07] pb-2">
+              <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] pb-2.5">
                 <div className="flex items-center gap-2 min-w-0">
                   {col.icon}
-                  <h5 className={`text-[12.5px] font-semibold tracking-tight truncate ${col.accentText}`}>
+                  <h5 className={`text-[13px] font-normal truncate ${col.accentText}`}>
                     {col.title}
                   </h5>
                 </div>
-                <span className={`rounded-md border px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums shrink-0 ${col.badgeBg}`}>
+                <span className={`text-[12px] font-normal tabular-nums shrink-0 ${col.accentText}`}>
                   {colAllItems.length}
                 </span>
               </div>
@@ -3374,10 +3385,10 @@ function CasoProgressMap({
                 {nonEmptyCategories.map((cat) => {
                   const items = colRows[cat.key];
                   return (
-                    <div key={cat.key} className="flex items-center gap-2 sm:gap-2.5 py-2">
-                      <div className="flex w-[74px] sm:w-[92px] shrink-0 items-center justify-between gap-1">
+                    <div key={cat.key} className="flex items-center gap-3 py-2.5">
+                      <div className="flex w-[80px] sm:w-[96px] shrink-0 items-center justify-between gap-1.5">
                         <span
-                          className="flex items-center gap-1.5 text-[11.5px] font-medium truncate"
+                          className="flex items-center gap-1.5 text-[12px] font-normal truncate"
                           style={{ color: cat.textColor }}
                         >
                           {cat.icon ? (
@@ -3390,12 +3401,12 @@ function CasoProgressMap({
                           )}
                           <span className="truncate">{cat.label}</span>
                         </span>
-                        <span className="text-[10px] text-slate-500 tabular-nums shrink-0">
+                        <span className="text-[11px] text-slate-500 tabular-nums shrink-0">
                           {items.length}
                         </span>
                       </div>
 
-                      <div className="w-px self-stretch shrink-0 bg-white/[0.08]" />
+                      <div className="w-px self-stretch shrink-0 bg-white/[0.07]" />
 
                       <div className="flex flex-1 flex-wrap items-center gap-1.5">
                         {items.map((item) => {
@@ -3412,12 +3423,12 @@ function CasoProgressMap({
 
                           const tileClasses =
                             stats?.ultimo === "acerto"
-                              ? "bg-[#16a34a]/90 border border-emerald-400/40 text-white shadow-sm hover:brightness-110"
+                              ? "bg-[#16a34a]/80 border border-emerald-400/35 text-white hover:brightness-110"
                               : stats?.ultimo === "erro"
-                              ? "bg-[#b91c1c]/90 border border-rose-400/40 text-white shadow-sm hover:brightness-110"
+                              ? "bg-[#b91c1c]/80 border border-rose-400/35 text-white hover:brightness-110"
                               : isDuvida
-                              ? "bg-[#ca8a04] border border-amber-300/40 text-[#111827] shadow-sm hover:brightness-110"
-                              : "border border-white/[0.14] bg-slate-800/80 text-slate-200 hover:border-indigo-400/60 hover:bg-slate-700/80 hover:text-white";
+                              ? "bg-[#ca8a04]/90 border border-amber-300/35 text-[#111827] hover:brightness-110"
+                              : "border border-white/[0.10] bg-slate-800/70 text-slate-200 hover:border-indigo-400/50 hover:bg-slate-700/80 hover:text-white";
 
                           const numShort = item.numero ? `Q${item.numero}` : "";
                           const tags = item.tagEmojis && item.tagEmojis.length > 0
@@ -3448,12 +3459,12 @@ function CasoProgressMap({
                               onClick={() => setZoomSession({ items: colAllItems, index: colIndex >= 0 ? colIndex : 0 })}
                               title={tooltipParts.join(" · ")}
                               aria-label={tooltipParts.join(" - ")}
-                              className={`inline-flex h-[26px] min-w-[28px] items-center justify-center gap-1 rounded-md px-1.5 text-[11px] font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-sky-400/70 ${tileClasses}`}
+                              className={`inline-flex h-7 min-w-[30px] items-center justify-center gap-1 rounded-lg px-2 text-[11.5px] font-normal tabular-nums transition-colors focus:outline-none focus:ring-2 focus:ring-sky-400/60 ${tileClasses}`}
                             >
-                              {stats?.ultimo === "acerto" && <Check size={10} strokeWidth={3} className="shrink-0" />}
-                              {stats?.ultimo === "erro" && <X size={10} strokeWidth={3} className="shrink-0" />}
+                              {stats?.ultimo === "acerto" && <Check size={10} strokeWidth={2.5} className="shrink-0" />}
+                              {stats?.ultimo === "erro" && <X size={10} strokeWidth={2.5} className="shrink-0" />}
                               {isDuvida && stats?.ultimo !== "acerto" && stats?.ultimo !== "erro" && (
-                                <span className="text-[10px] font-black leading-none shrink-0">?</span>
+                                <span className="text-[10.5px] font-normal leading-none shrink-0">?</span>
                               )}
                               <span>{item.numero ? item.numero.slice(0, 4) : "·"}</span>
                               {tags.length > 0 && (
@@ -4210,20 +4221,20 @@ const CasoCard = memo(function CasoCard({
           }
         }
       }}
-      className={`flex flex-col gap-0.5 ${
+      className={`flex flex-col gap-1 ${
         isSubcaso
-          ? "rounded-xl border border-indigo-500/20 bg-indigo-950/[0.16] px-1.5 py-1"
-          : "rounded-lg"
+          ? "rounded-xl border border-indigo-400/[0.12] bg-indigo-950/[0.10] px-2.5 py-2"
+          : "rounded-xl"
       } ${
-        isDraggingOver ? "ring-2 ring-indigo-500/50 bg-indigo-500/10" : ""
+        isDraggingOver ? "ring-2 ring-indigo-500/40 bg-indigo-500/10" : ""
       }`}
     >
-      <div className={`flex flex-wrap sm:flex-nowrap items-center justify-between gap-1.5 py-1.5 px-2 sm:px-2.5 min-h-[34px] sm:min-h-[30px] rounded-lg group ${
-        hasErrosInCaso ? "bg-rose-500/[0.03] border border-rose-500/20" : "hover:bg-white/[0.02]"
+      <div className={`flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 py-2 px-3 sm:px-3.5 min-h-[42px] rounded-xl group transition-colors ${
+        hasErrosInCaso ? "bg-rose-500/[0.035] border border-rose-500/18" : open ? "bg-white/[0.025]" : "hover:bg-white/[0.025]"
       }`}>
         {isAdmin && (
           <span 
-            className="cursor-grab active:cursor-grabbing p-0.5 text-slate-600 hover:text-indigo-400 shrink-0 select-none" 
+            className="cursor-grab active:cursor-grabbing p-0.5 text-slate-600 hover:text-indigo-300 shrink-0 select-none" 
             title="Arrastar para reordenar caso"
           >
             <GripVertical size={13} />
@@ -4232,29 +4243,29 @@ const CasoCard = memo(function CasoCard({
 
         <button
           onClick={() => setOpenState({ open: !open, seq: expandSignal?.seq ?? openState.seq })}
-          className="flex items-center gap-2 text-left flex-1 min-w-[160px]"
+          className="flex items-center gap-2.5 text-left flex-1 min-w-[160px]"
         >
           <span className="text-[10px] text-slate-500 w-4 h-4 flex items-center justify-center shrink-0 select-none">
             {loading ? (
-              <Loader2 size={10} className="animate-spin text-slate-500" />
+              <Loader2 size={11} className="animate-spin text-indigo-400" />
             ) : (
-              <ChevronRight size={12} className={`text-slate-500 shrink-0 ${open ? "rotate-90" : ""}`} />
+              <ChevronRight size={13} className={`text-slate-500 shrink-0 transition-transform duration-150 ${open ? "rotate-90 text-indigo-300" : ""}`} />
             )}
           </span>
           {isSubcaso && (
-            <Folder size={13} className="text-indigo-400/80 shrink-0" />
+            <Folder size={14} className="text-indigo-400/80 shrink-0" />
           )}
-          <span className={`font-semibold truncate ${hasErrosInCaso ? "text-rose-300 font-bold" : isSubcaso ? "text-indigo-100 group-hover:text-white" : "text-[#a4adc0] group-hover:text-white"} ${depth === 0 ? "text-[13.5px] sm:text-[14px]" : "text-[12.5px] sm:text-[13px]"}`}>
+          <span className={`font-normal truncate ${hasErrosInCaso ? "text-rose-200" : isSubcaso ? "text-indigo-100/95 group-hover:text-white" : "text-slate-200 group-hover:text-white"} ${depth === 0 ? "text-[14px] sm:text-[14.5px]" : "text-[13px] sm:text-[13.5px]"}`}>
             {caso.nome}
           </span>
           {isSubcaso && (
-            <span className="hidden sm:inline-flex items-center px-1.5 py-0 leading-[15px] rounded bg-indigo-500/15 border border-indigo-500/25 text-[9px] font-bold uppercase tracking-wider text-indigo-300 shrink-0">
+            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md bg-indigo-500/12 text-[10.5px] font-normal text-indigo-300/85 shrink-0">
               Subcaso
             </span>
           )}
 
           {hasErrosInCaso && (
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium text-rose-300 bg-rose-950/30 border border-rose-500/20 shrink-0 ml-1">
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[11px] font-normal text-rose-300 bg-rose-500/10 shrink-0 ml-1 tabular-nums">
               <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
               {errosInCaso} {errosInCaso === 1 ? "erro" : "erros"}
             </span>
@@ -4262,29 +4273,29 @@ const CasoCard = memo(function CasoCard({
         </button>
 
         {isAdmin && (
-          <div className="flex items-center gap-0.5 opacity-80 sm:opacity-35 sm:group-hover:opacity-100 ml-1 sm:ml-2">
+          <div className="flex items-center gap-0.5 opacity-80 sm:opacity-35 sm:group-hover:opacity-100 transition-opacity ml-1 sm:ml-2">
             <button
               onClick={(e) => { e.stopPropagation(); onMoveUp?.(caso.id); }}
               disabled={isFirst}
               title="Mover caso para cima"
-              className="w-6 h-6 sm:w-5 sm:h-5 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent"
+              className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
             >
-              <ArrowUp size={10} />
+              <ArrowUp size={11} />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onMoveDown?.(caso.id); }}
               disabled={isLast}
               title="Mover caso para baixo"
-              className="w-6 h-6 sm:w-5 sm:h-5 flex items-center justify-center rounded text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent"
+              className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-500 hover:text-indigo-300 hover:bg-white/[0.06] disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
             >
-              <ArrowDown size={10} />
+              <ArrowDown size={11} />
             </button>
           </div>
         )}
 
-        <div className="flex items-center gap-1 shrink-0 ml-auto sm:ml-1">
+        <div className="flex items-center gap-1.5 shrink-0 ml-auto sm:ml-1">
           {rootBlockId && (
-            <div className="flex items-center gap-0.5 opacity-85 sm:opacity-50 sm:group-hover:opacity-100 mr-0.5">
+            <div className="flex items-center gap-1 opacity-85 sm:opacity-45 sm:group-hover:opacity-100 transition-opacity mr-0.5">
               <button
                 type="button"
                 onClick={(e) => {
@@ -4292,7 +4303,7 @@ const CasoCard = memo(function CasoCard({
                   openCreateSubcaso(rootBlockId, caso.id, caso.nome);
                 }}
                 title={`Criar subcaso dentro de "${caso.nome}"`}
-                className="flex items-center gap-1 px-1.5 py-1 sm:py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06]"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-normal text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06] transition-colors"
               >
                 <FolderPlus size={12} />
                 <span className="hidden lg:inline">Subcaso</span>
@@ -4304,7 +4315,7 @@ const CasoCard = memo(function CasoCard({
                   openCreateQuestao(rootBlockId, caso.id);
                 }}
                 title={`Nova questão dentro de "${caso.nome}"`}
-                className="flex items-center gap-1 px-1.5 py-1 sm:py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-emerald-300 hover:bg-white/[0.06]"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-normal text-slate-400 hover:text-emerald-300 hover:bg-white/[0.06] transition-colors"
               >
                 <FilePlus2 size={12} />
                 <span className="hidden lg:inline">Questão</span>
@@ -4316,7 +4327,7 @@ const CasoCard = memo(function CasoCard({
                   void deleteCaso(rootBlockId, parentBlockId || rootBlockId, caso.id, caso.nome);
                 }}
                 title={`Remover "${caso.nome}"`}
-                className="p-1.5 sm:p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10"
+                className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
               >
                 <Trash2 size={12} />
               </button>
@@ -4329,32 +4340,32 @@ const CasoCard = memo(function CasoCard({
               onPrintCaso?.(caso, questoes);
             }}
             title={`Imprimir caso "${caso.nome}" (com gabarito no final)`}
-            className="opacity-80 sm:opacity-45 hover:opacity-100 sm:group-hover:opacity-80 p-1.5 sm:p-1 text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06] rounded-md"
+            className="opacity-80 sm:opacity-45 hover:opacity-100 sm:group-hover:opacity-85 p-1.5 text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06] rounded-lg transition-colors"
           >
-            <Printer size={12} />
+            <Printer size={13} />
           </button>
-          <BlocoStatsBadge
-            blockId={caso.id}
-            resultadosMap={resultadosMap}
+          <BlocoStatsBadge 
+            blockId={caso.id} 
+            resultadosMap={resultadosMap} 
             duvidasIds={duvidasIds}
           />
         </div>
       </div>
 
       {open && (
-        <div className={`flex flex-col gap-1.5 border-l my-1 ${
+        <div className={`flex flex-col gap-2 border-l my-1.5 ${
           isSubcaso
-            ? "ml-3 pl-2.5 sm:ml-10 sm:pl-5 border-indigo-400/25"
-            : "ml-2 pl-2.5 sm:ml-6 sm:pl-4 border-indigo-500/20"
+            ? "ml-3 pl-3 sm:ml-8 sm:pl-5 border-indigo-400/20"
+            : "ml-2.5 pl-3 sm:ml-6 sm:pl-5 border-white/[0.08]"
         }`}>
           {loading && !loaded ? (
-            <div className="flex items-center gap-2 text-[11px] text-slate-500 italic py-2">
-              <Loader2 size={12} className="animate-spin" />
+            <div className="flex items-center gap-2 text-xs text-slate-400 py-2.5">
+              <Loader2 size={12} className="animate-spin text-indigo-400" />
               Carregando...
             </div>
           ) : !hasContent ? (
-            <div className="flex items-center gap-2 flex-wrap py-1.5 px-2">
-              <span className="text-[11px] text-slate-600 italic">
+            <div className="flex items-center gap-2.5 flex-wrap py-2 px-2">
+              <span className="text-xs text-slate-500 italic">
                 {classificacaoFiltro !== "todas" ? "Nenhuma questão com esta classificação neste caso." : "Sem questões registradas."}
               </span>
               {rootBlockId && classificacaoFiltro === "todas" && (
@@ -4362,14 +4373,14 @@ const CasoCard = memo(function CasoCard({
                   <button
                     type="button"
                     onClick={() => openCreateSubcaso(rootBlockId, caso.id, caso.nome)}
-                    className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20"
+                    className="text-[11px] font-normal text-indigo-300 hover:text-indigo-200 px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 transition-colors"
                   >
                     + Criar Subcaso
                   </button>
                   <button
                     type="button"
                     onClick={() => openCreateQuestao(rootBlockId, caso.id)}
-                    className="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20"
+                    className="text-[11px] font-normal text-emerald-300 hover:text-emerald-200 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 transition-colors"
                   >
                     + Criar Questão
                   </button>
@@ -4379,10 +4390,10 @@ const CasoCard = memo(function CasoCard({
           ) : (
             <>
               {hasSubcasos && (
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2.5">
                   {hasDirectQuestoes && (
-                    <div className="flex items-center gap-1.5 px-1 pt-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-300/80">
-                      <Folder size={11} className="text-indigo-400 shrink-0" />
+                    <div className="flex items-center gap-2 px-1 pt-1 text-[11px] font-normal text-indigo-300/80">
+                      <Folder size={12} className="text-indigo-400 shrink-0" />
                       <span>Subcasos ({subcasos.length})</span>
                     </div>
                   )}
@@ -4419,15 +4430,15 @@ const CasoCard = memo(function CasoCard({
               )}
 
               {hasDirectQuestoes && (
-                <div className={hasSubcasos ? "mt-1 pt-2 border-t border-white/[0.08] flex flex-col gap-1.5" : "flex flex-col gap-0.5"}>
+                <div className={hasSubcasos ? "mt-1.5 pt-3 border-t border-white/[0.06] flex flex-col gap-2" : "flex flex-col gap-1"}>
                   {hasSubcasos && (
-                    <div className="flex items-center gap-1.5 px-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      <FileText size={11} className="text-slate-500 shrink-0" />
+                    <div className="flex items-center gap-2 px-1 text-[11px] font-normal text-slate-400">
+                      <FileText size={12} className="text-slate-500 shrink-0" />
                       <span>Questões diretas de &ldquo;{caso.nome}&rdquo; ({filteredQuestoes.length})</span>
                     </div>
                   )}
 
-                  <div className={hasSubcasos ? "ml-2.5 pl-2.5 sm:ml-8 sm:pl-4 border-l border-white/[0.10] flex flex-col gap-0.5" : "pl-1 sm:pl-2 flex flex-col gap-0.5"}>
+                  <div className={hasSubcasos ? "ml-2.5 pl-3 sm:ml-6 sm:pl-4 border-l border-white/[0.08] flex flex-col gap-1" : "pl-1 sm:pl-2 flex flex-col gap-1"}>
                     {showQuestionMap && (
                       <CasoProgressMap
                         questoes={filteredQuestoes}
@@ -4447,36 +4458,36 @@ const CasoCard = memo(function CasoCard({
                         return (
                           <div
                             key={`emoji-group-${entry.key}`}
-                            className="rounded-lg border border-amber-500/20 bg-amber-500/[0.03] px-1.5 py-1 my-0.5"
+                            className="rounded-xl border border-amber-500/[0.15] bg-amber-500/[0.025] px-2.5 py-1.5 my-1"
                           >
                             <button
                               type="button"
                               onClick={() => toggleEmojiGroup(entry.key)}
-                              className="w-full flex items-center gap-1.5 px-1.5 py-0.5 text-left rounded hover:bg-white/[0.03] transition-colors"
+                              className="w-full flex items-center gap-2 px-2 py-1 text-left rounded-lg hover:bg-white/[0.03] transition-colors"
                             >
                               <ChevronRight
-                                size={10}
-                                className={`text-amber-400/80 shrink-0 ${!isGroupCollapsed ? "rotate-90" : ""}`}
+                                size={11}
+                                className={`text-amber-300/80 shrink-0 transition-transform duration-150 ${!isGroupCollapsed ? "rotate-90" : ""}`}
                               />
                               <span className="text-[12px] leading-none shrink-0">{entry.emoji}</span>
-                              <span className="text-[10.5px] font-semibold text-amber-300/95 truncate">
+                              <span className="text-[11.5px] font-normal text-amber-200/90 truncate">
                                 Mesma resolução e raciocínio
                               </span>
-                              <span className="text-[9.5px] text-amber-200/75 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0 leading-[15px] rounded shrink-0 tabular-nums">
+                              <span className="text-[11px] text-amber-200/70 px-1.5 py-0.5 rounded-md bg-amber-500/10 shrink-0 tabular-nums">
                                 {entry.items.length} questões
                               </span>
-                              <span className="text-[9.5px] text-slate-500 truncate ml-auto hidden sm:inline tabular-nums">
+                              <span className="text-[11px] text-slate-500 truncate ml-auto hidden sm:inline tabular-nums">
                                 Q{entry.items.map(i => i.q.numero || "?").slice(0, 8).join(", ")}
                                 {entry.items.length > 8 ? "…" : ""}
                               </span>
                             </button>
 
                             {!isGroupCollapsed && (
-                              <div className="flex flex-col gap-0.5 mt-0.5 pl-2 ml-1.5 sm:pl-3 sm:ml-3 border-l border-amber-500/20">
+                              <div className="flex flex-col gap-1 mt-1 pl-2.5 ml-2 sm:pl-3.5 sm:ml-3 border-l border-amber-500/20">
                                 {entry.items.map(({ q, flatIdx }, subIdx) => (
                                   <div
                                     key={q.id}
-                                    className={subIdx < entry.items.length - 1 ? "border-b border-white/[0.04]" : ""}
+                                    className={subIdx < entry.items.length - 1 ? "border-b border-white/[0.04] pb-0.5" : ""}
                                   >
                                     <QuestaoRow
                                       questao={q}
@@ -4514,7 +4525,7 @@ const CasoCard = memo(function CasoCard({
                       return (
                         <div
                           key={q.id}
-                          className={entryIdx < questaoRenderEntries.length - 1 ? "border-b border-white/[0.04]" : ""}
+                          className={entryIdx < questaoRenderEntries.length - 1 ? "border-b border-white/[0.04] pb-0.5" : ""}
                         >
                           <QuestaoRow 
                             questao={q} 
@@ -4940,16 +4951,16 @@ function BlockViewer({
   }, [filteredItens, classificacaoFiltro, overrides]);
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center py-12 gap-3">
-      <Loader2 className="w-7 h-7 text-indigo-500 animate-spin" />
-      <p className="text-[10px] text-slate-700 font-black uppercase tracking-widest">Carregando questões...</p>
+    <div className="flex flex-col items-center justify-center py-14 gap-3">
+      <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
+      <p className="text-[12px] font-normal text-slate-500">Carregando questões...</p>
     </div>
   );
 
   if (error) return (
-    <div className="flex flex-col items-center py-10 gap-2">
-      <p className="text-[11px] text-red-400">{error}</p>
-      <p className="text-[10px] text-slate-600">Verifique se a integração Notion tem acesso a este bloco.</p>
+    <div className="flex flex-col items-center py-12 gap-2 text-center">
+      <p className="text-[12.5px] font-normal text-rose-400">{error}</p>
+      <p className="text-[11.5px] font-normal text-slate-500">Verifique se a integração Notion tem acesso a este bloco.</p>
     </div>
   );
 
@@ -4961,7 +4972,7 @@ function BlockViewer({
         nao_feitas: "Todas as questões deste caderno já foram respondidas!",
         feitas_hoje: "Nenhuma questão respondida hoje neste caderno.",
       };
-      return <p className="text-[11px] text-slate-600 italic text-center py-6">{msgMap[effectiveStatus] || "Nenhuma questão encontrada com os filtros selecionados."}</p>;
+      return <p className="text-[12.5px] font-normal text-slate-500 text-center py-8">{msgMap[effectiveStatus] || "Nenhuma questão encontrada com os filtros selecionados."}</p>;
     }
 
     if (showQuestionMap) {
@@ -4981,12 +4992,12 @@ function BlockViewer({
         byCaso.set(label, arr);
       }
       return (
-        <div className="flex flex-col gap-4 my-1">
+        <div className="flex flex-col gap-5 my-1">
           {[...byCaso.entries()].map(([casoLabel, qList]) => (
-            <div key={casoLabel} className="flex flex-col gap-1.5">
+            <div key={casoLabel} className="flex flex-col gap-2">
               <div className="flex items-center justify-between px-1">
-                <span className="text-[13px] font-medium text-slate-200">{casoLabel}</span>
-                <span className="text-[11px] text-slate-500 tabular-nums">{qList.length} questões</span>
+                <span className="text-[13.5px] font-normal text-slate-200">{casoLabel}</span>
+                <span className="text-[11.5px] font-normal text-slate-500 tabular-nums">{qList.length} questões</span>
               </div>
               <CasoProgressMap
                 questoes={qList}
@@ -5004,9 +5015,9 @@ function BlockViewer({
     }
 
     return (
-      <div className="flex flex-col gap-1 pl-4 border-l border-indigo-500/20 ml-4 my-1">
+      <div className="flex flex-col gap-1.5 pl-4 border-l border-white/[0.08] ml-2 my-2">
         {displayFilteredItens.map((item, idx) => (
-          <div key={item.id} className={idx < displayFilteredItens.length - 1 ? "border-b border-white/[0.05] pb-1 mb-1" : ""}>
+          <div key={item.id} className={idx < displayFilteredItens.length - 1 ? "border-b border-white/[0.04] pb-1.5 mb-0.5" : ""}>
             <QuestaoRow
               questao={{
                 id: item.id,
@@ -5033,13 +5044,13 @@ function BlockViewer({
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-white/[0.05]">
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-2.5 flex-wrap pb-3.5 mb-1 border-b border-white/[0.05]">
         <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
             onClick={() => builder.openCreateCaso(block.block_id, block.nome, casos.map(c => ({ id: c.id, nome: c.nome })))}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/35 border border-indigo-500/30 text-indigo-300 text-[11px] font-bold transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-500/12 hover:bg-indigo-500/20 border border-indigo-400/20 text-indigo-200 text-[12px] font-normal transition-colors whitespace-nowrap"
           >
             <FolderPlus size={13} />
             <span>+ Novo Caso</span>
@@ -5047,7 +5058,7 @@ function BlockViewer({
           <button
             type="button"
             onClick={() => builder.openCreateQuestao(block.block_id, casos[0]?.id)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/35 border border-emerald-500/30 text-emerald-300 text-[11px] font-bold transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/12 hover:bg-emerald-500/20 border border-emerald-400/20 text-emerald-200 text-[12px] font-normal transition-colors whitespace-nowrap"
           >
             <FilePlus2 size={13} />
             <span>+ Nova Questão</span>
@@ -5055,18 +5066,18 @@ function BlockViewer({
         </div>
 
         {showQuestionMap && casos.length > 1 && (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setExpandSignal(prev => ({ mode: "expand", seq: (prev?.seq ?? 0) + 1 }))}
-              className="rounded-lg border border-white/[0.08] bg-[#0d1220] px-2.5 py-1 text-[10px] font-medium text-slate-300 transition-colors hover:bg-white/[0.05] hover:text-white"
+              className="rounded-xl border border-white/[0.08] bg-[#0a0f1c] px-3 py-1.5 text-[11.5px] font-normal text-slate-300 transition-colors hover:bg-white/[0.05] hover:text-slate-100"
             >
               Expandir todos os casos
             </button>
             <button
               type="button"
               onClick={() => setExpandSignal(prev => ({ mode: "collapse", seq: (prev?.seq ?? 0) + 1 }))}
-              className="rounded-lg border border-white/[0.08] bg-[#0d1220] px-2.5 py-1 text-[10px] font-medium text-slate-400 transition-colors hover:bg-white/[0.05] hover:text-white"
+              className="rounded-xl border border-white/[0.08] bg-[#0a0f1c] px-3 py-1.5 text-[11.5px] font-normal text-slate-400 transition-colors hover:bg-white/[0.05] hover:text-slate-100"
             >
               Recolher todos
             </button>
@@ -5075,43 +5086,45 @@ function BlockViewer({
       </div>
 
       {casos.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-10 gap-2 text-center">
-          <p className="text-[11px] text-slate-500 italic">Nenhum caso criado neste caderno ainda.</p>
+        <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+          <p className="text-[12.5px] font-normal text-slate-500">Nenhum caso criado neste caderno ainda.</p>
           <button
             type="button"
             onClick={() => builder.openCreateCaso(block.block_id, block.nome, [])}
-            className="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 px-3 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/25"
+            className="text-[12px] font-normal text-indigo-300 hover:text-indigo-200 px-3.5 py-2 rounded-xl bg-indigo-500/12 border border-indigo-400/25 transition-colors"
           >
             + Criar primeiro Caso
           </button>
         </div>
       ) : (
-        casos.map((caso, idx) => (
-          <CasoCard 
-            key={caso.id} 
-            caso={caso} 
-            user={user} 
-            duvidasIds={duvidasIds}
-            onToggleDuvida={onToggleDuvida}
-            onAnswered={onAnswered}
-            resultadosMap={resultadosMap}
-            apenasComErros={apenasComErros}
-            statusFiltro={statusFiltro}
-            feitasHojeIds={feitasHojeIds}
-            isAdmin={isAdmin}
-            showQuestionMap={showQuestionMap}
-            expandSignal={expandSignal}
-            onMoveUp={(id) => handleMoveCaso(id, "up")}
-            onMoveDown={(id) => handleMoveCaso(id, "down")}
-            onDropCaso={handleDropCaso}
-            isFirst={idx === 0}
-            isLast={idx === casos.length - 1}
-            refreshKey={refreshKey}
-            onPrintCaso={onPrintCaso}
-            rootBlockId={block.block_id}
-            parentBlockId={block.block_id}
-          />
-        ))
+        <div className="flex flex-col gap-2">
+          {casos.map((caso, idx) => (
+            <CasoCard 
+              key={caso.id} 
+              caso={caso} 
+              user={user} 
+              duvidasIds={duvidasIds}
+              onToggleDuvida={onToggleDuvida}
+              onAnswered={onAnswered}
+              resultadosMap={resultadosMap}
+              apenasComErros={apenasComErros}
+              statusFiltro={statusFiltro}
+              feitasHojeIds={feitasHojeIds}
+              isAdmin={isAdmin}
+              showQuestionMap={showQuestionMap}
+              expandSignal={expandSignal}
+              onMoveUp={(id) => handleMoveCaso(id, "up")}
+              onMoveDown={(id) => handleMoveCaso(id, "down")}
+              onDropCaso={handleDropCaso}
+              isFirst={idx === 0}
+              isLast={idx === casos.length - 1}
+              refreshKey={refreshKey}
+              onPrintCaso={onPrintCaso}
+              rootBlockId={block.block_id}
+              parentBlockId={block.block_id}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
@@ -5161,7 +5174,7 @@ function BlocoStatsBadge({
   }, [ids, acertos, erros, duvidas, onStatsLoaded]);
 
   if (ids === null) {
-    return <Loader2 size={11} className="animate-spin text-slate-700 shrink-0" />;
+    return <Loader2 size={11} className="animate-spin text-slate-600 shrink-0" />;
   }
   if (ids.length === 0) return null;
 
@@ -5169,34 +5182,36 @@ function BlocoStatsBadge({
   const aproveitamento = respondidas > 0 ? Math.round((acertos / respondidas) * 100) : null;
   const abertas = Math.max(0, ids.length - respondidas);
 
-  const aproveitamentoClasses =
+  const aproveitamentoColor =
     aproveitamento === null
-      ? "border-slate-800 text-slate-500 bg-slate-900/60"
+      ? "text-slate-500"
       : aproveitamento >= 70
-      ? "border-slate-800 text-emerald-400/90 bg-slate-900/60 font-medium"
+      ? "text-emerald-400/90"
       : aproveitamento >= 50
-      ? "border-slate-800 text-amber-400/90 bg-slate-900/60 font-medium"
-      : "border-slate-800 text-rose-400/90 bg-slate-900/60 font-medium";
+      ? "text-amber-400/90"
+      : "text-rose-400/90";
 
   return (
-    <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] font-normal shrink-0 select-none flex-nowrap whitespace-nowrap">
+    <div className="flex items-center gap-2.5 text-[11px] font-normal shrink-0 select-none flex-nowrap whitespace-nowrap tabular-nums">
       <span className="text-slate-400">{ids.length} quest.</span>
-      <span className="text-emerald-400/90 flex items-center gap-0.5 font-normal" title="Acertos">
-        <Check size={11} className="text-emerald-400/80 stroke-[2]" />
+      <span className="text-emerald-400/90 flex items-center gap-1" title="Acertos">
+        <Check size={11} className="text-emerald-400/75" />
         {acertos}
       </span>
-      <span className="text-rose-400/90 flex items-center gap-0.5 font-normal" title="Erros">
-        <X size={11} className="text-rose-400/80 stroke-[2]" />
+      <span className="text-rose-400/90 flex items-center gap-1" title="Erros">
+        <X size={11} className="text-rose-400/75" />
         {erros}
       </span>
-      <span className="text-amber-400/90 flex items-center gap-0.5 font-normal" title="Em Dúvida">
-        <Flag size={10} className="text-amber-400/80 fill-amber-400/10" />
-        {duvidas}
-      </span>
-      <span className="text-slate-500 text-[9px]" title="Questões ainda não respondidas">
+      {duvidas > 0 && (
+        <span className="text-amber-400/90 flex items-center gap-1" title="Em Dúvida">
+          <Flag size={10} className="text-amber-400/80" />
+          {duvidas}
+        </span>
+      )}
+      <span className="text-slate-500 hidden sm:inline" title="Questões ainda não respondidas">
         {abertas} abertas
       </span>
-      <span className={`px-1.5 py-0.5 rounded border tabular-nums ${aproveitamentoClasses}`} title="Aproveitamento">
+      <span className={`${aproveitamentoColor}`} title="Aproveitamento">
         {aproveitamento === null ? "—" : `${aproveitamento}%`}
       </span>
     </div>
@@ -5247,38 +5262,40 @@ function MateriaStatsBadge({
   }
 
   if (ids === null) {
-    return <Loader2 size={11} className="animate-spin text-slate-700 shrink-0" />;
+    return <Loader2 size={11} className="animate-spin text-slate-600 shrink-0" />;
   }
   if (ids.length === 0) return null;
 
   const respondidas = acertos + erros;
   const aproveitamento = respondidas > 0 ? Math.round((acertos / respondidas) * 100) : null;
 
-  const aproveitamentoClasses =
+  const aproveitamentoColor =
     aproveitamento === null
-      ? "border-slate-800 text-slate-500 bg-slate-900/60"
+      ? "text-slate-500"
       : aproveitamento >= 70
-      ? "border-slate-800 text-emerald-400/90 bg-slate-900/60 font-medium"
+      ? "text-emerald-400/90"
       : aproveitamento >= 50
-      ? "border-slate-800 text-amber-400/90 bg-slate-900/60 font-medium"
-      : "border-slate-800 text-rose-400/90 bg-slate-900/60 font-medium";
+      ? "text-amber-400/90"
+      : "text-rose-400/90";
 
   return (
-    <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] font-normal shrink-0 select-none flex-nowrap whitespace-nowrap">
+    <div className="flex items-center gap-2.5 text-[11px] font-normal shrink-0 select-none flex-nowrap whitespace-nowrap tabular-nums">
       <span className="text-slate-400">{ids.length} quest.</span>
-      <span className="text-emerald-400/90 flex items-center gap-0.5 font-normal" title="Total de acertos na matéria">
-        <Check size={11} className="text-emerald-400/80 stroke-[2]" />
+      <span className="text-emerald-400/90 flex items-center gap-1" title="Total de acertos na matéria">
+        <Check size={11} className="text-emerald-400/75" />
         {acertos}
       </span>
-      <span className="text-rose-400/90 flex items-center gap-0.5 font-normal" title="Total de erros na matéria">
-        <X size={11} className="text-rose-400/80 stroke-[2]" />
+      <span className="text-rose-400/90 flex items-center gap-1" title="Total de erros na matéria">
+        <X size={11} className="text-rose-400/75" />
         {erros}
       </span>
-      <span className="text-amber-400/90 flex items-center gap-0.5 font-normal" title="Total em dúvida na matéria">
-        <Flag size={10} className="text-amber-400/80 fill-amber-400/10" />
-        {duvidas}
-      </span>
-      <span className={`px-1.5 py-0.5 rounded border tabular-nums ${aproveitamentoClasses}`} title="Aproveitamento geral na matéria">
+      {duvidas > 0 && (
+        <span className="text-amber-400/90 flex items-center gap-1" title="Total em dúvida na matéria">
+          <Flag size={10} className="text-amber-400/80" />
+          {duvidas}
+        </span>
+      )}
+      <span className={`${aproveitamentoColor}`} title="Aproveitamento geral na matéria">
         {aproveitamento === null ? "—" : `${aproveitamento}%`}
       </span>
     </div>
@@ -5307,17 +5324,17 @@ function TotalBancoStatsBadge({ blocks }: { blocks: NotionBlockRow[] }) {
 
   if (total === null) {
     return (
-      <span className="text-[10px] font-normal text-slate-300 flex items-center gap-1 bg-slate-900/60 border border-slate-800 px-2 py-0.5 rounded-lg" title="Total de questões cadastradas no banco">
-        <BookMarked size={11} className="text-indigo-400/80" />
-        <span className="text-indigo-300/80 font-medium">... questões</span>
+      <span className="text-[11.5px] font-normal text-slate-400 flex items-center gap-1.5 tabular-nums" title="Total de questões cadastradas no banco">
+        <BookMarked size={12} className="text-indigo-400/80" />
+        <span className="text-indigo-300/80">... questões</span>
       </span>
     );
   }
 
   return (
-    <span className="text-[10px] font-normal text-slate-300 flex items-center gap-1 bg-slate-900/60 border border-slate-800 px-2 py-0.5 rounded-lg" title="Total de questões cadastradas em todos os cadernos">
-      <BookMarked size={11} className="text-indigo-400/80" />
-      <span className="text-indigo-300 font-bold">{total} questões</span>
+    <span className="text-[11.5px] font-normal text-slate-300 flex items-center gap-1.5 tabular-nums" title="Total de questões cadastradas em todos os cadernos">
+      <BookMarked size={12} className="text-indigo-400/80" />
+      <span className="text-slate-200">{total} questões</span>
     </span>
   );
 }
@@ -5345,10 +5362,10 @@ function QuestaoBloquinho({
   const pct = stats && stats.total > 0 ? Math.round((stats.corretas / stats.total) * 100) : null;
   const tier: "green" | "amber" | "red" | "neutral" = pct === null ? "neutral" : pct >= 70 ? "green" : pct >= 40 ? "amber" : "red";
   const tierClasses = {
-    green: "border-emerald-500/25 bg-emerald-500/[0.05] hover:bg-emerald-500/[0.09]",
-    amber: "border-amber-500/25 bg-amber-500/[0.05] hover:bg-amber-500/[0.09]",
-    red: "border-red-500/25 bg-red-500/[0.05] hover:bg-red-500/[0.09]",
-    neutral: "border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05]",
+    green: "border-emerald-400/20 bg-emerald-500/[0.04] hover:bg-emerald-500/[0.08]",
+    amber: "border-amber-400/20 bg-amber-500/[0.04] hover:bg-amber-500/[0.08]",
+    red: "border-rose-400/20 bg-rose-500/[0.04] hover:bg-rose-500/[0.08]",
+    neutral: "border-white/[0.07] bg-[#0b101d] hover:bg-white/[0.04]",
   }[tier];
   const pctColor = { green: "#4ade80", amber: "#fbbf24", red: "#f87171", neutral: "#64748b" }[tier];
   const barColor = { green: "#22c55e", amber: "#f59e0b", red: "#ef4444", neutral: "#475569" }[tier];
@@ -5357,15 +5374,15 @@ function QuestaoBloquinho({
     <button
       onClick={onClick}
       title={q.topic || `Questão ${q.numero}`}
-      className={`relative flex flex-col gap-1 p-2 rounded-lg border text-left transition-colors shrink-0 w-[92px] ${tierClasses} ${
-        isSelected ? "ring-2 ring-blue-500" : ""
+      className={`relative flex flex-col gap-1.5 p-2.5 rounded-xl border text-left transition-colors shrink-0 w-[96px] ${tierClasses} ${
+        isSelected ? "ring-1 ring-indigo-400/70 bg-indigo-500/[0.08]" : ""
       }`}
     >
       <div className="flex items-center justify-between gap-1">
-        <span className="text-[13px] font-black text-white leading-none">{q.numero || "?"}</span>
+        <span className="text-[13px] font-normal text-slate-100 leading-none tabular-nums">{q.numero || "?"}</span>
         {catInfo && (
           <span
-            className="text-[8px] leading-none shrink-0"
+            className="text-[10px] leading-none shrink-0"
             title={catInfo.label}
           >
             {FACE_EMOJI[q.categoryKey]}
@@ -5373,20 +5390,20 @@ function QuestaoBloquinho({
         )}
       </div>
       {q.topic && (
-        <span className="text-[8px] text-slate-500 truncate leading-tight">— {q.topic}</span>
+        <span className="text-[9.5px] font-normal text-slate-400 truncate leading-tight">{q.topic}</span>
       )}
       {pct !== null ? (
-        <div className="flex flex-col gap-0.5 mt-0.5">
-          <span className="text-[8px] font-black tabular-nums" style={{ color: pctColor }}>{pct}%</span>
+        <div className="flex flex-col gap-1 mt-0.5">
+          <span className="text-[10px] font-normal tabular-nums" style={{ color: pctColor }}>{pct}%</span>
           <div className="h-0.5 bg-white/[0.08] rounded-full overflow-hidden">
             <div className="h-full rounded-full" style={{ width: `${pct}%`, background: barColor }} />
           </div>
         </div>
       ) : (
-        <span className="text-[8px] text-slate-700 italic mt-0.5">sem tentativa</span>
+        <span className="text-[9.5px] font-normal text-slate-600 mt-0.5">sem tentativa</span>
       )}
       {isDuvida && (
-        <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 border border-[#111623]" />
+        <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 border border-[#0b101d]" />
       )}
     </button>
   );
@@ -5435,13 +5452,13 @@ function GabaritoBloco({
 
   if (detalhes === null) {
     return (
-      <div className="flex items-center gap-2 text-[11px] text-slate-500 italic py-4 px-2">
-        <Loader2 size={12} className="animate-spin" /> Carregando gabarito...
+      <div className="flex items-center gap-2 text-[12px] font-normal text-slate-500 py-5 px-2">
+        <Loader2 size={13} className="animate-spin text-indigo-400" /> Carregando gabarito...
       </div>
     );
   }
   if (detalhes.itens.length === 0) {
-    return <p className="text-[11px] text-slate-600 italic py-4 px-2">Nenhuma questão encontrada neste caderno.</p>;
+    return <p className="text-[12px] font-normal text-slate-500 py-5 px-2">Nenhuma questão encontrada neste caderno.</p>;
   }
 
   const { itens, caseIcons } = detalhes;
@@ -5454,18 +5471,18 @@ function GabaritoBloco({
   }
 
   return (
-    <div className="flex flex-col gap-2 p-3 bg-[#0d1220] rounded-xl border border-white/[0.06]">
-      <h4 className="text-[11px] font-black text-slate-300 uppercase tracking-wider flex items-center gap-1.5 mb-1">
-        <LayoutGrid size={12} className="text-indigo-400" /> Desempenho por Caso
+    <div className="flex flex-col gap-3 p-4 bg-[#0b101d] rounded-2xl border border-white/[0.06]">
+      <h4 className="text-[12.5px] font-normal text-slate-300 flex items-center gap-2 mb-0.5">
+        <LayoutGrid size={13} className="text-indigo-400" /> Desempenho por Caso
       </h4>
 
-      <div className="relative flex flex-col gap-2 pl-1">
+      <div className="relative flex flex-col gap-2.5 pl-1">
         {/* Linha do tempo vertical conectando os casos */}
-        <div className="absolute left-[15px] top-4 bottom-4 w-px bg-white/[0.07]" />
+        <div className="absolute left-[17px] top-4 bottom-4 w-px bg-white/[0.06]" />
 
         {[...grupos.entries()].map(([caseLabel, qs], idx) => {
           const isOpen = expandido.has(caseLabel);
-          const icon = caseIcons[caseLabel] ?? "📁";
+          const customIcon = caseIcons[caseLabel];
           let cAcertos = 0, cErros = 0, cDuvidas = 0;
           for (const q of qs) {
             const st = resultadosMap.get(q.id)?.ultimo;
@@ -5475,39 +5492,39 @@ function GabaritoBloco({
           }
           const cRespondidas = cAcertos + cErros;
           const cPct = cRespondidas > 0 ? Math.round((cAcertos / cRespondidas) * 100) : null;
-          const aproveitamentoClasses =
+          const pctColor =
             cPct === null
-              ? "border-slate-800 text-slate-500 bg-slate-900/60"
+              ? "text-slate-500"
               : cPct >= 70
-              ? "border-slate-800 text-emerald-400/90 bg-slate-900/60 font-medium"
+              ? "text-emerald-400/90"
               : cPct >= 50
-              ? "border-slate-800 text-amber-400/90 bg-slate-900/60 font-medium"
-              : "border-slate-800 text-rose-400/90 bg-slate-900/60 font-medium";
+              ? "text-amber-400/90"
+              : "text-rose-400/90";
 
           return (
             <div key={caseLabel} className="relative flex flex-col gap-2">
               <button
                 onClick={() => toggleExpandido(caseLabel)}
-                className="relative z-10 w-full flex items-center gap-3 px-2.5 py-2 rounded-xl border border-white/[0.06] bg-[#111623] hover:border-white/[0.14] transition-colors text-left"
+                className="relative z-10 w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-white/[0.06] bg-[#101625] hover:border-white/[0.12] transition-colors text-left"
               >
-                <span className="w-7 h-7 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-sm shrink-0">
-                  {icon}
+                <span className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.07] flex items-center justify-center text-xs shrink-0">
+                  {customIcon && customIcon !== "📁" ? customIcon : <Folder size={13} className="text-indigo-400/85" />}
                 </span>
-                <span className="flex-1 text-[11px] font-bold text-slate-200 truncate">
-                  {idx + 1}. {caseLabel}
+                <span className="flex-1 text-[12.5px] font-normal text-slate-200 truncate">
+                  <span className="text-slate-500 tabular-nums mr-1">{idx + 1}.</span> {caseLabel}
                 </span>
-                <div className="flex items-center gap-1.5 text-[10px] shrink-0 tabular-nums">
+                <div className="flex items-center gap-2.5 text-[11px] font-normal shrink-0 tabular-nums">
                   <span className="text-slate-400">{qs.length} quest.</span>
-                  <span className="text-emerald-400 flex items-center gap-0.5"><Check size={10} />{cAcertos}</span>
-                  <span className="text-rose-400 flex items-center gap-0.5"><X size={10} />{cErros}</span>
-                  <span className="text-amber-400 flex items-center gap-0.5"><Flag size={9} />{cDuvidas}</span>
-                  <span className={`px-1.5 py-0.5 rounded border text-[9px] ${aproveitamentoClasses}`}>{cPct === null ? "—" : `${cPct}%`}</span>
+                  <span className="text-emerald-400/90 flex items-center gap-0.5"><Check size={10} />{cAcertos}</span>
+                  <span className="text-rose-400/90 flex items-center gap-0.5"><X size={10} />{cErros}</span>
+                  {cDuvidas > 0 && <span className="text-amber-400/90 flex items-center gap-0.5"><Flag size={9} />{cDuvidas}</span>}
+                  <span className={`${pctColor}`}>{cPct === null ? "—" : `${cPct}%`}</span>
                 </div>
-                <ChevronDown size={13} className={`text-slate-500 shrink-0 ${isOpen ? "rotate-180" : ""}`} />
+                <ChevronDown size={13} className={`text-slate-500 shrink-0 transition-transform duration-150 ${isOpen ? "rotate-180" : ""}`} />
               </button>
 
               {isOpen && (
-                <div className="flex flex-wrap gap-1.5 pl-9 pb-1">
+                <div className="flex flex-wrap gap-2 pl-10 pb-1.5">
                   {qs.map(q => (
                     <QuestaoBloquinho
                       key={q.id}
@@ -5526,7 +5543,7 @@ function GabaritoBloco({
       </div>
 
       {selecionada && (
-        <div className="border border-indigo-500/20 rounded-xl bg-[#111623] p-2 mt-1">
+        <div className="border border-indigo-400/20 rounded-2xl bg-[#101625] p-3 mt-1">
           <QuestaoRow
             key={selecionada.id}
             questao={{
@@ -5699,39 +5716,45 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
           }
         }
       }}
-      className={`flex flex-col gap-1.5 p-2 sm:p-2.5 rounded-xl border transition-colors ${
-        isDraggingOver ? "ring-2 ring-indigo-500/50 bg-indigo-500/10" : ""
+      className={`flex flex-col gap-2 px-3.5 py-2.5 sm:py-3 rounded-xl border transition-colors ${
+        isDraggingOver ? "ring-1 ring-indigo-400/50 bg-indigo-500/10" : ""
       } ${
         showRedHighlight
-          ? "bg-rose-500/[0.03] border-rose-500/25"
-          : "bg-[#111623]/95 border-white/[0.06] hover:border-white/[0.12]"
+          ? "bg-rose-500/[0.03] border-rose-500/20"
+          : "bg-[#0f1626]/75 border-white/[0.06] hover:border-white/[0.12] hover:bg-[#131b2e]/85"
       }`}
     >
       {/* Header do Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-1.5 min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 min-w-0">
         <button
           onClick={() => onSelect ? onSelect(block) : setOpen(v => !v)}
-          className="flex items-center gap-1.5 text-left flex-1 min-w-0 group overflow-hidden"
+          className="flex items-center gap-2 text-left flex-1 min-w-0 group overflow-hidden"
         >
-          <span className="text-[9px] text-slate-500 w-3.5 h-3.5 flex items-center justify-center shrink-0 select-none">
-            {onSelect ? "→" : open ? "▼" : "▶"}
+          <span className="w-4 h-4 flex items-center justify-center shrink-0 select-none text-slate-500 group-hover:text-indigo-300 transition-colors">
+            {onSelect ? (
+              <ArrowRight size={13} />
+            ) : (
+              <ChevronRight size={13} className={`transition-transform duration-150 ${open ? "rotate-90" : ""}`} />
+            )}
           </span>
-          <span className="text-sm shrink-0 select-none">{blockIcon}</span>
-          <div className="flex items-baseline gap-1.5 min-w-0 overflow-hidden">
-            <span className={`text-[13px] font-normal truncate ${
-              showRedHighlight ? "text-rose-300" : "text-slate-300 group-hover:text-slate-100"
+          <span className="text-[14px] shrink-0 select-none leading-none">
+            {blockIcon && blockIcon !== "📝" ? blockIcon : <BookMarked size={13} className="text-indigo-400/80" />}
+          </span>
+          <div className="flex items-baseline gap-2 min-w-0 overflow-hidden">
+            <span className={`text-[13.5px] font-normal truncate transition-colors ${
+              showRedHighlight ? "text-rose-200" : "text-slate-200 group-hover:text-white"
             }`}>
               {block.nome}
             </span>
             {block.descricao && (
-              <span className="hidden sm:inline text-[10px] text-slate-400/70 font-normal truncate shrink min-w-0 whitespace-nowrap">
+              <span className="hidden sm:inline text-[11px] text-slate-500 font-normal truncate shrink min-w-0 whitespace-nowrap">
                 {block.descricao}
               </span>
             )}
           </div>
         </button>
 
-        <div className="flex items-center justify-between sm:justify-end gap-1.5 shrink-0 flex-nowrap whitespace-nowrap pl-5 sm:pl-0">
+        <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 flex-nowrap whitespace-nowrap pl-6 sm:pl-0">
           <button
             type="button"
             onClick={(e) => {
@@ -5739,7 +5762,7 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
               onPrintCaderno?.(block);
             }}
             title={`Imprimir caderno "${block.nome}" inteiro (com gabarito no final)`}
-            className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.03] text-slate-400 hover:text-indigo-300 hover:bg-white/[0.08] hover:border-white/[0.15] transition-colors"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.02] text-slate-400 hover:text-indigo-300 hover:bg-white/[0.06] hover:border-white/[0.14] transition-colors"
           >
             <Printer size={12} />
           </button>
@@ -5759,10 +5782,10 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
                   setShowMenu(v => !v);
                 }}
                 title="Opções do Caderno (Admin)"
-                className={`w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border transition-colors ${
+                className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-colors ${
                   showMenu
-                    ? "bg-indigo-600/30 border-indigo-500/50 text-indigo-300"
-                    : "bg-white/[0.03] border-white/[0.07] text-slate-500 hover:text-slate-200 hover:border-white/[0.15]"
+                    ? "bg-indigo-500/20 border-indigo-400/40 text-indigo-200"
+                    : "bg-white/[0.02] border-white/[0.06] text-slate-500 hover:text-slate-200 hover:border-white/[0.14]"
                 }`}
               >
                 <MoreVertical size={13} />
@@ -5776,24 +5799,24 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
                   />
                   
                   <div 
-                    className="absolute right-0 top-full mt-1.5 w-60 max-w-[calc(100vw-2.5rem)] z-50 bg-[#111623] border border-white/[0.12] rounded-2xl p-3 shadow-lg flex flex-col gap-2.5"
+                    className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-2.5rem)] z-50 bg-[#0f1524] border border-white/[0.10] rounded-2xl p-3.5 shadow-xl flex flex-col gap-3"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
-                      <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1.5">
-                        <span>⚙️</span> Opções de Admin
+                      <span className="text-[11.5px] font-normal text-indigo-300 flex items-center gap-1.5">
+                        Opções de Admin
                       </span>
                       <button 
                         onClick={() => setShowMenu(false)}
                         className="text-slate-500 hover:text-slate-300 p-0.5"
                       >
-                        <X size={12} />
+                        <X size={13} />
                       </button>
                     </div>
 
                     {/* Campo de Alterar Ordem */}
-                    <div className="flex flex-col gap-1 bg-[#0d1220] p-2.5 rounded-xl border border-white/[0.06]">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                    <div className="flex flex-col gap-1.5 bg-[#0a0f1c] p-3 rounded-xl border border-white/[0.06]">
+                      <label className="text-[11px] font-normal text-slate-400">
                         Ordem no Banco (Supabase)
                       </label>
                       <div className="flex items-center gap-2">
@@ -5808,14 +5831,14 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
                             }
                           }}
                           placeholder="Ex: 1"
-                          className="w-full text-center text-[12px] font-mono font-black text-indigo-300 bg-black/50 border border-indigo-500/30 rounded-lg py-1 focus:outline-none focus:border-indigo-400"
+                          className="w-full text-center text-[12px] font-mono font-normal text-indigo-200 bg-black/40 border border-indigo-400/25 rounded-lg py-1.5 focus:outline-none focus:border-indigo-400/50 tabular-nums"
                         />
                         <button
                           onClick={() => {
                             handleSaveOrdem();
                             setShowMenu(false);
                           }}
-                          className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shrink-0"
+                          className="px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/30 text-indigo-100 rounded-lg text-[11px] font-normal transition-colors shrink-0"
                         >
                           Salvar
                         </button>
@@ -5823,31 +5846,31 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
                     </div>
 
                     {/* Botões Mover Para Cima / Baixo */}
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => { onMoveUp?.(block.id); }}
                         disabled={isFirst}
-                        className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-[#0d1220] hover:bg-white/[0.06] border border-white/[0.06] rounded-xl text-[10px] font-bold text-slate-300 disabled:opacity-30 disabled:hover:bg-[#0d1220] transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-[#0a0f1c] hover:bg-white/[0.05] border border-white/[0.06] rounded-xl text-[11px] font-normal text-slate-300 disabled:opacity-30 disabled:hover:bg-[#0a0f1c] transition-colors"
                       >
                         <ArrowUp size={12} className="text-indigo-400" /> Subir
                       </button>
                       <button
                         onClick={() => { onMoveDown?.(block.id); }}
                         disabled={isLast}
-                        className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-[#0d1220] hover:bg-white/[0.06] border border-white/[0.06] rounded-xl text-[10px] font-bold text-slate-300 disabled:opacity-30 disabled:hover:bg-[#0d1220] transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-[#0a0f1c] hover:bg-white/[0.05] border border-white/[0.06] rounded-xl text-[11px] font-normal text-slate-300 disabled:opacity-30 disabled:hover:bg-[#0a0f1c] transition-colors"
                       >
                         <ArrowDown size={12} className="text-indigo-400" /> Descer
                       </button>
                     </div>
 
                     {/* Botão Excluir Caderno */}
-                    <div className="border-t border-white/[0.06] pt-2">
+                    <div className="border-t border-white/[0.06] pt-2.5">
                       <button
                         onClick={() => {
                           setShowMenu(false);
                           onDelete(block.id);
                         }}
-                        className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 rounded-xl text-[10px] font-bold transition-colors"
+                        className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-300 rounded-xl text-[11px] font-normal transition-colors"
                       >
                         <Trash2 size={12} /> Excluir Caderno
                       </button>
@@ -5860,10 +5883,8 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
         </div>
       </div>
 
-
-
       {showGabarito && (
-        <div className="mt-1">
+        <div className="mt-1.5">
           <GabaritoBloco
             block={block}
             user={user}
@@ -5877,7 +5898,7 @@ const NotionBlockRowItem = memo(function NotionBlockRowItem({
       )}
 
       {open && (
-        <div className="mt-1 pl-3 border-l border-indigo-500/[0.2]">
+        <div className="mt-2 pl-4 border-l border-white/[0.08]">
           <BlockViewer 
             block={block} 
             user={user} 
@@ -6858,42 +6879,50 @@ export default function NotionQuestionTab({ user }: { user: any }) {
   return (
     <BuilderActionsContext.Provider value={builderContextValue}>
     <ClassificationContext.Provider value={{ overrides: classificationOverrides, updateClassification: handleUpdateClassification, canEdit: !!user?.id, classificacaoFiltro, setClassificacaoFiltro }}>
-    <div className="flex flex-col gap-3 sm:gap-4 bg-[#080d1a] rounded-2xl border border-white/[0.06] p-2.5 sm:p-5 relative overflow-x-clip">
+    <div className="flex flex-col gap-5 sm:gap-6 bg-[#080d1a] rounded-2xl border border-white/[0.06] p-4 sm:p-6 relative overflow-x-clip">
 
-      {/* Sleek Ultra-Compact Header Toolbar */}
-      <div className="flex items-center justify-between flex-wrap gap-2.5 pb-2.5 border-b border-white/[0.06] relative z-10">
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
-              <BookMarked size={14} className="text-indigo-400" />
+      {/* Header Toolbar */}
+      <div className="flex items-center justify-between flex-wrap gap-3.5 pb-4 border-b border-white/[0.06] relative z-10">
+        <div className="flex items-center gap-3 sm:gap-4 flex-wrap min-w-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-indigo-500/12 border border-indigo-400/20 flex items-center justify-center shrink-0">
+              <BookMarked size={15} className="text-indigo-300" />
             </div>
-            <h2 className="text-sm font-black text-white tracking-tight">Notion Question</h2>
+            <h2 className="text-base sm:text-[17px] font-normal text-slate-100 tracking-tight">Notion Question</h2>
           </div>
 
           {user && (
-            <div className="flex items-center gap-1.5 sm:pl-2 sm:border-l sm:border-white/10 flex-wrap">
+            <div className="flex items-center gap-x-3.5 gap-y-1.5 sm:pl-3.5 sm:border-l sm:border-white/[0.08] flex-wrap tabular-nums">
               <TotalBancoStatsBadge blocks={blocks} />
-              <span className="text-[10px] font-normal text-slate-300 flex items-center gap-1 bg-slate-900/60 border border-slate-800 px-2 py-0.5 rounded-lg" title="Feitas hoje">
-                <Clock size={11} className="text-sky-400/80" /> <span className="text-sky-400/90 font-medium">{feitasHojeIds.length} hoje</span>
+              <span className="text-[11.5px] font-normal text-slate-300 flex items-center gap-1.5" title="Feitas hoje">
+                <Clock size={12} className="text-sky-400/80" />
+                <span className="text-sky-300/90">{feitasHojeIds.length} hoje</span>
               </span>
-              <span className="text-[10px] font-normal text-slate-300 flex items-center gap-1 bg-slate-900/60 border border-slate-800 px-2 py-0.5 rounded-lg" title="Total de acertos">
-                <Check size={11} className="text-emerald-400/80 stroke-[2]" /> <span className="text-emerald-400/90 font-medium">{acertadas.length} acertos</span>
+              <span className="text-[11.5px] font-normal text-slate-300 flex items-center gap-1.5" title="Total de acertos">
+                <Check size={12} className="text-emerald-400/80" />
+                <span className="text-emerald-300/90">{acertadas.length} acertos</span>
               </span>
-              <span className="text-[10px] font-normal text-slate-300 flex items-center gap-1 bg-slate-900/60 border border-slate-800 px-2 py-0.5 rounded-lg" title="Com erros">
-                <X size={11} className="text-rose-400/80 stroke-[2]" /> <span className="text-rose-400/90 font-medium">{erradas.length} erros</span>
+              <span className="text-[11.5px] font-normal text-slate-300 flex items-center gap-1.5" title="Com erros">
+                <X size={12} className="text-rose-400/80" />
+                <span className="text-rose-300/90">{erradas.length} erros</span>
               </span>
-              <span className="text-[10px] font-normal text-slate-300 flex items-center gap-1 bg-slate-900/60 border border-slate-800 px-2 py-0.5 rounded-lg" title="Em dúvida">
-                <Flag size={11} className="text-amber-400/80 fill-amber-400/10" /> <span className="text-amber-400/90 font-medium">{duvidasArr.length} dúvidas</span>
+              <span className="text-[11.5px] font-normal text-slate-300 flex items-center gap-1.5" title="Em dúvida">
+                <Flag size={11} className="text-amber-400/80" />
+                <span className="text-amber-300/90">{duvidasArr.length} dúvidas</span>
               </span>
               {totalRespondidas > 0 && (
-                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-lg border bg-slate-900/60 border-slate-800 ${
-                  taxaAcerto >= 70
-                    ? "text-emerald-400/90"
-                    : taxaAcerto >= 50
-                    ? "text-amber-400/90"
-                    : "text-rose-400/90"
-                }`} title="Taxa de acertos">
-                  🎯 {taxaAcerto}%
+                <span
+                  className={`text-[11.5px] font-normal flex items-center gap-1.5 ${
+                    taxaAcerto >= 70
+                      ? "text-emerald-300/90"
+                      : taxaAcerto >= 50
+                      ? "text-amber-300/90"
+                      : "text-rose-300/90"
+                  }`}
+                  title="Taxa de acertos"
+                >
+                  <Target size={12} className="opacity-80" />
+                  <span>{taxaAcerto}%</span>
                 </span>
               )}
             </div>
@@ -6906,7 +6935,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               type="button"
               onClick={() => builderContextValue.openCreateQuestao(selectedBlock?.block_id ?? blocks[0]?.block_id)}
               title="Criar questão (em Caso ou Subcaso), anexar imagem, escrever enunciado e resposta"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors shrink-0"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/25 text-emerald-200 text-[12px] font-normal transition-colors shrink-0 whitespace-nowrap"
             >
               <FilePlus2 size={13} />
               <span>+ Nova Questão</span>
@@ -6915,37 +6944,42 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           <button
             onClick={toggleAntiBrilho}
             title={antiBrilho === 'noturno' ? "Modo Escuro (Dark Invertido) ativo para imagens — clique para alternar" : "Modo Original ativo para imagens — clique para alternar"}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors shrink-0 ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-[12px] font-normal transition-colors shrink-0 whitespace-nowrap ${
               antiBrilho === 'noturno'
-                ? 'bg-purple-950/40 hover:bg-purple-900/50 text-purple-300 border-purple-500/40'
-                : 'bg-slate-800/60 hover:bg-slate-700/60 text-slate-300 border-slate-700'
+                ? 'bg-purple-500/15 hover:bg-purple-500/25 text-purple-200 border-purple-400/25'
+                : 'bg-[#0d1322] hover:bg-white/[0.05] text-slate-300 border-white/[0.08]'
             }`}
           >
-            <Moon size={13} className={antiBrilho === 'noturno' ? "text-purple-400 fill-purple-400/20" : "text-slate-400"} />
-            <span>🌙 Dark Imagens: {antiBrilho === 'noturno' ? "ON" : "OFF"}</span>
+            {antiBrilho === 'noturno' ? (
+              <Moon size={13} className="text-purple-300" />
+            ) : (
+              <Sun size={13} className="text-slate-400" />
+            )}
+            <span>Dark Imagens: {antiBrilho === 'noturno' ? "ON" : "OFF"}</span>
           </button>
           <button
             onClick={handleForceSyncNotion}
             title="Forçar sincronização em tempo real com o Notion (Limpa todos os caches)"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 text-xs font-bold transition-colors shrink-0"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-500/12 hover:bg-indigo-500/22 text-indigo-200 border border-indigo-400/20 text-[12px] font-normal transition-colors shrink-0 whitespace-nowrap"
           >
-            <RefreshCw size={13} className={loadingBlocks ? "animate-spin text-indigo-400" : "text-indigo-400"} />
+            <RefreshCw size={13} className={loadingBlocks ? "animate-spin text-indigo-300" : "text-indigo-300"} />
             <span className="hidden sm:inline">Sincronizar Notion</span>
           </button>
           <button
             onClick={() => setShowSyncModal(true)}
             title="Espelhar questões e salvar imagens permanentemente no Supabase (Carregamento ultra-rápido de 0ms)"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-colors shrink-0"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-500/22 hover:bg-indigo-500/32 border border-indigo-400/30 text-indigo-100 text-[12px] font-normal transition-colors shrink-0 whitespace-nowrap"
           >
-            <Database size={13} className="text-white" />
+            <Database size={13} className="text-indigo-200" />
             <span>Sincronizar Banco</span>
           </button>
           {isAdmin && (
             <button
               onClick={() => setShowForm(v => !v)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-200 rounded-xl text-[12px] font-normal transition-colors shrink-0 whitespace-nowrap"
             >
-              <Plus size={11} /> Novo Bloco
+              <Plus size={13} className="text-indigo-300" />
+              <span>Novo Bloco</span>
             </button>
           )}
         </div>
@@ -6963,9 +6997,9 @@ export default function NotionQuestionTab({ user }: { user: any }) {
 
       {/* Aviso de alteração ou remoção de ID de bloco no Notion */}
       {visibleIdAlerts.length > 0 && (
-        <div className="relative z-10 flex flex-col gap-2.5 rounded-2xl border border-amber-500/35 bg-amber-950/25 p-3.5 shadow-lg">
+        <div className="relative z-10 flex flex-col gap-3 rounded-2xl border border-amber-400/25 bg-amber-950/20 p-4">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2 text-amber-300 text-xs font-bold">
+            <div className="flex items-center gap-2 text-amber-200 text-[12.5px] font-normal">
               <AlertTriangle size={15} className="text-amber-400 shrink-0" />
               <span>
                 Aviso: Modificação de ID de bloco do Notion detectada ({visibleIdAlerts.length})
@@ -6975,44 +7009,44 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               <button
                 type="button"
                 onClick={() => setShowSyncModal(true)}
-                className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/35 text-amber-200 text-[10px] font-bold transition-colors"
+                className="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/25 text-amber-200 text-[11.5px] font-normal transition-colors"
               >
                 Sincronizar Banco
               </button>
               <button
                 type="button"
                 onClick={handleDismissAllAlerts}
-                className="px-2 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white text-[10px] font-medium transition-colors"
+                className="px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-slate-100 text-[11.5px] font-normal transition-colors"
               >
                 Dispensar todos
               </button>
             </div>
           </div>
 
-          <div className="flex flex-col gap-1.5 max-h-44 overflow-y-auto pr-1">
+          <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
             {visibleIdAlerts.map(alertItem => (
               <div
                 key={alertItem.id}
-                className="flex items-center justify-between gap-3 flex-wrap rounded-xl border border-amber-500/20 bg-black/30 px-3 py-2 text-[11px]"
+                className="flex items-center justify-between gap-3 flex-wrap rounded-xl border border-amber-400/15 bg-[#0a0f1c]/80 px-3.5 py-2.5 text-[12px]"
               >
                 <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                  <span className="font-semibold text-amber-200 truncate">
+                  <span className="font-normal text-amber-200 truncate">
                     {alertItem.cadernoNome ? `${alertItem.cadernoNome}` : "Bloco Notion"}
                     {alertItem.casoNome ? ` • ${alertItem.casoNome}` : ""}
                     {alertItem.numero ? ` • Questão ${alertItem.numero}` : ""}
                     {alertItem.topico ? ` — ${alertItem.topico}` : ""}
                   </span>
-                  <span className="text-[10.5px] text-amber-100/80 break-words">
+                  <span className="text-[11px] font-normal text-amber-100/75 break-words">
                     {alertItem.mensagem}
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   {alertItem.novoId && user?.id && (
                     <button
                       type="button"
                       disabled={migratingAlertId === alertItem.id}
                       onClick={() => handleMigrateAlertHistory(alertItem)}
-                      className="px-2.5 py-1 rounded-lg bg-emerald-600/25 hover:bg-emerald-600/40 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold transition-colors disabled:opacity-50"
+                      className="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/25 text-emerald-200 text-[11px] font-normal transition-colors disabled:opacity-50"
                     >
                       {migratingAlertId === alertItem.id ? "Atualizando..." : "Atualizar meu histórico"}
                     </button>
@@ -7021,7 +7055,7 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                     type="button"
                     onClick={() => handleDismissAlert(alertItem.id)}
                     title="Dispensar este aviso"
-                    className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] transition-colors"
                   >
                     <X size={13} />
                   </button>
@@ -7043,17 +7077,17 @@ export default function NotionQuestionTab({ user }: { user: any }) {
       />
 
       {showForm && (
-        <div className="border border-indigo-500/20 rounded-2xl bg-[#101526] p-5 flex flex-col gap-4 relative z-10 shadow-lg">
+        <div className="border border-white/[0.08] rounded-2xl bg-[#0d1322] p-5 sm:p-6 flex flex-col gap-4 relative z-10">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-black text-indigo-300 uppercase tracking-widest">
+            <p className="text-[13.5px] font-normal text-slate-100">
               Cadastrar Bloco Notion
             </p>
-            <button onClick={() => setShowForm(false)} className="text-slate-600 hover:text-slate-400"><X size={14} /></button>
+            <button onClick={() => setShowForm(false)} className="text-slate-500 hover:text-slate-300 p-1 rounded-lg hover:bg-white/[0.05]"><X size={15} /></button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between gap-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">ID do Bloco *</label>
+                <label className="text-[11.5px] font-normal text-slate-400">ID do Bloco *</label>
                 <button
                   type="button"
                   onClick={() => {
@@ -7063,50 +7097,50 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                     setFormId(id);
                     setIsLocalNewBlock(true);
                   }}
-                  className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300"
+                  className="text-[11px] font-normal text-indigo-300 hover:text-indigo-200"
                 >
                   Gerar ID local
                 </button>
               </div>
-              <input value={formId} onChange={e => { setFormId(e.target.value); setIsLocalNewBlock(false); }} placeholder="abc12345-... ou gere um ID local" className="px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40 font-mono" />
+              <input value={formId} onChange={e => { setFormId(e.target.value); setIsLocalNewBlock(false); }} placeholder="abc12345-... ou gere um ID local" className="px-3.5 py-2.5 bg-[#080d1a] border border-white/[0.08] rounded-xl text-[12.5px] font-normal text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-400/40 font-mono" />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Nome *</label>
-              <input value={formNome} onChange={e => setFormNome(e.target.value)} placeholder="Ex: Caderno Azul" className="px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40" />
+              <label className="text-[11.5px] font-normal text-slate-400">Nome *</label>
+              <input value={formNome} onChange={e => setFormNome(e.target.value)} placeholder="Ex: Caderno Azul" className="px-3.5 py-2.5 bg-[#080d1a] border border-white/[0.08] rounded-xl text-[12.5px] font-normal text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-400/40" />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Matéria</label>
+              <label className="text-[11.5px] font-normal text-slate-400">Matéria</label>
               <input
                 value={formMateria}
                 onChange={e => setFormMateria(e.target.value)}
                 placeholder="Ex: Matemática Financeira"
                 list="materias-cadastradas"
-                className="px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40"
+                className="px-3.5 py-2.5 bg-[#080d1a] border border-white/[0.08] rounded-xl text-[12.5px] font-normal text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-400/40"
               />
               <datalist id="materias-cadastradas">
                 {materiasDisponiveis.map(m => <option key={m} value={m} />)}
               </datalist>
             </div>
             <div className="flex flex-col gap-1.5 sm:col-span-3">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Descrição (opcional)</label>
-              <input value={formDesc} onChange={e => setFormDesc(e.target.value)} placeholder="Ex: BB 2024 — Edital completo" className="px-3 py-2 bg-[#0d1220] border border-white/[0.08] rounded-xl text-[12px] text-slate-200 placeholder-slate-700 focus:outline-none focus:border-indigo-500/40" />
+              <label className="text-[11.5px] font-normal text-slate-400">Descrição (opcional)</label>
+              <input value={formDesc} onChange={e => setFormDesc(e.target.value)} placeholder="Ex: BB 2024 — Edital completo" className="px-3.5 py-2.5 bg-[#080d1a] border border-white/[0.08] rounded-xl text-[12.5px] font-normal text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-400/40" />
             </div>
           </div>
-          {saveErr && <p className="text-[11px] text-red-400 font-bold">{saveErr}</p>}
-          <div className="flex items-center gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-4 py-1.5 rounded-xl text-[11px] font-black text-slate-500 hover:text-slate-300 transition-colors">Cancelar</button>
-            <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-[11px] font-black uppercase tracking-widest transition-colors">
-              {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} Salvar
+          {saveErr && <p className="text-[12px] font-normal text-rose-400">{saveErr}</p>}
+          <div className="flex items-center gap-2.5 justify-end pt-1">
+            <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-xl text-[12px] font-normal text-slate-400 hover:text-slate-200 transition-colors">Cancelar</button>
+            <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/30 disabled:opacity-50 text-indigo-100 rounded-xl text-[12px] font-normal transition-colors">
+              {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Salvar
             </button>
           </div>
         </div>
       )}
 
       {!selectedBlock && !loadingBlocks && blocks.length > 0 && (
-        <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap justify-between bg-[#101526] p-2.5 sm:p-3 rounded-2xl border border-white/[0.08] relative z-10">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full lg:w-auto flex-1 min-w-0">
+        <div className="flex items-center gap-3 flex-wrap justify-between bg-[#0d1322]/90 p-3 sm:p-3.5 rounded-2xl border border-white/[0.06] relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full lg:w-auto flex-1 min-w-0">
             {/* Filtro por Caderno */}
-            <div className="flex items-center gap-1.5 bg-[#0d1220] border border-white/[0.08] hover:border-white/[0.18] px-3 py-2 sm:py-1.5 rounded-xl transition-colors w-full sm:w-auto">
+            <div className="flex items-center gap-2 bg-[#0a0f1c] border border-white/[0.08] hover:border-white/[0.16] px-3.5 py-2 rounded-xl transition-colors w-full sm:w-auto">
               <BookMarked size={13} className="text-indigo-400 shrink-0" />
               <select
                 value={cadernoFiltro}
@@ -7120,13 +7154,13 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                     if (found) setSelectedBlock(found);
                   }
                 }}
-                className="bg-[#0d1220] text-slate-200 text-[11px] font-bold focus:outline-none cursor-pointer border-none w-full sm:w-auto sm:min-w-[140px] sm:max-w-[240px]"
-                style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}
+                className="bg-[#0a0f1c] text-slate-200 text-[12px] font-normal focus:outline-none cursor-pointer border-none w-full sm:w-auto sm:min-w-[150px] sm:max-w-[240px]"
+                style={{ backgroundColor: "#0a0f1c", color: "#e2e8f0" }}
               >
                 <option
                   value="Todos"
-                  className="bg-[#0d1220] text-slate-200 py-1"
-                  style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}
+                  className="bg-[#0a0f1c] text-slate-200 py-1"
+                  style={{ backgroundColor: "#0a0f1c", color: "#e2e8f0" }}
                 >
                   Todos os Cadernos ({blocks.length})
                 </option>
@@ -7134,8 +7168,8 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                   <option
                     key={b.id}
                     value={b.id}
-                    className="bg-[#0d1220] text-slate-200 py-1"
-                    style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}
+                    className="bg-[#0a0f1c] text-slate-200 py-1"
+                    style={{ backgroundColor: "#0a0f1c", color: "#e2e8f0" }}
                   >
                     {b.nome} {b.materia ? `(${b.materia})` : ""}
                   </option>
@@ -7144,18 +7178,18 @@ export default function NotionQuestionTab({ user }: { user: any }) {
             </div>
 
             {/* Filtro por Matéria em lista suspensa */}
-            <label className="flex items-center gap-1.5 bg-[#0d1220] border border-white/[0.08] hover:border-white/[0.18] px-2.5 py-2 sm:py-1.5 rounded-xl transition-colors w-full sm:w-auto">
-              <Filter size={12} className="text-indigo-400 shrink-0" />
-              <span className="text-[10px] text-slate-500 shrink-0">Matéria</span>
+            <label className="flex items-center gap-2 bg-[#0a0f1c] border border-white/[0.08] hover:border-white/[0.16] px-3.5 py-2 rounded-xl transition-colors w-full sm:w-auto">
+              <Filter size={13} className="text-indigo-400 shrink-0" />
+              <span className="text-[11.5px] font-normal text-slate-500 shrink-0">Matéria</span>
               <select
                 value={materiaFiltro}
                 onChange={e => setMateriaFiltro(e.target.value)}
                 aria-label="Filtrar por matéria"
-                className="bg-transparent text-slate-200 text-[11px] focus:outline-none cursor-pointer border-none w-full sm:w-auto sm:max-w-[190px]"
-                style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}
+                className="bg-transparent text-slate-200 text-[12px] font-normal focus:outline-none cursor-pointer border-none w-full sm:w-auto sm:max-w-[200px]"
+                style={{ backgroundColor: "#0a0f1c", color: "#e2e8f0" }}
               >
                 {["Todas", ...materiasDisponiveis, "Sem matéria"].map(m => (
-                  <option key={m} value={m} style={{ backgroundColor: "#0d1220", color: "#e2e8f0" }}>
+                  <option key={m} value={m} style={{ backgroundColor: "#0a0f1c", color: "#e2e8f0" }}>
                     {m === "Todas" ? `Todas as matérias (${materiasDisponiveis.length})` : m}
                   </option>
                 ))}
@@ -7164,50 +7198,64 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           </div>
 
           {/* Filtro por Status da Questão */}
-          <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] w-full sm:w-auto overflow-x-auto no-scrollbar sm:flex-wrap shrink-0">
+          <div className="flex items-center gap-1 bg-[#0a0f1c] p-1 rounded-xl border border-white/[0.07] w-full sm:w-auto overflow-x-auto no-scrollbar sm:flex-wrap shrink-0">
             <button
               onClick={() => setStatusFiltro("todas")}
-              className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap shrink-0 ${
-                statusFiltro === "todas" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
+              className={`px-3 py-1.5 rounded-lg text-[12px] font-normal border transition-colors whitespace-nowrap shrink-0 ${
+                statusFiltro === "todas"
+                  ? "bg-indigo-500/20 border-indigo-400/30 text-indigo-100"
+                  : "border-transparent text-slate-400 hover:text-slate-200"
               }`}
             >
               Todas
             </button>
             <button
               onClick={() => setStatusFiltro("erros")}
-              className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap shrink-0 ${
-                statusFiltro === "erros" ? "bg-rose-600 text-white" : "text-rose-400/70 hover:text-rose-300"
+              className={`px-3 py-1.5 rounded-lg text-[12px] font-normal border transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+                statusFiltro === "erros"
+                  ? "bg-rose-500/18 border-rose-400/28 text-rose-200"
+                  : "border-transparent text-rose-300/70 hover:text-rose-200"
               }`}
             >
-              🔴 Últs. Erros
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
+              <span>Últs. Erros</span>
             </button>
             <button
               onClick={() => setStatusFiltro("mais_erros")}
-              className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap shrink-0 ${
-                statusFiltro === "mais_erros" ? "bg-amber-600 text-white" : "text-amber-400/70 hover:text-amber-300"
+              className={`px-3 py-1.5 rounded-lg text-[12px] font-normal border transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+                statusFiltro === "mais_erros"
+                  ? "bg-amber-500/18 border-amber-400/28 text-amber-200"
+                  : "border-transparent text-amber-300/70 hover:text-amber-200"
               }`}
             >
-              🔥 Mais Erros
+              <Flame size={12} className="shrink-0" />
+              <span>Mais Erros</span>
             </button>
             <button
               onClick={() => setStatusFiltro("nao_feitas")}
-              className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap shrink-0 ${
-                statusFiltro === "nao_feitas" ? "bg-purple-600 text-white" : "text-purple-400/70 hover:text-purple-300"
+              className={`px-3 py-1.5 rounded-lg text-[12px] font-normal border transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+                statusFiltro === "nao_feitas"
+                  ? "bg-purple-500/18 border-purple-400/28 text-purple-200"
+                  : "border-transparent text-purple-300/70 hover:text-purple-200"
               }`}
             >
-              ⭕ Não Feitas
+              <span className="w-1.5 h-1.5 rounded-full border border-purple-400 shrink-0" />
+              <span>Não Feitas</span>
             </button>
             <button
               onClick={() => setStatusFiltro("feitas_hoje")}
-              className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors whitespace-nowrap shrink-0 ${
-                statusFiltro === "feitas_hoje" ? "bg-sky-600 text-white" : "text-sky-400/70 hover:text-sky-300"
+              className={`px-3 py-1.5 rounded-lg text-[12px] font-normal border transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+                statusFiltro === "feitas_hoje"
+                  ? "bg-sky-500/18 border-sky-400/28 text-sky-200"
+                  : "border-transparent text-sky-300/70 hover:text-sky-200"
               }`}
             >
-              ⚡ Feitas Hoje
+              <Clock size={12} className="shrink-0" />
+              <span>Feitas Hoje</span>
             </button>
           </div>
 
-          {/* Filtro por Classificação (Lista de Validação de Dados) */}
+          {/* Filtro por Classificação */}
           <div className="shrink-0 relative z-30">
             <ClassificationValidationDropdown
               value={classificacaoFiltro}
@@ -7215,92 +7263,125 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               compact
             />
           </div>
-          <div className="flex items-center gap-1 rounded-xl border border-white/[0.08] bg-[#0d1220] p-1 shrink-0">
-            <button type="button" onClick={() => setNotionViewMode("quadros")} aria-pressed={notionViewMode === "quadros"} className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold transition-colors ${notionViewMode === "quadros" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"}`}>
-              <LayoutGrid size={11} /> Quadros
+          <div className="flex items-center gap-1 rounded-xl border border-white/[0.07] bg-[#0a0f1c] p-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => setNotionViewMode("quadros")}
+              aria-pressed={notionViewMode === "quadros"}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-normal border transition-colors ${
+                notionViewMode === "quadros"
+                  ? "bg-indigo-500/20 border-indigo-400/30 text-indigo-100"
+                  : "border-transparent text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <LayoutGrid size={12} /> Quadros
             </button>
-            <button type="button" onClick={() => setNotionViewMode("lista")} aria-pressed={notionViewMode === "lista"} className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold transition-colors ${notionViewMode === "lista" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"}`}>
-              <ListTree size={11} /> Lista
+            <button
+              type="button"
+              onClick={() => setNotionViewMode("lista")}
+              aria-pressed={notionViewMode === "lista"}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-normal border transition-colors ${
+                notionViewMode === "lista"
+                  ? "bg-indigo-500/20 border-indigo-400/30 text-indigo-100"
+                  : "border-transparent text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <ListTree size={12} /> Lista
             </button>
-            <button type="button" onClick={() => setNotionViewMode("mapa")} aria-pressed={notionViewMode === "mapa"} className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold transition-colors ${notionViewMode === "mapa" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"}`}>
-              <BarChart3 size={11} /> Mapa
+            <button
+              type="button"
+              onClick={() => setNotionViewMode("mapa")}
+              aria-pressed={notionViewMode === "mapa"}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-normal border transition-colors ${
+                notionViewMode === "mapa"
+                  ? "bg-indigo-500/20 border-indigo-400/30 text-indigo-100"
+                  : "border-transparent text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <BarChart3 size={12} /> Mapa
             </button>
           </div>
           {notionViewMode !== "quadros" && (
-            <div className="flex items-center gap-1 rounded-xl border border-white/[0.08] bg-[#0d1220] p-1 shrink-0">
-              <button type="button" onClick={() => setMateriasListaAbertas(new Set(blocksPorMateria.keys()))} className="rounded-lg px-2 py-1 text-[10px] text-slate-400 hover:bg-white/[0.06] hover:text-slate-200">Expandir</button>
-              <button type="button" onClick={() => setMateriasListaAbertas(new Set())} className="rounded-lg px-2 py-1 text-[10px] text-slate-400 hover:bg-white/[0.06] hover:text-slate-200">Recolher</button>
+            <div className="flex items-center gap-1 rounded-xl border border-white/[0.07] bg-[#0a0f1c] p-1 shrink-0">
+              <button type="button" onClick={() => setMateriasListaAbertas(new Set(blocksPorMateria.keys()))} className="rounded-lg px-2.5 py-1.5 text-[11.5px] font-normal text-slate-400 hover:bg-white/[0.05] hover:text-slate-200 transition-colors">Expandir</button>
+              <button type="button" onClick={() => setMateriasListaAbertas(new Set())} className="rounded-lg px-2.5 py-1.5 text-[11.5px] font-normal text-slate-400 hover:bg-white/[0.05] hover:text-slate-200 transition-colors">Recolher</button>
             </div>
           )}
         </div>
       )}
 
       {selectedBlock ? (
-        <div className="flex flex-col gap-4 relative z-10">
+        <div className="flex flex-col gap-4 sm:gap-5 relative z-10">
           {/* Header da visão dedicada do caderno */}
-          <div className="flex items-center justify-between gap-3 bg-[#101526] p-3.5 sm:p-4 rounded-2xl border border-white/[0.08] flex-wrap">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3.5 bg-[#0d1322]/90 p-4 sm:p-5 rounded-2xl border border-white/[0.06] flex-wrap">
+            <div className="flex items-center gap-3 min-w-0">
               <button
                 onClick={() => {
                   setSelectedBlock(null);
                   setCadernoFiltro("Todos");
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white text-xs font-bold transition-colors shrink-0"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.08] text-slate-300 hover:text-white text-[12px] font-normal transition-colors shrink-0"
               >
-                <ChevronLeft size={15} className="text-indigo-400" />
+                <ChevronLeft size={14} className="text-indigo-300" />
                 <span>Voltar aos Cadernos</span>
               </button>
 
-              <div className="h-5 w-px bg-white/10 hidden sm:block" />
+              <div className="h-5 w-px bg-white/[0.08] hidden sm:block" />
 
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-lg shrink-0">📝</span>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-indigo-500/12 border border-indigo-400/20 flex items-center justify-center shrink-0">
+                  <BookMarked size={15} className="text-indigo-300" />
+                </div>
                 <div className="flex flex-col min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm sm:text-base font-bold text-white truncate">{selectedBlock.nome}</h3>
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h3 className="text-base sm:text-[17px] font-normal text-slate-100 truncate">{selectedBlock.nome}</h3>
                     {selectedBlock.materia && (
-                      <span className="text-[10px] font-bold text-indigo-400/90 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md shrink-0">
+                      <span className="text-[11.5px] font-normal text-indigo-300/90 bg-indigo-500/10 px-2.5 py-0.5 rounded-lg shrink-0">
                         {selectedBlock.materia}
                       </span>
                     )}
                   </div>
                   {selectedBlock.descricao && (
-                    <p className="text-[11px] text-slate-400 truncate">{selectedBlock.descricao}</p>
+                    <p className="text-[12px] font-normal text-slate-400 truncate mt-0.5">{selectedBlock.descricao}</p>
                   )}
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0 flex-wrap">
-              <div className="flex items-center gap-1 rounded-xl border border-white/[0.08] bg-[#0d1220] p-1 shrink-0">
+            <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+              <div className="flex items-center gap-1 rounded-xl border border-white/[0.07] bg-[#0a0f1c] p-1 shrink-0">
                 <button
                   type="button"
                   onClick={() => setNotionViewMode("quadros")}
                   aria-pressed={notionViewMode !== "mapa"}
-                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold transition-colors ${
-                    notionViewMode !== "mapa" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-normal border transition-colors ${
+                    notionViewMode !== "mapa"
+                      ? "bg-indigo-500/20 border-indigo-400/30 text-indigo-100"
+                      : "border-transparent text-slate-400 hover:text-slate-200"
                   }`}
                 >
-                  <ListTree size={11} /> Caderno
+                  <ListTree size={12} /> Caderno
                 </button>
                 <button
                   type="button"
                   onClick={() => setNotionViewMode("mapa")}
                   aria-pressed={notionViewMode === "mapa"}
-                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold transition-colors ${
-                    notionViewMode === "mapa" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-normal border transition-colors ${
+                    notionViewMode === "mapa"
+                      ? "bg-indigo-500/20 border-indigo-400/30 text-indigo-100"
+                      : "border-transparent text-slate-400 hover:text-slate-200"
                   }`}
                 >
-                  <BarChart3 size={11} /> Mapa
+                  <BarChart3 size={12} /> Mapa
                 </button>
               </div>
               <button
                 type="button"
                 onClick={() => handlePrintCaderno(selectedBlock)}
                 title="Imprimir caderno inteiro com máximo de questões por folha e gabarito no final"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-slate-300 hover:text-white text-xs font-semibold transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.08] hover:border-white/[0.16] text-slate-300 hover:text-white text-[12px] font-normal transition-colors"
               >
-                <Printer size={13} className="text-indigo-400" />
+                <Printer size={13} className="text-indigo-300" />
                 <span>Imprimir Caderno</span>
               </button>
               <BlocoStatsBadge
@@ -7312,10 +7393,10 @@ export default function NotionQuestionTab({ user }: { user: any }) {
           </div>
 
           {/* Barra de Filtro interna do Caderno */}
-          <div className="flex items-center justify-between gap-2.5 sm:gap-3 flex-wrap bg-[#101526] p-2.5 sm:p-3 rounded-2xl border border-white/[0.06] relative z-20">
-            <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full sm:w-auto">
-              <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5 shrink-0">
-                <Filter size={14} className="text-indigo-400" />
+          <div className="flex items-center justify-between gap-3 flex-wrap bg-[#0d1322]/90 p-3 sm:p-3.5 rounded-2xl border border-white/[0.06] relative z-20">
+            <div className="flex items-center gap-2.5 flex-wrap w-full sm:w-auto">
+              <span className="text-[12px] font-normal text-slate-400 flex items-center gap-1.5 shrink-0">
+                <Filter size={13} className="text-indigo-400" />
                 Filtrar questões:
               </span>
 
@@ -7331,20 +7412,22 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                     setStatusFiltro("todas");
                     setClassificacaoFiltro("todas");
                   }}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10.5px] font-bold text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11.5px] font-normal text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition-colors"
                 >
-                  <X size={11} />
+                  <X size={12} />
                   Limpar
                 </button>
               )}
             </div>
 
-            <div className="flex items-center gap-1 bg-[#0d1220] p-1 rounded-xl border border-white/[0.08] w-full sm:w-auto overflow-x-auto no-scrollbar sm:flex-wrap shrink-0">
+            <div className="flex items-center gap-1 bg-[#0a0f1c] p-1 rounded-xl border border-white/[0.07] w-full sm:w-auto overflow-x-auto no-scrollbar sm:flex-wrap shrink-0">
               <button
                 type="button"
                 onClick={() => setStatusFiltro("todas")}
-                className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shrink-0 ${
-                  statusFiltro === "todas" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-slate-200"
+                className={`px-3 py-1.5 rounded-lg text-[12px] font-normal border transition-colors shrink-0 ${
+                  statusFiltro === "todas"
+                    ? "bg-indigo-500/20 border-indigo-400/30 text-indigo-100"
+                    : "border-transparent text-slate-400 hover:text-slate-200"
                 }`}
               >
                 Todas
@@ -7352,44 +7435,56 @@ export default function NotionQuestionTab({ user }: { user: any }) {
               <button
                 type="button"
                 onClick={() => setStatusFiltro("erros")}
-                className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shrink-0 ${
-                  statusFiltro === "erros" ? "bg-rose-600 text-white" : "text-rose-400/70 hover:text-rose-300"
+                className={`px-3 py-1.5 rounded-lg text-[12px] font-normal border transition-colors shrink-0 flex items-center gap-1.5 ${
+                  statusFiltro === "erros"
+                    ? "bg-rose-500/18 border-rose-400/28 text-rose-200"
+                    : "border-transparent text-rose-300/70 hover:text-rose-200"
                 }`}
               >
-                🔴 Últs. Erros
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
+                <span>Últs. Erros</span>
               </button>
               <button
                 type="button"
                 onClick={() => setStatusFiltro("mais_erros")}
-                className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shrink-0 ${
-                  statusFiltro === "mais_erros" ? "bg-amber-600 text-white" : "text-amber-400/70 hover:text-amber-300"
+                className={`px-3 py-1.5 rounded-lg text-[12px] font-normal border transition-colors shrink-0 flex items-center gap-1.5 ${
+                  statusFiltro === "mais_erros"
+                    ? "bg-amber-500/18 border-amber-400/28 text-amber-200"
+                    : "border-transparent text-amber-300/70 hover:text-amber-200"
                 }`}
               >
-                🔥 Mais Erros
+                <Flame size={12} className="shrink-0" />
+                <span>Mais Erros</span>
               </button>
               <button
                 type="button"
                 onClick={() => setStatusFiltro("nao_feitas")}
-                className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shrink-0 ${
-                  statusFiltro === "nao_feitas" ? "bg-purple-600 text-white" : "text-purple-400/70 hover:text-purple-300"
+                className={`px-3 py-1.5 rounded-lg text-[12px] font-normal border transition-colors shrink-0 flex items-center gap-1.5 ${
+                  statusFiltro === "nao_feitas"
+                    ? "bg-purple-500/18 border-purple-400/28 text-purple-200"
+                    : "border-transparent text-purple-300/70 hover:text-purple-200"
                 }`}
               >
-                ⭕ Não Feitas
+                <span className="w-1.5 h-1.5 rounded-full border border-purple-400 shrink-0" />
+                <span>Não Feitas</span>
               </button>
               <button
                 type="button"
                 onClick={() => setStatusFiltro("feitas_hoje")}
-                className={`px-3 py-1.5 sm:py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors shrink-0 ${
-                  statusFiltro === "feitas_hoje" ? "bg-sky-600 text-white" : "text-sky-400/70 hover:text-sky-300"
+                className={`px-3 py-1.5 rounded-lg text-[12px] font-normal border transition-colors shrink-0 flex items-center gap-1.5 ${
+                  statusFiltro === "feitas_hoje"
+                    ? "bg-sky-500/18 border-sky-400/28 text-sky-200"
+                    : "border-transparent text-sky-300/70 hover:text-sky-200"
                 }`}
               >
-                ⚡ Feitas Hoje
+                <Clock size={12} className="shrink-0" />
+                <span>Feitas Hoje</span>
               </button>
             </div>
           </div>
 
           {/* Conteúdo do caderno selecionado */}
-          <div className="bg-[#101526] border border-white/[0.06] rounded-2xl p-2.5 sm:p-5 ml-0 sm:ml-5">
+          <div className="bg-[#0d1322]/75 border border-white/[0.06] rounded-2xl p-4 sm:p-6">
             <BlockViewer
               block={selectedBlock}
               user={user}
@@ -7409,46 +7504,46 @@ export default function NotionQuestionTab({ user }: { user: any }) {
       ) : (
         <>
           {isAdmin && !loadingBlocks && blocksFiltrados.length > 0 && (
-            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 bg-[#101526]/80 px-3.5 py-2 rounded-xl border border-white/[0.06] relative z-10">
-              <MoreVertical size={12} className="text-indigo-400 shrink-0" />
+            <div className="flex items-center gap-2 text-[11.5px] font-normal text-slate-400 bg-[#0d1322]/70 px-4 py-2.5 rounded-xl border border-white/[0.05] relative z-10">
+              <MoreVertical size={13} className="text-indigo-400 shrink-0" />
               <span>Modo Admin: arraste os cadernos ou use as setas no menu para organizar a ordem dentro de cada matéria.</span>
             </div>
           )}
 
           {loadingBlocks ? (
-            <div className="flex items-center justify-center py-16"><Loader2 className="w-7 h-7 text-indigo-500 animate-spin" /></div>
+            <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 text-indigo-400 animate-spin" /></div>
           ) : blocks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3 text-center bg-[#101526]/80 border border-white/[0.06] rounded-2xl relative z-10">
-              <BookMarked size={32} className="text-slate-800" />
-              <p className="text-[12px] font-black text-slate-600 uppercase tracking-widest">Nenhum bloco cadastrado</p>
-              <p className="text-[11px] text-slate-700 max-w-xs">Clique em &ldquo;Novo Bloco&rdquo; para cadastrar o ID de um bloco do Notion.</p>
+            <div className="flex flex-col items-center justify-center py-20 gap-3 text-center bg-[#0d1322]/70 border border-white/[0.06] rounded-2xl relative z-10">
+              <BookMarked size={32} className="text-slate-700" />
+              <p className="text-[14px] font-normal text-slate-400">Nenhum bloco cadastrado</p>
+              <p className="text-[12px] font-normal text-slate-500 max-w-xs">Clique em &ldquo;Novo Bloco&rdquo; para cadastrar o ID de um bloco do Notion.</p>
             </div>
           ) : blocksFiltrados.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-2 text-center bg-[#101526]/80 border border-white/[0.06] rounded-2xl relative z-10">
-              <p className="text-[12px] font-black text-slate-600 uppercase tracking-widest">Nenhum caderno encontrado</p>
-              <button onClick={() => { setMateriaFiltro("Todas"); setCadernoFiltro("Todos"); setStatusFiltro("todas"); setClassificacaoFiltro("todas"); }} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold">Limpar filtros</button>
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center bg-[#0d1322]/70 border border-white/[0.06] rounded-2xl relative z-10">
+              <p className="text-[14px] font-normal text-slate-400">Nenhum caderno encontrado</p>
+              <button onClick={() => { setMateriaFiltro("Todas"); setCadernoFiltro("Todos"); setStatusFiltro("todas"); setClassificacaoFiltro("todas"); }} className="text-[12px] text-indigo-300 hover:text-indigo-200 font-normal px-3.5 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-400/20">Limpar filtros</button>
             </div>
           ) : (
             notionViewMode !== "quadros" ? (
-              <div className="flex flex-col gap-2 relative z-10">
+              <div className="flex flex-col gap-3 relative z-10">
                 {[...blocksPorMateria.entries()].map(([materiaName, mBlocks]) => {
                   const isOpen = materiasListaAbertas.has(materiaName);
                   return (
-                    <section key={materiaName} className="overflow-hidden rounded-xl border border-white/[0.07] bg-[#0d1320]">
+                    <section key={materiaName} className="overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0d1322]/85">
                       <button type="button" aria-expanded={isOpen} onClick={() => setMateriasListaAbertas(prev => {
                         const next = new Set(prev);
                         if (next.has(materiaName)) next.delete(materiaName); else next.add(materiaName);
                         return next;
-                      })} className="flex w-full flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-left transition-colors hover:bg-white/[0.025]">
-                        <span className="flex min-w-0 items-center gap-2">
-                          <ChevronRight size={12} className={`shrink-0 text-slate-500 ${isOpen ? "rotate-90" : ""}`} />
-                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
-                          <span className="truncate text-[11px] font-medium uppercase tracking-wide text-slate-300">{materiaName}</span>
-                          <span className="shrink-0 text-[10px] text-slate-500">{mBlocks.length} cadernos</span>
+                      })} className="flex w-full flex-wrap items-center justify-between gap-2.5 px-4 py-3.5 text-left transition-colors hover:bg-white/[0.025]">
+                        <span className="flex min-w-0 items-center gap-2.5">
+                          <ChevronRight size={13} className={`shrink-0 text-slate-500 transition-transform duration-150 ${isOpen ? "rotate-90" : ""}`} />
+                          <span className="h-2 w-2 shrink-0 rounded-full bg-indigo-400/80" />
+                          <span className="truncate text-[13.5px] font-normal text-slate-100">{materiaName}</span>
+                          <span className="shrink-0 text-[11.5px] font-normal text-slate-500 tabular-nums">{mBlocks.length} cadernos</span>
                         </span>
                         <MateriaStatsBadge blocks={mBlocks} resultadosMap={resultadosMap} duvidasIds={duvidasIds} />
                       </button>
-                      {isOpen && <div className="flex flex-col gap-1.5 border-t border-white/[0.05] p-2 sm:p-2.5">
+                      {isOpen && <div className="flex flex-col gap-2 border-t border-white/[0.05] p-3 sm:p-4">
                         {notionViewMode === "mapa" ? mBlocks.map((block, index) => (
                           <NotionBlockRowItem
                             key={block.id}
@@ -7502,32 +7597,32 @@ export default function NotionQuestionTab({ user }: { user: any }) {
                 })}
               </div>
             ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 relative z-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 relative z-10">
               {[...blocksPorMateria.entries()].map(([materiaName, mBlocks]) => (
                 <div 
                   key={materiaName} 
-                  className="flex flex-col bg-[#101526]/90 border border-white/[0.06] rounded-xl p-2.5 sm:p-3 gap-1.5 transition-colors hover:border-white/[0.10]"
+                  className="flex flex-col bg-[#0d1322]/85 border border-white/[0.06] rounded-2xl p-4 sm:p-5 gap-3 transition-colors hover:border-white/[0.11]"
                 >
-                  <div className="flex items-center justify-between border-b border-white/[0.06] pb-1.5 px-0.5 flex-wrap gap-1.5">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
-                      <h3 className="text-[10.5px] font-medium text-slate-400 uppercase tracking-wider truncate">
+                  <div className="flex items-center justify-between border-b border-white/[0.06] pb-3 px-0.5 flex-wrap gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-indigo-400/80 shrink-0" />
+                      <h3 className="text-[13.5px] font-normal text-slate-100 truncate">
                         {materiaName}
                       </h3>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2.5 shrink-0">
                       <MateriaStatsBadge
                         blocks={mBlocks}
                         resultadosMap={resultadosMap}
                         duvidasIds={duvidasIds}
                       />
-                      <span className="text-[9.5px] font-normal text-slate-500 font-mono bg-white/[0.03] px-1.5 py-0.5 rounded border border-white/[0.04] shrink-0">
+                      <span className="text-[11px] font-normal text-slate-500 tabular-nums shrink-0">
                         {mBlocks.length} caderno{mBlocks.length > 1 ? "s" : ""}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-1 mt-0.5">
+                  <div className="flex flex-col gap-2">
                     {mBlocks.map((block, index) => (
                       <NotionBlockRowItem
                         key={block.id}
